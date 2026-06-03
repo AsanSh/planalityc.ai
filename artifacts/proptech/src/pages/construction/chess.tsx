@@ -3,6 +3,7 @@ import {
 	Download,
 	Grid3X3,
 	Layers,
+	Lock,
 	Plus,
 	Settings2,
 	Upload,
@@ -78,6 +79,11 @@ interface Unit {
 	area?: string;
 	pricePerSqm?: string;
 	totalPrice?: string;
+	basePricePerSqm?: string;
+	saleCoefficient?: string;
+	approvedSalePricePerSqm?: string;
+	approvedTotalPrice?: string;
+	isPublishedForSale?: boolean | null;
 	currency: string;
 	status: string;
 	notes?: string;
@@ -93,6 +99,14 @@ interface Project {
 	name: string;
 	totalFloors?: number;
 	totalUnits?: number;
+}
+
+function isUnitPublishedForSale(unit: Pick<Unit, "isPublishedForSale" | "approvedSalePricePerSqm">) {
+	return unit.isPublishedForSale === true && parseFloat(String(unit.approvedSalePricePerSqm || "0")) > 0;
+}
+
+function approvedPricePerSqm(unit: Pick<Unit, "approvedSalePricePerSqm" | "pricePerSqm">) {
+	return unit.approvedSalePricePerSqm || unit.pricePerSqm || "";
 }
 
 function UnitDialog({
@@ -481,6 +495,135 @@ function BulkGenerateDialog({
 	);
 }
 
+function UnitPricingDialog({
+	unit,
+	onClose,
+	onSaved,
+}: {
+	unit: Unit;
+	onClose: () => void;
+	onSaved: () => void;
+}) {
+	const { toast } = useToast();
+	const [form, setForm] = useState({
+		basePricePerSqm: unit.basePricePerSqm || unit.pricePerSqm || "",
+		saleCoefficient: unit.saleCoefficient || "1",
+		isPublishedForSale: unit.isPublishedForSale !== false,
+	});
+	const [loading, setLoading] = useState(false);
+
+	const base = parseFloat(form.basePricePerSqm || "0");
+	const coefficient = parseFloat(form.saleCoefficient || "0");
+	const area = parseFloat(unit.area || "0");
+	const approvedPps = Number.isFinite(base * coefficient) ? base * coefficient : 0;
+	const approvedTotal = area > 0 && approvedPps > 0 ? area * approvedPps : 0;
+
+	const save = async () => {
+		if (base <= 0 || coefficient <= 0) {
+			toast({
+				title: "Укажите базовую цену и коэффициент больше 0",
+				variant: "destructive",
+			});
+			return;
+		}
+		setLoading(true);
+		try {
+			await api.patch(`/construction/units/${unit.id}/pricing`, {
+				basePricePerSqm: form.basePricePerSqm,
+				saleCoefficient: form.saleCoefficient,
+				isPublishedForSale: form.isPublishedForSale,
+			});
+			toast({
+				title: form.isPublishedForSale
+					? "Цена утверждена и объект опубликован"
+					: "Цена сохранена, объект снят с продажи",
+			});
+			onSaved();
+			onClose();
+		} catch (e: unknown) {
+			toast({
+				title: "Не удалось сохранить цену",
+				description: e instanceof Error ? e.message : "Проверьте данные",
+				variant: "destructive",
+			});
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	return (
+		<Dialog open onOpenChange={(v) => !v && onClose()}>
+			<DialogContent className="sm:max-w-md">
+				<DialogHeader>
+					<DialogTitle>Коммерческая цена · {unit.unitNumber}</DialogTitle>
+				</DialogHeader>
+				<div className="space-y-4">
+					<div className="grid grid-cols-2 gap-3">
+						<div>
+							<Label>Базовая цена за м²</Label>
+							<Input
+								className="mt-1"
+								type="number"
+								min="0"
+								step="0.01"
+								value={form.basePricePerSqm}
+								onChange={(e) =>
+									setForm((p) => ({ ...p, basePricePerSqm: e.target.value }))
+								}
+							/>
+						</div>
+						<div>
+							<Label>Коэффициент</Label>
+							<Input
+								className="mt-1"
+								type="number"
+								min="0"
+								step="0.01"
+								value={form.saleCoefficient}
+								onChange={(e) =>
+									setForm((p) => ({ ...p, saleCoefficient: e.target.value }))
+								}
+							/>
+						</div>
+					</div>
+					<div className="rounded-lg border bg-slate-50 p-3">
+						<div className="flex items-center justify-between text-sm">
+							<span className="text-muted-foreground">Утверждённая цена за м²</span>
+							<span className="font-semibold">
+								{fmtNum(approvedPps)} {unit.currency || "KGS"}
+							</span>
+						</div>
+						<div className="mt-1 flex items-center justify-between text-sm">
+							<span className="text-muted-foreground">Итого по объекту</span>
+							<span className="font-semibold">
+								{approvedTotal > 0 ? fmtNum(approvedTotal) : "—"} {unit.currency || "KGS"}
+							</span>
+						</div>
+					</div>
+					<label className="flex items-center gap-2 text-sm">
+						<input
+							type="checkbox"
+							checked={form.isPublishedForSale}
+							onChange={(e) =>
+								setForm((p) => ({ ...p, isPublishedForSale: e.target.checked }))
+							}
+						/>
+						Показывать продажникам как активный объект для продажи
+					</label>
+					<div className="flex justify-end gap-2">
+						<Button variant="outline" onClick={onClose} disabled={loading}>
+							Отмена
+						</Button>
+						<Button onClick={save} disabled={loading}>
+							{loading ? "Сохранение..." : "Сохранить"}
+						</Button>
+					</div>
+				</div>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
 type ViewMode = "grid" | "by-unit" | "by-counterparty";
 
 /** Инлайн-редактор площади для ПТО */
@@ -749,14 +892,17 @@ export default function ConstructionChess() {
 	const { user } = useAuth();
 	const userRole = (user as any)?.role;
 	const isAdmin = userRole === "admin" || userRole === "super_admin" || userRole === "company_admin";
+	const isCommercialDirector = userRole === "commercial_director";
 	const isSalesOnly = userRole === "sales_manager";
 	const forcedRoleByUser = userRole === "pto" || userRole === "engineer";
 	// Админы могут вручную переключать режим ПТО/CRM
-	const [adminModeOverride, setAdminModeOverride] = useState<"crm" | "pto">("crm");
+	const [adminModeOverride, setAdminModeOverride] = useState<"crm" | "pto" | "pricing">("crm");
 	const [ptoEditUnit, setPtoEditUnit] = useState<Unit | null>(null);
 	const isPTO = forcedRoleByUser || (isAdmin && adminModeOverride === "pto");
+	const isPricingMode = isCommercialDirector || (isAdmin && adminModeOverride === "pricing");
 	const [projectId, setProjectId] = useState<number | null>(null);
 	const [selectedUnit, setSelectedUnit] = useState<Unit | null | "new">(null);
+	const [pricingUnit, setPricingUnit] = useState<Unit | null>(null);
 	const [saleFlow, setSaleFlow] = useState<{
 		unit: Unit;
 		status: "reserved" | "sold";
@@ -861,6 +1007,18 @@ export default function ConstructionChess() {
 	};
 
 	const openUnit = (u: OverviewUnit | Unit) => {
+		if (isPricingMode) {
+			setPricingUnit(u as Unit);
+			return;
+		}
+		if (isSalesOnly && !isUnitPublishedForSale(u as Unit)) {
+			toast({
+				title: "Объект пока не активен для продажи",
+				description: "Коммерческий директор должен утвердить коэффициент и опубликовать объект.",
+				variant: "destructive",
+			});
+			return;
+		}
 		setSelectedUnit(u as Unit);
 	};
 
@@ -924,6 +1082,7 @@ export default function ConstructionChess() {
 			border: "border-slate-200",
 		});
 	}
+	const unpublishedCount = units.filter((u) => !isUnitPublishedForSale(u)).length;
 
 	return (
 		<div className="space-y-6">
@@ -936,10 +1095,17 @@ export default function ConstructionChess() {
 								🔧 Режим ПТО
 							</span>
 						)}
+						{isPricingMode && (
+							<span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-xs font-medium align-middle">
+								Цены
+							</span>
+						)}
 					</h1>
 					<p className="text-sm text-gray-500 mt-0.5">
 						{isPTO
 							? "Управление площадями · клик по площади для редактирования"
+							: isPricingMode
+								? "Коммерческое утверждение базовой цены и коэффициента продажи"
 							: isSalesOnly
 								? "Продажи · бронь и оформление договоров"
 								: "Визуальная карта квартир · договоры и финансы"}
@@ -959,6 +1125,12 @@ export default function ConstructionChess() {
 								className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${adminModeOverride === "pto" ? "bg-white shadow text-amber-700" : "text-gray-500 hover:text-gray-700"}`}
 							>
 								ПТО
+							</button>
+							<button
+								onClick={() => setAdminModeOverride("pricing")}
+								className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${adminModeOverride === "pricing" ? "bg-white shadow text-emerald-700" : "text-gray-500 hover:text-gray-700"}`}
+							>
+								Цены
 							</button>
 						</div>
 					)}
@@ -1049,6 +1221,15 @@ export default function ConstructionChess() {
 				<>
 					{/* Legend + Stats */}
 					<div className="flex flex-wrap gap-3">
+						{unpublishedCount > 0 && (
+							<div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-gray-50 border-gray-200">
+								<Lock className="w-3.5 h-3.5 text-gray-500" />
+								<span className="text-xs font-medium text-gray-600">
+									Не опубликовано
+								</span>
+								<span className="text-xs font-bold text-gray-800">{unpublishedCount}</span>
+							</div>
+						)}
 						{stats.map((s) => (
 							<div
 								key={s.key}
@@ -1244,31 +1425,47 @@ export default function ConstructionChess() {
 															unit.status,
 														);
 														const cellModified = !!(unit as any).areaModified;
+														const published = isUnitPublishedForSale(unit);
+														const lockedForSales = isSalesOnly && !published;
 														const ptoBg = cellModified ? "bg-amber-100" : cfg.bg;
 														const ptoBorder = cellModified ? "border-amber-500" : cfg.border;
+														const cellBg = lockedForSales ? "bg-gray-100" : isPTO ? ptoBg : cfg.bg;
+														const cellBorder = lockedForSales ? "border-gray-200" : isPTO ? ptoBorder : cfg.border;
 														return (
 															<div
 																key={unit.id}
-																title={`${unit.unitNumber} · ${unit.area ? `${unit.area} м²` : ""} · ${cfg.label}`}
-																className={`w-14 rounded border-2 text-center transition-all flex flex-col items-center justify-center p-0.5 relative cursor-pointer ${isPTO ? `${ptoBg} ${ptoBorder}` : `${cfg.bg} ${cfg.border}`}`}
+																title={
+																	lockedForSales
+																		? `${unit.unitNumber} · не опубликовано коммерческим директором`
+																		: `${unit.unitNumber} · ${unit.area ? `${unit.area} м²` : ""} · ${cfg.label}`
+																}
+																className={`w-14 rounded border-2 text-center transition-all flex flex-col items-center justify-center p-0.5 relative ${lockedForSales ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:shadow-sm"} ${cellBg} ${cellBorder}`}
 																style={{ minHeight: "48px" }}
 																onClick={() => {
 																	if (isPTO) setPtoEditUnit(unit);
-																	else setSelectedUnit(unit);
+																	else openUnit(unit);
 																}}
 															>
+																{lockedForSales && (
+																	<Lock className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-white p-0.5 text-gray-500 shadow" />
+																)}
 																{!isPTO && cellModified && (
 																	<div className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[7px] font-bold px-0.5 rounded z-10">Δ</div>
 																)}
-																<span className={`text-[10px] font-bold ${cfg.text}`}>
+																<span className={`text-[10px] font-bold ${lockedForSales ? "text-gray-500" : cfg.text}`}>
 																	{unit.unitNumber}
 																</span>
 																{isPTO ? (
 																	<PtoAreaDisplay unit={unit as any} />
 																) : (
 																	<>
-																		{unit.area && <span className={`text-[8px] ${cfg.text} opacity-70`}>{unit.area}м²</span>}
-																		{unit.roomCount && <span className={`text-[8px] ${cfg.text} opacity-70`}>{unit.roomCount}к</span>}
+																		{unit.area && <span className={`text-[8px] ${lockedForSales ? "text-gray-400" : cfg.text} opacity-70`}>{unit.area}м²</span>}
+																		{unit.roomCount && <span className={`text-[8px] ${lockedForSales ? "text-gray-400" : cfg.text} opacity-70`}>{unit.roomCount}к</span>}
+																		{isPricingMode && (
+																			<span className={`text-[8px] ${published ? "text-emerald-700" : "text-gray-400"} font-medium`}>
+																				{published ? `×${unit.saleCoefficient || "1"}` : "нет цены"}
+																			</span>
+																		)}
 																	</>
 																)}
 															</div>
@@ -1299,6 +1496,13 @@ export default function ConstructionChess() {
 						setSelectedUnit(null);
 						setSaleFlow({ unit, status });
 					}}
+				/>
+			)}
+			{pricingUnit && (
+				<UnitPricingDialog
+					unit={pricingUnit}
+					onClose={() => setPricingUnit(null)}
+					onSaved={invalidateAll}
 				/>
 			)}
 			<ChessStatusSettingsDialog

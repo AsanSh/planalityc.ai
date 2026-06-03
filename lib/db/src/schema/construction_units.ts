@@ -17,6 +17,13 @@ export const constructionUnitsTable = pgTable("construction_units", {
   totalPrice: numeric("total_price", { precision: 15, scale: 2 }),
   currency: text("currency").notNull().default("KGS"),
   status: text("status").notNull().default("available"),
+  basePricePerSqm: numeric("base_price_per_sqm", { precision: 12, scale: 2 }),
+  saleCoefficient: numeric("sale_coefficient", { precision: 8, scale: 4 }),
+  approvedSalePricePerSqm: numeric("approved_sale_price_per_sqm", { precision: 12, scale: 2 }),
+  approvedTotalPrice: numeric("approved_total_price", { precision: 15, scale: 2 }),
+  isPublishedForSale: boolean("is_published_for_sale").notNull().default(false),
+  priceApprovedBy: integer("price_approved_by"),
+  priceApprovedAt: timestamp("price_approved_at", { withTimezone: true }),
   buyerId: integer("buyer_id"),
   contractDate: text("contract_date"),
 

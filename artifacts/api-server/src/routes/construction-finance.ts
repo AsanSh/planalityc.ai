@@ -42,6 +42,14 @@ const router = Router();
 
 router.use(requireAuth, requireTenantCompany);
 
+function unitIsSellable(unit: typeof constructionUnitsTable.$inferSelect): boolean {
+  return (
+    unit.isPublishedForSale === true &&
+    !!unit.approvedSalePricePerSqm &&
+    parseFloat(String(unit.approvedSalePricePerSqm)) > 0
+  );
+}
+
 function mapSalesContractResponse(row: typeof constructionSalesContractsTable.$inferSelect) {
   const { contractDocumentMeta, ...rest } = row;
   return {
@@ -539,9 +547,18 @@ router.post("/contracts-sales", async (req: AuthenticatedRequest, res): Promise<
       .from(constructionUnitsTable)
       .where(and(eq(constructionUnitsTable.id, Number(body.unitId)), eq(constructionUnitsTable.companyId, companyId)));
     if (unit) {
+      if (!unitIsSellable(unit)) {
+        res.status(403).json({ error: "Объект не опубликован коммерческим директором для продажи" });
+        return;
+      }
       const area = parseFloat(String(unit.area || "0"));
-      const pps = parseFloat(String(unit.pricePerSqm || "0"));
+      const pps = parseFloat(String(unit.approvedSalePricePerSqm || unit.pricePerSqm || "0"));
       if (area > 0 && pps > 0) total = area * pps;
+      const approvedTotal = parseFloat(String(unit.approvedTotalPrice || "0"));
+      if (approvedTotal > 0 && total > 0 && Math.abs(total - approvedTotal) > 1) {
+        res.status(400).json({ error: "Сумма договора должна совпадать с утверждённой коммерческой ценой" });
+        return;
+      }
     }
   }
 
@@ -602,6 +619,10 @@ router.post("/contracts-sales/from-unit", async (req: AuthenticatedRequest, res)
     res.status(404).json({ error: "Квартира не найдена" });
     return;
   }
+  if (!unitIsSellable(unit)) {
+    res.status(403).json({ error: "Объект не опубликован коммерческим директором для продажи" });
+    return;
+  }
 
   const buyerName = String(body.buyerName || "").trim();
   if (!buyerName) {
@@ -612,6 +633,11 @@ router.post("/contracts-sales/from-unit", async (req: AuthenticatedRequest, res)
   const totalAmount = parseFloat(body.totalAmount || "0");
   if (totalAmount <= 0) {
     res.status(400).json({ error: "Укажите сумму договора" });
+    return;
+  }
+  const approvedTotal = parseFloat(String(unit.approvedTotalPrice || "0"));
+  if (approvedTotal > 0 && Math.abs(totalAmount - approvedTotal) > 1) {
+    res.status(400).json({ error: "Сумма договора должна совпадать с утверждённой коммерческой ценой" });
     return;
   }
 

@@ -47,6 +47,11 @@ export type OverviewUnit = {
 	area?: string | null;
 	pricePerSqm?: string | null;
 	totalPrice?: string | null;
+	basePricePerSqm?: string | null;
+	saleCoefficient?: string | null;
+	approvedSalePricePerSqm?: string | null;
+	approvedTotalPrice?: string | null;
+	isPublishedForSale?: boolean | null;
 	currency: string;
 	status: string;
 	notes?: string | null;

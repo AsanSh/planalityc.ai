@@ -1,0 +1,225 @@
+import { Router } from "express";
+import { eq, and, SQL } from "drizzle-orm";
+import { db, rolesTable } from "../lib/db";
+import { requireAuth, requireRole, AuthenticatedRequest } from "../middleware/auth";
+import { requireTenantCompany } from "../middleware/tenant";
+import { ensureDefaultCompanyRoles } from "../lib/settings-catalog-sync";
+
+const router: ReturnType<typeof Router> = Router();
+
+router.use(requireAuth, requireTenantCompany);
+
+// GET /api/roles - List all roles
+router.get("/roles",
+  async (req: AuthenticatedRequest, res): Promise<void> => {
+    try {
+      const companyId = req.scopedCompanyId!;
+      await ensureDefaultCompanyRoles(companyId);
+
+      const rows = await db
+        .select()
+        .from(rolesTable)
+        .where(eq(rolesTable.companyId, companyId))
+        .orderBy(rolesTable.createdAt);
+
+      res.json(rows);
+    } catch (error) {
+      console.error("List roles error:", error);
+      res.status(500).json({ error: "Failed to fetch roles" });
+    }
+  }
+);
+
+// GET /api/roles/:id - Get role with permissions
+router.get("/roles/:id",
+  async (req: AuthenticatedRequest, res): Promise<void> => {
+    try {
+      const id = parseInt(
+        Array.isArray(req.params.id) ? req.params.id[0] : req.params.id,
+        10
+      );
+
+      if (isNaN(id)) {
+        res.status(400).json({ error: "Invalid ID" });
+        return;
+      }
+
+      const conditions: SQL[] = [eq(rolesTable.id, id)];
+      conditions.push(eq(rolesTable.companyId, req.scopedCompanyId!));
+
+      const [row] = await db
+        .select()
+        .from(rolesTable)
+        .where(and(...conditions));
+
+      if (!row) {
+        res.status(404).json({ error: "Not found" });
+        return;
+      }
+
+      res.json(row);
+    } catch (error) {
+      console.error("Get role error:", error);
+      res.status(500).json({ error: "Failed to fetch role" });
+    }
+  }
+);
+
+// POST /api/roles - Create role (admin only)
+router.post(
+  "/roles",
+  requireAuth,
+  requireRole("admin", "company_admin"),
+  async (req: AuthenticatedRequest, res): Promise<void> => {
+    try {
+      const {
+        name,
+        description,
+        permissions,
+        isSystem,
+        isActive,
+      } = req.body;
+
+      if (!name) {
+        res.status(400).json({
+          error: "name is required",
+        });
+        return;
+      }
+
+      if (!Array.isArray(permissions)) {
+        res.status(400).json({
+          error: "permissions must be an array",
+        });
+        return;
+      }
+
+      const [row] = await db
+        .insert(rolesTable)
+        .values({
+          companyId: req.scopedCompanyId!,
+          name,
+          description,
+          permissions: permissions || [],
+          isSystem: isSystem ?? false,
+          isActive: isActive ?? true,
+        })
+        .returning();
+
+      res.status(201).json(row);
+    } catch (error) {
+      console.error("Create role error:", error);
+      res.status(500).json({ error: "Failed to create role" });
+    }
+  }
+);
+
+// PATCH /api/roles/:id - Update role (admin only)
+router.patch(
+  "/roles/:id",
+  requireAuth,
+  requireRole("admin", "company_admin"),
+  async (req: AuthenticatedRequest, res): Promise<void> => {
+    try {
+      const id = parseInt(
+        Array.isArray(req.params.id) ? req.params.id[0] : req.params.id,
+        10
+      );
+
+      if (isNaN(id)) {
+        res.status(400).json({ error: "Invalid ID" });
+        return;
+      }
+
+      const {
+        name,
+        description,
+        permissions,
+        isActive,
+      } = req.body;
+
+      // Prevent updating system roles
+      const conditions: SQL[] = [
+        eq(rolesTable.id, id),
+        eq(rolesTable.isSystem, false),
+      ];
+      conditions.push(eq(rolesTable.companyId, req.scopedCompanyId!));
+
+      const updateData: Record<string, unknown> = {};
+      if (name !== undefined) updateData.name = name;
+      if (description !== undefined) updateData.description = description;
+      if (permissions !== undefined) {
+        if (!Array.isArray(permissions)) {
+          res.status(400).json({
+            error: "permissions must be an array",
+          });
+          return;
+        }
+        updateData.permissions = permissions;
+      }
+      if (isActive !== undefined) updateData.isActive = isActive;
+
+      const [row] = await db
+        .update(rolesTable)
+        .set(updateData)
+        .where(and(...conditions))
+        .returning();
+
+      if (!row) {
+        res.status(404).json({ error: "Not found or system role cannot be modified" });
+        return;
+      }
+
+      res.json(row);
+    } catch (error) {
+      console.error("Update role error:", error);
+      res.status(500).json({ error: "Failed to update role" });
+    }
+  }
+);
+
+// DELETE /api/roles/:id - Delete role (admin only)
+router.delete(
+  "/roles/:id",
+  requireAuth,
+  requireRole("admin", "company_admin"),
+  async (req: AuthenticatedRequest, res): Promise<void> => {
+    try {
+      const id = parseInt(
+        Array.isArray(req.params.id) ? req.params.id[0] : req.params.id,
+        10
+      );
+
+      if (isNaN(id)) {
+        res.status(400).json({ error: "Invalid ID" });
+        return;
+      }
+
+      // Prevent deleting system roles
+      const conditions: SQL[] = [
+        eq(rolesTable.id, id),
+        eq(rolesTable.isSystem, false),
+      ];
+      conditions.push(eq(rolesTable.companyId, req.scopedCompanyId!));
+
+      const [existing] = await db
+        .select()
+        .from(rolesTable)
+        .where(and(...conditions));
+
+      if (!existing) {
+        res.status(404).json({ error: "Not found or system role cannot be deleted" });
+        return;
+      }
+
+      await db.delete(rolesTable).where(and(...conditions));
+
+      res.sendStatus(204);
+    } catch (error) {
+      console.error("Delete role error:", error);
+      res.status(500).json({ error: "Failed to delete role" });
+    }
+  }
+);
+
+export default router;

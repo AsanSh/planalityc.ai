@@ -1,0 +1,62 @@
+---
+alwaysApply: true
+---
+
+# 🛡️ PROJECT SAFETY RULES — MUST FOLLOW ALWAYS
+
+## DATABASE & USER DATA
+- NEVER drop, truncate, or delete tables that contain user data
+- NEVER run destructive migrations without explicit confirmation
+- NEVER seed/reset database in production environment
+- NEVER delete existing users, sessions, or auth records
+
+## ПОЛЬЗОВАТЕЛИ (users) — НИКОГДА НЕ УДАЛЯТЬ
+При любых правках (код, SQL, скрипты, seed, Neon/Vercel, «почистить БД») **запрещено**:
+- `DELETE FROM users` / `TRUNCATE users` / `DROP TABLE users`
+- удалять строки пользователей «для порядка», при откате миграции, при смене роли или пароля
+- пересоздавать prod через seed/reset, если это затронет существующих пользователей
+
+**Разрешено без отдельного запроса:**
+- `UPDATE users` (пароль, роль, `is_active`, профиль) — только целевые строки, с `WHERE`
+- `INSERT` нового пользователя, если явно нужен (например, новый super_admin)
+- деактивация: `is_active = false`, не физическое удаление
+
+**Скрипты и ops** (`scripts/`, Neon MCP, drizzle): только `SELECT` / `UPDATE` / `INSERT` по users; при сомнении — спросить, не удалять.
+
+**Миграции:** не `DROP` таблицу `users` и не `DELETE` из неё; только `ALTER TABLE … ADD COLUMN IF NOT EXISTS`.
+- When modifying schema — use ALTER TABLE, not DROP + CREATE
+- Always create a backup strategy before any migration
+- If migration could lose data — STOP and ask user first
+
+## CODE CHANGES
+- NEVER delete existing API endpoints — only add new ones or deprecate
+- NEVER change authentication logic without explicit request
+- NEVER remove environment variables — only add new ones
+- When refactoring — keep old function signatures until new ones are tested
+- Do NOT remove error handling code even if it "looks messy"
+
+## FILE OPERATIONS
+- NEVER delete config files (.env, .env.example, docker-compose.yml, etc.)
+- NEVER overwrite migration files that have already been run
+- When replacing a file — show diff first and ask for approval
+- NEVER delete seed files or fixture data
+
+## BEFORE MAKING CHANGES
+1. State exactly what you are going to change
+2. State what could break as a result
+3. If the change touches DB or auth — ask for explicit confirmation
+4. Prefer small incremental changes over large rewrites
+
+## MIGRATIONS SPECIFICALLY
+- Generate migration files, do NOT run them automatically
+- Name migrations descriptively: `add_column_users_stripe_id` not `update1`
+- Always include a rollback/down migration
+- Test migration on dev DB first — never run directly on prod data
+- **Every new file in `artifacts/api-server/drizzle/migrations/*.sql` MUST be registered in `meta/_journal.json`** before API deploy (otherwise prod schema lags → login/API 500)
+- Do NOT add `drizzle/` to `.vercelignore` — migrations run on API startup
+
+## WHEN IN DOUBT
+- Ask before deleting anything
+- Ask before changing database schema
+- Ask before modifying auth/session logic
+- Default answer to "should I remove this?" is NO

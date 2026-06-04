@@ -99,7 +99,7 @@ const MODULES: Module[] = [
 		label: "Контроль строительства",
 		shortLabel: "Строительство",
 		icon: HardHat,
-		color: "#f97316",
+		color: "#0ea5e9",
 		urlPrefix: ["/construction"],
 		sections: [
 			{
@@ -277,7 +277,7 @@ const MODULES: Module[] = [
 		label: "Аренда",
 		shortLabel: "Аренда",
 		icon: Home,
-		color: "#3b82f6",
+		color: "#14b8a6",
 		urlPrefix: ["/rental"],
 		sections: [
 			{
@@ -379,7 +379,7 @@ const MODULES: Module[] = [
 		label: "CRM / Продажи",
 		shortLabel: "CRM",
 		icon: Target,
-		color: "#8b5cf6",
+		color: "#2563eb",
 		urlPrefix: ["/proptech", "/sales", "/crm"],
 		sections: [
 			{
@@ -411,7 +411,7 @@ const MODULES: Module[] = [
 		label: "Закуп / Снабжение",
 		shortLabel: "Закуп",
 		icon: ShoppingBag,
-		color: "#10b981",
+		color: "#0f766e",
 		urlPrefix: ["/warehouse"],
 		sections: [
 			{
@@ -645,7 +645,7 @@ function SectionGroup({
 									className={cn(
 										"flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] cursor-pointer transition-all duration-150 group",
 										active
-											? "bg-indigo-600 text-white shadow-sm"
+											? "bg-cyan-600 text-white shadow-sm shadow-cyan-950/20"
 											: "text-white/60 hover:text-white hover:bg-white/8",
 									)}
 								>
@@ -781,7 +781,7 @@ export function Layout({ children }: { children: ReactNode }) {
 	return (
 		<div
 			className="flex h-screen overflow-hidden"
-			style={{ background: "#F7F8FC" }}
+			style={{ background: "#F5F8FA" }}
 		>
 			{mobileNavOpen && (
 				<button
@@ -806,7 +806,7 @@ export function Layout({ children }: { children: ReactNode }) {
 					mobileNavOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
 				)}
 				style={{
-					background: "linear-gradient(180deg, #0B1020 0%, #121A33 100%)",
+					background: "linear-gradient(180deg, #06111F 0%, #0B1F2F 100%)",
 				}}
 			>
 				{/* Logo */}
@@ -852,22 +852,22 @@ export function Layout({ children }: { children: ReactNode }) {
 				{showQuickCreate && (
 					<div className="px-3 pb-3 pt-2 border-t border-white/10">
 						<div
-							className="rounded-xl px-2 py-2.5 border border-indigo-400/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+							className="rounded-lg px-2 py-2.5 border border-cyan-400/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
 							style={{
 								background:
-									"linear-gradient(165deg, rgba(30, 41, 89, 0.92) 0%, rgba(20, 28, 58, 0.95) 100%)",
+									"linear-gradient(165deg, rgba(8, 47, 73, 0.72) 0%, rgba(12, 28, 42, 0.96) 100%)",
 							}}
 						>
 							<div className="flex items-center gap-1.5 px-1 mb-1.5">
-								<Zap className="w-3 h-3 text-indigo-400/90" />
-								<span className="text-[10px] font-semibold text-indigo-200/70 uppercase tracking-wider">
+								<Zap className="w-3 h-3 text-cyan-300/90" />
+								<span className="text-[10px] font-semibold text-cyan-100/70 uppercase tracking-wider">
 									Быстрое создание
 								</span>
 							</div>
 							{quickActions.map((qa) => (
 								<Link key={qa.href} href={qa.href}>
-									<div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-white/55 hover:text-white hover:bg-indigo-500/20 text-[12px] cursor-pointer transition-all">
-										<Plus className="w-3 h-3 text-indigo-400 flex-shrink-0" />
+									<div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-white/55 hover:text-white hover:bg-cyan-500/16 text-[12px] cursor-pointer transition-all">
+										<Plus className="w-3 h-3 text-cyan-300 flex-shrink-0" />
 										{qa.label}
 									</div>
 								</Link>
@@ -881,7 +881,7 @@ export function Layout({ children }: { children: ReactNode }) {
 					<div className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-white/8 transition-all cursor-pointer group">
 						<div
 							className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-[11px] flex-shrink-0"
-							style={{ background: "#4F46E5" }}
+							style={{ background: "linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%)" }}
 						>
 							{initials}
 						</div>
@@ -944,7 +944,7 @@ export function Layout({ children }: { children: ReactNode }) {
 													className={cn(
 														"flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer transition-colors whitespace-nowrap",
 														m.id === activeModule.id
-															? "bg-indigo-50 text-indigo-900"
+															? "bg-cyan-50 text-cyan-950"
 															: "hover:bg-gray-50 text-gray-900",
 													)}
 													onClick={() => setModulePickerOpen(false)}
@@ -999,7 +999,7 @@ export function Layout({ children }: { children: ReactNode }) {
 						<div className="relative" ref={createRef}>
 							<button
 								onClick={() => setCreateOpen((o) => !o)}
-								className="flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-lg text-sm font-semibold text-white transition-all shadow-sm hover:shadow-md whitespace-nowrap bg-amber-500 hover:bg-amber-600"
+								className="flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-lg text-sm font-semibold text-white transition-all shadow-sm hover:shadow-md whitespace-nowrap bg-cyan-700 hover:bg-cyan-800 shadow-cyan-950/10"
 							>
 								<Plus className="w-4 h-4" />
 								Создать

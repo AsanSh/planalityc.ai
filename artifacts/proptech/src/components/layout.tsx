@@ -96,58 +96,29 @@ interface Module {
 const MODULES: Module[] = [
 	{
 		id: "construction",
-		label: "Контроль строительства",
-		shortLabel: "Строительство",
-		icon: HardHat,
+		label: "Контур продаж",
+		shortLabel: "Контур продаж",
+		icon: Grid3X3,
 		color: "#0ea5e9",
 		urlPrefix: ["/construction"],
 		sections: [
 			{
-				title: "Управление",
+				title: "Главный поток",
 				items: [
 					{
 						href: "/dashboard?tab=construction",
 						label: "Обзор",
 						icon: LayoutDashboard,
 					},
-					{
-						href: "/construction/operations",
-						label: "Операции",
-						icon: ArrowRightLeft,
-					},
-					{ href: "/construction/projects", label: "Проекты", icon: Map },
-					{ href: "/construction/stages", label: "План проекта (WBS)", icon: Flag },
-					{ href: "/construction/tasks", label: "Задачи", icon: ClipboardList },
-				],
-			},
-			{
-				title: "Ресурсы",
-				items: [
-					{ href: "/construction/workers", label: "Бригады", icon: Hammer },
-					{
-						href: "/construction/contractors",
-						label: "Подрядчики",
-						icon: Briefcase,
-					},
-					{
-						href: "/construction/materials",
-						label: "Материалы",
-						icon: Package,
-					},
-				],
-			},
-			{
-				title: "Финансы",
-				items: [
 					{ href: "/construction/chess", label: "Шахматка", icon: Grid3X3 },
 					{
 						href: "/construction/contracts-sales",
-						label: "Договоры",
+						label: "Договоры продаж",
 						icon: FileText,
 					},
 					{
 						href: "/construction/accruals",
-						label: "Начисление",
+						label: "Начисления",
 						icon: ListOrdered,
 					},
 					{
@@ -155,22 +126,45 @@ const MODULES: Module[] = [
 						label: "Приём платежей",
 						icon: DollarSign,
 					},
-					{ href: "/construction/accounts", label: "Счета", icon: Landmark },
 					{
 						href: "/construction/reconciliation",
-						label: "Сверка 1С",
+						label: "Акт сверки",
 						icon: Scale,
 					},
 					{
-						href: "/construction/payroll",
-						label: "Зарплатная ведомость",
-						icon: Banknote,
+						href: "/crm/client-relations",
+						label: "Клиентский сервис",
+						icon: MessageCircle,
 					},
 				],
 			},
 			{
-				title: "Планалитика",
+				title: "Себестоимость",
 				items: [
+					{ href: "/construction/budget", label: "Бюджет и план/факт", icon: Wallet },
+					{ href: "/construction/stages", label: "Этапы WBS", icon: Flag },
+					{ href: "/construction/tasks", label: "Задачи", icon: ClipboardList },
+					{
+						href: "/construction/operations",
+						label: "Операции",
+						icon: ArrowRightLeft,
+					},
+					{
+						href: "/construction/materials",
+						label: "Материалы",
+						icon: Package,
+					},
+					{
+						href: "/construction/contractors",
+						label: "Подрядчики",
+						icon: Briefcase,
+					},
+				],
+			},
+			{
+				title: "Финансы и контроль",
+				items: [
+					{ href: "/construction/accounts", label: "Счета", icon: Landmark },
 					{
 						href: "/construction/analytics/cashflow",
 						label: "ОДДС",
@@ -191,7 +185,6 @@ const MODULES: Module[] = [
 						label: "Задолженности",
 						icon: AlertTriangle,
 					},
-					{ href: "/construction/budget", label: "Бюджет", icon: Wallet },
 					{
 						href: "/construction/planning/forecast",
 						label: "Будущие поступления",
@@ -207,6 +200,18 @@ const MODULES: Module[] = [
 						label: "Согласование",
 						icon: CheckSquare,
 					},
+				],
+			},
+			{
+				title: "Производство",
+				items: [
+					{ href: "/construction/projects", label: "Проекты", icon: Map },
+					{ href: "/construction/workers", label: "Бригады", icon: Hammer },
+					{
+						href: "/construction/payroll",
+						label: "Зарплатная ведомость",
+						icon: Banknote,
+					},
 					{
 						href: "/construction/planning/broadcast",
 						label: "Рассылка",
@@ -215,7 +220,7 @@ const MODULES: Module[] = [
 				],
 			},
 			{
-				title: "AI-Инструменты",
+				title: "AI и документы",
 				items: [
 					{
 						href: "/construction/ai/chat",
@@ -251,7 +256,7 @@ const MODULES: Module[] = [
 				],
 			},
 			{
-				title: "Справочники",
+				title: "Настройки",
 				items: [
 					{
 						href: "/construction/counterparties",

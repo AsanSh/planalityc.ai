@@ -10,7 +10,8 @@ import {
 	TrendingUp,
 	Upload,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
@@ -131,6 +132,8 @@ function CategoryBlock({ category, items }: { category: string; items: BudgetIte
 
 export default function AIEstimates() {
 	const [projectId, setProjectId] = useState<string>("");
+	const [uploadedFileName, setUploadedFileName] = useState("");
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const { data: projects = [] } = useQuery<Project[]>({
 		queryKey: ["construction-projects-all"],
@@ -170,16 +173,25 @@ export default function AIEstimates() {
 		(i) => parseFloat(i.actualAmount || "0") > parseFloat(i.plannedAmount || "0"),
 	);
 
+	const handleFileSelected = (file?: File) => {
+		if (!file) return;
+		setUploadedFileName(file.name);
+		toast.info("Файл выбран", {
+			description: "Импорт сметы в бюджет пока требует подключения API. Файл зафиксирован в интерфейсе.",
+		});
+	};
+
 	return (
-		<div className="space-y-6">
-			<div className="flex items-center justify-between flex-wrap gap-3">
+		<div className="am-page space-y-6">
+			<div className="am-page-header">
 				<div>
-					<h1 className="text-2xl font-bold text-gray-900">AI Смета</h1>
-					<p className="text-sm text-gray-500 mt-1">Анализ и отклонения бюджета по проекту</p>
+					<p className="text-[11px] font-bold uppercase tracking-[0.22em] text-cyan-700">AI-инструмент</p>
+					<h1 className="am-page-title mt-1 text-[24px] sm:text-[30px]">AI Смета</h1>
+					<p className="am-page-subtitle text-sm">Анализ и отклонения бюджета по проекту</p>
 				</div>
-				<div className="flex items-center gap-2">
+				<div className="flex flex-wrap items-center gap-2">
 					<Select value={projectId} onValueChange={setProjectId}>
-						<SelectTrigger className="w-52">
+						<SelectTrigger className="w-full sm:w-52">
 							<SelectValue placeholder="Выберите проект" />
 						</SelectTrigger>
 						<SelectContent>
@@ -194,33 +206,45 @@ export default function AIEstimates() {
 						<RefreshCw className={cn("w-4 h-4 mr-1.5", isLoading && "animate-spin")} />
 						Обновить
 					</Button>
-					<Button variant="outline" size="sm" disabled title="Загрузка Excel — в разработке">
+					<input
+						ref={fileInputRef}
+						type="file"
+						accept=".xlsx,.xls,.csv"
+						className="hidden"
+						onChange={(event) => handleFileSelected(event.target.files?.[0])}
+					/>
+					<Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
 						<Upload className="w-4 h-4 mr-1.5" />
-						Загрузить смету
+						{uploadedFileName ? "Файл выбран" : "Загрузить смету"}
 					</Button>
 				</div>
 			</div>
+			{uploadedFileName && (
+				<div className="am-panel px-4 py-3 text-sm text-slate-600">
+					<span className="font-semibold text-slate-900">Выбран файл:</span> {uploadedFileName}
+				</div>
+			)}
 
 			{/* Summary cards */}
 			{projectId && (
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-					<div className="bg-white rounded-xl border border-gray-200 p-4">
+				<div className="am-kpi-grid">
+					<div className="am-kpi-card">
 						<p className="text-xs text-gray-500 mb-1">Позиций в смете</p>
 						<p className="text-2xl font-bold text-gray-900">{items.length}</p>
 					</div>
-					<div className="bg-white rounded-xl border border-gray-200 p-4">
+					<div className="am-kpi-card">
 						<p className="text-xs text-gray-500 mb-1">Плановый бюджет</p>
 						<p className="text-xl font-bold text-gray-900">{fmt(totalPlanned)} с</p>
 					</div>
-					<div className="bg-white rounded-xl border border-gray-200 p-4">
+					<div className="am-kpi-card">
 						<p className="text-xs text-gray-500 mb-1">Фактически</p>
 						<p className={cn("text-xl font-bold", totalActual > totalPlanned ? "text-rose-600" : "text-emerald-600")}>
 							{fmt(totalActual)} с
 						</p>
 					</div>
 					<div className={cn(
-						"rounded-xl border p-4",
-						totalPct > 0 ? "bg-rose-50 border-rose-200" : "bg-emerald-50 border-emerald-200"
+						"am-kpi-card",
+						totalPct > 0 ? "border-rose-200/80 bg-rose-50/80" : "border-emerald-200/80 bg-emerald-50/80"
 					)}>
 						<p className="text-xs text-gray-500 mb-1">Отклонение</p>
 						<p className={cn("text-xl font-bold", totalPct > 0 ? "text-rose-700" : "text-emerald-700")}>
@@ -279,7 +303,7 @@ export default function AIEstimates() {
 					))}
 
 					{/* % by category chart */}
-					<div className="bg-white rounded-xl border border-gray-200 p-5 mt-2">
+					<div className="am-panel p-5 mt-2">
 						<h3 className="text-sm font-semibold text-gray-800 mb-4">Структура по разделам (% от плана)</h3>
 						<div className="space-y-2.5">
 							{categories.map(([cat, catItems]) => {

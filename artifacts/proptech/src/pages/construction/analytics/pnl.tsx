@@ -530,7 +530,7 @@ export default function ConstructionPnL() {
 					{ label: "Маржа", value: fmtPct(periodTotals.margin), tone: periodTotals.margin < 0 ? "text-rose-700" : "text-blue-700", bg: "bg-white border-slate-200" },
 					{ label: "Чистая прибыль", value: fmt2(periodTotals.net), tone: periodTotals.net < 0 ? "text-rose-700" : "text-white", bg: "bg-slate-950 border-slate-950" },
 				].map((card) => (
-					<div key={card.label} className={`rounded-2xl border p-4 shadow-sm ${card.bg}`}>
+					<div key={card.label} className={`am-kpi-card ${card.bg}`}>
 						<div className={cn("text-xs font-semibold uppercase tracking-wide", card.bg.includes("slate-950") ? "text-white/55" : "text-slate-400")}>
 							{card.label}
 						</div>
@@ -540,15 +540,15 @@ export default function ConstructionPnL() {
 					</div>
 				))}
 			</div>
-			<div className="flex-1 overflow-auto rounded-[24px] border border-slate-200 bg-white shadow-sm">
+			<div className="am-card flex-1 overflow-auto rounded-[28px] border border-white/80 bg-white/78 shadow-2xl shadow-slate-950/8 backdrop-blur-xl">
 				<table
 					className="text-sm border-collapse"
 					style={{ minWidth: `${360 + visibleMonths.length * 112 + 128}px` }}
 				>
 					<thead>
-						<tr className="sticky top-0 z-20 bg-slate-100 text-xs font-semibold text-slate-600">
+						<tr className="sticky top-0 z-20 bg-slate-950 text-xs font-semibold text-white/75">
 							<th
-								className="sticky left-0 z-30 border-r border-slate-200 bg-slate-100 px-4 py-3 text-left"
+								className="sticky left-0 z-30 border-r border-white/10 bg-slate-950 px-4 py-3 text-left text-white/85"
 								style={{ minWidth: "240px", width: "240px" }}
 							>
 								Статья
@@ -556,7 +556,7 @@ export default function ConstructionPnL() {
 							{visibleMonths.map((i) => (
 								<th
 									key={i}
-									className={`border-r border-slate-200 px-3 py-3 text-right ${i === curMonth && String(new Date().getFullYear()) === year ? "bg-lime-100 text-lime-800" : ""}`}
+									className={`border-r border-white/10 px-3 py-3 text-right ${i === curMonth && String(new Date().getFullYear()) === year ? "bg-cyan-500/18 text-cyan-100" : ""}`}
 									style={{ minWidth: "112px" }}
 								>
 									{MONTH_SHORT[i].slice(0, 3)} {year.slice(2)}

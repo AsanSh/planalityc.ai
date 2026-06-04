@@ -1553,7 +1553,7 @@ export default function ConstructionTasks() {
 			</div>
 
 			{/* Tabs */}
-			<div className="flex gap-1 overflow-x-auto rounded-xl bg-gray-100 p-1">
+			<div className="flex gap-1.5 overflow-x-auto rounded-[22px] border border-white/80 bg-white/62 p-1.5 shadow-xl shadow-slate-950/6 backdrop-blur-xl">
 				{TABS.map((tab) => {
 					const Icon = tab.icon;
 					const count = tabCounts[tab.id] ?? 0;
@@ -1562,14 +1562,16 @@ export default function ConstructionTasks() {
 						<button
 							key={tab.id}
 							onClick={() => setActiveTab(tab.id)}
-							className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium transition-all ${
-								active ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+							className={`flex-1 flex min-h-10 items-center justify-center gap-1.5 rounded-2xl px-3 py-2 text-xs font-semibold transition-all ${
+								active
+									? "bg-gradient-to-br from-slate-950 to-cyan-950 text-white shadow-lg shadow-cyan-950/18"
+									: "text-slate-500 hover:bg-white/80 hover:text-slate-950"
 							}`}
 						>
-							<Icon className="w-3.5 h-3.5 flex-shrink-0" />
+							<Icon className={`w-3.5 h-3.5 flex-shrink-0 ${active ? "text-cyan-300" : ""}`} />
 							<span className="hidden sm:inline">{tab.label}</span>
 							{count > 0 && (
-								<span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${active ? "bg-amber-100 text-amber-700" : "bg-gray-200 text-gray-500"}`}>
+								<span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${active ? "bg-white/14 text-cyan-100" : "bg-slate-200 text-slate-500"}`}>
 									{count}
 								</span>
 							)}

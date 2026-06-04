@@ -735,7 +735,6 @@ export function Layout({ children }: { children: ReactNode }) {
 		: location;
 	const { allowedModules, homePath, canAccess, isLoading: accessLoading, role, permissions } =
 		useModuleAccess();
-	const [modulePickerOpen, setModulePickerOpen] = useState(false);
 	const [createOpen, setCreateOpen] = useState(false);
 	const [mobileNavOpen, setMobileNavOpen] = useState(false);
 	const [sidebarPinned, setSidebarPinned] = useState(
@@ -745,7 +744,6 @@ export function Layout({ children }: { children: ReactNode }) {
 	const [openSectionTitle, setOpenSectionTitle] = useState<string | null>(null);
 	const { open: commandOpen, setOpen: setCommandOpen } = useCommandPalette();
 	useFinanceHotkeys(!!user);
-	const modulePickerRef = useRef<HTMLDivElement>(null);
 	const createRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -754,12 +752,6 @@ export function Layout({ children }: { children: ReactNode }) {
 
 	useEffect(() => {
 		function handleClickOutside(e: MouseEvent) {
-			if (
-				modulePickerRef.current &&
-				!modulePickerRef.current.contains(e.target as Node)
-			) {
-				setModulePickerOpen(false);
-			}
 			if (createRef.current && !createRef.current.contains(e.target as Node)) {
 				setCreateOpen(false);
 			}
@@ -1065,14 +1057,11 @@ export function Layout({ children }: { children: ReactNode }) {
 					{showModuleSwitcher ? (
 						<div
 							className="relative flex-shrink-0"
-							ref={modulePickerRef}
-							onMouseEnter={() => setModulePickerOpen(true)}
-							onMouseLeave={() => setModulePickerOpen(false)}
-							onFocus={() => setModulePickerOpen(true)}
 						>
 							<button
-								onClick={() => setModulePickerOpen((o) => !o)}
+								type="button"
 								className="flex lg:hidden items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 text-sm font-medium text-gray-700 bg-white transition-all whitespace-nowrap"
+								title={activeModule.label}
 							>
 								<ModuleIcon
 									className="w-4 h-4 flex-shrink-0"
@@ -1089,7 +1078,7 @@ export function Layout({ children }: { children: ReactNode }) {
 										<Link key={m.id} href={getModuleEntryHref(m)}>
 											<div
 												className={cn(
-													"group flex h-10 items-center justify-center rounded-xl text-sm font-semibold transition-all",
+													"group relative flex h-10 items-center justify-center rounded-xl text-sm font-semibold transition-all",
 														active
 															? "min-w-[132px] gap-2 bg-gradient-to-br from-slate-950 to-cyan-950 px-3 text-white shadow-lg shadow-cyan-950/20"
 															: "w-10 text-slate-500 hover:bg-white/80 hover:text-slate-950",
@@ -1107,66 +1096,16 @@ export function Layout({ children }: { children: ReactNode }) {
 															: m.shortLabel}
 													</span>
 												)}
+												{!active && (
+													<span className="pointer-events-none absolute left-1/2 top-full z-[9999] mt-2 -translate-x-1/2 whitespace-nowrap rounded-xl border border-slate-200/80 bg-white/96 px-2.5 py-1.5 text-xs font-semibold text-slate-700 opacity-0 shadow-xl shadow-slate-950/12 backdrop-blur transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100">
+														{m.shortLabel}
+													</span>
+												)}
 											</div>
 										</Link>
 									);
 								})}
 							</div>
-							{modulePickerOpen && (
-								<div
-									className="absolute top-full left-0 mt-2 w-[280px] overflow-hidden rounded-3xl border border-slate-200 bg-white/95 p-2 shadow-2xl shadow-slate-900/16 backdrop-blur"
-									style={{ zIndex: 9999 }}
-								>
-									{visibleModules.map((m) => {
-										const Icon = m.icon;
-										const moduleHref = getModuleEntryHref(m);
-										return (
-											<Link key={m.id} href={moduleHref}>
-												<div
-													className={cn(
-														"flex items-center gap-3 rounded-2xl px-3 py-3 text-sm cursor-pointer transition-all whitespace-nowrap",
-														m.id === activeModule.id
-															? "bg-slate-950 text-white shadow-sm"
-															: "hover:bg-slate-50 text-slate-800",
-													)}
-													onClick={() => setModulePickerOpen(false)}
-												>
-													<div
-														className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-100"
-														style={{
-															background:
-																m.id === activeModule.id
-																	? "rgba(255,255,255,0.12)"
-																	: `${m.color}14`,
-														}}
-													>
-														<Icon
-															className="w-4 h-4 flex-shrink-0"
-															style={{
-																color:
-																	m.id === activeModule.id ? "#67e8f9" : m.color,
-															}}
-														/>
-													</div>
-													<div className="min-w-0">
-														<div className="truncate font-semibold">{m.label}</div>
-														<div
-															className={cn(
-																"text-xs",
-																m.id === activeModule.id
-																	? "text-white/45"
-																	: "text-slate-400",
-															)}
-														>
-															{m.sections.length} разделов
-														</div>
-													</div>
-												</div>
-											</Link>
-										);
-									})}
-								</div>
-							)}
 						</div>
 					) : (
 						<div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 whitespace-nowrap">

@@ -5,6 +5,7 @@ import { z } from "zod/v4";
 export const payrollEmployeesTable = pgTable("payroll_employees", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull(),
+  legalEntityId: integer("legal_entity_id"),
   userId: integer("user_id"),
   fullName: text("full_name").notNull(),
   position: text("position"),

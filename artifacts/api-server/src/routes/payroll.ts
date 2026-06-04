@@ -1,7 +1,8 @@
 import { Router, type Response } from "express";
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import {
   db,
+  legalEntitiesTable,
   moduleSettingsTable,
   payrollEmployeesTable,
   payrollSalaryChangesTable,
@@ -123,17 +124,47 @@ router.get(
 // All remaining endpoints require a tenant company.
 router.use("/payroll", requireTenantCompany);
 
-// GET /construction/payroll/employees — flat list (frontend groups by department)
+// GET /construction/payroll/employees — flat list with legal entity assignment
 router.get(
   "/payroll/employees",
   async (req: AuthenticatedRequest, res): Promise<void> => {
     if (!(await assertPayrollAccess(req, res))) return;
     const companyId = req.scopedCompanyId!;
     const rows = await db
-      .select()
+      .select({
+        id: payrollEmployeesTable.id,
+        companyId: payrollEmployeesTable.companyId,
+        legalEntityId: payrollEmployeesTable.legalEntityId,
+        legalEntityName: legalEntitiesTable.name,
+        userId: payrollEmployeesTable.userId,
+        fullName: payrollEmployeesTable.fullName,
+        position: payrollEmployeesTable.position,
+        department: payrollEmployeesTable.department,
+        employmentType: payrollEmployeesTable.employmentType,
+        hireDate: payrollEmployeesTable.hireDate,
+        baseSalary: payrollEmployeesTable.baseSalary,
+        currentSalary: payrollEmployeesTable.currentSalary,
+        currency: payrollEmployeesTable.currency,
+        status: payrollEmployeesTable.status,
+        notes: payrollEmployeesTable.notes,
+        createdBy: payrollEmployeesTable.createdBy,
+        createdAt: payrollEmployeesTable.createdAt,
+        updatedAt: payrollEmployeesTable.updatedAt,
+      })
       .from(payrollEmployeesTable)
+      .leftJoin(
+        legalEntitiesTable,
+        and(
+          eq(payrollEmployeesTable.legalEntityId, legalEntitiesTable.id),
+          eq(legalEntitiesTable.companyId, companyId),
+        ),
+      )
       .where(eq(payrollEmployeesTable.companyId, companyId))
-      .orderBy(payrollEmployeesTable.department, payrollEmployeesTable.fullName);
+      .orderBy(
+        asc(legalEntitiesTable.name),
+        asc(payrollEmployeesTable.department),
+        asc(payrollEmployeesTable.fullName),
+      );
     res.json(rows);
   },
 );
@@ -159,12 +190,33 @@ router.post(
       ? String(body.employmentType)
       : "staff";
     const baseSalary = toAmount(body.baseSalary);
+    const legalEntityId =
+      body.legalEntityId != null && body.legalEntityId !== ""
+        ? Number(body.legalEntityId)
+        : null;
+
+    if (legalEntityId != null) {
+      const [legalEntity] = await db
+        .select()
+        .from(legalEntitiesTable)
+        .where(
+          and(
+            eq(legalEntitiesTable.id, legalEntityId),
+            eq(legalEntitiesTable.companyId, companyId),
+          ),
+        );
+      if (!legalEntity) {
+        res.status(400).json({ error: "ОсОО не найдено" });
+        return;
+      }
+    }
 
     try {
       const [created] = await db
         .insert(payrollEmployeesTable)
         .values({
           companyId,
+          legalEntityId,
           userId:
             body.userId != null && body.userId !== ""
               ? Number(body.userId)
@@ -220,6 +272,28 @@ router.patch(
     const patch: Record<string, unknown> = { updatedAt: new Date() };
     if (body.position !== undefined)
       patch.position = body.position ? String(body.position) : null;
+    if (body.legalEntityId !== undefined) {
+      const legalEntityId =
+        body.legalEntityId != null && body.legalEntityId !== ""
+          ? Number(body.legalEntityId)
+          : null;
+      if (legalEntityId != null) {
+        const [legalEntity] = await db
+          .select()
+          .from(legalEntitiesTable)
+          .where(
+            and(
+              eq(legalEntitiesTable.id, legalEntityId),
+              eq(legalEntitiesTable.companyId, companyId),
+            ),
+          );
+        if (!legalEntity) {
+          res.status(400).json({ error: "ОсОО не найдено" });
+          return;
+        }
+      }
+      patch.legalEntityId = legalEntityId;
+    }
     if (body.department !== undefined)
       patch.department = body.department ? String(body.department) : null;
     if (body.employmentType !== undefined && VALID_EMPLOYMENT.has(String(body.employmentType)))
@@ -298,11 +372,19 @@ router.get(
         createdAt: payrollSalaryChangesTable.createdAt,
         employeeName: payrollEmployeesTable.fullName,
         department: payrollEmployeesTable.department,
+        legalEntityName: legalEntitiesTable.name,
       })
       .from(payrollSalaryChangesTable)
       .leftJoin(
         payrollEmployeesTable,
         eq(payrollSalaryChangesTable.payrollEmployeeId, payrollEmployeesTable.id),
+      )
+      .leftJoin(
+        legalEntitiesTable,
+        and(
+          eq(payrollEmployeesTable.legalEntityId, legalEntitiesTable.id),
+          eq(legalEntitiesTable.companyId, companyId),
+        ),
       )
       .where(eq(payrollSalaryChangesTable.companyId, companyId))
       .orderBy(desc(payrollSalaryChangesTable.id));

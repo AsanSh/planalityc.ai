@@ -393,6 +393,11 @@ const MODULES: Module[] = [
 					{ href: "/crm/leads", label: "Лиды", icon: Target },
 					{ href: "/crm/leads/intake", label: "Приём лидов", icon: Rss },
 					{ href: "/crm/clients", label: "Клиенты", icon: Users },
+					{
+						href: "/crm/client-relations",
+						label: "Клиентский сервис",
+						icon: MessageCircle,
+					},
 					{ href: "/crm/employees", label: "Сотрудники", icon: Users },
 					{ href: "/crm/counterparties", label: "Контрагенты", icon: Briefcase },
 					{ href: "/crm/deals", label: "Сделки", icon: TrendingUp },

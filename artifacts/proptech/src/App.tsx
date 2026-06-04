@@ -85,6 +85,7 @@ import ConstructionTasks from "@/pages/construction/tasks";
 import { TaskDetailPage } from "@/features/construction-tasks/TaskDetailPage";
 import ConstructionWorkers from "@/pages/construction/workers";
 import Counterparties from "@/pages/counterparties";
+import ClientRelations from "@/pages/crm/client-relations";
 import CrmClients from "@/pages/crm/clients";
 // CRM/PropTech module
 import CrmDeals from "@/pages/crm/deals";
@@ -561,6 +562,9 @@ function Router() {
 			</Route>
 			<Route path="/crm/clients">
 				<ProtectedRoute component={CrmClients} />
+			</Route>
+			<Route path="/crm/client-relations">
+				<ProtectedRoute component={ClientRelations} />
 			</Route>
 			<Route path="/crm/deals">
 				<ProtectedRoute component={CrmDeals} />

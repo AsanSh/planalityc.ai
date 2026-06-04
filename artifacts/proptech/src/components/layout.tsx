@@ -110,6 +110,11 @@ const MODULES: Module[] = [
 						label: "Обзор",
 						icon: LayoutDashboard,
 					},
+					{
+						href: "/construction/projects",
+						label: "Проект / ЖК",
+						icon: Building2,
+					},
 					{ href: "/construction/chess", label: "Шахматка", icon: Grid3X3 },
 					{
 						href: "/construction/contracts-sales",
@@ -205,7 +210,6 @@ const MODULES: Module[] = [
 			{
 				title: "Производство",
 				items: [
-					{ href: "/construction/projects", label: "Проекты", icon: Map },
 					{ href: "/construction/workers", label: "Бригады", icon: Hammer },
 					{
 						href: "/construction/payroll",

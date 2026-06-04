@@ -737,6 +737,14 @@ export default function ConstructionProjects() {
 	> | null>(null);
 	const [search, setSearch] = useState("");
 
+	useEffect(() => {
+		const params = new URLSearchParams(window.location.search);
+		if (params.get("create") !== "1") return;
+		setPrefill(null);
+		setDialog("new");
+		window.history.replaceState(null, "", "/construction/projects");
+	}, []);
+
 	const handleDocumentParsed = (parsed: ParsedProjectDocument) => {
 		setPrefill(applyParsedToProjectForm(parsed));
 		setDialog("new");

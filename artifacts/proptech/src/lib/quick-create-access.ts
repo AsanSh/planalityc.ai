@@ -10,7 +10,8 @@ export type QuickAction = {
 };
 
 const QUICK_ACTIONS: QuickAction[] = [
-	{ module: "construction", label: "Сделка", href: "/construction/sales-contracts/new", permission: "construction.sales.create", roles: ["company_admin", "admin", "sales_manager"] },
+	{ module: "construction", label: "Проект", href: "/construction/projects?create=1", permission: "construction.projects.create", roles: ["company_admin", "admin", "sales_manager"] },
+	{ module: "construction", label: "Договор", href: "/construction/contracts-sales", permission: "construction.sales.create", roles: ["company_admin", "admin", "sales_manager"] },
 	{ module: "construction", label: "Операция", href: "/construction/operations?new=1", permission: "finance.operations.create", roles: ["company_admin", "admin", "finance"] },
 	{ module: "construction", label: "Задача", href: "/construction/tasks?new=1", permission: "construction.tasks.create", roles: ["company_admin", "admin", "pto", "engineer"] },
 	{ module: "rental", label: "Договор аренды", href: "/rental/contracts?new=1", permission: "rental.contracts.create", roles: ["company_admin", "admin", "rental_manager"] },

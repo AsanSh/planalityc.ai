@@ -491,6 +491,85 @@
 /* tabular-nums для денежных колонок */
 .am-num { font-variant-numeric: tabular-nums; }
 
+@keyframes construction-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes construction-soft-sheen {
+  0% {
+    transform: translateX(-18%) translateY(-8%) rotate(0deg);
+  }
+  50% {
+    transform: translateX(8%) translateY(2%) rotate(4deg);
+  }
+  100% {
+    transform: translateX(-18%) translateY(-8%) rotate(0deg);
+  }
+}
+
+.construction-command-center {
+  background:
+    radial-gradient(circle at 12% 2%, rgb(20 184 166 / 0.16), transparent 26%),
+    radial-gradient(circle at 82% 8%, rgb(14 165 233 / 0.14), transparent 28%),
+    linear-gradient(180deg, #f4fbf8 0%, #f7fafc 44%, #f2f5f8 100%);
+}
+
+.construction-hero::after {
+  content: "";
+  position: absolute;
+  width: 360px;
+  height: 360px;
+  right: -140px;
+  top: -160px;
+  border-radius: 999px;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgb(255 255 255 / 0.34) 0 8px,
+      rgb(255 255 255 / 0.1) 8px 16px
+    );
+  filter: blur(0.2px);
+  animation: construction-soft-sheen 12s var(--am-ease-in-out) infinite;
+}
+
+.construction-card-in {
+  opacity: 0;
+  animation: construction-card-enter 560ms var(--am-ease-out) forwards;
+}
+
+.construction-press {
+  transition:
+    transform 220ms var(--am-ease-out),
+    box-shadow 220ms var(--am-ease-out),
+    border-color 180ms var(--am-ease-out),
+    background-color 180ms var(--am-ease-out);
+}
+
+.construction-press:active {
+  transform: scale(0.985);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .construction-card-in,
+  .construction-hero::after {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .construction-press,
+  .construction-press:active {
+    transition: none;
+    transform: none;
+  }
+}
+
 /* ── Print styles — hide chrome, show content only ── */
 @media print {
 	aside,

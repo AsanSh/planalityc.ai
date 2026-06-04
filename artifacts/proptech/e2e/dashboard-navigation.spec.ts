@@ -22,16 +22,13 @@ test.describe("Dashboard navigation smoke", () => {
 			{ timeout: 20_000 },
 		);
 
-		// Переключатель модулей (виден при 2+ модулях)
-		const moduleSwitcher = page
-			.locator("header button")
-			.filter({ hasText: /Сводное|Строительство|Аренда|CRM|Закуп/ })
-			.first();
-
-		if (await moduleSwitcher.isVisible()) {
-			await moduleSwitcher.click();
-			await page.getByText("CRM / Продажи", { exact: true }).click();
-			await expect(page).toHaveURL(/\/crm\//);
+		// Модули теперь переключаются без dropdown: активный модуль подписан,
+		// остальные раскрывают label на hover и ведут сразу на свой маршрут.
+		const crmModule = page.locator('header a[href^="/crm"], header a[href^="/dashboard?tab=sales"]').first();
+		if (await crmModule.isVisible()) {
+			await crmModule.hover();
+			await crmModule.click();
+			await expect(page).toHaveURL(/(\/crm\/|tab=sales)/);
 		}
 
 		// Unified Dashboard — смена вкладки

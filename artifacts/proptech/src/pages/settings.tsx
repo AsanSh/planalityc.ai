@@ -107,12 +107,6 @@ export default function Settings() {
 	const isAdmin =
 		userRole === "super_admin" || userRole === "company_admin";
 
-	// Debug: log user role for troubleshooting
-	useEffect(() => {
-		console.log("Settings page - full user object:", user);
-		console.log("Settings page - user role:", userRole, "isAdmin:", isAdmin);
-	}, [user, userRole, isAdmin]);
-
 	const [org, setOrg] = useState<Company | null>(null);
 	const [form, setForm] = useState({
 		name: "",
@@ -140,14 +134,6 @@ export default function Settings() {
 	const [showPasswords, setShowPasswords] = useState(false);
 
 	useEffect(() => {
-		// Verify user role by checking API directly
-		apiFetch("/auth/me")
-			.then((data: any) => {
-				console.log("Settings - User from API:", data);
-				console.log("Settings - User role from API:", data.role);
-			})
-			.catch((err) => console.error("Failed to fetch user:", err));
-
 		apiFetch("/companies/my")
 			.then((data: Company) => {
 				setOrg(data);

@@ -141,8 +141,6 @@ export default function Register() {
 				password: form.password,
 			});
 
-			console.log("Registration successful:", data);
-
 			// Set new token
 			login(data.token);
 
@@ -156,7 +154,6 @@ export default function Register() {
 				setLocation("/dashboard");
 			}, 500);
 		} catch (err: any) {
-			console.error("Registration error details:", err);
 			toast({
 				title: "Ошибка регистрации",
 				description: err.message || "Неизвестная ошибка",

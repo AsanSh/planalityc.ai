@@ -3,7 +3,15 @@ import {
 	AlertCircle,
 	ArrowRight,
 	BarChart2,
+	Banknote,
 	Building2,
+	CalendarClock,
+	ClipboardCheck,
+	FileSpreadsheet,
+	Landmark,
+	ListChecks,
+	ReceiptText,
+	Scale,
 	TrendingDown,
 	TrendingUp,
 	Users,
@@ -12,6 +20,7 @@ import {
 import { useState } from "react";
 import { Link } from "wouter";
 import { CashSummary } from "@/components/cash-summary";
+import { ModuleCommandCenter } from "@/components/dashboard/module-command-center";
 import {
 	defaultPeriod,
 	inPeriod,
@@ -175,42 +184,168 @@ export default function ConstructionDashboard() {
 		.sort((a, b) => b[1] - a[1])
 		.slice(0, 5);
 	const maxContAmt = topContExp[0]?.[1] || 1;
+	const financeMetrics = [
+		{
+			label: "Деньги бизнеса",
+			value: fmtShort(totalAccountsKgs),
+			description: `${accountsArray.length} счетов под контролем`,
+			href: "/construction/accounts",
+			icon: Wallet,
+			tone: "blue" as const,
+		},
+		{
+			label: "Поступления",
+			value: fmtShort(totalIncome),
+			description: "Деньги по выбранному периоду",
+			href: "/construction/operations",
+			icon: TrendingUp,
+			tone: "emerald" as const,
+		},
+		{
+			label: "Расходы",
+			value: fmtShort(totalExpense),
+			description: "Оплаты, подрядчики, материалы",
+			href: "/construction/operations",
+			icon: TrendingDown,
+			tone: "amber" as const,
+		},
+		{
+			label: "Дебиторка",
+			value: fmtShort(overdueDebt),
+			description: "Просроченные обязательства клиентов",
+			href: "/construction/analytics/debt",
+			icon: AlertCircle,
+			tone: overdueDebt > 0 ? ("amber" as const) : ("emerald" as const),
+		},
+	];
+	const financeSteps = [
+		{
+			title: "Счета и кассы",
+			description: "Сначала видим деньги по банкам, кассе и валютам.",
+			href: "/construction/accounts",
+			icon: Landmark,
+			meta: "остатки",
+			tone: "blue" as const,
+		},
+		{
+			title: "Операции",
+			description: "Фиксируем приход и расход с проектом, статьей и контрагентом.",
+			href: "/construction/operations",
+			icon: Banknote,
+			meta: "первичный учет",
+			tone: "emerald" as const,
+		},
+		{
+			title: "Начисления",
+			description: "Договор автоматически превращается в график начислений.",
+			href: "/construction/accruals",
+			icon: ReceiptText,
+			meta: "график оплат",
+			tone: "cyan" as const,
+		},
+		{
+			title: "ОДДС",
+			description: "Движение денег по периодам: статья строкой, месяцы столбцами.",
+			href: "/construction/analytics/cashflow",
+			icon: FileSpreadsheet,
+			meta: "cash flow",
+			tone: "violet" as const,
+		},
+		{
+			title: "ОПУ",
+			description: "Доходы, расходы и прибыль без смешивания с кассовыми остатками.",
+			href: "/construction/analytics/pnl",
+			icon: BarChart2,
+			meta: "profit & loss",
+			tone: "amber" as const,
+		},
+		{
+			title: "План оплат",
+			description: "Будущие поступления, просрочки и задолженности в одном ритме.",
+			href: "/construction/planning/forecast",
+			icon: CalendarClock,
+			meta: "контроль сроков",
+			tone: "cyan" as const,
+		},
+	];
+	const financeLanes = [
+		{
+			title: "Финансист",
+			description: "операции, счета, сверки",
+			value: `${filteredOps.length}`,
+			progress: Math.min(100, filteredOps.length * 8),
+		},
+		{
+			title: "Коммерческий директор",
+			description: "цены, коэффициенты, договоры",
+			value: `${contractsArray.length}`,
+			progress: Math.min(100, contractsArray.length * 12),
+		},
+		{
+			title: "Бухгалтерия",
+			description: "1С, подтверждение, закрытие",
+			value: "1С",
+			progress: 62,
+		},
+	];
+	const financeQuickLinks = [
+		{
+			title: "Сверка 1С",
+			description: "банк, импорт, подтверждение",
+			href: "/construction/reconciliation",
+			icon: Scale,
+		},
+		{
+			title: "Согласование",
+			description: "платежи до проведения",
+			href: "/construction/planning/approvals",
+			icon: ClipboardCheck,
+		},
+		{
+			title: "Бюджет",
+			description: "план-факт по проектам",
+			href: "/construction/budget",
+			icon: ListChecks,
+		},
+	];
 
 	return (
 		<div className="space-y-4 -mt-1">
-			{/* Header */}
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-2xl font-bold text-gray-900">
-						{projectsArray[0]?.name?.split(" ")[0] || "Planalityc.ai"}
-					</h1>
-					<p className="text-sm text-gray-400">Строительный дашборд</p>
-				</div>
-				<div className="flex items-center gap-2">
-					<CashSummary accounts={accountsArray} />
-				</div>
-			</div>
+			<ModuleCommandCenter
+				eyebrow="Финансовый контур"
+				title="От договора до денег, ОДДС, ОПУ и контроля долгов"
+				description="Финансовый модуль должен вести пользователя по процессу: счета, операции, начисления, отчеты, будущие платежи и просрочки. Ниже остаются графики и детализация."
+				primaryHref="/construction/operations"
+				primaryLabel="Провести операцию"
+				metrics={financeMetrics}
+				steps={financeSteps}
+				lanes={financeLanes}
+				quickLinks={financeQuickLinks}
+			/>
 
 			{/* Period / project filter */}
-			<div className="flex items-center gap-2 flex-wrap">
-				<PeriodPicker value={period} onChange={setPeriod} />
-				<div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-					<button
-						onClick={() => setFilterProject("all")}
-						className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${filterProject === "all" ? "bg-white shadow text-gray-900" : "text-gray-500"}`}
-					>
-						Все проекты
-					</button>
-					{projectsArray.slice(0, 3).map((p: any) => (
+			<div className="flex items-center justify-between gap-3 rounded-[24px] border border-white/70 bg-white/85 p-3 shadow-sm backdrop-blur">
+				<div className="flex items-center gap-2 flex-wrap">
+					<PeriodPicker value={period} onChange={setPeriod} />
+					<div className="flex gap-1 bg-gray-100 rounded-lg p-1">
 						<button
-							key={p.id}
-							onClick={() => setFilterProject(String(p.id))}
-							className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${filterProject === String(p.id) ? "bg-white shadow text-gray-900" : "text-gray-500"}`}
+							onClick={() => setFilterProject("all")}
+							className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${filterProject === "all" ? "bg-white shadow text-gray-900" : "text-gray-500"}`}
 						>
-							{p.name}
+							Все проекты
 						</button>
-					))}
+						{projectsArray.slice(0, 3).map((p: any) => (
+							<button
+								key={p.id}
+								onClick={() => setFilterProject(String(p.id))}
+								className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${filterProject === String(p.id) ? "bg-white shadow text-gray-900" : "text-gray-500"}`}
+							>
+								{p.name}
+							</button>
+						))}
+					</div>
 				</div>
+				<CashSummary accounts={accountsArray} />
 			</div>
 
 			{/* KPI Cards - like Adesk */}

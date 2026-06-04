@@ -35,8 +35,6 @@ import {
 	Menu,
 	MessageCircle,
 	Package,
-	Pin,
-	PinOff,
 	PieChart,
 	PiggyBank,
 	Plus,
@@ -586,6 +584,24 @@ function detectModule(path: string): ModuleId {
 	return detectModuleFromPath(path);
 }
 
+function getDashboardTabLabel(path: string): string | null {
+	if (!path.startsWith("/dashboard")) return null;
+	const queryIndex = path.indexOf("?");
+	if (queryIndex === -1) return "Сводное";
+	const tab = new URLSearchParams(path.slice(queryIndex + 1)).get("tab");
+	const labels: Record<string, string> = {
+		control: "Сводное",
+		construction: "Контур",
+		finance: "Финансы",
+		supply: "Закуп",
+		sales: "Продажи",
+		rental: "Аренда",
+		investors: "Инвесторы",
+		analytics: "Аналитика",
+	};
+	return tab ? labels[tab] || null : "Сводное";
+}
+
 interface SectionGroupProps {
 	section: NavSection;
 	location: string;
@@ -595,7 +611,6 @@ interface SectionGroupProps {
 	allowedModules: ModuleId[];
 	open: boolean;
 	onToggle: () => void;
-	collapsed?: boolean;
 }
 
 function navItemMatches(location: string, href: string): boolean {
@@ -625,7 +640,6 @@ function SectionGroup({
 	allowedModules,
 	open,
 	onToggle,
-	collapsed = false,
 }: SectionGroupProps) {
 	const items = section.items.map((item) => ({
 		...item,
@@ -638,32 +652,6 @@ function SectionGroup({
 		(a, b) => b.href.length - a.href.length,
 	)[0];
 	const isActiveSection = !!bestMatch;
-
-	if (collapsed) {
-		return (
-			<div className="space-y-1">
-				{items.map((item) => {
-					const active = bestMatch?.href === item.href;
-					const Icon = item.icon;
-					return (
-						<Link key={item.href} href={item.href}>
-							<div
-								title={`${section.title}: ${item.label}`}
-								className={cn(
-									"mx-auto flex h-10 w-10 items-center justify-center rounded-2xl transition-all",
-									active
-										? "bg-cyan-500 text-white shadow-lg shadow-cyan-950/25"
-										: "text-white/45 hover:bg-white/10 hover:text-white",
-								)}
-							>
-								<Icon className="h-4 w-4" />
-							</div>
-						</Link>
-					);
-				})}
-			</div>
-		);
-	}
 
 	return (
 		<div
@@ -737,18 +725,11 @@ export function Layout({ children }: { children: ReactNode }) {
 	const [modulePickerOpen, setModulePickerOpen] = useState(false);
 	const [createOpen, setCreateOpen] = useState(false);
 	const [mobileNavOpen, setMobileNavOpen] = useState(false);
-	const [sidebarPinned, setSidebarPinned] = useState(
-		() => localStorage.getItem("planalityc_sidebar_pinned") === "1",
-	);
 	const [openSectionTitle, setOpenSectionTitle] = useState<string | null>(null);
 	const { open: commandOpen, setOpen: setCommandOpen } = useCommandPalette();
 	useFinanceHotkeys(!!user);
 	const modulePickerRef = useRef<HTMLDivElement>(null);
 	const createRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		localStorage.setItem("planalityc_sidebar_pinned", sidebarPinned ? "1" : "0");
-	}, [sidebarPinned]);
 
 	useEffect(() => {
 		function handleClickOutside(e: MouseEvent) {
@@ -784,6 +765,8 @@ export function Layout({ children }: { children: ReactNode }) {
 		MODULES.find((m) => m.id === activeModuleId) ||
 		MODULES[MODULES.length - 1];
 	const ModuleIcon = activeModule.icon;
+	const activeModuleShortLabel =
+		getDashboardTabLabel(pathWithSearch) || activeModule.shortLabel;
 	const quickActions = useMemo(
 		() =>
 			resolveQuickActions(
@@ -795,7 +778,6 @@ export function Layout({ children }: { children: ReactNode }) {
 		[activeModule.id, role, permissions, allowedModules],
 	);
 	const showQuickCreate = quickActions.length > 0;
-	const sidebarCollapsed = !sidebarPinned;
 	const showModuleSwitcher = visibleModules.length > 1;
 	const adminRoles = new Set(["company_admin", "admin", "super_admin"]);
 	const isAdminUser = adminRoles.has(String((user as { role?: string })?.role ?? role));
@@ -902,10 +884,8 @@ export function Layout({ children }: { children: ReactNode }) {
 			{/* ───── SIDEBAR ───── */}
 			<aside
 				className={cn(
-					"flex-shrink-0 flex flex-col overflow-hidden z-50",
+					"w-[244px] flex-shrink-0 flex flex-col overflow-hidden z-50",
 					"fixed md:relative inset-y-0 left-0 transition-transform duration-200",
-					sidebarCollapsed ? "md:w-[72px]" : "md:w-[244px]",
-					"w-[244px]",
 					mobileNavOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
 				)}
 				style={{
@@ -914,29 +894,8 @@ export function Layout({ children }: { children: ReactNode }) {
 				}}
 			>
 				{/* Logo */}
-				<div
-					className={cn(
-						"border-b border-white/8",
-						sidebarCollapsed ? "px-3 py-4" : "px-4 py-4",
-					)}
-				>
-					<div className={cn("flex items-center", sidebarCollapsed ? "flex-col justify-center gap-2" : "justify-between gap-2")}>
-						<PlanalitycLogo
-							variant={sidebarCollapsed ? "mark" : "sidebar"}
-							className={sidebarCollapsed ? "h-9 w-9" : undefined}
-						/>
-						<button
-							type="button"
-							onClick={() => setSidebarPinned((p) => !p)}
-							title={sidebarPinned ? "Свернуть меню" : "Закрепить меню"}
-							className={cn(
-								"hidden h-8 w-8 items-center justify-center rounded-xl text-white/45 transition hover:bg-white/10 hover:text-white md:flex",
-								sidebarCollapsed && "h-7 w-7 bg-white/5",
-							)}
-						>
-							{sidebarPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
-						</button>
-					</div>
+				<div className="px-4 py-4 border-b border-white/8">
+					<PlanalitycLogo variant="sidebar" />
 				</div>
 
 				{/* Nav */}
@@ -954,7 +913,6 @@ export function Layout({ children }: { children: ReactNode }) {
 							permissions={permissions}
 							allowedModules={allowedModules}
 							open={openSectionTitle === section.title}
-							collapsed={sidebarCollapsed}
 							onToggle={() =>
 								setOpenSectionTitle((current) =>
 									current === section.title ? null : section.title,
@@ -966,21 +924,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
 				{/* Quick create — отдельная панель, чтобы не путать с разделами меню */}
 				{showQuickCreate && (
-					<div className={cn("px-3 pb-3 pt-2 border-t border-white/8", sidebarCollapsed && "hidden md:block")}>
-						{sidebarCollapsed ? (
-							<div className="flex flex-col items-center gap-1">
-								{quickActions.slice(0, 4).map((qa) => (
-									<Link key={qa.href} href={qa.href}>
-										<div
-											title={qa.label}
-											className="flex h-10 w-10 items-center justify-center rounded-2xl text-cyan-300 hover:bg-cyan-500/14 hover:text-white"
-										>
-											<Plus className="h-4 w-4" />
-										</div>
-									</Link>
-								))}
-							</div>
-						) : (
+					<div className="px-3 pb-3 pt-2 border-t border-white/8">
 						<div
 							className="rounded-2xl px-2.5 py-3 border border-cyan-400/18 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
 							style={{
@@ -1003,7 +947,6 @@ export function Layout({ children }: { children: ReactNode }) {
 								</Link>
 							))}
 						</div>
-						)}
 					</div>
 				)}
 
@@ -1016,7 +959,7 @@ export function Layout({ children }: { children: ReactNode }) {
 						>
 							{initials}
 						</div>
-						<div className={cn("flex-1 min-w-0", sidebarCollapsed && "hidden")}>
+						<div className="flex-1 min-w-0">
 							<div className="text-white text-[12px] font-medium truncate leading-none">
 								{displayName}
 							</div>
@@ -1026,7 +969,7 @@ export function Layout({ children }: { children: ReactNode }) {
 						</div>
 						<button
 							onClick={logout}
-							className={cn("opacity-0 group-hover:opacity-100 transition-opacity", sidebarCollapsed && "hidden")}
+							className="opacity-0 group-hover:opacity-100 transition-opacity"
 						>
 							<LogOut className="w-3.5 h-3.5 text-white/40 hover:text-white/70" />
 						</button>
@@ -1064,7 +1007,7 @@ export function Layout({ children }: { children: ReactNode }) {
 									className="w-4 h-4 flex-shrink-0"
 									style={{ color: activeModule.color }}
 								/>
-								<span>{activeModule.shortLabel}</span>
+								<span>{activeModuleShortLabel}</span>
 								<ChevronDown className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
 							</button>
 							<div className="hidden lg:flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-slate-50/90 p-1 shadow-inner">
@@ -1086,7 +1029,13 @@ export function Layout({ children }: { children: ReactNode }) {
 													className="h-4 w-4 flex-shrink-0"
 													style={{ color: active ? "#67e8f9" : m.color }}
 												/>
-												{active && <span className="truncate">{m.shortLabel}</span>}
+												{active && (
+													<span className="truncate">
+														{m.id === activeModule.id
+															? activeModuleShortLabel
+															: m.shortLabel}
+													</span>
+												)}
 											</div>
 										</Link>
 									);
@@ -1154,7 +1103,7 @@ export function Layout({ children }: { children: ReactNode }) {
 								className="w-4 h-4 flex-shrink-0"
 								style={{ color: activeModule.color }}
 							/>
-							<span>{activeModule.shortLabel}</span>
+							<span>{activeModuleShortLabel}</span>
 						</div>
 					)}
 

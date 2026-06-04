@@ -1,11 +1,20 @@
 import {
 	AlertTriangle,
+	Banknote,
+	BarChart3,
 	Building2,
 	CheckCircle2,
+	ClipboardCheck,
 	Clock,
+	FileSignature,
 	FileText,
+	Home,
+	KeyRound,
 	Receipt,
+	ReceiptText,
+	ShieldCheck,
 	TrendingUp,
+	UserRound,
 	Users,
 } from "lucide-react";
 import { Link } from "wouter";
@@ -16,6 +25,7 @@ import {
 	useListProperties,
 	useListTenants,
 } from "@/api-client";
+import { ModuleCommandCenter } from "@/components/dashboard/module-command-center";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function formatCurrency(amount: number | string) {
@@ -119,15 +129,144 @@ export default function RentalDashboard() {
 	const leaseMap = Object.fromEntries(
 		leasesArray.map((l) => [l.id, l.contractNumber]),
 	);
+	const rentalMetrics = [
+		{
+			label: "Договоры",
+			value: activeLeases.length,
+			description: `из ${leasesArray.length} в портфеле`,
+			href: "/rental/contracts",
+			icon: FileText,
+			tone: "blue" as const,
+		},
+		{
+			label: "Арендаторы",
+			value: tenantsArray.filter((t) => t.status === "active").length,
+			description: "активные карточки",
+			href: "/rental/tenants",
+			icon: Users,
+			tone: "cyan" as const,
+		},
+		{
+			label: "Получено",
+			value: formatCurrency(totalPaid),
+			description: "платежи аренды",
+			href: "/rental/payments",
+			icon: TrendingUp,
+			tone: "emerald" as const,
+		},
+		{
+			label: "Задолженность",
+			value: formatCurrency(totalBalance),
+			description: totalBalance > 0 ? "к погашению" : "нет долга",
+			href: "/rental/analytics/debt",
+			icon: AlertTriangle,
+			tone: totalBalance > 0 ? ("amber" as const) : ("emerald" as const),
+		},
+	];
+	const rentalSteps = [
+		{
+			title: "Объект",
+			description: "Помещение, ставка, статус, владелец и готовность к аренде.",
+			href: "/rental/properties",
+			icon: Home,
+			meta: "портфель",
+			tone: "blue" as const,
+		},
+		{
+			title: "Арендатор",
+			description: "Контакты, документы, история платежей и ответственность.",
+			href: "/rental/tenants",
+			icon: UserRound,
+			meta: "карточка",
+			tone: "cyan" as const,
+		},
+		{
+			title: "Договор",
+			description: "Срок, ставка, депозит и правила автоматических начислений.",
+			href: "/rental/contracts",
+			icon: FileSignature,
+			meta: "условия",
+			tone: "violet" as const,
+		},
+		{
+			title: "Начисление",
+			description: "Система создает ежемесячные обязательства по договору.",
+			href: "/rental/accruals",
+			icon: ReceiptText,
+			meta: "график",
+			tone: "amber" as const,
+		},
+		{
+			title: "Платеж",
+			description: "Поступление закрывает задолженность и попадает в ОДДС.",
+			href: "/rental/payments",
+			icon: Banknote,
+			meta: "касса",
+			tone: "emerald" as const,
+		},
+		{
+			title: "Акт владельцу",
+			description: "Сверка, распределение и отчетность для собственника.",
+			href: "/rental/statements",
+			icon: ClipboardCheck,
+			meta: "закрытие",
+			tone: "cyan" as const,
+		},
+	];
+	const rentalLanes = [
+		{
+			title: "Менеджер аренды",
+			description: "объекты, арендаторы, договоры",
+			value: `${activeLeases.length}`,
+			progress: Math.min(100, activeLeases.length * 10),
+		},
+		{
+			title: "Финансист",
+			description: "начисления, платежи, долги",
+			value: `${pendingAccruals.length}`,
+			progress: Math.min(100, pendingAccruals.length * 18),
+		},
+		{
+			title: "Собственник",
+			description: "акты, распределения, отчеты",
+			value: `${rentedProps}`,
+			progress: Math.min(100, rentedProps * 12),
+		},
+	];
+	const rentalQuickLinks = [
+		{
+			title: "Депозиты",
+			description: "обеспечение по договорам",
+			href: "/rental/deposits",
+			icon: ShieldCheck,
+		},
+		{
+			title: "ОДДС аренды",
+			description: "движение денег по месяцам",
+			href: "/rental/analytics/odds",
+			icon: BarChart3,
+		},
+		{
+			title: "Просрочки",
+			description: "контроль сроков оплаты",
+			href: "/rental/planning/overdue",
+			icon: KeyRound,
+		},
+	];
 
 	return (
 		<div className="space-y-6">
-			<div>
-				<h1 className="text-2xl font-bold text-gray-900">Дашборд аренды</h1>
-				<p className="text-sm text-gray-500 mt-1">
-					Сводная информация по арендному портфелю
-				</p>
-			</div>
+			<ModuleCommandCenter
+				eyebrow="Контур аренды"
+				title="От объекта и арендатора до начислений, платежей и актов"
+				description="Аренда должна работать как отдельный производственный цикл: объект, договор, автоматические начисления, платежи, долги, акты владельцам и рассылки."
+				primaryHref="/rental/properties"
+				primaryLabel="Открыть объекты"
+				metrics={rentalMetrics}
+				steps={rentalSteps}
+				lanes={rentalLanes}
+				quickLinks={rentalQuickLinks}
+			/>
 
 			{/* KPI Row 1 */}
 			<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

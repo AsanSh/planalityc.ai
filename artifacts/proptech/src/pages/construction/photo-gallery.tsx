@@ -139,7 +139,7 @@ export default function PhotoGallery() {
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/20 to-teal-50/20 p-6 space-y-6">
 			{/* Header */}
-			<div className="flex items-center justify-between">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div>
 					<h1 className="text-4xl font-extrabold text-gray-900">
 						Фотогалерея строительства
@@ -166,7 +166,7 @@ export default function PhotoGallery() {
 					</div>
 
 					<Select value={projectFilter} onValueChange={setProjectFilter}>
-						<SelectTrigger className="w-56">
+						<SelectTrigger className="w-full sm:w-56">
 							<SelectValue placeholder="Проект" />
 						</SelectTrigger>
 						<SelectContent>
@@ -181,7 +181,7 @@ export default function PhotoGallery() {
 					</Select>
 
 					<Select value={stageFilter} onValueChange={setStageFilter}>
-						<SelectTrigger className="w-56">
+						<SelectTrigger className="w-full sm:w-56">
 							<SelectValue placeholder="Этап" />
 						</SelectTrigger>
 						<SelectContent>

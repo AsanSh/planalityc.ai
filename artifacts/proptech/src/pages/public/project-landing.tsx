@@ -134,7 +134,7 @@ export default function ProjectLanding() {
 			{/* Stats Bar */}
 			<div className="bg-gradient-to-r from-purple-600 to-teal-600 text-white py-8 shadow-xl">
 				<div className="container mx-auto px-6">
-					<div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+					<div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center">
 						<div>
 							<div className="text-4xl font-bold mb-2">
 								{project.totalUnits}
@@ -180,7 +180,7 @@ export default function ProjectLanding() {
 								Мы создаем не просто дома, а комфортную среду для жизни, где
 								каждая деталь продумана до мелочей.
 							</p>
-							<div className="grid grid-cols-2 gap-4 pt-4">
+							<div className="grid gap-4 sm:grid-cols-2 pt-4">
 								{[
 									{ icon: Shield, label: "Надежный застройщик" },
 									{ icon: Award, label: "Премиум качество" },
@@ -198,7 +198,7 @@ export default function ProjectLanding() {
 								))}
 							</div>
 						</div>
-						<div className="grid grid-cols-2 gap-4">
+						<div className="grid gap-4 sm:grid-cols-2">
 							{project.gallery.map((img, idx) => (
 								<div
 									key={idx}
@@ -220,7 +220,7 @@ export default function ProjectLanding() {
 					<h2 className="text-4xl font-bold text-gray-900 mb-12 text-center">
 						Преимущества
 					</h2>
-					<div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+					<div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 gap-6">
 						{project.features.map((feature, idx) => (
 							<Card
 								key={idx}

@@ -310,7 +310,7 @@ export default function ConstructionDashboard() {
 	];
 
 	return (
-		<div className="space-y-4 -mt-1">
+		<div className="am-page space-y-4 -mt-1">
 			<ModuleCommandCenter
 				eyebrow="Финансовый контур"
 				title="От договора до денег, ОДДС, ОПУ и контроля долгов"
@@ -349,7 +349,7 @@ export default function ConstructionDashboard() {
 			</div>
 
 			{/* KPI Cards - like Adesk */}
-			<div className="grid grid-cols-4 gap-4">
+			<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
 				{/* Доходы */}
 				<Link href="/construction/operations" className="block no-underline">
 				<div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:shadow-md hover:border-gray-200 transition-all cursor-pointer">
@@ -475,9 +475,9 @@ export default function ConstructionDashboard() {
 			</div>
 
 			{/* Second row */}
-			<div className="grid grid-cols-3 gap-4">
+			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				{/* Cashflow chart */}
-				<div className="col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+				<div className="sm:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
 					<div className="flex items-center justify-between mb-4">
 						<div className="text-sm font-semibold text-gray-700">
 							Деньги на счетах (за 6 мес.)
@@ -564,9 +564,9 @@ export default function ConstructionDashboard() {
 			</div>
 
 			{/* Third row: expense dynamics + structure */}
-			<div className="grid grid-cols-3 gap-4">
+			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				{/* Динамика расходов по статьям */}
-				<div className="col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+				<div className="sm:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
 					<div className="text-sm font-semibold text-gray-700 mb-4">
 						Динамика расходов
 					</div>
@@ -644,7 +644,7 @@ export default function ConstructionDashboard() {
 			</div>
 
 			{/* Bottom: Top clients + top expense */}
-			<div className="grid grid-cols-2 gap-4">
+			<div className="grid gap-4 sm:grid-cols-2">
 				<div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
 					<div className="flex items-center gap-2 mb-4">
 						<Users className="w-4 h-4 text-emerald-500" />
@@ -733,7 +733,7 @@ export default function ConstructionDashboard() {
 
 			{/* Recent ops */}
 			<div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-				<div className="px-5 py-3 border-b border-gray-50 flex items-center justify-between">
+				<div className="px-5 py-3 border-b border-gray-50 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<div className="text-sm font-semibold text-gray-700">
 						Последние операции
 					</div>

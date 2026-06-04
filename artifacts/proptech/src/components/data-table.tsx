@@ -315,13 +315,13 @@ export function DataTable<T>({
 			<div className="flex items-center gap-2 flex-wrap">
 				{toolbar}
 				{enableSearch && (
-					<div className="relative">
+					<div className="relative min-w-[220px] flex-1 sm:flex-none">
 						<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
 						<Input
 							value={globalFilter}
 							onChange={(e) => setGlobalFilter(e.target.value)}
 							placeholder={searchPlaceholder}
-							className="pl-8 h-9 w-56 border-gray-200"
+							className="pl-8 h-9 w-full sm:w-64 border-gray-200"
 						/>
 					</div>
 				)}

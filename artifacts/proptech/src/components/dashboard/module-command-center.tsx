@@ -106,7 +106,7 @@ export function ModuleCommandCenter({
 	quickLinks,
 }: ModuleCommandCenterProps) {
 	return (
-		<section className="construction-hero relative overflow-hidden rounded-[28px] border border-white/60 bg-[#eef7f5] p-5 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)] md:p-7">
+		<section className="construction-hero relative overflow-hidden rounded-3xl border border-white/60 bg-[#eef7f5] p-4 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)] md:p-6">
 			<div className="relative z-10 grid items-start gap-5 xl:grid-cols-[1.05fr_1.45fr]">
 				<div className="flex flex-col justify-between gap-5">
 					<div>
@@ -123,7 +123,7 @@ export function ModuleCommandCenter({
 					<div className="grid gap-3 sm:grid-cols-2">
 						<Link
 							href={primaryHref}
-							className="construction-press group rounded-3xl bg-slate-950 p-4 text-white shadow-xl shadow-slate-900/15"
+							className="construction-press group rounded-2xl bg-slate-950 p-4 text-white shadow-xl shadow-slate-900/15"
 						>
 							<div className="flex items-center justify-between gap-4">
 								<div>
@@ -135,7 +135,7 @@ export function ModuleCommandCenter({
 								<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
 							</div>
 						</Link>
-						<div className="rounded-3xl border border-white/70 bg-white/75 p-4 shadow-lg shadow-slate-900/5 backdrop-blur">
+						<div className="rounded-2xl border border-white/70 bg-white/75 p-4 shadow-lg shadow-slate-900/5 backdrop-blur">
 							<p className="text-xs uppercase tracking-[0.18em] text-slate-400">
 								Принцип
 							</p>
@@ -154,15 +154,15 @@ export function ModuleCommandCenter({
 							<Link
 								key={metric.label}
 								href={metric.href}
-								className={`construction-card-in group min-h-[168px] rounded-3xl border border-white/80 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${tone.card}`}
+								className={`construction-card-in group min-h-[132px] rounded-2xl border border-white/80 bg-white p-3.5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${tone.card}`}
 							>
 								<div className="flex items-start justify-between gap-3">
-									<div className={`rounded-2xl p-2.5 ${tone.icon}`}>
+									<div className={`rounded-xl p-2.5 ${tone.icon}`}>
 										<Icon className="h-5 w-5" />
 									</div>
 									<ArrowRight className="h-4 w-4 text-slate-300 transition-transform group-hover:translate-x-1 group-hover:text-slate-700" />
 								</div>
-								<p className="mt-4 text-2xl font-black text-slate-950">
+								<p className="mt-3 text-2xl font-black text-slate-950">
 									{metric.value}
 								</p>
 								<p className="mt-1 text-sm font-semibold text-slate-700">
@@ -178,7 +178,7 @@ export function ModuleCommandCenter({
 			</div>
 
 			<div className="relative z-10 mt-5 grid gap-5 xl:grid-cols-[1.5fr_1fr]">
-				<div className="rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-sm backdrop-blur">
+				<div className="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-sm backdrop-blur">
 					<div className="mb-4 flex items-center justify-between gap-3">
 						<div>
 							<p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
@@ -197,17 +197,17 @@ export function ModuleCommandCenter({
 								<Link
 									key={step.title}
 									href={step.href}
-									className={`construction-press group relative min-h-[142px] overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${tone.card}`}
+									className={`construction-press group relative min-h-[126px] overflow-hidden rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${tone.card}`}
 								>
 									<div className="flex items-start justify-between gap-3">
-										<div className={`rounded-2xl p-2.5 ${tone.icon}`}>
+										<div className={`rounded-xl p-2.5 ${tone.icon}`}>
 											<Icon className="h-5 w-5" />
 										</div>
 										<span className={`rounded-full px-2.5 py-1 text-xs font-black ${tone.chip}`}>
 											{String(index + 1).padStart(2, "0")}
 										</span>
 									</div>
-									<h4 className="mt-4 text-base font-black text-slate-950">
+									<h4 className="mt-3 text-base font-black text-slate-950">
 										{step.title}
 									</h4>
 									<p className="mt-1 text-xs leading-5 text-slate-500">
@@ -225,13 +225,13 @@ export function ModuleCommandCenter({
 				</div>
 
 				<div className="grid gap-5">
-					<div className="rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-sm backdrop-blur">
+					<div className="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-sm backdrop-blur">
 						<p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
 							Роли и очереди
 						</p>
 						<div className="mt-4 space-y-3">
 							{lanes.map((lane) => (
-								<div key={lane.title} className="rounded-3xl border border-slate-100 bg-slate-50 p-3">
+								<div key={lane.title} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
 									<div className="flex items-center justify-between gap-3">
 										<div>
 											<p className="text-sm font-black text-slate-900">

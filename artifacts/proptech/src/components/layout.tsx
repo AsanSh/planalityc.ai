@@ -916,7 +916,7 @@ export function Layout({ children }: { children: ReactNode }) {
 				)}
 				style={{
 					background:
-						"radial-gradient(circle at 20% 0%, rgba(14,165,233,0.22), transparent 26%), radial-gradient(circle at 100% 24%, rgba(20,184,166,0.15), transparent 30%), linear-gradient(180deg, #030A12 0%, #071827 46%, #08131E 100%)",
+						"radial-gradient(circle at 20% 0%, rgba(34,211,238,0.28), transparent 28%), radial-gradient(circle at 105% 18%, rgba(16,185,129,0.18), transparent 30%), linear-gradient(145deg, #020617 0%, #062032 46%, #07111f 100%)",
 				}}
 			>
 				{/* Logo */}
@@ -1043,7 +1043,7 @@ export function Layout({ children }: { children: ReactNode }) {
 			{/* ───── MAIN AREA ───── */}
 			<div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 				{/* ── TOP HEADER ── */}
-				<header className="h-14 bg-white border-b border-gray-100 flex items-center px-3 md:px-5 gap-2 md:gap-3 flex-shrink-0 relative z-50 shadow-sm">
+				<header className="h-14 bg-white/92 backdrop-blur border-b border-gray-100 flex items-center px-3 md:px-5 gap-2 md:gap-3 flex-shrink-0 relative z-50 shadow-sm">
 					<button
 						type="button"
 						className="md:hidden p-2 rounded-lg hover:bg-gray-100 text-gray-600"
@@ -1174,7 +1174,7 @@ export function Layout({ children }: { children: ReactNode }) {
 					<button
 						type="button"
 						onClick={() => setCommandOpen(true)}
-						className="relative hidden min-w-[280px] flex-1 items-center rounded-xl border border-gray-200 bg-gray-50 py-2 pl-9 pr-14 text-left text-sm text-gray-500 transition-all hover:border-gray-300 sm:flex"
+							className="relative hidden min-w-0 max-w-[760px] flex-1 items-center rounded-xl border border-gray-200 bg-gray-50 py-2 pl-9 pr-14 text-left text-sm text-gray-500 transition-all hover:border-gray-300 sm:flex"
 					>
 						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
 						<span>Поиск по проектам, контрагентам, договорам…</span>
@@ -1240,7 +1240,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
 				{/* ── CONTENT ── */}
 				<main className="flex-1 overflow-y-auto">
-					<div className="p-6">{children}</div>
+					<div className="p-3 sm:p-4 xl:p-6">{children}</div>
 				</main>
 			</div>
 		</div>

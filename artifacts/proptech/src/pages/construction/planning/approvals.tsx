@@ -53,7 +53,7 @@ function fmtFull(n: any) {
 export default function ConstructionApprovals() {
 	return (
 		<div>
-			<div className="flex items-center justify-between mb-6">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
 				<div>
 					<h1 className="text-2xl font-bold text-gray-900">
 						Согласование платежей
@@ -67,7 +67,7 @@ export default function ConstructionApprovals() {
 				</Button>
 			</div>
 
-			<div className="grid grid-cols-3 gap-4 mb-6">
+			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 mb-6">
 				<div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
 					<div className="text-xs text-gray-500 mb-1">На согласовании</div>
 					<div className="text-2xl font-bold text-amber-600">1</div>

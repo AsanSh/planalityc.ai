@@ -214,7 +214,7 @@ export function UnitSaleDialog({
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-5">
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">ФИО покупателя *</Label>
 							<Input
@@ -235,7 +235,7 @@ export function UnitSaleDialog({
 						</div>
 					</div>
 
-					<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+					<div className="grid gap-3 sm:grid-cols-4 gap-3">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Сумма договора *</Label>
 							<Input
@@ -277,7 +277,7 @@ export function UnitSaleDialog({
 						</div>
 					</div>
 
-					<div className="bg-amber-50 border border-amber-100 rounded-lg px-4 py-3 text-sm grid grid-cols-3 gap-2 text-center">
+					<div className="bg-amber-50 border border-amber-100 rounded-lg px-4 py-3 text-sm grid gap-2 sm:grid-cols-3 text-center">
 						<div>
 							<div className="text-xs text-gray-500">Остаток в рассрочку</div>
 							<div className="font-bold text-amber-700">{fmt(remaining)}</div>
@@ -296,7 +296,7 @@ export function UnitSaleDialog({
 						</div>
 					</div>
 
-					<div className="flex items-center justify-between">
+					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 						<Label className="font-medium">Гибкий график (редактировать вручную)</Label>
 						<Switch checked={flexible} onCheckedChange={setFlexible} />
 					</div>

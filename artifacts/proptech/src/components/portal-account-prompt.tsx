@@ -135,7 +135,7 @@ export function PortalAccountPrompt({
 						/>
 						<p className="text-[10px] text-gray-400 mt-1">На этот номер придёт SMS-код для входа</p>
 					</div>
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div>
 							<Label>Имя *</Label>
 							<Input

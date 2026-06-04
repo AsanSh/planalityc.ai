@@ -165,7 +165,7 @@ function LegalEntityDialog({ open, onClose, entity }: LegalEntityDialogProps) {
 					</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-4">
-					<div className="grid grid-cols-2 gap-4">
+					<div className="grid gap-4 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Название *</Label>
 							<Input
@@ -191,7 +191,7 @@ function LegalEntityDialog({ open, onClose, entity }: LegalEntityDialogProps) {
 						</div>
 					</div>
 
-					<div className="grid grid-cols-2 gap-4">
+					<div className="grid gap-4 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">ИНН/ИНО</Label>
 							<Input
@@ -241,7 +241,7 @@ function LegalEntityDialog({ open, onClose, entity }: LegalEntityDialogProps) {
 						/>
 					</div>
 
-					<div className="grid grid-cols-2 gap-4">
+					<div className="grid gap-4 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Директор</Label>
 							<Input

@@ -444,7 +444,7 @@ export default function RentalOperationsLog() {
 			</div>
 
 			{/* Stats */}
-			<div className="grid grid-cols-3 gap-3 mb-5">
+			<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 mb-5">
 				<div className="rounded-xl border border-gray-200 bg-white p-4 flex items-center gap-3">
 					<div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center">
 						<Clock className="w-4.5 h-4.5 text-gray-500" />

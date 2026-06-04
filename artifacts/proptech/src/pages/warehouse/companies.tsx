@@ -136,7 +136,7 @@ export default function WarehouseCompanies() {
 								)}
 							</div>
 
-							<div className="grid grid-cols-2 gap-3 pt-3 border-t">
+							<div className="grid gap-3 sm:grid-cols-2 pt-3 border-t">
 								<div className="text-center">
 									<div className="flex items-center justify-center gap-1 text-amber-600 mb-1">
 										<Star className="w-4 h-4 fill-yellow-500" />

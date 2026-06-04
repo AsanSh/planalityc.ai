@@ -265,7 +265,7 @@ export default function TenantDetail() {
 								Арендатор получит отдельный логин для просмотра своих договоров
 								и платежей.
 							</p>
-							<div className="grid grid-cols-2 gap-3">
+							<div className="grid gap-3 sm:grid-cols-2">
 								<div className="flex flex-col">
 									<label className="text-xs font-medium text-gray-700 mb-1 block leading-tight">
 										Имя
@@ -416,7 +416,7 @@ export default function TenantDetail() {
 				</div>
 
 				{/* Stats */}
-				<div className="lg:col-span-2 grid grid-cols-2 gap-3">
+				<div className="lg:col-span-2 grid gap-3 sm:grid-cols-2">
 					<StatCard
 						icon={<Building2 className="w-5 h-5 text-blue-600" />}
 						label="Активных договоров"

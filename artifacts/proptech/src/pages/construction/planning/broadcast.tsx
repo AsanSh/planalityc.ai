@@ -103,7 +103,7 @@ export default function ConstructionBroadcast() {
 				</p>
 			</div>
 
-			<div className="grid grid-cols-2 gap-6">
+			<div className="grid gap-6 lg:grid-cols-2">
 				{/* Compose */}
 				<div className="space-y-4">
 					<div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
@@ -137,7 +137,7 @@ export default function ConstructionBroadcast() {
 
 							<div>
 								<Label className="text-xs">Канал отправки</Label>
-								<div className="grid grid-cols-4 gap-2 mt-1">
+								<div className="grid gap-2 sm:grid-cols-2 mt-1 sm:grid-cols-4">
 									{CHANNELS.map((ch) => {
 										const Icon = ch.icon;
 										return (

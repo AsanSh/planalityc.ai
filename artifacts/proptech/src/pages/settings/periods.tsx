@@ -167,7 +167,7 @@ function PeriodForm({
 					className="h-9"
 				/>
 			</div>
-			<div className="grid grid-cols-2 gap-3">
+			<div className="grid gap-3 sm:grid-cols-2">
 				<div className="flex flex-col">
 					<Label className="text-xs text-gray-600 mb-1.5 block leading-tight">
 						Дата начала *
@@ -191,7 +191,7 @@ function PeriodForm({
 					/>
 				</div>
 			</div>
-			<div className="grid grid-cols-2 gap-3">
+			<div className="grid gap-3 sm:grid-cols-2">
 				<div className="flex flex-col">
 					<Label className="text-xs text-gray-600 mb-1.5 block leading-tight">Модуль</Label>
 					<Select value={form.module} onValueChange={(v) => set("module", v)}>
@@ -350,7 +350,7 @@ export default function SettingsPeriods() {
 			</div>
 
 			{/* Stats */}
-			<div className="grid grid-cols-3 gap-3 mb-5">
+			<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 mb-5">
 				{[
 					{
 						label: "Открытые",

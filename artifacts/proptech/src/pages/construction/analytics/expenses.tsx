@@ -110,7 +110,7 @@ export default function ConstructionExpenseAnalysis() {
 				</p>
 			</div>
 
-			<div className="grid grid-cols-2 gap-6">
+			<div className="grid gap-6 lg:grid-cols-2">
 				{/* By category */}
 				<div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
 					<div className="text-sm font-semibold text-gray-700 mb-4">

@@ -324,8 +324,8 @@ function ProjectDialog({
 						<p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
 							Основное
 						</p>
-						<div className="grid grid-cols-2 gap-3">
-							<div className="col-span-2 flex flex-col">
+						<div className="grid gap-3 sm:grid-cols-2">
+							<div className="sm:col-span-2 flex flex-col">
 								<Label className="leading-tight mb-1.5">Название проекта *</Label>
 								<Input
 									className="mt-auto"
@@ -362,7 +362,7 @@ function ProjectDialog({
 									placeholder="Бишкек"
 								/>
 							</div>
-							<div className="col-span-2 flex flex-col">
+							<div className="sm:col-span-2 flex flex-col">
 								<Label className="leading-tight mb-1.5">Адрес</Label>
 								<Input
 									className="mt-auto"
@@ -379,7 +379,7 @@ function ProjectDialog({
 						<p className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
 							<Building className="w-3.5 h-3.5" /> Характеристики здания
 						</p>
-						<div className="grid grid-cols-2 gap-3">
+						<div className="grid gap-3 sm:grid-cols-2">
 							<div className="flex flex-col">
 								<Label className="leading-tight mb-1.5">Тип здания</Label>
 								<Select
@@ -441,7 +441,7 @@ function ProjectDialog({
 									При сохранении проекта квартиры появятся в шахматке автоматически
 								</p>
 							</div>
-							<div className="col-span-2 flex flex-col">
+							<div className="sm:col-span-2 flex flex-col">
 								<Label className="leading-tight mb-1.5">Общая площадь (кв.м)</Label>
 								<Input
 									className="mt-auto"
@@ -461,7 +461,7 @@ function ProjectDialog({
 						<p className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
 							<Calculator className="w-3.5 h-3.5" /> Расчёт себестоимости
 						</p>
-						<div className="grid grid-cols-2 gap-3">
+						<div className="grid gap-3 sm:grid-cols-2">
 							<div className="flex flex-col">
 								<Label className="leading-tight mb-1.5">Стоимость за 1 кв.м ({form.currency})</Label>
 								<Input
@@ -565,7 +565,7 @@ function ProjectDialog({
 						<p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
 							Сроки
 						</p>
-						<div className="grid grid-cols-2 gap-3">
+						<div className="grid gap-3 sm:grid-cols-2">
 							<div className="flex flex-col">
 								<Label className="leading-tight mb-1.5">Дата начала</Label>
 								<Input
@@ -801,17 +801,17 @@ export default function ConstructionProjects() {
 	);
 
 	return (
-		<div className="space-y-6">
-			<div className="flex items-center justify-between">
+		<div className="am-page space-y-5">
+			<div className="am-page-header">
 				<div>
-					<h1 className="text-2xl font-bold text-gray-900">
+					<h1 className="am-page-title text-2xl">
 						Строительные проекты
 					</h1>
-					<p className="text-sm text-gray-500 mt-0.5">
+					<p className="am-page-subtitle text-sm">
 						Управление проектами и расчёт себестоимости
 					</p>
 				</div>
-				<div className="flex gap-2">
+				<div className="flex flex-wrap gap-2">
 					<Button
 						variant="outline"
 						onClick={() => setDocUploadOpen(true)}
@@ -855,7 +855,7 @@ export default function ConstructionProjects() {
 					<p className="text-sm mt-1">Нажмите «Новый проект» чтобы начать</p>
 				</div>
 			) : (
-				<div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
+				<div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
 					{filtered.map((p) => {
 						const cost = projectCostInCurrency(p);
 						const breakdown = projectCostBreakdown(p);
@@ -871,9 +871,9 @@ export default function ConstructionProjects() {
 						return (
 							<div
 								key={p.id}
-								className="group overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-xl hover:shadow-slate-900/8"
+								className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-lg hover:shadow-slate-900/8"
 							>
-								<div className="grid gap-4 p-4 lg:grid-cols-[1.1fr_0.9fr]">
+								<div className="grid gap-3 p-4 lg:grid-cols-[1.05fr_0.95fr]">
 									<div className="min-w-0">
 										<div className="flex items-start justify-between gap-3">
 											<div className="min-w-0">
@@ -900,8 +900,8 @@ export default function ConstructionProjects() {
 										</Badge>
 									</div>
 
-										<div className="mt-4 grid grid-cols-3 gap-2">
-											<div className="rounded-2xl bg-slate-50 p-3">
+										<div className="mt-3 grid gap-2 sm:grid-cols-3">
+											<div className="rounded-xl bg-slate-50 p-2.5">
 												<p className="text-[11px] text-slate-400">Тип</p>
 												<p className="mt-1 truncate text-sm font-bold text-slate-800">
 												{BUILD_TYPE_LABELS[p.buildingType]
@@ -909,13 +909,13 @@ export default function ConstructionProjects() {
 													.trim() || p.buildingType}
 											</p>
 										</div>
-											<div className="rounded-2xl bg-slate-50 p-3">
+											<div className="rounded-xl bg-slate-50 p-2.5">
 												<p className="text-[11px] text-slate-400">Этажей</p>
 												<p className="mt-1 text-lg font-black text-slate-900">
 												{p.totalFloors || "—"}
 											</p>
 										</div>
-											<div className="rounded-2xl bg-slate-50 p-3">
+											<div className="rounded-xl bg-slate-50 p-2.5">
 												<p className="text-[11px] text-slate-400">Юнитов</p>
 												<p className="mt-1 text-lg font-black text-slate-900">
 												{p.totalUnits || "—"}
@@ -924,7 +924,7 @@ export default function ConstructionProjects() {
 									</div>
 
 									{meta && (
-											<div className="mt-3 rounded-2xl border border-blue-100 bg-blue-50/70 p-3 text-xs">
+											<div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-xs">
 											{meta.stage != null && (
 												<p>
 													<span className="text-blue-600">Стадия:</span>{" "}
@@ -951,25 +951,25 @@ export default function ConstructionProjects() {
 										</div>
 									)}
 
-										<div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+										<div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
 											<Button
 												size="sm"
 												variant="outline"
-												className="h-10 flex-1 rounded-2xl text-sm"
+												className="h-9 flex-1 rounded-xl text-sm"
 												onClick={() => setDialog(p)}
 											>
 												<Edit2 className="mr-2 h-4 w-4" /> Редактировать
 											</Button>
 											<a
 												href={`/construction/chess?projectId=${p.id}`}
-												className="inline-flex h-10 items-center gap-2 rounded-2xl bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
+												className="inline-flex h-9 items-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
 											>
 												<Grid3X3 className="h-4 w-4" /> Шахматка
 											</a>
 											<Button
 												size="icon"
 												variant="ghost"
-												className="h-10 w-10 rounded-2xl text-rose-600 hover:text-rose-600"
+												className="h-9 w-9 rounded-xl text-rose-600 hover:text-rose-600"
 												onClick={() => handleDelete(p.id, p.name)}
 											>
 												<Trash2 className="h-4 w-4" />
@@ -979,7 +979,7 @@ export default function ConstructionProjects() {
 
 									<div className="space-y-3">
 									{cost.total > 0 && (
-											<div className="rounded-3xl border border-amber-100 bg-gradient-to-br from-amber-50 to-orange-50 p-4">
+											<div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-orange-50 p-3.5">
 												<p className="text-xs font-bold uppercase tracking-[0.16em] text-orange-600">
 												{projectCostLabel(p.currency || "KGS")}
 											</p>
@@ -998,13 +998,13 @@ export default function ConstructionProjects() {
 									)}
 
 									{area > 0 && (plannedCostPerSqm > 0 || currentCostPerSqm > 0) && (
-											<div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+											<div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
 												<p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
 												Стоимость за кв.м
 											</p>
 												<div className="space-y-2">
 												{plannedCostPerSqm > 0 && (
-													<div className="flex items-center justify-between">
+													<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 															<span className="text-sm text-slate-500">Плановая</span>
 															<span className="text-base font-black text-slate-900">
 															{fmtProjectAmount(plannedCostPerSqm)} {sym}/м²
@@ -1012,7 +1012,7 @@ export default function ConstructionProjects() {
 													</div>
 												)}
 												{currentCostPerSqm > 0 && (
-													<div className="flex items-center justify-between">
+													<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 															<span className="text-sm text-slate-500">Текущая</span>
 															<span className="text-base font-black text-orange-600">
 															{fmtProjectAmount(currentCostPerSqm)} {sym}/м²
@@ -1023,7 +1023,7 @@ export default function ConstructionProjects() {
 										</div>
 									)}
 
-										<div className="rounded-3xl border border-slate-100 bg-white p-4">
+										<div className="rounded-2xl border border-slate-100 bg-white p-3.5">
 											<div className="flex items-start gap-3">
 												<div className="rounded-2xl bg-cyan-50 p-2 text-cyan-700">
 													<CalendarDays className="h-4 w-4" />

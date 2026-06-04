@@ -156,7 +156,7 @@ export default function RentalBroadcast() {
 				<div className="col-span-2 space-y-5">
 					<div className="bg-white border rounded-lg p-5">
 						<h3 className="font-semibold text-gray-800 mb-4">Получатели</h3>
-						<div className="grid grid-cols-2 gap-3">
+						<div className="grid gap-3 sm:grid-cols-2">
 							<div className="flex flex-col">
 								<Label className="text-sm font-medium mb-1.5 block leading-tight">
 									Аудитория

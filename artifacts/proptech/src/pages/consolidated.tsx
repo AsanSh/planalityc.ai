@@ -215,7 +215,7 @@ export default function ConsolidatedModule() {
 			</div>
 
 			{/* KPIs */}
-			<div className="grid grid-cols-3 gap-4">
+			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				{[
 					{ label: "Поступления", value: totals.income, color: "text-emerald-700" },
 					{ label: "Расходы", value: totals.expense, color: "text-rose-700" },

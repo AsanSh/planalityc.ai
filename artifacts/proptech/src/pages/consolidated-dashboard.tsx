@@ -388,7 +388,7 @@ export default function ConsolidatedDashboard() {
 	}
 
 	return (
-		<div className="max-w-7xl">
+		<div className="am-page">
 		<div className="flex flex-col gap-6">
 
 		<div className="flex-1 min-w-0 space-y-6 w-full">
@@ -408,7 +408,7 @@ export default function ConsolidatedDashboard() {
 								договора, начислений, оплат и прозрачности для клиента.
 							</p>
 						</div>
-						<div className="grid grid-cols-3 gap-2 text-center">
+						<div className="grid gap-2 text-center sm:grid-cols-3">
 							<div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
 								<p className="text-lg font-bold tabular-nums">
 									{kpis?.unitsSold ?? totals.sold}/{kpis?.unitsTotal ?? totals.units}
@@ -498,7 +498,7 @@ export default function ConsolidatedDashboard() {
 
 			<AttentionQueue />
 
-			<div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 				{[
 					{
 						label: "Проектов",
@@ -654,7 +654,7 @@ export default function ConsolidatedDashboard() {
 						</span>
 					</Link>
 				</div>
-				<div className="px-4 py-3 grid grid-cols-3 gap-2 text-center">
+				<div className="px-4 py-3 grid gap-2 text-center sm:grid-cols-3">
 					<div>
 						<p className="text-lg font-bold text-cyan-700">{tasksSummary?.todo ?? 0}</p>
 						<p className="text-[10px] text-gray-400">В работе</p>

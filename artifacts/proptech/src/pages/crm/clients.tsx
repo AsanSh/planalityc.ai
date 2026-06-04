@@ -177,7 +177,7 @@ function ClientDialog({ open, onClose, client, onSuccess }: ClientDialogProps) {
 					</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-4">
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Тип *</Label>
 							<Select
@@ -239,7 +239,7 @@ function ClientDialog({ open, onClose, client, onSuccess }: ClientDialogProps) {
 						/>
 					</div>
 
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Телефон *</Label>
 							<Input
@@ -279,7 +279,7 @@ function ClientDialog({ open, onClose, client, onSuccess }: ClientDialogProps) {
 					</div>
 
 					{formData.type === "individual" ? (
-						<div className="grid grid-cols-2 gap-3">
+						<div className="grid gap-3 sm:grid-cols-2">
 								<div className="flex flex-col">
 									<Label className="leading-tight mb-1.5">Паспортные данные</Label>
 									<Input
@@ -317,7 +317,7 @@ function ClientDialog({ open, onClose, client, onSuccess }: ClientDialogProps) {
 						</div>
 					)}
 
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Бюджет (KGS)</Label>
 							<Input

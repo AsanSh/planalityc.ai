@@ -269,7 +269,7 @@ export default function RentalDashboard() {
 			/>
 
 			{/* KPI Row 1 */}
-			<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 				<KpiCard
 					label="Активных договоров"
 					value={activeLeases.length}
@@ -310,7 +310,7 @@ export default function RentalDashboard() {
 			</div>
 
 			{/* KPI Row 2 - Financial */}
-			<div className="grid grid-cols-3 gap-4">
+			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				<KpiCard
 					label="Начислено всего"
 					value={formatCurrency(totalCharged)}
@@ -340,7 +340,7 @@ export default function RentalDashboard() {
 				/>
 			</div>
 
-			<div className="grid grid-cols-2 gap-4">
+			<div className="grid gap-4 sm:grid-cols-2">
 				{/* Pending Accruals */}
 				<div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
 					<div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">

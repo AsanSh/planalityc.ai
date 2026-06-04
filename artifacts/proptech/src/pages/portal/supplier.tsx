@@ -188,7 +188,7 @@ export default function SupplierPortal({ previewSupplierId }: { previewSupplierI
 					<p className="text-sm opacity-70 mt-1">Личный кабинет поставщика</p>
 				</div>
 
-				<div className="grid grid-cols-2 gap-4">
+				<div className="grid gap-4 sm:grid-cols-2">
 					<KPI
 						icon={<FileText className="w-6 h-6 text-emerald-600" />}
 						label="Сумма договора"
@@ -290,7 +290,7 @@ export default function SupplierPortal({ previewSupplierId }: { previewSupplierI
 							</Button>
 						</div>
 					</div>
-					<div className="px-4 sm:px-6 py-4 border-b bg-gray-50/50 text-sm grid grid-cols-2 sm:grid-cols-4 gap-4">
+					<div className="px-4 sm:px-6 py-4 border-b bg-gray-50/50 text-sm grid gap-3 sm:grid-cols-4 gap-4">
 						<div>
 							<p className="text-gray-500 text-xs">Договор</p>
 							<p className="font-semibold">{fmt(summary.contractAmount)} {currency}</p>

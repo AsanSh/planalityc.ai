@@ -335,7 +335,7 @@ export default function OwnerStatements() {
 				</p>
 				<div className="flex flex-wrap gap-3 items-center">
 					<Select value={propertyFilter} onValueChange={setPropertyFilter}>
-						<SelectTrigger className="w-56">
+						<SelectTrigger className="w-full sm:w-56">
 							<SelectValue placeholder="Все объекты" />
 						</SelectTrigger>
 						<SelectContent>

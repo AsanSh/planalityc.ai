@@ -506,7 +506,7 @@ export default function PlatformAdminMarketplace() {
 				<TabsContent value="catalog" className="mt-4 space-y-3">
 					<div className="flex flex-wrap gap-2 items-center justify-between">
 						<Select value={supplierFilter} onValueChange={setSupplierFilter}>
-							<SelectTrigger className="w-56">
+							<SelectTrigger className="w-full sm:w-56">
 								<SelectValue placeholder="Все поставщики" />
 							</SelectTrigger>
 							<SelectContent>
@@ -776,7 +776,7 @@ export default function PlatformAdminMarketplace() {
 						<p className="text-xs text-muted-foreground">
 							Телефон → вход через /portal-login (SMS). Email + пароль → обычный /login.
 						</p>
-						<div className="grid grid-cols-2 gap-3">
+						<div className="grid gap-3 sm:grid-cols-2">
 							<div>
 								<Label>Имя</Label>
 								<Input
@@ -875,7 +875,7 @@ export default function PlatformAdminMarketplace() {
 								}
 							/>
 						</div>
-						<div className="grid grid-cols-2 gap-3">
+						<div className="grid gap-3 sm:grid-cols-2">
 							<div>
 								<Label>Цена (сом)</Label>
 								<Input

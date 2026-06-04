@@ -15,7 +15,7 @@ export default function InvestorsDashboardTab() {
 
 	return (
 		<div className="space-y-4">
-			<div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+			<div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 gap-3">
 				<div className="bg-white rounded-xl border p-4">
 					<Users className="w-4 h-4 text-blue-600 mb-2" />
 					{isLoading ? (

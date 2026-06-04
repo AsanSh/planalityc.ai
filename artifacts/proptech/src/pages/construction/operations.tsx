@@ -619,7 +619,7 @@ export default function ConstructionOperations() {
 
 				{/* Summary row */}
 				{filteredArray.length > 0 && (
-					<div className="grid grid-cols-4 gap-4 mb-4">
+					<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 mb-4">
 						<div className="bg-white border border-gray-200 rounded-xl p-4">
 							<p className="text-xs font-medium text-gray-500 mb-1">Приходы</p>
 							<p className="text-xl font-bold text-emerald-600 font-mono">

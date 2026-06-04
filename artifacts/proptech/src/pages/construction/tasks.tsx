@@ -440,7 +440,7 @@ function TaskDialog({
 						<Label>Описание</Label>
 						<Input className="mt-1" value={form.description} onChange={(e) => set("description", e.target.value)} />
 					</div>
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Статус</Label>
 							<Select value={form.status} onValueChange={(v) => set("status", v)}>
@@ -1044,7 +1044,7 @@ function TasksCalendarView({
 	}
 
 	return (
-		<div className="space-y-4">
+		<div className="am-page space-y-4">
 			<div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
 				<div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
 					<Button
@@ -1245,7 +1245,7 @@ function TasksGanttView({
 					onClick={() => onTaskClick(row.task)}
 					className="w-full text-left"
 				>
-					<div className="text-xs text-gray-700 mb-1 flex items-center justify-between">
+					<div className="text-xs text-gray-700 mb-1 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 						<span className="truncate pr-2">{row.task.title}</span>
 						<span className="text-gray-400">
 							{row.start} → {row.end}
@@ -1539,10 +1539,10 @@ export default function ConstructionTasks() {
 	return (
 		<div className="space-y-4">
 			{/* Header */}
-			<div className="flex items-center justify-between">
+			<div className="am-page-header">
 				<div>
-					<h1 className="text-2xl font-bold text-gray-900">Задачи</h1>
-					<p className="text-sm text-gray-500 mt-0.5">
+					<h1 className="am-page-title text-2xl">Задачи</h1>
+					<p className="am-page-subtitle text-sm">
 						{filteredTasks.length} задач · {doneCount} выполнено
 						{overdueCount > 0 && <span className="text-rose-600"> · {overdueCount} просрочено</span>}
 					</p>
@@ -1553,7 +1553,7 @@ export default function ConstructionTasks() {
 			</div>
 
 			{/* Tabs */}
-			<div className="flex gap-1 bg-gray-100 rounded-xl p-1">
+			<div className="flex gap-1 overflow-x-auto rounded-xl bg-gray-100 p-1">
 				{TABS.map((tab) => {
 					const Icon = tab.icon;
 					const count = tabCounts[tab.id] ?? 0;
@@ -1579,12 +1579,12 @@ export default function ConstructionTasks() {
 			</div>
 
 			{/* Filters */}
-			<div className="flex gap-2 flex-wrap items-center">
+			<div className="am-toolbar">
 				<Input
 					placeholder="Поиск..."
 					value={search}
 					onChange={(e) => setSearch(e.target.value)}
-					className="h-8 text-sm w-44"
+					className="h-9 w-full text-sm sm:w-44"
 				/>
 				<Select value={projectFilter} onValueChange={setProjectFilter}>
 					<SelectTrigger className="h-8 text-sm w-40"><SelectValue placeholder="Проект" /></SelectTrigger>
@@ -1640,7 +1640,7 @@ export default function ConstructionTasks() {
 						✕ сбросить
 					</button>
 				)}
-				<div className="ml-auto flex gap-1 bg-gray-100 rounded-lg p-0.5">
+				<div className="ml-auto flex gap-1 rounded-lg bg-gray-100 p-0.5">
 					<button
 						onClick={() => setViewMode("kanban")}
 						className={`p-1.5 rounded transition-all ${viewMode === "kanban" ? "bg-white shadow-sm text-gray-900" : "text-gray-400 hover:text-gray-600"}`}
@@ -1682,7 +1682,7 @@ export default function ConstructionTasks() {
 			) : filteredTasks.length === 0 ? (
 				<EmptyState tab={activeTab} />
 			) : viewMode === "kanban" ? (
-				<div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+				<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
 					{columns.map((col) => {
 						const Icon = col.icon;
 						const isDropTarget = kanbanDropStatus === col.value;

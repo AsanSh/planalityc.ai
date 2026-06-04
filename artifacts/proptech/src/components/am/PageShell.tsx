@@ -132,7 +132,7 @@ function ReportShell({ title, subtitle, primaryAction, backLink, breadcrumb, fil
 			<div className="bg-am-bg rounded-lg border border-am-border p-3 flex items-center gap-2 flex-wrap">
 				{filters}
 			</div>
-			{summary && <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">{summary}</div>}
+			{summary && <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 gap-3">{summary}</div>}
 			<div>{children}</div>
 		</div>
 	);

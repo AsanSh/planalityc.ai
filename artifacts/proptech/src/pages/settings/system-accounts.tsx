@@ -289,7 +289,7 @@ function AccountDialog({ open, onClose, account }: AccountDialogProps) {
 					</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-4">
-					<div className="grid grid-cols-2 gap-4">
+					<div className="grid gap-4 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Название счета *</Label>
 							<Input
@@ -326,7 +326,7 @@ function AccountDialog({ open, onClose, account }: AccountDialogProps) {
 
 					{isBankAccount && (
 						<>
-							<div className="grid grid-cols-2 gap-4">
+							<div className="grid gap-4 sm:grid-cols-2">
 								<div className="flex flex-col">
 									<Label className="leading-tight mb-1.5">Название банка</Label>
 									<Input
@@ -365,7 +365,7 @@ function AccountDialog({ open, onClose, account }: AccountDialogProps) {
 						</>
 					)}
 
-					<div className="grid grid-cols-2 gap-4">
+					<div className="grid gap-4 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Валюта *</Label>
 							<Select

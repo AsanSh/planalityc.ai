@@ -358,7 +358,7 @@ function EditRowDialog({ row, onClose, onSaved }: { row: EditRow; onClose: () =>
 					<F label="ФИО / Название" name="tenantName" />
 
 					<p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Объект</p>
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<F label="Проект / Адрес" name="projectName" />
 						<F label="Номер (кабинет)" name="unitNumber" />
 						<F label="Корпус / Блок" name="block" />
@@ -368,7 +368,7 @@ function EditRowDialog({ row, onClose, onSaved }: { row: EditRow; onClose: () =>
 					</div>
 
 					<p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Договор</p>
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div className="col-span-2"><F label="Номер договора" name="contractNumber" /></div>
 						<F label="Взнос" name="rentAmount" type="number" />
 						<F label="Валюта" name="currency" options={[
@@ -634,7 +634,7 @@ export default function RentalSummary() {
 				<p className="text-sm text-gray-500 mt-0.5">Сводная таблица арендного портфеля</p>
 			</div>
 
-			<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 flex-shrink-0">
+			<div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 flex-shrink-0">
 				<div className="bg-white rounded-xl border border-gray-200 p-4">
 					<div className="flex items-center gap-2 mb-1.5"><Building2 className="w-4 h-4 text-blue-500" /><span className="text-xs text-gray-500">Объектов</span></div>
 					<p className="text-2xl font-bold text-gray-900">{totalProps}</p>

@@ -183,7 +183,7 @@ function BudgetDialog({
 					</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-3">
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Проект *</Label>
 							<Select
@@ -405,7 +405,7 @@ export default function ConstructionBudget() {
 
 	return (
 		<div className="space-y-6">
-			<div className="flex items-center justify-between">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div>
 					<h1 className="text-2xl font-bold text-gray-900">
 						Бюджет строительства
@@ -445,7 +445,7 @@ export default function ConstructionBudget() {
 				</div>
 			</div>
 
-			<div className="grid grid-cols-3 gap-4">
+			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				<div className="bg-white rounded-xl border border-gray-200 p-4">
 					<p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
 						<Wallet className="w-3.5 h-3.5" /> Плановый бюджет

@@ -137,7 +137,7 @@ function CategoryForm({
 					className="h-9"
 				/>
 			</div>
-			<div className="grid grid-cols-2 gap-3">
+			<div className="grid gap-3 sm:grid-cols-2">
 				<div className="flex flex-col">
 					<Label className="text-xs text-gray-600 mb-1.5 block leading-tight">Тип</Label>
 					<Select value={form.type} onValueChange={(v) => set("type", v)}>

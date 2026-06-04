@@ -184,7 +184,7 @@ function CounterpartyDialog({
 					</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-4">
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Тип *</Label>
 							<Select
@@ -242,7 +242,7 @@ function CounterpartyDialog({
 						/>
 					</div>
 
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">
 								{formData.type === "company" ? "ИНН (ОГРН)" : "ИНН (ИИН)"}

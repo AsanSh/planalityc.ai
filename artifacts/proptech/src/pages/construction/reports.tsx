@@ -80,7 +80,7 @@ export default function ConstructionReports() {
 
 	return (
 		<div className="space-y-6">
-			<div className="flex items-center justify-between">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div>
 					<h1 className="text-2xl font-bold text-gray-900">
 						Отчёты строительства
@@ -91,7 +91,7 @@ export default function ConstructionReports() {
 				</div>
 				<div className="flex gap-3 items-center">
 					<Select value={selectedProject} onValueChange={setSelectedProject}>
-						<SelectTrigger className="w-56">
+						<SelectTrigger className="w-full sm:w-56">
 							<SelectValue placeholder="Выберите проект" />
 						</SelectTrigger>
 						<SelectContent>
@@ -119,9 +119,9 @@ export default function ConstructionReports() {
 				</div>
 			</div>
 
-			<div className="grid grid-cols-2 gap-4">
+			<div className="grid gap-4 sm:grid-cols-2">
 				{/* Budget vs Actual */}
-				<div className="bg-white rounded-xl border border-gray-200 p-5 col-span-2">
+				<div className="bg-white rounded-xl border border-gray-200 p-5 sm:col-span-2">
 					<h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
 						<BarChart3 className="w-4 h-4 text-amber-600" /> Бюджет vs Факт
 					</h3>
@@ -251,11 +251,11 @@ export default function ConstructionReports() {
 				</div>
 
 				{/* Projects */}
-				<div className="bg-white rounded-xl border border-gray-200 p-5 col-span-2">
+				<div className="bg-white rounded-xl border border-gray-200 p-5 sm:col-span-2">
 					<h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
 						<Building2 className="w-4 h-4 text-amber-600" /> Сводка по проектам
 					</h3>
-					<div className="grid grid-cols-3 gap-4">
+					<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 						{[
 							{
 								label: "Всего проектов",

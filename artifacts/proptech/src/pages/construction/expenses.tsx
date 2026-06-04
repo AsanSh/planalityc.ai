@@ -291,7 +291,7 @@ function ExpenseDialog({
 					</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-3">
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Проект *</Label>
 							<Select
@@ -311,7 +311,7 @@ function ExpenseDialog({
 							</Select>
 						</div>
 						{stageOptions.length === 0 ? (
-							<div className="flex flex-col col-span-2">
+							<div className="flex flex-col sm:col-span-2">
 								<Label className="leading-tight mb-1.5">Категория</Label>
 								<Select
 									value={form.miscCategory || CATS[CATS.length - 1]}
@@ -334,7 +334,7 @@ function ExpenseDialog({
 							</div>
 						) : (
 							<>
-								<div className="flex flex-col col-span-2">
+								<div className="flex flex-col sm:col-span-2">
 									<Label className="leading-tight mb-1.5">Этап WBS *</Label>
 									<Select
 										value={form.stageId || undefined}
@@ -360,7 +360,7 @@ function ExpenseDialog({
 										</SelectContent>
 									</Select>
 								</div>
-								<div className="flex flex-col col-span-2">
+								<div className="flex flex-col sm:col-span-2">
 									<Label className="leading-tight mb-1.5">Статья бюджета</Label>
 									<Select
 										value={form.budgetItemId}
@@ -385,7 +385,7 @@ function ExpenseDialog({
 								</div>
 							</>
 						)}
-						<div className="col-span-2 flex flex-col">
+						<div className="sm:col-span-2 flex flex-col">
 							<Label className="leading-tight mb-1.5">Описание *</Label>
 							<Input
 								className="mt-auto"
@@ -493,7 +493,7 @@ function ExpenseDialog({
 								</SelectContent>
 							</Select>
 						</div>
-						<div className="col-span-2 flex flex-col">
+						<div className="sm:col-span-2 flex flex-col">
 							<Label className="leading-tight mb-1.5">Дата</Label>
 							<Input
 								className="mt-auto"
@@ -743,7 +743,7 @@ export default function ConstructionExpenses() {
 
 	return (
 		<div className="space-y-6">
-			<div className="flex items-center justify-between">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div>
 					<h1 className="text-2xl font-bold text-gray-900">
 						Расходы строительства
@@ -762,14 +762,14 @@ export default function ConstructionExpenses() {
 
 			<PeriodPicker value={period} onChange={setPeriod} />
 
-			<div className="grid grid-cols-3 gap-4">
+			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				<div className="bg-white rounded-xl border border-gray-200 p-4">
 					<p className="text-xs text-gray-500 mb-1">Всего расходов</p>
 					<p className="text-2xl font-bold text-amber-600">
 						{filteredExpenses.length}
 					</p>
 				</div>
-				<div className="bg-white rounded-xl border border-gray-200 p-4 col-span-2">
+				<div className="bg-white rounded-xl border border-gray-200 p-4 sm:col-span-2">
 					<p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
 						<TrendingDown className="w-3.5 h-3.5" /> Общая сумма в KGS
 					</p>

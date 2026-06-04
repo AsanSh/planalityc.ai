@@ -46,7 +46,7 @@ export function WbsCardsView({
 						</div>
 						<Progress value={node.metrics.effectiveProgress} className="h-1.5 mb-1" />
 						<p className="text-xs text-gray-600 mb-3">{node.metrics.effectiveProgress}% выполнено</p>
-						<div className="grid grid-cols-2 gap-2 text-[11px] text-gray-500">
+						<div className="grid gap-2 text-[11px] text-gray-500 sm:grid-cols-2">
 							<span>Бюджет: {fmt(node.metrics.budgetKgs)}</span>
 							<span>Освоено: {fmt(node.metrics.spentKgs)}</span>
 							<span

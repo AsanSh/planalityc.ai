@@ -185,7 +185,7 @@ function UnitDialog({
 					</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-3">
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Номер *</Label>
 							<Input
@@ -398,7 +398,7 @@ function BulkGenerateDialog({
 					<DialogTitle>Быстрое заполнение шахматки</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-3">
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Этажей *</Label>
 							<Input
@@ -558,7 +558,7 @@ function UnitPricingDialog({
 					<DialogTitle>Коммерческая цена · {unit.unitNumber}</DialogTitle>
 				</DialogHeader>
 				<div className="space-y-4">
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div>
 							<Label>Базовая цена за м²</Label>
 							<Input
@@ -1095,10 +1095,10 @@ export default function ConstructionChess() {
 	const unpublishedCount = units.filter((u) => !isUnitPublishedForSale(u)).length;
 
 	return (
-		<div className="space-y-6">
-			<div className="flex items-center justify-between flex-wrap gap-3">
+		<div className="am-page space-y-5">
+			<div className="am-page-header">
 				<div>
-					<h1 className="text-2xl font-bold text-gray-900">
+					<h1 className="am-page-title text-2xl">
 						Шахматка
 						{isPTO && (
 							<span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-xs font-medium align-middle">
@@ -1111,7 +1111,7 @@ export default function ConstructionChess() {
 							</span>
 						)}
 					</h1>
-					<p className="text-sm text-gray-500 mt-0.5">
+					<p className="am-page-subtitle text-sm">
 						{isPTO
 							? "Управление площадями · клик по площади для редактирования"
 							: isPricingMode
@@ -1121,7 +1121,7 @@ export default function ConstructionChess() {
 								: "Визуальная карта квартир · договоры и финансы"}
 					</p>
 				</div>
-				<div className="flex gap-2 flex-wrap items-center">
+				<div className="flex flex-wrap items-center gap-2">
 					{isAdmin && (
 						<div className="flex gap-1 bg-gray-100 rounded-lg p-1">
 							<button
@@ -1203,7 +1203,7 @@ export default function ConstructionChess() {
 			</div>
 
 			{/* Project selector */}
-			<div className="rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm">
+			<div className="am-panel p-3">
 				<div className="flex items-center gap-3 overflow-x-auto">
 					<Label className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400 whitespace-nowrap">
 						Проект
@@ -1230,7 +1230,7 @@ export default function ConstructionChess() {
 			) : (
 				<>
 					{/* Legend + filters */}
-					<div className="rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm">
+					<div className="am-panel p-3">
 						<div className="flex flex-wrap items-center justify-between gap-3">
 							<div className="flex flex-wrap gap-2">
 								{unpublishedCount > 0 && (

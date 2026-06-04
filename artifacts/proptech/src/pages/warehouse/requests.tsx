@@ -210,7 +210,7 @@ export default function WarehouseRequests() {
 				</div>
 			</div>
 
-			<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+			<div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 gap-4">
 				{Object.entries(statusConfig).map(([key, s]) => (
 					<Card key={key} className="p-4">
 						<p className="text-sm text-gray-500">{s.label}</p>
@@ -223,7 +223,7 @@ export default function WarehouseRequests() {
 
 			<div className="flex gap-3">
 				<Select value={statusFilter} onValueChange={setStatusFilter}>
-					<SelectTrigger className="w-56">
+					<SelectTrigger className="w-full sm:w-56">
 						<SelectValue placeholder="Статус" />
 					</SelectTrigger>
 					<SelectContent>

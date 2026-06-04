@@ -265,7 +265,7 @@ export default function Register() {
 											className="mt-1.5 h-11 rounded-lg border-slate-200 bg-slate-50/80 focus:bg-white focus-visible:ring-cyan-600/20"
 										/>
 									</div>
-									<div className="grid grid-cols-2 gap-3">
+									<div className="grid gap-3 sm:grid-cols-2">
 										<div className="flex flex-col">
 											<Label className="text-sm font-medium text-gray-700 leading-tight mb-1.5">
 												ИНН / ИНО
@@ -339,7 +339,7 @@ export default function Register() {
 									</p>
 								</div>
 								<form onSubmit={handleSubmit} className="space-y-4">
-									<div className="grid grid-cols-2 gap-3">
+									<div className="grid gap-3 sm:grid-cols-2">
 										<div className="flex flex-col">
 											<Label className="text-sm font-medium text-gray-700 leading-tight mb-1.5">
 												Имя *

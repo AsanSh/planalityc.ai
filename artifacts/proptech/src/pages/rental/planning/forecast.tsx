@@ -219,7 +219,7 @@ export default function RentalForecast() {
 			</div>
 
 			{/* KPIs */}
-			<div className="grid grid-cols-4 gap-4 mb-6">
+			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-6">
 				<div className="bg-white border rounded-xl p-4">
 					<div className="flex items-center gap-2 mb-1">
 						<TrendingUp className="w-4 h-4 text-blue-500" />

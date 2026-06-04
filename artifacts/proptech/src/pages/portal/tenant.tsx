@@ -192,7 +192,7 @@ export default function TenantPortal({ previewTenantId }: { previewTenantId?: nu
 				</div>
 
 				{/* KPIs */}
-				<div className="grid grid-cols-2 gap-4">
+				<div className="grid gap-4 sm:grid-cols-2">
 					<KPI
 						icon={<Building2 className="w-6 h-6 text-blue-600" />}
 						label="Активных договоров"

@@ -436,7 +436,7 @@ export default function ImportCenter() {
 					{step === "preview" && preview && (
 						<div className="space-y-4">
 							{/* Summary */}
-							<div className="grid grid-cols-3 gap-4">
+							<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 								<div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-center">
 									<p className="text-2xl font-bold text-gray-900">
 										{preview.totalRows}

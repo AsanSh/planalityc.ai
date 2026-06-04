@@ -217,8 +217,8 @@ function AddEmployeeDialog({
 						запросы на одобрение.
 					</DialogDescription>
 				</DialogHeader>
-				<div className="grid grid-cols-2 gap-3">
-					<div className="flex flex-col col-span-2">
+				<div className="grid gap-3 sm:grid-cols-2">
+					<div className="flex flex-col sm:col-span-2">
 						<Label className="leading-tight mb-1.5">ФИО *</Label>
 						<Input
 							className="mt-auto"
@@ -242,7 +242,7 @@ function AddEmployeeDialog({
 							onChange={(e) => set("department", e.target.value)}
 						/>
 					</div>
-					<div className="flex flex-col col-span-2">
+					<div className="flex flex-col sm:col-span-2">
 						<Label className="leading-tight mb-1.5">ОсОО</Label>
 						<Select
 							value={form.legalEntityId}
@@ -400,7 +400,7 @@ function RequestDialog({
 							Текущая ЗП: {fmtMoney(selected.currentSalary, selected.currency ?? "KGS")}
 						</p>
 					)}
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Новая ЗП *</Label>
 							<Input
@@ -496,7 +496,7 @@ function HistoryDialog({
 								const delta = parseFloat(String(c.delta ?? "0"));
 								return (
 									<div key={c.id} className="rounded-md border p-2.5 text-sm">
-										<div className="flex items-center justify-between">
+										<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 											<span className="text-muted-foreground">
 												{c.effectiveDate || "—"}
 											</span>

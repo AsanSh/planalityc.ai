@@ -306,8 +306,8 @@ function ContractorDialog({
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-4">
 					{/* Basic info */}
-					<div className="grid grid-cols-2 gap-3">
-						<div className="col-span-2 flex flex-col">
+					<div className="grid gap-3 sm:grid-cols-2">
+						<div className="sm:col-span-2 flex flex-col">
 							<Label className="leading-tight mb-1.5">Название / ФИО *</Label>
 							<Input
 								className="mt-auto"
@@ -378,7 +378,7 @@ function ContractorDialog({
 					</div>
 
 					{/* Contacts */}
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Телефон</Label>
 							<Input className="mt-auto" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
@@ -417,7 +417,7 @@ function ContractorDialog({
 					{/* Contract */}
 					<div className="border-t pt-3">
 						<p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Договор</p>
-						<div className="grid grid-cols-2 gap-3">
+						<div className="grid gap-3 sm:grid-cols-2">
 							<div className="flex flex-col">
 								<Label className="leading-tight mb-1.5">№ договора</Label>
 								<Input className="mt-auto" value={form.contractNumber} onChange={(e) => set("contractNumber", e.target.value)} />
@@ -472,7 +472,7 @@ function ContractorDialog({
 					)}
 
 					{/* Rating */}
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Рейтинг (1–5)</Label>
 							<Select value={form.rating} onValueChange={(v) => set("rating", v)}>
@@ -582,7 +582,7 @@ function ContractorDialog({
 									<p className="text-[11px] text-gray-400">
 										Войдёт по телефону из контактов выше ({form.phone || "укажите телефон"}) и SMS-коду
 									</p>
-									<div className="grid grid-cols-2 gap-3">
+									<div className="grid gap-3 sm:grid-cols-2">
 										<div className="flex flex-col">
 											<Label className="leading-tight mb-1.5">Имя *</Label>
 											<Input
@@ -603,7 +603,7 @@ function ContractorDialog({
 												}
 											/>
 										</div>
-										<div className="col-span-2 flex flex-col">
+										<div className="sm:col-span-2 flex flex-col">
 											<Label className="leading-tight mb-1.5">Email (необязательно)</Label>
 											<Input
 												className="mt-auto"
@@ -919,11 +919,11 @@ export default function ConstructionContractors() {
 	);
 
 	return (
-		<div className="space-y-6">
-			<div className="flex items-center justify-between">
+		<div className="am-page space-y-5">
+			<div className="am-page-header">
 				<div>
-					<h1 className="text-2xl font-bold text-gray-900">Подрядчики</h1>
-					<p className="text-sm text-gray-500 mt-0.5">
+					<h1 className="am-page-title text-2xl">Подрядчики</h1>
+					<p className="am-page-subtitle text-sm">
 						Подрядные организации и ИП со специализацией. Покупатели и поставщики — в{" "}
 						<a href="/counterparties" className="text-orange-600 hover:underline">
 							общем справочнике контрагентов

@@ -642,7 +642,7 @@ export default function RentalSettings() {
 							</p>
 						</div>
 
-						<div className="grid grid-cols-2 gap-4">
+						<div className="grid gap-4 sm:grid-cols-2">
 							<div className="flex flex-col">
 								<Label className="text-sm font-medium leading-tight mb-1.5">Валюта</Label>
 								<Select
@@ -683,7 +683,7 @@ export default function RentalSettings() {
 							</div>
 						</div>
 
-						<div className="grid grid-cols-2 gap-4">
+						<div className="grid gap-4 sm:grid-cols-2">
 							<div className="flex flex-col">
 								<Label className="text-sm font-medium leading-tight mb-1.5">Пеня (% в день)</Label>
 								<Input
@@ -764,7 +764,7 @@ export default function RentalSettings() {
 				{/* ── BILLING ── */}
 				{tab === "billing" && (
 					<>
-						<div className="grid grid-cols-2 gap-4">
+						<div className="grid gap-4 sm:grid-cols-2">
 							<div className="flex flex-col">
 								<Label className="text-sm font-medium leading-tight mb-1.5">День начисления</Label>
 								<Input
@@ -799,7 +799,7 @@ export default function RentalSettings() {
 								</p>
 							</div>
 						</div>
-						<div className="grid grid-cols-2 gap-4">
+						<div className="grid gap-4 sm:grid-cols-2">
 							<div className="flex flex-col">
 								<Label className="text-sm font-medium leading-tight mb-1.5">Авто-начисление</Label>
 								<Select
@@ -841,7 +841,7 @@ export default function RentalSettings() {
 				{/* ── NOTIFICATIONS ── */}
 				{tab === "notifications" && (
 					<>
-						<div className="grid grid-cols-2 gap-4">
+						<div className="grid gap-4 sm:grid-cols-2">
 							<div className="flex flex-col">
 								<Label className="text-sm font-medium leading-tight mb-1.5">
 									Напомнить за (дней до срока)

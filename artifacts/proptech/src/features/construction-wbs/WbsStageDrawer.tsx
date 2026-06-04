@@ -97,7 +97,7 @@ export function WbsStageDrawer({
 								<Progress value={node.metrics.effectiveProgress} className="h-2 mb-1" />
 								<p className="text-sm font-semibold">{node.metrics.effectiveProgress}%</p>
 							</div>
-							<div className="grid grid-cols-2 gap-3 text-sm">
+							<div className="grid gap-3 sm:grid-cols-2 text-sm">
 								<div>
 									<p className="text-xs text-gray-500">Начало</p>
 									<p>{node.stage.startDate || "—"}</p>

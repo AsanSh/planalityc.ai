@@ -156,7 +156,7 @@ export default function RentalEmployees() {
 			</div>
 
 			{/* Stats */}
-			<div className="grid grid-cols-3 gap-4 mb-6">
+			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 mb-6">
 				<div className="bg-white border rounded-lg p-4">
 					<p className="text-sm text-gray-500">Всего сотрудников</p>
 					<p className="text-2xl font-bold text-gray-900 mt-1">
@@ -178,7 +178,7 @@ export default function RentalEmployees() {
 			</div>
 
 			{/* Cards */}
-			<div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+			<div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 gap-4">
 				{isLoading ? (
 					Array.from({ length: 3 }).map((_, i) => (
 						<div
@@ -281,7 +281,7 @@ export default function RentalEmployees() {
 						</div>
 
 						<div className="p-5 space-y-4">
-							<div className="grid grid-cols-2 gap-3">
+							<div className="grid gap-3 sm:grid-cols-2">
 								<div className="flex flex-col">
 									<Label className="text-xs font-medium text-gray-600 leading-tight mb-1.5">
 										Имя *

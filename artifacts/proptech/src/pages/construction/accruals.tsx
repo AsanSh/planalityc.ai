@@ -425,7 +425,7 @@ function AcceptPaymentDialog({
 						</Select>
 					</div>
 
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Способ оплаты</Label>
 							<Select
@@ -851,34 +851,34 @@ export default function ConstructionAccruals() {
 	);
 
 	return (
-		<div>
-			<div className="mb-6">
-				<h1 className="text-2xl font-bold text-gray-900">Начисления</h1>
-				<p className="text-gray-500 text-sm mt-0.5">
+		<div className="am-page">
+			<div className="mb-5">
+				<h1 className="am-page-title text-2xl">Начисления</h1>
+				<p className="am-page-subtitle text-sm">
 					График платежей по договорам
 				</p>
 			</div>
 
-			<div className="grid grid-cols-4 gap-4 mb-6">
-				<div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+			<div className="am-kpi-grid mb-5">
+				<div className="am-kpi-card">
 					<div className="text-xs text-gray-500 mb-1">К получению</div>
 					<div className="text-xl font-bold text-blue-600">
 						{fmt(totalPending)}
 					</div>
 				</div>
-				<div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+				<div className="am-kpi-card">
 					<div className="text-xs text-gray-500 mb-1">Получено</div>
 					<div className="text-xl font-bold text-emerald-600">
 						{fmt(totalPaid)}
 					</div>
 				</div>
-				<div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+				<div className="am-kpi-card">
 					<div className="text-xs text-gray-500 mb-1">Просрочено</div>
 					<div className="text-xl font-bold text-rose-600">
 						{fmt(totalOverdue)}
 					</div>
 				</div>
-				<div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+				<div className="am-kpi-card">
 					<div className="text-xs text-gray-500 mb-1">Просроченных</div>
 					<div className="text-xl font-bold text-rose-600">
 						{countOverdue} шт.
@@ -886,8 +886,8 @@ export default function ConstructionAccruals() {
 				</div>
 			</div>
 
-			<div className="bg-white rounded-xl border border-gray-100 shadow-sm mb-4 p-3 flex gap-3 items-center">
-				<div className="flex gap-2">
+			<div className="am-panel mb-4 flex flex-wrap items-center gap-3 p-3">
+				<div className="flex flex-wrap gap-2">
 					{["all", "pending", "partial", "paid", "overdue"].map((s) => (
 						<button
 							key={s}

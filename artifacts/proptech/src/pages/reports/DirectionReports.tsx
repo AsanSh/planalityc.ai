@@ -406,7 +406,7 @@ export default function DirectionReportsPage() {
 						<RefreshCw className="w-4 h-4 animate-spin" /> Загрузка…
 					</div>
 				) : (
-					<div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5 gap-3">
 						<KpiCard
 							label="Контрагентов"
 							value={String(summary.entityCount)}

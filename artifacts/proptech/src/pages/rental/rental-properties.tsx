@@ -88,7 +88,7 @@ function PropertyFormFields({ form, setField }: { form: FormState; setField: (k:
 				<Label className="text-xs">Проект / здание *</Label>
 				<Input className="mt-1" value={form.projectName} onChange={(e) => setField("projectName", e.target.value)} placeholder="Например, ЖК Центральный" />
 			</div>
-			<div className="grid grid-cols-2 gap-2">
+			<div className="grid gap-2 sm:grid-cols-2">
 				<div className="flex flex-col">
 					<Label className="text-xs leading-tight mb-1.5">Номер / кабинет *</Label>
 					<Input className="mt-auto" value={form.unitNumber} onChange={(e) => setField("unitNumber", e.target.value)} placeholder="101" />
@@ -106,7 +106,7 @@ function PropertyFormFields({ form, setField }: { form: FormState; setField: (k:
 					</Select>
 				</div>
 			</div>
-			<div className="grid grid-cols-3 gap-2">
+			<div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
 				<div className="flex flex-col">
 					<Label className="text-xs leading-tight mb-1.5">Площадь, м²</Label>
 					<Input className="mt-auto" type="number" value={form.area} onChange={(e) => setField("area", e.target.value)} />

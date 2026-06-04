@@ -460,11 +460,11 @@ export default function SettingsPeriods() {
 
 			{/* List */}
 			{isLoading ? (
-				<div className="text-center py-16 text-gray-400 text-sm">
+				<div className="text-center py-16 text-gray-600 text-sm">
 					Загрузка...
 				</div>
 			) : filtered.length === 0 ? (
-				<div className="text-center py-16 text-gray-400">
+				<div className="text-center py-16 text-gray-600">
 					<CalendarDays className="w-10 h-10 mx-auto mb-3 opacity-30" />
 					<p className="text-sm font-medium">Нет периодов</p>
 					<p className="text-xs mt-1">
@@ -507,20 +507,20 @@ export default function SettingsPeriods() {
 									>
 										<td className="px-4 py-3">
 											<div className="flex items-center gap-2">
-												<CalendarDays className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+												<CalendarDays className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
 												<span className="font-medium text-gray-800">
 													{p.name}
 												</span>
 											</div>
 											{p.notes && (
-												<p className="text-xs text-gray-400 mt-0.5 ml-5">
+												<p className="text-xs text-gray-600 mt-0.5 ml-5">
 													{p.notes}
 												</p>
 											)}
 										</td>
 										<td className="px-4 py-3">
 											<span className="flex items-center gap-1.5 text-xs text-gray-600">
-												<ModIcon className="w-3.5 h-3.5 text-gray-400" />
+												<ModIcon className="w-3.5 h-3.5 text-gray-600" />
 												{MODULE_LABELS[p.module] || p.module}
 											</span>
 										</td>

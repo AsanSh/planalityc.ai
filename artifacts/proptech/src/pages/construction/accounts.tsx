@@ -136,11 +136,11 @@ export default function ConstructionAccounts() {
 
 			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				{isLoading ? (
-					<div className="xl:col-span-3 text-center py-12 text-gray-400">
+					<div className="xl:col-span-3 text-center py-12 text-gray-600">
 						Загрузка...
 					</div>
 				) : accountsArray.length === 0 ? (
-					<div className="xl:col-span-3 text-center py-12 text-gray-400">
+					<div className="xl:col-span-3 text-center py-12 text-gray-600">
 						<Landmark className="w-12 h-12 mx-auto mb-3 text-gray-200" />
 						<p>Нет счетов. Нажмите «Добавить счёт»</p>
 					</div>
@@ -172,12 +172,12 @@ export default function ConstructionAccounts() {
 									</div>
 								</div>
 								{acc.bank && (
-									<div className="text-xs text-gray-400 mb-0.5">
+									<div className="text-xs text-gray-600 mb-0.5">
 										Банк: {acc.bank}
 									</div>
 								)}
 								{acc.accountNumber && (
-									<div className="text-xs text-gray-400 font-mono mb-2">
+									<div className="text-xs text-gray-600 font-mono mb-2">
 										{acc.accountNumber}
 									</div>
 								)}
@@ -185,7 +185,7 @@ export default function ConstructionAccounts() {
 									<div className="text-xs text-gray-500">Баланс</div>
 									<div className="text-xl font-bold text-gray-900 mt-0.5">
 										{fmt(acc.currentBalance)}{" "}
-										<span className="text-sm text-gray-400">
+										<span className="text-sm text-gray-600">
 											{acc.currency}
 										</span>
 									</div>

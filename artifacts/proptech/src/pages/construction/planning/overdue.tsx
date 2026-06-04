@@ -184,7 +184,7 @@ export default function ConstructionOverdue() {
 			</div>
 
 			<div className="mb-5 grid gap-3 md:grid-cols-3">
-				<div className="rounded-2xl border border-rose-100 bg-rose-50 p-4 shadow-sm">
+				<div className="rounded-lg border border-rose-100 bg-rose-50 p-4 shadow-sm">
 					<div className="mb-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-rose-600">
 						<AlertTriangle className="w-3 h-3" />
 						Сумма просрочки
@@ -193,13 +193,13 @@ export default function ConstructionOverdue() {
 						{fmtFull(totalOverdue)}
 					</div>
 				</div>
-				<div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+				<div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
 					<div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Частично оплачено</div>
 					<div className="text-2xl font-black text-amber-600">
 						{fmtFull(totalPaid)}
 					</div>
 				</div>
-				<div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+				<div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
 					<div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
 						Просроченных платежей
 					</div>

@@ -321,7 +321,7 @@ export default function ChatPanel() {
 									onClick={() => setOpen(false)}
 									className="p-1 hover:bg-gray-200 rounded-lg"
 								>
-									<X className="w-4 h-4 text-gray-400" />
+									<X className="w-4 h-4 text-gray-600" />
 								</button>
 							</div>
 
@@ -392,7 +392,7 @@ export default function ChatPanel() {
 									{!activeContact.phone &&
 										!activeContact.email &&
 										!activeContact.telegram && (
-											<div className="text-center py-8 text-gray-400">
+											<div className="text-center py-8 text-gray-600">
 												<User className="w-10 h-10 opacity-20 mx-auto mb-2" />
 												<p className="text-sm">Нет контактных данных</p>
 											</div>
@@ -435,7 +435,7 @@ export default function ChatPanel() {
 									<p className="text-sm font-semibold text-gray-900">
 										{getUserName(activeUser)}
 									</p>
-									<p className="text-[10px] text-gray-400">
+									<p className="text-[10px] text-gray-600">
 										{activeUser?.email}
 									</p>
 								</div>
@@ -443,12 +443,12 @@ export default function ChatPanel() {
 									onClick={() => setOpen(false)}
 									className="p-1 hover:bg-gray-200 rounded-lg"
 								>
-									<X className="w-4 h-4 text-gray-400" />
+									<X className="w-4 h-4 text-gray-600" />
 								</button>
 							</div>
 							<div className="flex-1 overflow-y-auto p-4 space-y-3">
 								{messages.length === 0 ? (
-									<div className="flex flex-col items-center justify-center h-full text-gray-400">
+									<div className="flex flex-col items-center justify-center h-full text-gray-600">
 										<MessageCircle className="w-8 h-8 mb-2 opacity-30" />
 										<p className="text-sm">Начните общение</p>
 									</div>
@@ -464,7 +464,7 @@ export default function ChatPanel() {
 												{showDate && (
 													<div className="flex items-center gap-2 my-2">
 														<div className="flex-1 h-px bg-gray-100" />
-														<span className="text-[10px] text-gray-400">
+														<span className="text-[10px] text-gray-600">
 															{new Date(m.createdAt).toLocaleDateString(
 																"ru-KG",
 																{ day: "numeric", month: "long" },
@@ -484,7 +484,7 @@ export default function ChatPanel() {
 														>
 															{m.content}
 														</div>
-														<span className="text-[10px] text-gray-400 mt-0.5 px-1">
+														<span className="text-[10px] text-gray-600 mt-0.5 px-1">
 															{fullTime(m.createdAt)}
 														</span>
 													</div>
@@ -529,7 +529,7 @@ export default function ChatPanel() {
 									onClick={() => setOpen(false)}
 									className="p-1 hover:bg-gray-200 rounded-lg"
 								>
-									<X className="w-4 h-4 text-gray-400" />
+									<X className="w-4 h-4 text-gray-600" />
 								</button>
 							</div>
 
@@ -553,7 +553,7 @@ export default function ChatPanel() {
 
 							<div className="p-3 border-b">
 								<div className="relative">
-									<Search className="absolute left-2.5 top-2 w-4 h-4 text-gray-400" />
+									<Search className="absolute left-2.5 top-2 w-4 h-4 text-gray-600" />
 									<Input
 										className="pl-8 h-8 text-sm"
 										placeholder={
@@ -571,7 +571,7 @@ export default function ChatPanel() {
 							<div className="flex-1 overflow-y-auto">
 								{contactTab === "employees" ? (
 									filteredEmployees.length === 0 ? (
-										<div className="text-center py-8 text-sm text-gray-400">
+										<div className="text-center py-8 text-sm text-gray-600">
 											Сотрудники не найдены
 										</div>
 									) : (
@@ -591,13 +591,13 @@ export default function ChatPanel() {
 													<p className="text-sm font-medium text-gray-900">
 														{c.name}
 													</p>
-													<p className="text-xs text-gray-400">{c.email}</p>
+													<p className="text-xs text-gray-600">{c.email}</p>
 												</div>
 											</button>
 										))
 									)
 								) : filteredCounterparties.length === 0 ? (
-									<div className="text-center py-8 text-sm text-gray-400">
+									<div className="text-center py-8 text-sm text-gray-600">
 										Контрагенты не найдены
 									</div>
 								) : (
@@ -628,7 +628,7 @@ export default function ChatPanel() {
 														{typeIcon[c.type]} {c.sub}
 													</span>
 													{c.phone && (
-														<span className="text-[10px] text-gray-400">
+														<span className="text-[10px] text-gray-600">
 															{c.phone}
 														</span>
 													)}
@@ -657,13 +657,13 @@ export default function ChatPanel() {
 										onClick={() => setOpen(false)}
 										className="p-1 hover:bg-gray-100 rounded-lg"
 									>
-										<X className="w-4 h-4 text-gray-400" />
+										<X className="w-4 h-4 text-gray-600" />
 									</button>
 								</div>
 							</div>
 							<div className="p-3 border-b">
 								<div className="relative">
-									<Search className="absolute left-2.5 top-2 w-4 h-4 text-gray-400" />
+									<Search className="absolute left-2.5 top-2 w-4 h-4 text-gray-600" />
 									<Input
 										className="pl-8 h-8 text-sm"
 										placeholder="Поиск чата..."
@@ -674,7 +674,7 @@ export default function ChatPanel() {
 							</div>
 							<div className="flex-1 overflow-y-auto">
 								{conversations.length === 0 ? (
-									<div className="flex flex-col items-center justify-center h-full text-gray-400 gap-2">
+									<div className="flex flex-col items-center justify-center h-full text-gray-600 gap-2">
 										<MessageCircle className="w-10 h-10 opacity-20" />
 										<p className="text-sm">Нет диалогов</p>
 										<button
@@ -722,11 +722,11 @@ export default function ChatPanel() {
 														>
 															{getUserName(c.partner)}
 														</p>
-														<span className="text-[10px] text-gray-400 flex-shrink-0 ml-2">
+														<span className="text-[10px] text-gray-600 flex-shrink-0 ml-2">
 															{timeAgo(c.lastMessage?.createdAt)}
 														</span>
 													</div>
-													<p className="text-xs text-gray-400 truncate mt-0.5">
+													<p className="text-xs text-gray-600 truncate mt-0.5">
 														{c.lastMessage?.fromUserId === myId ? "Вы: " : ""}
 														{c.lastMessage?.content}
 													</p>

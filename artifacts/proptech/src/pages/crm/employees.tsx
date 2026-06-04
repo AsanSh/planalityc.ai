@@ -266,7 +266,7 @@ export default function CrmEmployees() {
 								<Label className="leading-tight mb-1.5">{editingId ? "Новый пароль" : "Пароль *"}</Label>
 								<div className="relative mt-auto">
 									<Input className="h-9 pr-10" type={showPassword ? "text" : "password"} value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} />
-									<button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-2.5 top-2 text-gray-400">
+									<button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-2.5 top-2 text-gray-600">
 										{showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
 									</button>
 								</div>

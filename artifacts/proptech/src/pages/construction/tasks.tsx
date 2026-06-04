@@ -71,10 +71,10 @@ const ah = () => {
 };
 
 const STATUS_OPTS = [
-	{ value: "todo", label: "К выполнению", icon: Circle, color: "text-gray-400", bg: "bg-gray-50 border-gray-200" },
+	{ value: "todo", label: "К выполнению", icon: Circle, color: "text-gray-600", bg: "bg-gray-50 border-gray-200" },
 	{ value: "in_progress", label: "В работе", icon: Clock, color: "text-blue-500", bg: "bg-blue-50 border-blue-200" },
 	{ value: "review", label: "На проверке", icon: AlertCircle, color: "text-amber-500", bg: "bg-amber-50 border-amber-200" },
-	{ value: "done", label: "Готово", icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50 border-emerald-200" },
+	{ value: "done", label: "Готово", icon: CheckCircle2, color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
 ];
 
 const PRIORITY_OPTS = [
@@ -639,11 +639,11 @@ function TaskCard({
 						<StatusIcon className="w-4 h-4" />
 					</button>
 					<div className="flex-1 min-w-0">
-						<p className={`text-sm font-medium leading-snug ${task.status === "done" ? "line-through text-gray-400" : "text-gray-900"}`}>
+						<p className={`text-sm font-medium leading-snug ${task.status === "done" ? "line-through text-gray-600" : "text-gray-900"}`}>
 							{task.title}
 						</p>
 						{task.description && (
-							<p className="text-xs text-gray-400 mt-0.5 truncate">{task.description}</p>
+							<p className="text-xs text-gray-600 mt-0.5 truncate">{task.description}</p>
 						)}
 					</div>
 				</div>
@@ -715,7 +715,7 @@ function TaskCard({
 					</span>
 				)}
 				{task.dueDate && (
-					<span className={`text-[10px] ${isOverdue ? "text-rose-600 font-semibold" : "text-gray-400"}`}>
+					<span className={`text-[10px] ${isOverdue ? "text-rose-600 font-semibold" : "text-gray-600"}`}>
 						{isOverdue ? "⚠ " : ""}
 						{new Date(task.dueDate).toLocaleDateString("ru-KG", { day: "numeric", month: "short" })}
 					</span>
@@ -726,7 +726,7 @@ function TaskCard({
 					</span>
 				)}
 				{projectMap[task.projectId] && (
-					<span className="text-[10px] text-gray-400 truncate max-w-[100px]">
+					<span className="text-[10px] text-gray-600 truncate max-w-[100px]">
 						{projectMap[task.projectId]}
 					</span>
 				)}
@@ -768,7 +768,7 @@ function EmptyState({ tab }: { tab: TabId }) {
 		all: "Задач пока нет",
 	};
 	return (
-		<div className="text-center py-16 text-gray-400">
+		<div className="text-center py-16 text-gray-600">
 			<Flag className="w-8 h-8 mx-auto mb-2 opacity-20" />
 			<p className="text-sm">{msgs[tab]}</p>
 		</div>
@@ -835,7 +835,7 @@ function TasksTable({
 				cell: ({ row }) => (
 					<div className="text-sm font-medium tabular-nums">
 						<div>{Number(row.original.progressPercent) || 0}%</div>
-						<div className="text-[10px] text-gray-400">
+						<div className="text-[10px] text-gray-600">
 							Этап: {Number(row.original.stageProgressPercent ?? 0)}%
 						</div>
 					</div>
@@ -848,7 +848,7 @@ function TasksTable({
 				meta: { exportLabel: "Статус" },
 				cell: ({ getValue }) => {
 					const status = STATUS_OPTS.find((s) => s.value === getValue());
-					if (!status) return <span className="text-gray-400">—</span>;
+					if (!status) return <span className="text-gray-600">—</span>;
 					const Icon = status.icon;
 					return (
 						<div
@@ -867,7 +867,7 @@ function TasksTable({
 				meta: { exportLabel: "Приоритет" },
 				cell: ({ getValue }) => {
 					const priority = PRIORITY_OPTS.find((p) => p.value === getValue());
-					if (!priority) return <span className="text-gray-400">—</span>;
+					if (!priority) return <span className="text-gray-600">—</span>;
 					return (
 						<div
 							className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${priority.color}`}
@@ -884,7 +884,7 @@ function TasksTable({
 				cell: ({ row }) => {
 					const assigneeId = taskAssignedTo(row.original);
 					if (!assigneeId) {
-						return <span className="text-gray-400 text-sm">Не назначен</span>;
+						return <span className="text-gray-600 text-sm">Не назначен</span>;
 					}
 					const user = userMap[assigneeId];
 					return (
@@ -901,7 +901,7 @@ function TasksTable({
 				meta: { exportLabel: "Срок" },
 				cell: ({ getValue, row }) => {
 					const date = getValue() as string | null;
-					if (!date) return <span className="text-gray-400 text-sm">—</span>;
+					if (!date) return <span className="text-gray-600 text-sm">—</span>;
 					const d = new Date(date);
 					const isOverdue =
 						d < new Date() && row.original.status !== "done";
@@ -969,7 +969,7 @@ function TasksTable({
 				meta: { exportLabel: "Просрочка, дн", align: "right" },
 				cell: ({ row }) => {
 					if (!row.original.dueDate || row.original.status === "done") {
-						return <span className="text-xs text-gray-400">0</span>;
+						return <span className="text-xs text-gray-600">0</span>;
 					}
 					const due = new Date(row.original.dueDate);
 					const now = new Date();
@@ -995,7 +995,7 @@ function TasksTable({
 			onRowClick={onRowClick}
 			initialSorting={[{ id: "dueDate", desc: false }]}
 			emptyState={
-				<div className="text-center py-8 text-gray-400 text-sm">
+				<div className="text-center py-8 text-gray-600 text-sm">
 					Нет задач по выбранным фильтрам
 				</div>
 			}
@@ -1040,7 +1040,7 @@ function TasksCalendarView({
 	const weekDayLabels = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
 	if (tasks.length === 0) {
-		return <div className="text-sm text-gray-400 py-10 text-center">Нет задач в выбранном периоде</div>;
+		return <div className="text-sm text-gray-600 py-10 text-center">Нет задач в выбранном периоде</div>;
 	}
 
 	return (
@@ -1106,7 +1106,7 @@ function TasksCalendarView({
 												? "bg-amber-500 text-white"
 												: inMonth
 													? "text-gray-800"
-													: "text-gray-400"
+													: "text-gray-600"
 										}`}
 									>
 										{format(day, "d")}
@@ -1136,7 +1136,7 @@ function TasksCalendarView({
 										);
 									})}
 									{dayTasks.length > 3 && (
-										<div className="text-[10px] text-gray-400 px-1">
+										<div className="text-[10px] text-gray-600 px-1">
 											+{dayTasks.length - 3} ещё
 										</div>
 									)}
@@ -1157,7 +1157,7 @@ function TasksCalendarView({
 					)}
 				</div>
 				{selectedTasks.length === 0 ? (
-					<p className="text-sm text-gray-400 px-3 py-4">На этот день задач нет</p>
+					<p className="text-sm text-gray-600 px-3 py-4">На этот день задач нет</p>
 				) : (
 					<div className="divide-y divide-gray-100">
 						{selectedTasks.map((task) => (
@@ -1234,7 +1234,7 @@ function TasksGanttView({
 	}, [tasks]);
 
 	if (bars.length === 0) {
-		return <div className="text-sm text-gray-400 py-10 text-center">Нет плановых дат для Gantt</div>;
+		return <div className="text-sm text-gray-600 py-10 text-center">Нет плановых дат для Gantt</div>;
 	}
 
 	return (
@@ -1247,7 +1247,7 @@ function TasksGanttView({
 				>
 					<div className="text-xs text-gray-700 mb-1 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 						<span className="truncate pr-2">{row.task.title}</span>
-						<span className="text-gray-400">
+						<span className="text-gray-600">
 							{row.start} → {row.end}
 						</span>
 					</div>
@@ -1628,7 +1628,7 @@ export default function ConstructionTasks() {
 				<PeriodPicker value={period} onChange={setPeriod} />
 				{(projectFilter !== "all" || priorityFilter !== "all" || statusFilter !== "all" || search) && (
 					<button
-						className="text-xs text-gray-400 hover:text-gray-700"
+						className="text-xs text-gray-600 hover:text-gray-700"
 						onClick={() => {
 							setProjectFilter("all");
 							setPriorityFilter("all");
@@ -1643,28 +1643,28 @@ export default function ConstructionTasks() {
 				<div className="ml-auto flex gap-1 rounded-lg bg-gray-100 p-0.5">
 					<button
 						onClick={() => setViewMode("kanban")}
-						className={`p-1.5 rounded transition-all ${viewMode === "kanban" ? "bg-white shadow-sm text-gray-900" : "text-gray-400 hover:text-gray-600"}`}
+						className={`p-1.5 rounded transition-all ${viewMode === "kanban" ? "bg-white shadow-sm text-gray-900" : "text-gray-600 hover:text-gray-600"}`}
 						title="Канбан"
 					>
 						<LayoutGrid className="w-4 h-4" />
 					</button>
 					<button
 						onClick={() => setViewMode("table")}
-						className={`p-1.5 rounded transition-all ${viewMode === "table" ? "bg-white shadow-sm text-gray-900" : "text-gray-400 hover:text-gray-600"}`}
+						className={`p-1.5 rounded transition-all ${viewMode === "table" ? "bg-white shadow-sm text-gray-900" : "text-gray-600 hover:text-gray-600"}`}
 						title="Таблица"
 					>
 						<List className="w-4 h-4" />
 					</button>
 					<button
 						onClick={() => setViewMode("calendar")}
-						className={`p-1.5 rounded transition-all ${viewMode === "calendar" ? "bg-white shadow-sm text-gray-900" : "text-gray-400 hover:text-gray-600"}`}
+						className={`p-1.5 rounded transition-all ${viewMode === "calendar" ? "bg-white shadow-sm text-gray-900" : "text-gray-600 hover:text-gray-600"}`}
 						title="Календарь"
 					>
 						<CalendarDays className="w-4 h-4" />
 					</button>
 					<button
 						onClick={() => setViewMode("gantt")}
-						className={`p-1.5 rounded transition-all ${viewMode === "gantt" ? "bg-white shadow-sm text-gray-900" : "text-gray-400 hover:text-gray-600"}`}
+						className={`p-1.5 rounded transition-all ${viewMode === "gantt" ? "bg-white shadow-sm text-gray-900" : "text-gray-600 hover:text-gray-600"}`}
 						title="Gantt"
 					>
 						<BarChart3 className="w-4 h-4" />

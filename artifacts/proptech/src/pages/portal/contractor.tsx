@@ -48,7 +48,7 @@ function KPI({
 	color: string;
 }) {
 	return (
-		<div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
+		<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
 			<div
 				className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}
 			>
@@ -57,7 +57,7 @@ function KPI({
 			<div className="min-w-0">
 				<p className="text-xs text-gray-500 font-medium">{label}</p>
 				<p className="text-base sm:text-xl font-bold text-gray-900 mt-0.5 break-words">{value}</p>
-				{sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+				{sub && <p className="text-xs text-gray-600 mt-0.5">{sub}</p>}
 			</div>
 		</div>
 	);
@@ -151,7 +151,7 @@ export default function ContractorPortal({ previewContractorId }: { previewContr
 						</div>
 						<div>
 							<p className="text-sm font-bold text-gray-900">Planalityc.ai</p>
-							<p className="text-[10px] text-gray-400 -mt-0.5">
+							<p className="text-[10px] text-gray-600 -mt-0.5">
 								Портал подрядчика
 							</p>
 						</div>
@@ -223,7 +223,7 @@ export default function ContractorPortal({ previewContractorId }: { previewContr
 					/>
 				</div>
 
-				<div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+				<div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
 					<div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-4 border-b bg-gray-50">
 						<div className="flex items-center gap-3">
 							<FileText className="w-4 h-4 text-gray-500" />
@@ -250,21 +250,21 @@ export default function ContractorPortal({ previewContractorId }: { previewContr
 									<p className="font-medium text-gray-900">
 										{contractor.contractDocument.fileName}
 									</p>
-									<p className="text-xs text-gray-400">
+									<p className="text-xs text-gray-600">
 										Загружен{" "}
 										{fmtDate(contractor.contractDocument.uploadedAt)}
 									</p>
 								</div>
 							</div>
 						) : (
-							<p className="text-sm text-gray-400 text-center py-6">
+							<p className="text-sm text-gray-600 text-center py-6">
 								Договор ещё не загружен заказчиком
 							</p>
 						)}
 					</div>
 				</div>
 
-				<div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:shadow-none">
+				<div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden print:shadow-none">
 					<div className="flex items-center justify-between gap-2 flex-wrap px-4 sm:px-6 py-4 border-b bg-gray-50">
 						<div className="flex items-center gap-3">
 							<CreditCard className="w-4 h-4 text-gray-500" />
@@ -306,7 +306,7 @@ export default function ContractorPortal({ previewContractorId }: { previewContr
 						</div>
 					</div>
 					{lines.length === 0 ? (
-						<div className="py-12 text-center text-gray-400">
+						<div className="py-12 text-center text-gray-600">
 							<CreditCard className="w-10 h-10 mx-auto mb-2 opacity-20" />
 							<p className="text-sm">Нет подтверждённых платежей</p>
 						</div>

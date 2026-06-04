@@ -376,7 +376,7 @@ export default function Register() {
 											readOnly
 											className="mt-1.5 h-11 rounded-lg border-slate-200 bg-slate-100 text-slate-500"
 										/>
-										<p className="text-xs text-gray-400 mt-1">
+										<p className="text-xs text-gray-600 mt-1">
 											Используется email организации
 										</p>
 									</div>

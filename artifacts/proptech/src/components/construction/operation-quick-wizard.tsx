@@ -158,7 +158,7 @@ export function OperationQuickWizard({
 									? "bg-amber-50 border-amber-200 text-amber-800 font-medium"
 									: i < step
 										? "bg-emerald-50 border-emerald-100 text-emerald-700"
-										: "bg-gray-50 border-gray-100 text-gray-400",
+										: "bg-gray-50 border-gray-100 text-gray-600",
 							)}
 						>
 							{i + 1}. {label}

@@ -866,7 +866,7 @@ function PtoEditAreaDialog({
 								</button>
 							)}
 						</div>
-						<p className="text-[10px] text-gray-400 mt-1">PDF, JPG, PNG · до 8 МБ</p>
+						<p className="text-[10px] text-gray-600 mt-1">PDF, JPG, PNG · до 8 МБ</p>
 					</div>
 
 					<div className="flex justify-end gap-2 pt-1">
@@ -1223,7 +1223,7 @@ export default function ConstructionChess() {
 			</div>
 
 			{!projectId ? (
-				<div className="text-center py-16 text-gray-400">
+				<div className="text-center py-16 text-gray-600">
 					<Grid3X3 className="w-12 h-12 mx-auto mb-2 opacity-20" />
 					<p>Выберите проект</p>
 				</div>
@@ -1234,7 +1234,7 @@ export default function ConstructionChess() {
 						<div className="flex flex-wrap items-center justify-between gap-3">
 							<div className="flex flex-wrap gap-2">
 								{unpublishedCount > 0 && (
-									<div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+									<div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
 										<Lock className="h-3.5 w-3.5 text-slate-500" />
 										<span className="text-xs font-medium text-slate-600">
 											Не опубликовано
@@ -1335,11 +1335,11 @@ export default function ConstructionChess() {
 					{/* Chess grid */}
 					{viewMode === "grid" &&
 						(isLoading ? (
-						<div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400">
+						<div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-600">
 							Загрузка...
 						</div>
 					) : units.length === 0 ? (
-						<div className="bg-white rounded-xl border border-gray-200 py-16 text-center text-gray-400">
+						<div className="bg-white rounded-xl border border-gray-200 py-16 text-center text-gray-600">
 							<Grid3X3 className="w-12 h-12 mx-auto mb-3 opacity-20" />
 							<p className="font-medium">Шахматка пуста</p>
 							<p className="text-sm mt-1 max-w-md mx-auto">
@@ -1407,7 +1407,7 @@ export default function ConstructionChess() {
 						>
 							<div className="min-w-max bg-slate-50/70 p-4">
 								{floors.length === 0 ? (
-									<div className="p-4 text-center text-gray-400">
+									<div className="p-4 text-center text-gray-600">
 										Нет данных для отображения
 									</div>
 								) : (
@@ -1470,10 +1470,10 @@ export default function ConstructionChess() {
 																	<PtoAreaDisplay unit={unit as any} />
 																) : (
 																	<>
-																		{unit.area && <span className={`text-[8px] ${lockedForSales ? "text-gray-400" : cfg.text} opacity-70`}>{unit.area}м²</span>}
-																		{unit.roomCount && <span className={`text-[8px] ${lockedForSales ? "text-gray-400" : cfg.text} opacity-70`}>{unit.roomCount}к</span>}
+																		{unit.area && <span className={`text-[8px] ${lockedForSales ? "text-gray-600" : cfg.text} opacity-70`}>{unit.area}м²</span>}
+																		{unit.roomCount && <span className={`text-[8px] ${lockedForSales ? "text-gray-600" : cfg.text} opacity-70`}>{unit.roomCount}к</span>}
 																		{isPricingMode && (
-																			<span className={`text-[8px] ${published ? "text-emerald-700" : "text-gray-400"} font-medium`}>
+																			<span className={`text-[8px] ${published ? "text-emerald-700" : "text-gray-600"} font-medium`}>
 																				{published ? `×${unit.saleCoefficient || "1"}` : "нет цены"}
 																			</span>
 																		)}

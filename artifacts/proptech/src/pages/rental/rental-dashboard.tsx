@@ -77,7 +77,7 @@ function KpiCard({
 			) : (
 				<>
 					<p className="text-2xl font-bold text-gray-900">{value}</p>
-					{sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+					{sub && <p className="text-xs text-gray-600 mt-1">{sub}</p>}
 				</>
 			)}
 		</div>
@@ -342,7 +342,7 @@ export default function RentalDashboard() {
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				{/* Pending Accruals */}
-				<div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+				<div className="bg-white rounded-lg border border-gray-100 shadow-sm">
 					<div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
 						<h2 className="text-sm font-semibold text-gray-900">
 							Ожидают подтверждения
@@ -358,7 +358,7 @@ export default function RentalDashboard() {
 							))}
 						</div>
 					) : pendingAccruals.length === 0 ? (
-						<div className="py-10 text-center text-gray-400 text-sm">
+						<div className="py-10 text-center text-gray-600 text-sm">
 							<CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-600" />
 							Все начисления подтверждены
 						</div>
@@ -373,7 +373,7 @@ export default function RentalDashboard() {
 										<p className="text-sm text-gray-800">
 											Договор #{a.leaseContractId} — {a.period}
 										</p>
-										<p className="text-xs text-gray-400">
+										<p className="text-xs text-gray-600">
 											До {new Date(a.dueDate).toLocaleDateString("ru-KG")}
 										</p>
 									</div>
@@ -397,7 +397,7 @@ export default function RentalDashboard() {
 				</div>
 
 				{/* Recent Payments */}
-				<div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+				<div className="bg-white rounded-lg border border-gray-100 shadow-sm">
 					<div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
 						<h2 className="text-sm font-semibold text-gray-900">
 							Последние платежи
@@ -416,7 +416,7 @@ export default function RentalDashboard() {
 							))}
 						</div>
 					) : recentPayments.length === 0 ? (
-						<div className="py-10 text-center text-gray-400 text-sm">
+						<div className="py-10 text-center text-gray-600 text-sm">
 							<Clock className="w-8 h-8 mx-auto mb-2 text-gray-300" />
 							Платежей пока нет
 						</div>
@@ -432,7 +432,7 @@ export default function RentalDashboard() {
 											{leaseMap[p.leaseContractId] ||
 												`Договор #${p.leaseContractId}`}
 										</p>
-										<p className="text-xs text-gray-400">
+										<p className="text-xs text-gray-600">
 											{new Date(p.paymentDate).toLocaleDateString("ru-KG")}
 										</p>
 									</div>
@@ -447,7 +447,7 @@ export default function RentalDashboard() {
 			</div>
 
 			{/* Active Leases Table */}
-			<div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+			<div className="bg-white rounded-lg border border-gray-100 shadow-sm">
 				<div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
 					<h2 className="text-sm font-semibold text-gray-900">
 						Активные договоры
@@ -466,7 +466,7 @@ export default function RentalDashboard() {
 						))}
 					</div>
 				) : activeLeases.length === 0 ? (
-					<div className="py-10 text-center text-gray-400 text-sm">
+					<div className="py-10 text-center text-gray-600 text-sm">
 						Нет активных договоров аренды
 					</div>
 				) : (
@@ -480,7 +480,7 @@ export default function RentalDashboard() {
 									<p className="text-sm font-medium text-gray-800">
 										{l.contractNumber}
 									</p>
-									<p className="text-xs text-gray-400">
+									<p className="text-xs text-gray-600">
 										{l.tenantName || `Арендатор #${l.tenantId}`} ·{" "}
 										{l.propertyUnitNumber || `Объект #${l.propertyId}`}
 									</p>
@@ -489,7 +489,7 @@ export default function RentalDashboard() {
 									<p className="text-sm font-semibold text-gray-900">
 										{formatCurrency(parseFloat(String(l.rentAmount)))}
 									</p>
-									<p className="text-xs text-gray-400">
+									<p className="text-xs text-gray-600">
 										{l.endDate
 											? `до ${new Date(l.endDate).toLocaleDateString("ru-KG")}`
 											: "бессрочный"}

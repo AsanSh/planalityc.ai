@@ -974,7 +974,7 @@ export function LeaseTable({ isLoading, leasesArray, sortedLeases, sortKey, sort
 							<tr key={i}>{Array.from({ length: 9 }).map((_, j) => <td key={j} className={TD}><Skeleton className="h-3 w-full" /></td>)}</tr>
 						))
 					) : !leasesArray.length ? (
-						<tr><td colSpan={9} className="text-center text-gray-400 py-8 text-sm">Договоры аренды не найдены</td></tr>
+						<tr><td colSpan={9} className="text-center text-gray-600 py-8 text-sm">Договоры аренды не найдены</td></tr>
 					) : (
 						sortedLeases.map((lease, idx) => (
 							<tr key={lease.id} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>

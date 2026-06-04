@@ -649,7 +649,7 @@ export default function Deals() {
 					emptyState={
 						<div className="flex flex-col items-center gap-2">
 							<Target className="w-8 h-8 text-gray-200" />
-							<p className="text-gray-400">Сделки не найдены</p>
+							<p className="text-gray-600">Сделки не найдены</p>
 						</div>
 					}
 				/>

@@ -535,7 +535,7 @@ export default function ConstructionCashflow() {
 											{hasChildren && row.collapsible ? (
 												<button
 													onClick={() => toggle(row.id)}
-													className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-gray-400 hover:text-gray-700"
+													className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-gray-600 hover:text-gray-700"
 												>
 													{isCollapsed ? (
 														<ChevronRight className="w-3 h-3" />

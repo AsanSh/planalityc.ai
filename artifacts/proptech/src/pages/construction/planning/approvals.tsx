@@ -74,7 +74,7 @@ export default function ConstructionApprovals() {
 				</div>
 				<div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
 					<div className="text-xs text-gray-500 mb-1">Согласовано</div>
-					<div className="text-2xl font-bold text-emerald-500">1</div>
+					<div className="text-2xl font-bold text-emerald-700">1</div>
 				</div>
 				<div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
 					<div className="text-xs text-gray-500 mb-1">Отклонено</div>
@@ -91,7 +91,7 @@ export default function ConstructionApprovals() {
 						<div className="flex items-start justify-between mb-3">
 							<div>
 								<div className="font-medium text-gray-900">{ap.title}</div>
-								<div className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+								<div className="text-xs text-gray-600 mt-0.5 flex items-center gap-1">
 									<User className="w-3 h-3" /> {ap.initiator} · {ap.date}
 								</div>
 							</div>
@@ -99,7 +99,7 @@ export default function ConstructionApprovals() {
 								<div className="font-mono font-bold text-lg">
 									{fmtFull(ap.amount)}
 								</div>
-								<div className="text-xs text-gray-400">{ap.currency}</div>
+								<div className="text-xs text-gray-600">{ap.currency}</div>
 							</div>
 						</div>
 
@@ -119,7 +119,7 @@ export default function ConstructionApprovals() {
 														? "bg-emerald-50 border-emerald-200 text-emerald-700"
 														: isCurrent
 															? "bg-amber-50 border-amber-200 text-amber-700"
-															: "bg-gray-50 border-gray-200 text-gray-400"
+															: "bg-gray-50 border-gray-200 text-gray-600"
 											}`}
 										>
 											{isDone ? (

@@ -388,7 +388,7 @@ export default function Settings() {
 
 			{/* Org tab */}
 			{activeTab === "org" && (
-				<div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+				<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
 					{loading ? (
 						<div className="flex items-center justify-center py-12">
 							<Loader2 className="h-6 w-6 animate-spin text-blue-500" />
@@ -503,7 +503,7 @@ export default function Settings() {
 												<SelectItem value="KZT">Тенге (KZT)</SelectItem>
 											</SelectContent>
 										</Select>
-										<p className="text-xs text-gray-400 mt-1">
+										<p className="text-xs text-gray-600 mt-1">
 											Используется для сводного итога по кассам
 										</p>
 									</div>
@@ -560,7 +560,7 @@ export default function Settings() {
 			{activeTab === "profile" && (
 				<div className="space-y-5">
 					{/* Header card */}
-					<div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+					<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
 						<div className="flex items-center gap-4">
 							<div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center text-2xl font-bold text-blue-700 flex-shrink-0">
 								{profileForm.firstName?.[0]}
@@ -582,7 +582,7 @@ export default function Settings() {
 					</div>
 
 					{/* Edit profile form */}
-					<div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+					<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
 						<h3 className="font-semibold text-gray-900 mb-5 flex items-center gap-2">
 							<User className="w-4 h-4 text-blue-500" />
 							Личные данные
@@ -595,9 +595,9 @@ export default function Settings() {
 								<Input
 									value={(user as any)?.email || ""}
 									disabled
-									className="mt-1.5 h-11 rounded-xl bg-gray-50 border-gray-200 text-gray-400"
+									className="mt-1.5 h-11 rounded-xl bg-gray-50 border-gray-200 text-gray-600"
 								/>
-								<p className="text-xs text-gray-400 mt-1">
+								<p className="text-xs text-gray-600 mt-1">
 									Email изменить нельзя
 								</p>
 							</div>
@@ -660,7 +660,7 @@ export default function Settings() {
 					</div>
 
 					{/* Change password form */}
-					<div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+					<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
 						<h3 className="font-semibold text-gray-900 mb-5 flex items-center gap-2">
 							<KeyRound className="w-4 h-4 text-blue-500" />
 							Изменить пароль
@@ -683,7 +683,7 @@ export default function Settings() {
 									<button
 										type="button"
 										onClick={() => setShowPasswords((v) => !v)}
-										className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+										className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-600"
 									>
 										{showPasswords ? (
 											<EyeOff className="w-4 h-4" />
@@ -764,7 +764,7 @@ export default function Settings() {
 							{[1, 2, 3].map((i) => (
 								<div
 									key={i}
-									className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4 animate-pulse"
+									className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 flex items-center gap-4 animate-pulse"
 								>
 									<div className="w-10 h-10 bg-gray-200 rounded-xl flex-shrink-0" />
 									<div className="flex-1 space-y-2">
@@ -792,10 +792,10 @@ export default function Settings() {
 						Object.entries(groupedModules).map(([category, mods]) => (
 							<div
 								key={category}
-								className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+								className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden"
 							>
 								<div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
-									<p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+									<p className="text-xs font-semibold uppercase tracking-wider text-gray-600">
 										{CATEGORY_LABELS[category] || category}
 									</p>
 								</div>
@@ -818,7 +818,7 @@ export default function Settings() {
 													<IconComp
 														className={cn(
 															"w-5 h-5",
-															m.isEnabled ? "text-blue-600" : "text-gray-400",
+															m.isEnabled ? "text-blue-600" : "text-gray-600",
 														)}
 													/>
 												</div>
@@ -843,7 +843,7 @@ export default function Settings() {
 															<CheckCircle2 className="w-3.5 h-3.5" /> Включён
 														</span>
 													) : (
-														<span className="flex items-center gap-1 text-xs text-gray-400">
+														<span className="flex items-center gap-1 text-xs text-gray-600">
 															<XCircle className="w-3.5 h-3.5" /> Выключен
 														</span>
 													)}

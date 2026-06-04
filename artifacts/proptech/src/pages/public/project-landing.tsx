@@ -428,7 +428,7 @@ export default function ProjectLanding() {
 						<Building2 className="w-8 h-8" />
 						<span className="text-2xl font-bold">Planalityc.ai</span>
 					</div>
-					<p className="text-gray-400 mb-6">{project.developer}</p>
+					<p className="text-gray-600 mb-6">{project.developer}</p>
 					<p className="text-sm text-gray-500">© 2026 Все права защищены</p>
 				</div>
 			</div>

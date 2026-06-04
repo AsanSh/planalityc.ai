@@ -338,7 +338,7 @@ export default function RentalForecast() {
 							<tr>
 								<td
 									colSpan={cols.length + 2}
-									className="text-center py-12 text-gray-400"
+									className="text-center py-12 text-gray-600"
 								>
 									Загрузка...
 								</td>
@@ -347,7 +347,7 @@ export default function RentalForecast() {
 							<tr>
 								<td
 									colSpan={cols.length + 2}
-									className="text-center py-12 text-gray-400"
+									className="text-center py-12 text-gray-600"
 								>
 									Нет активных договоров аренды
 								</td>
@@ -369,7 +369,7 @@ export default function RentalForecast() {
 													row.tenant?.fullName ||
 													`Дог. #${row.contract.id}`}
 											</p>
-											<p className="text-xs text-gray-400">
+											<p className="text-xs text-gray-600">
 												{row.contract.propertyAddress ||
 													`Договор #${row.contract.id}`}
 											</p>

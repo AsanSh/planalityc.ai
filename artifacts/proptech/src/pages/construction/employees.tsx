@@ -241,7 +241,7 @@ export default function ConstructionEmployees() {
 				searchPlaceholder="Поиск по имени, email…"
 				initialSorting={[{ id: "name", desc: false }]}
 				emptyState={
-					<div className="text-center py-8 text-gray-400">
+					<div className="text-center py-8 text-gray-600">
 						<UserCircle className="w-10 h-10 mx-auto mb-3 opacity-30" />
 						<p className="text-sm mb-3">Нет сотрудников</p>
 						<Button size="sm" variant="outline" onClick={openCreate} className="gap-1">
@@ -327,7 +327,7 @@ export default function ConstructionEmployees() {
 									<button
 										type="button"
 										onClick={() => setShowPassword((v) => !v)}
-										className="absolute right-2.5 top-2 text-gray-400 hover:text-gray-600"
+										className="absolute right-2.5 top-2 text-gray-600 hover:text-gray-600"
 									>
 										{showPassword ? (
 											<EyeOff className="w-4 h-4" />

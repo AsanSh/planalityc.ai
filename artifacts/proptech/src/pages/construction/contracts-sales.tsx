@@ -254,7 +254,7 @@ function ContractDetailSummary({
 									setPortalForm((p) => ({ ...p, phone: e.target.value }))
 								}
 							/>
-							<p className="text-[10px] text-gray-400 mt-1">Покупатель войдёт по этому номеру и SMS-коду</p>
+							<p className="text-[10px] text-gray-600 mt-1">Покупатель войдёт по этому номеру и SMS-коду</p>
 						</div>
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Имя *</Label>
@@ -473,7 +473,7 @@ export default function ConstructionContractsSales() {
 							{row.original.buyerName || "—"}
 						</div>
 						{row.original.buyerPhone && (
-							<div className="text-xs text-gray-400">
+							<div className="text-xs text-gray-600">
 								{row.original.buyerPhone}
 							</div>
 						)}
@@ -568,7 +568,7 @@ export default function ConstructionContractsSales() {
 				size: 100,
 				meta: { exportLabel: "Дата" },
 				cell: ({ row }) => (
-					<span className="text-gray-400 text-xs">
+					<span className="text-gray-600 text-xs">
 						{row.original.contractDate}
 					</span>
 				),

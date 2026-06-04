@@ -200,7 +200,7 @@ export default function RentalOwners() {
 					<p className="text-sm text-gray-500">
 						Нет данных отчётов владельцев.
 					</p>
-					<p className="text-xs text-gray-400 mt-1">
+					<p className="text-xs text-gray-600 mt-1">
 						Отчёты создаются автоматически при добавлении платежей
 					</p>
 				</div>

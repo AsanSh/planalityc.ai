@@ -579,7 +579,7 @@ function ContractorDialog({
 								</div>
 							) : (
 								<>
-									<p className="text-[11px] text-gray-400">
+									<p className="text-[11px] text-gray-600">
 										Войдёт по телефону из контактов выше ({form.phone || "укажите телефон"}) и SMS-коду
 									</p>
 									<div className="grid gap-3 sm:grid-cols-2">
@@ -720,7 +720,7 @@ export default function ConstructionContractors() {
 							</div>
 							<div>
 								<p className="font-medium text-sm text-gray-900">{c.fullName}</p>
-								<p className="text-xs text-gray-400">
+								<p className="text-xs text-gray-600">
 									{c.type === "company" ? "Компания" : "ИП"}
 								</p>
 							</div>
@@ -751,8 +751,8 @@ export default function ConstructionContractors() {
 					return (
 						<div className="text-xs">
 							<p className="text-gray-600">{c.phone || "—"}</p>
-							{c.inn && <p className="text-gray-400">ИНН: {c.inn}</p>}
-							{c.okpo && <p className="text-gray-400">ОКПО: {c.okpo}</p>}
+							{c.inn && <p className="text-gray-600">ИНН: {c.inn}</p>}
+							{c.okpo && <p className="text-gray-600">ОКПО: {c.okpo}</p>}
 						</div>
 					);
 				},
@@ -772,7 +772,7 @@ export default function ConstructionContractors() {
 								<p className="font-medium text-gray-800">№{c.contractNumber}</p>
 							)}
 							{contractAmt > 0 && (
-								<p className="text-gray-400 text-xs">
+								<p className="text-gray-600 text-xs">
 									{contractAmt.toLocaleString("ru-KG")} сом
 								</p>
 							)}
@@ -805,7 +805,7 @@ export default function ConstructionContractors() {
 							</p>
 							<p
 								className={
-									outstanding > 0 ? "text-amber-600" : "text-gray-400"
+									outstanding > 0 ? "text-amber-600" : "text-gray-600"
 								}
 							>
 								ост. {outstanding.toLocaleString("ru-KG")} сом
@@ -839,7 +839,7 @@ export default function ConstructionContractors() {
 				cell: ({ row }) => {
 					const c = row.original;
 					if (!c.rating) {
-						return <span className="text-gray-400 text-sm">—</span>;
+						return <span className="text-gray-600 text-sm">—</span>;
 					}
 					return (
 						<div className="flex items-center gap-0.5">
@@ -900,7 +900,7 @@ export default function ConstructionContractors() {
 								className="h-7 w-7 p-0"
 								onClick={() => setDialog(c)}
 							>
-								<Edit2 className="w-3.5 h-3.5 text-gray-400" />
+								<Edit2 className="w-3.5 h-3.5 text-gray-600" />
 							</Button>
 							<Button
 								size="sm"
@@ -908,7 +908,7 @@ export default function ConstructionContractors() {
 								className="h-7 w-7 p-0"
 								onClick={() => handleDelete(c.id)}
 							>
-								<Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-rose-600" />
+								<Trash2 className="w-3.5 h-3.5 text-gray-600 hover:text-rose-600" />
 							</Button>
 						</div>
 					);

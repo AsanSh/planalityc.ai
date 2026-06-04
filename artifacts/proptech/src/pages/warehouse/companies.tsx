@@ -64,7 +64,7 @@ export default function WarehouseCompanies() {
 
 			<div className="flex gap-3">
 				<div className="relative flex-1">
-					<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+					<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600" />
 					<Input
 						placeholder="Поиск по названию, ИНН, телефону..."
 						value={search}
@@ -118,19 +118,19 @@ export default function WarehouseCompanies() {
 							<div className="space-y-2 mb-4">
 								{supplier.phone && (
 									<div className="flex items-center gap-2 text-sm text-gray-600">
-										<Phone className="w-4 h-4 text-gray-400" />
+										<Phone className="w-4 h-4 text-gray-600" />
 										{supplier.phone}
 									</div>
 								)}
 								{supplier.email && (
 									<div className="flex items-center gap-2 text-sm text-gray-600">
-										<Mail className="w-4 h-4 text-gray-400" />
+										<Mail className="w-4 h-4 text-gray-600" />
 										{supplier.email}
 									</div>
 								)}
 								{supplier.address && (
 									<div className="flex items-center gap-2 text-sm text-gray-600">
-										<MapPin className="w-4 h-4 text-gray-400" />
+										<MapPin className="w-4 h-4 text-gray-600" />
 										<span className="line-clamp-1">{supplier.address}</span>
 									</div>
 								)}

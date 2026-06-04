@@ -440,7 +440,7 @@ export default function Roles() {
 
 			<div className="flex gap-3">
 				<div className="relative flex-1">
-					<Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+					<Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-600" />
 					<Input
 						placeholder="Поиск по названию или описанию..."
 						value={search}
@@ -477,7 +477,7 @@ export default function Roles() {
 							<TableRow>
 								<TableCell colSpan={6} className="text-center py-12">
 									<Shield className="w-8 h-8 text-gray-200 mx-auto mb-2" />
-									<p className="text-gray-400">Роли не найдены</p>
+									<p className="text-gray-600">Роли не найдены</p>
 								</TableCell>
 							</TableRow>
 						) : (

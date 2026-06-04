@@ -166,7 +166,7 @@ export default function ConstructionDebt() {
 
 			{/* Stats */}
 			<div className="mb-5 grid gap-3 md:grid-cols-3">
-				<div className="rounded-2xl border border-cyan-100 bg-white p-4 shadow-sm">
+				<div className="rounded-lg border border-cyan-100 bg-white p-4 shadow-sm">
 					<div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Всего к получению</div>
 					<div className="text-2xl font-black text-cyan-700">
 						{fmtFull(totalDebt)}
@@ -175,7 +175,7 @@ export default function ConstructionDebt() {
 						{filteredAccruals.length} платежей
 					</div>
 				</div>
-				<div className="rounded-2xl border border-rose-100 bg-rose-50 p-4 shadow-sm">
+				<div className="rounded-lg border border-rose-100 bg-rose-50 p-4 shadow-sm">
 					<div className="mb-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-rose-700">
 						<AlertTriangle className="w-3 h-3" />
 						Просрочено
@@ -185,7 +185,7 @@ export default function ConstructionDebt() {
 					</div>
 					<div className="text-xs text-rose-600">{overdue.length} платежей</div>
 				</div>
-				<div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+				<div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
 					<div className="mb-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
 						<Clock className="w-3 h-3" />
 						Предстоит

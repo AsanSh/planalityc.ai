@@ -225,7 +225,7 @@ export default function PhotoGallery() {
 					{filteredPhotos.map((photo) => (
 						<Card
 							key={photo.id}
-							className="group relative overflow-hidden rounded-2xl shadow-lg border-0 cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]"
+							className="group relative overflow-hidden rounded-lg shadow-lg border-0 cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]"
 							onClick={() => setSelectedPhoto(photo)}
 						>
 							<div className="aspect-square relative overflow-hidden bg-gradient-to-br from-purple-100 to-teal-100">
@@ -437,11 +437,11 @@ export default function PhotoGallery() {
 						<div>
 							<Label>Файл *</Label>
 							<div className="mt-1 border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition-colors cursor-pointer">
-								<Upload className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+								<Upload className="w-12 h-12 mx-auto text-gray-600 mb-3" />
 								<p className="text-sm text-gray-600">
 									Перетащите файл или нажмите для выбора
 								</p>
-								<p className="text-xs text-gray-400 mt-1">PNG, JPG до 10MB</p>
+								<p className="text-xs text-gray-600 mt-1">PNG, JPG до 10MB</p>
 							</div>
 						</div>
 						<div className="flex justify-end gap-2 pt-2">

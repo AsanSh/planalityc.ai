@@ -172,7 +172,7 @@ export default function RentalCashflow() {
 									}}
 								/>
 							</div>
-							<span className="text-xs text-gray-400">
+							<span className="text-xs text-gray-600">
 								{MONTHS[parseInt(mon, 10) - 1]}
 							</span>
 						</div>

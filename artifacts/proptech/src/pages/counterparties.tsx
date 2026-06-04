@@ -553,7 +553,7 @@ export default function Counterparties() {
 				emptyState={
 					<div className="flex flex-col items-center gap-2">
 						<Briefcase className="w-8 h-8 text-gray-200" />
-						<p className="text-gray-400">Контрагенты не найдены</p>
+						<p className="text-gray-600">Контрагенты не найдены</p>
 					</div>
 				}
 			/>

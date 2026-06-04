@@ -512,7 +512,7 @@ export default function Clients() {
 							Да
 						</Badge>
 					) : (
-						<span className="text-xs text-gray-400">—</span>
+						<span className="text-xs text-gray-600">—</span>
 					),
 			},
 			{
@@ -606,7 +606,7 @@ export default function Clients() {
 				emptyState={
 					<div className="flex flex-col items-center gap-2">
 						<Users className="w-8 h-8 text-gray-200" />
-						<p className="text-gray-400">Клиенты не найдены</p>
+						<p className="text-gray-600">Клиенты не найдены</p>
 					</div>
 				}
 			/>

@@ -170,7 +170,7 @@ export default function ConstructionForecast() {
 				size: 100,
 				meta: { exportLabel: "№ платежа" },
 				cell: ({ row }) => (
-					<span className="text-gray-400">#{row.original.installmentNumber}</span>
+					<span className="text-gray-600">#{row.original.installmentNumber}</span>
 				),
 			},
 			{
@@ -209,19 +209,19 @@ export default function ConstructionForecast() {
 			</div>
 
 			<div className="mb-5 grid gap-3 md:grid-cols-3">
-				<div className="rounded-2xl border border-cyan-100 bg-white p-4 shadow-sm">
+				<div className="rounded-lg border border-cyan-100 bg-white p-4 shadow-sm">
 					<div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Всего к получению</div>
 					<div className="text-2xl font-black text-cyan-700">
 						{fmtFull(totalForecast)}
 					</div>
 				</div>
-				<div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+				<div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
 					<div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Периодов</div>
 					<div className="text-2xl font-black text-slate-950">
 						{monthsSorted.length}
 					</div>
 				</div>
-				<div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+				<div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
 					<div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Платежей</div>
 					<div className="text-2xl font-black text-slate-950">
 						{pending.length}
@@ -234,7 +234,7 @@ export default function ConstructionForecast() {
 					График поступлений
 				</div>
 				{monthsSorted.length === 0 ? (
-					<div className="text-center py-8 text-gray-400 text-sm">
+					<div className="text-center py-8 text-gray-600 text-sm">
 						<Calendar className="w-10 h-10 mx-auto mb-2 text-gray-200" />
 						Нет данных. Создайте договоры и сформируйте графики платежей.
 					</div>
@@ -251,12 +251,12 @@ export default function ConstructionForecast() {
 									<div className="flex items-center justify-between text-sm mb-1">
 										<div className="flex items-center gap-2">
 											<span
-												className={`font-medium ${isPast ? "text-gray-400" : "text-gray-700"}`}
+												className={`font-medium ${isPast ? "text-gray-600" : "text-gray-700"}`}
 											>
 												{MONTHS[parseInt(m, 10) - 1]} {y}
 											</span>
 											{isPast && (
-												<span className="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded">
+												<span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
 													прошлый
 												</span>
 											)}
@@ -265,7 +265,7 @@ export default function ConstructionForecast() {
 											<span className="font-mono font-bold text-blue-600">
 												{fmtFull(v.total)}
 											</span>
-											<span className="text-xs text-gray-400 ml-2">
+											<span className="text-xs text-gray-600 ml-2">
 												{v.count} пл.
 											</span>
 										</div>

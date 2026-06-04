@@ -163,7 +163,7 @@ function PaymentRow({
 				<div className="font-medium text-gray-900 text-xs font-mono">
 					{contract?.contractNumber || a.contractNumber || `#${a.contractId}`}
 				</div>
-				<div className="text-xs text-gray-400">{a.buyerName || contract?.buyerName}</div>
+				<div className="text-xs text-gray-600">{a.buyerName || contract?.buyerName}</div>
 			</td>
 			<td className="px-4 py-3">
 				<div
@@ -373,7 +373,7 @@ function AcceptPaymentDialog({
 							onChange={(e) => setAmount(e.target.value)}
 							className="mt-1"
 						/>
-						<p className="text-xs text-gray-400 mt-1">
+						<p className="text-xs text-gray-600 mt-1">
 							Сумма распределится по графику: сначала выбранный платёж,
 							затем следующие месяцы. Меньше суммы — частичная оплата и
 							остаток (просрочка, если срок прошёл).
@@ -694,7 +694,7 @@ export default function ConstructionAccruals() {
 							<div className="font-medium text-gray-900 text-xs font-mono">
 								{a.contractNumber || `#${a.contractId}`}
 							</div>
-							<div className="text-xs text-gray-400">{a.buyerName}</div>
+							<div className="text-xs text-gray-600">{a.buyerName}</div>
 						</div>
 					);
 				},
@@ -1052,13 +1052,13 @@ export default function ConstructionAccruals() {
 						<tbody>
 							{isLoading ? (
 								<tr>
-									<td colSpan={5} className="text-center py-12 text-gray-400">
+									<td colSpan={5} className="text-center py-12 text-gray-600">
 										Загрузка...
 									</td>
 								</tr>
 							) : counterpartyGroups.length === 0 ? (
 								<tr>
-									<td colSpan={5} className="text-center py-12 text-gray-400">
+									<td colSpan={5} className="text-center py-12 text-gray-600">
 										Нет данных за выбранный период
 									</td>
 								</tr>
@@ -1091,7 +1091,7 @@ export default function ConstructionAccruals() {
 												</td>
 												<td className="px-4 py-3 font-medium">
 													{buyer.name}
-													<span className="text-xs text-gray-400 ml-2">
+													<span className="text-xs text-gray-600 ml-2">
 														({buyer.payments.length} плат.)
 													</span>
 												</td>

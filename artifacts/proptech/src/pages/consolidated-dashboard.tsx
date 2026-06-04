@@ -548,7 +548,7 @@ export default function ConsolidatedDashboard() {
 							<p className="text-xl font-bold text-gray-900 tabular-nums">
 								{c.value}
 							</p>
-							<p className="text-[10px] text-gray-400">{c.sub}</p>
+							<p className="text-[10px] text-gray-600">{c.sub}</p>
 						</div>
 					);
 				})}
@@ -619,7 +619,7 @@ export default function ConsolidatedDashboard() {
 		</div>
 
 		<div className="grid w-full gap-4 lg:grid-cols-4">
-			<div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 lg:col-span-2">
+			<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 lg:col-span-2">
 				<p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
 					Подключаемые модули
 				</p>
@@ -642,7 +642,7 @@ export default function ConsolidatedDashboard() {
 				</div>
 			</div>
 
-			<div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+			<div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
 				<div className="px-4 py-3 border-b flex items-center justify-between">
 					<div className="flex items-center gap-2">
 						<CheckSquare className="w-4 h-4 text-blue-600" />
@@ -657,15 +657,15 @@ export default function ConsolidatedDashboard() {
 				<div className="px-4 py-3 grid gap-2 text-center sm:grid-cols-3">
 					<div>
 						<p className="text-lg font-bold text-cyan-700">{tasksSummary?.todo ?? 0}</p>
-						<p className="text-[10px] text-gray-400">В работе</p>
+						<p className="text-[10px] text-gray-600">В работе</p>
 					</div>
 					<div>
 						<p className="text-lg font-bold text-rose-600">{tasksSummary?.overdue ?? 0}</p>
-						<p className="text-[10px] text-gray-400">Просрочено</p>
+						<p className="text-[10px] text-gray-600">Просрочено</p>
 					</div>
 					<div>
 						<p className="text-lg font-bold text-emerald-600">{tasksSummary?.done ?? 0}</p>
-						<p className="text-[10px] text-gray-400">Выполнено</p>
+						<p className="text-[10px] text-gray-600">Выполнено</p>
 					</div>
 				</div>
 				{overdueTasksPreview.length > 0 && (
@@ -693,7 +693,7 @@ export default function ConsolidatedDashboard() {
 				))}
 			</div>
 
-			<div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+			<div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
 				<div className="px-4 py-3 border-b flex items-center justify-between">
 					<div className="flex items-center gap-2">
 						<TrendingUp className="w-4 h-4 text-gray-500" />
@@ -706,7 +706,7 @@ export default function ConsolidatedDashboard() {
 					</Link>
 				</div>
 				{recentOps.length === 0 ? (
-					<p className="px-4 py-6 text-xs text-gray-400 text-center">Нет операций</p>
+					<p className="px-4 py-6 text-xs text-gray-600 text-center">Нет операций</p>
 				) : (
 					<div>
 						{recentOps.map((op) => {
@@ -714,10 +714,10 @@ export default function ConsolidatedDashboard() {
 							const isTransfer = op.type === "transfer";
 							return (
 								<div key={op.id} className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-50 last:border-0">
-									<div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isIncome ? "bg-emerald-500" : isTransfer ? "bg-blue-500" : "bg-rose-500"}`} />
+									<div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isIncome ? "bg-emerald-600" : isTransfer ? "bg-blue-500" : "bg-rose-500"}`} />
 									<div className="flex-1 min-w-0">
 										<p className="text-xs text-gray-800 truncate">{op.description}</p>
-										<p className="text-[10px] text-gray-400">{op.date}</p>
+										<p className="text-[10px] text-gray-600">{op.date}</p>
 									</div>
 									<span className={`text-xs font-mono font-semibold flex-shrink-0 ${isIncome ? "text-emerald-600" : isTransfer ? "text-blue-600" : "text-rose-600"}`}>
 										{isIncome ? "+" : isTransfer ? "⇄" : "−"}{fmtFull(op.amountKgs)}
@@ -729,7 +729,7 @@ export default function ConsolidatedDashboard() {
 				)}
 			</div>
 
-			<div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2">
+			<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 space-y-2">
 				<p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Быстрый переход</p>
 				{quickLinks.map((l) => (
 					<Link key={l.label} href={l.href}>

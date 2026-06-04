@@ -58,7 +58,7 @@ export default function ConstructionBroadcast() {
 			id: "whatsapp",
 			label: "WhatsApp",
 			icon: MessageCircle,
-			color: "text-emerald-500",
+			color: "text-emerald-700",
 		},
 		{ id: "telegram", label: "Telegram", icon: Send, color: "text-blue-500" },
 		{ id: "email", label: "Email", icon: Mail, color: "text-amber-600" },
@@ -165,7 +165,7 @@ export default function ConstructionBroadcast() {
 									rows={5}
 									placeholder="Введите текст..."
 								/>
-								<div className="text-xs text-gray-400 mt-1">
+								<div className="text-xs text-gray-600 mt-1">
 									Переменные: {"{name}"}, {"{contract}"}, {"{date}"},{" "}
 									{"{amount}"}
 								</div>
@@ -217,7 +217,7 @@ export default function ConstructionBroadcast() {
 									<div className="font-medium text-sm text-gray-900 truncate">
 										{log.recipient}
 									</div>
-									<div className="text-xs text-gray-400">
+									<div className="text-xs text-gray-600">
 										{log.template} · {log.channel} · {log.date}
 									</div>
 								</div>

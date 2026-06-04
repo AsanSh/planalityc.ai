@@ -639,7 +639,7 @@ function SupplierDialog({ open, onClose, supplier }: SupplierDialogProps) {
 								</div>
 							) : (
 								<>
-									<p className="text-[11px] text-gray-400">
+									<p className="text-[11px] text-gray-600">
 										Войдёт по телефону из контактов выше ({formData.phone || "укажите телефон"}) и SMS-коду
 									</p>
 									<div className="grid gap-3 sm:grid-cols-2">

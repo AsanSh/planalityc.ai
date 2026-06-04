@@ -47,7 +47,7 @@ function fmt(v: number) {
 
 function DeviationBadge({ pct }: { pct: number }) {
 	if (Math.abs(pct) < 0.5) {
-		return <span className="text-xs text-gray-400">±0%</span>;
+		return <span className="text-xs text-gray-600">±0%</span>;
 	}
 	const over = pct > 0;
 	return (
@@ -72,17 +72,17 @@ function CategoryBlock({ category, items }: { category: string; items: BudgetIte
 				className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors"
 			>
 				<div className="flex items-center gap-2">
-					{open ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+					{open ? <ChevronDown className="w-4 h-4 text-gray-600" /> : <ChevronRight className="w-4 h-4 text-gray-600" />}
 					<span className="text-sm font-semibold text-gray-800">{category}</span>
-					<span className="text-xs text-gray-400">({items.length} позиций)</span>
+					<span className="text-xs text-gray-600">({items.length} позиций)</span>
 				</div>
 				<div className="flex items-center gap-6 text-right">
 					<div>
-						<p className="text-xs text-gray-400">План</p>
+						<p className="text-xs text-gray-600">План</p>
 						<p className="text-sm font-medium text-gray-700">{fmt(planned)}</p>
 					</div>
 					<div>
-						<p className="text-xs text-gray-400">Факт</p>
+						<p className="text-xs text-gray-600">Факт</p>
 						<p className="text-sm font-medium text-gray-700">{fmt(actual)}</p>
 					</div>
 					<div className="w-20 text-right">
@@ -255,12 +255,12 @@ export default function AIEstimates() {
 					<RefreshCw className="w-6 h-6 text-blue-500 animate-spin" />
 				</div>
 			) : !projectId ? (
-				<div className="text-center py-20 text-gray-400">
+				<div className="text-center py-20 text-gray-600">
 					<FileSpreadsheet className="w-10 h-10 mx-auto mb-3 text-gray-300" />
 					<p>Выберите проект для анализа сметы</p>
 				</div>
 			) : categories.length === 0 ? (
-				<div className="text-center py-20 text-gray-400">
+				<div className="text-center py-20 text-gray-600">
 					<BarChart3 className="w-10 h-10 mx-auto mb-3 text-gray-300" />
 					<p className="font-medium">Нет данных бюджета</p>
 					<p className="text-sm mt-1">Добавьте позиции в разделе «Бюджет»</p>
@@ -268,7 +268,7 @@ export default function AIEstimates() {
 			) : (
 				<div className="space-y-3">
 					{/* Table header */}
-					<div className="flex items-center gap-6 px-4 text-xs text-gray-400 font-medium">
+					<div className="flex items-center gap-6 px-4 text-xs text-gray-600 font-medium">
 						<div className="flex-1">Наименование</div>
 						<div className="w-24 text-right">План</div>
 						<div className="w-24 text-right">Факт</div>
@@ -302,7 +302,7 @@ export default function AIEstimates() {
 										<div className="w-12 text-xs text-right text-gray-500 flex-shrink-0">
 											{share.toFixed(1)}%
 										</div>
-										<div className={cn("w-20 text-xs text-right flex-shrink-0", a > p ? "text-rose-500" : "text-gray-400")}>
+										<div className={cn("w-20 text-xs text-right flex-shrink-0", a > p ? "text-rose-500" : "text-gray-600")}>
 											{a > p ? `+${fmt(a - p)}` : a < p ? `-${fmt(p - a)}` : "="}
 										</div>
 									</div>

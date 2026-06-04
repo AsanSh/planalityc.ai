@@ -15,7 +15,7 @@ export function WbsCardsView({
 
 	if (roots.length === 0) {
 		return (
-			<div className="rounded-xl border border-dashed border-gray-200 py-16 text-center text-sm text-gray-400">
+			<div className="rounded-xl border border-dashed border-gray-200 py-16 text-center text-sm text-gray-600">
 				Нет этапов — добавьте корневой элемент WBS
 			</div>
 		);
@@ -37,7 +37,7 @@ export function WbsCardsView({
 					>
 						<div className="flex items-start justify-between gap-2 mb-2">
 							<div className="min-w-0">
-								<p className="text-[10px] font-mono text-gray-400">{node.wbsCode}</p>
+								<p className="text-[10px] font-mono text-gray-600">{node.wbsCode}</p>
 								<p className="font-semibold text-gray-900 truncate">{node.stage.name}</p>
 							</div>
 							<span className={`text-[10px] px-1.5 py-0.5 rounded border shrink-0 ${meta.badge}`}>

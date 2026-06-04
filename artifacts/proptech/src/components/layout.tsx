@@ -888,6 +888,14 @@ export function Layout({ children }: { children: ReactNode }) {
 			className="flex h-screen overflow-hidden"
 			style={{ background: "#F5F8FA" }}
 		>
+			{/* Skip link для accessibility */}
+			<a
+				href="#main-content"
+				className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-cyan-700 focus:text-white focus:rounded-lg focus:shadow-lg"
+			>
+				Перейти к основному содержанию
+			</a>
+
 			{mobileNavOpen && (
 				<button
 					type="button"
@@ -988,7 +996,7 @@ export function Layout({ children }: { children: ReactNode }) {
 							</div>
 						) : (
 						<div
-							className="rounded-2xl px-2.5 py-3 border border-cyan-400/18 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+							className="rounded-lg px-2.5 py-3 border border-cyan-400/18 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
 							style={{
 								background:
 									"linear-gradient(165deg, rgba(8, 47, 73, 0.78) 0%, rgba(12, 28, 42, 0.94) 100%)",
@@ -1071,9 +1079,9 @@ export function Layout({ children }: { children: ReactNode }) {
 									style={{ color: activeModule.color }}
 								/>
 								<span>{activeModuleShortLabel}</span>
-								<ChevronDown className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+								<ChevronDown className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
 							</button>
-							<div className="hidden lg:flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-slate-50/90 p-1 shadow-inner">
+							<div className="hidden lg:flex items-center gap-1 rounded-lg border border-slate-200/80 bg-slate-50/90 p-1 shadow-inner">
 								{visibleModules.map((m) => {
 									const Icon = m.icon;
 									const active = m.id === activeModule.id;
@@ -1176,9 +1184,9 @@ export function Layout({ children }: { children: ReactNode }) {
 						onClick={() => setCommandOpen(true)}
 							className="relative hidden min-w-0 max-w-[760px] flex-1 items-center rounded-xl border border-gray-200 bg-gray-50 py-2 pl-9 pr-14 text-left text-sm text-gray-500 transition-all hover:border-gray-300 sm:flex"
 					>
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 pointer-events-none" />
 						<span>Поиск по проектам, контрагентам, договорам…</span>
-						<span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded font-mono">
+						<span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded font-mono">
 							⌘W
 						</span>
 					</button>
@@ -1239,7 +1247,7 @@ export function Layout({ children }: { children: ReactNode }) {
 				</header>
 
 				{/* ── CONTENT ── */}
-				<main className="flex-1 overflow-y-auto">
+				<main id="main-content" className="flex-1 overflow-y-auto">
 					<div className="p-3 sm:p-4 xl:p-6">{children}</div>
 				</main>
 			</div>

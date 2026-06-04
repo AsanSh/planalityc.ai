@@ -328,7 +328,7 @@ function ExpenseDialog({
 										))}
 									</SelectContent>
 								</Select>
-								<p className="text-[10px] text-gray-400 mt-1">
+								<p className="text-[10px] text-gray-600 mt-1">
 									В проекте нет этапов WBS — расход не попадёт в Гант
 								</p>
 							</div>
@@ -379,7 +379,7 @@ function ExpenseDialog({
 											))}
 										</SelectContent>
 									</Select>
-									<p className="text-[10px] text-gray-400 mt-1">
+									<p className="text-[10px] text-gray-600 mt-1">
 										Этап — для WBS и Ганта; статья — детализация в бюджете проекта
 									</p>
 								</div>
@@ -716,7 +716,7 @@ export default function ConstructionExpenses() {
 						: "—",
 				meta: { exportLabel: "Курс" },
 				cell: ({ getValue }) => (
-					<span className="text-xs text-gray-400">{getValue() as string}</span>
+					<span className="text-xs text-gray-600">{getValue() as string}</span>
 				),
 			},
 			{
@@ -732,7 +732,7 @@ export default function ConstructionExpenses() {
 						className="h-7 w-7 p-0"
 						onClick={() => handleDelete(row.original.id)}
 					>
-						<Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-rose-600" />
+						<Trash2 className="w-3.5 h-3.5 text-gray-600 hover:text-rose-600" />
 					</Button>
 				),
 			},
@@ -800,7 +800,7 @@ export default function ConstructionExpenses() {
 
 			{projectFilter !== "all" && filterStages.length > 0 && (
 				<div className="flex gap-2 flex-wrap items-center">
-					<span className="text-xs text-gray-400">Этап:</span>
+					<span className="text-xs text-gray-600">Этап:</span>
 					<button
 						onClick={() => setStageFilter("all")}
 						className={`px-2.5 py-1 rounded-full text-xs ${stageFilter === "all" ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600"}`}

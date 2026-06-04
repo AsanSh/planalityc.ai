@@ -457,14 +457,14 @@ export default function ConstructionOpsDashboardTab() {
 
 						<div className="space-y-3">
 							{[
-								{ label: "Открыто к продаже", value: overview.available ?? 0, color: "bg-emerald-500" },
+								{ label: "Открыто к продаже", value: overview.available ?? 0, color: "bg-emerald-600" },
 								{ label: "Продано", value: overview.sold ?? 0, color: "bg-cyan-700" },
 								{ label: "Бронь", value: overview.reserved ?? 0, color: "bg-amber-500" },
 							].map((row) => (
 								<Link
 									key={row.label}
 									href="/construction/chess"
-									className="construction-press block rounded-2xl border border-slate-100 bg-slate-50 p-3 hover:bg-white hover:shadow-sm"
+									className="construction-press block rounded-lg border border-slate-100 bg-slate-50 p-3 hover:bg-white hover:shadow-sm"
 								>
 									<div className="flex items-center justify-between gap-3">
 										<div className="flex items-center gap-2">

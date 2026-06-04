@@ -539,7 +539,7 @@ export default function SystemAccounts() {
 
 			<div className="flex gap-3">
 				<div className="relative flex-1">
-					<Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+					<Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-600" />
 					<Input
 						placeholder="Поиск по названию, банку, номеру счета..."
 						value={search}
@@ -613,7 +613,7 @@ export default function SystemAccounts() {
 							<TableRow>
 								<TableCell colSpan={7} className="text-center py-12">
 									<Wallet className="w-8 h-8 text-gray-200 mx-auto mb-2" />
-									<p className="text-gray-400">Счета не найдены</p>
+									<p className="text-gray-600">Счета не найдены</p>
 								</TableCell>
 							</TableRow>
 						) : (

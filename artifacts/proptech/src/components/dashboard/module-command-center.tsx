@@ -69,7 +69,7 @@ const toneMap: Record<
 		chip: "bg-emerald-50 text-emerald-700",
 		card: "hover:border-emerald-200 hover:shadow-emerald-950/10",
 		ring: "ring-emerald-100",
-		progress: "bg-emerald-500",
+		progress: "bg-emerald-600",
 	},
 	blue: {
 		icon: "text-blue-600 bg-blue-50",
@@ -135,7 +135,7 @@ export function ModuleCommandCenter({
 								<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
 							</div>
 						</Link>
-						<div className="rounded-2xl border border-white/70 bg-white/75 p-4 shadow-lg shadow-slate-900/5 backdrop-blur">
+						<div className="rounded-lg border border-white/70 bg-white/75 p-4 shadow-lg shadow-slate-900/5 backdrop-blur">
 							<p className="text-xs uppercase tracking-[0.18em] text-slate-400">
 								Принцип
 							</p>
@@ -178,7 +178,7 @@ export function ModuleCommandCenter({
 			</div>
 
 			<div className="relative z-10 mt-5 grid gap-5 xl:grid-cols-[1.5fr_1fr]">
-				<div className="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-sm backdrop-blur">
+				<div className="rounded-lg border border-white/80 bg-white/85 p-4 shadow-sm backdrop-blur">
 					<div className="mb-4 flex items-center justify-between gap-3">
 						<div>
 							<p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
@@ -225,13 +225,13 @@ export function ModuleCommandCenter({
 				</div>
 
 				<div className="grid gap-5">
-					<div className="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-sm backdrop-blur">
+					<div className="rounded-lg border border-white/80 bg-white/85 p-4 shadow-sm backdrop-blur">
 						<p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
 							Роли и очереди
 						</p>
 						<div className="mt-4 space-y-3">
 							{lanes.map((lane) => (
-								<div key={lane.title} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+								<div key={lane.title} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
 									<div className="flex items-center justify-between gap-3">
 										<div>
 											<p className="text-sm font-black text-slate-900">
@@ -267,7 +267,7 @@ export function ModuleCommandCenter({
 									<Link
 										key={link.title}
 										href={link.href}
-										className="construction-press group flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3 hover:bg-white hover:shadow-sm"
+										className="construction-press group flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3 hover:bg-white hover:shadow-sm"
 									>
 										<div className="flex min-w-0 items-center gap-3">
 											<div className="rounded-xl bg-white p-2 text-slate-700 ring-1 ring-slate-100">

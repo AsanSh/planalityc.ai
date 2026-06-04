@@ -738,7 +738,7 @@ export default function Leads() {
 				emptyState={
 					<div className="flex flex-col items-center gap-2">
 						<UserPlus className="w-8 h-8 text-gray-200" />
-						<span className="text-gray-400">Лиды не найдены</span>
+						<span className="text-gray-600">Лиды не найдены</span>
 					</div>
 				}
 			/>

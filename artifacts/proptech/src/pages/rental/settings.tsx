@@ -319,7 +319,7 @@ function DocTemplateRow({
 			</div>
 			<div className="flex-1 min-w-0">
 				<p className="text-sm font-medium text-gray-900">{doc.label}</p>
-				<p className="text-xs text-gray-400">{doc.desc}</p>
+				<p className="text-xs text-gray-600">{doc.desc}</p>
 				{upload ? (
 					<p className="text-xs text-emerald-600 mt-0.5 truncate">
 						{upload.fileName} ·{" "}
@@ -459,7 +459,7 @@ function DocsTab() {
 					<p className="text-sm font-semibold text-gray-800">
 						Шаблоны документов
 					</p>
-					<p className="text-xs text-gray-400">
+					<p className="text-xs text-gray-600">
 						Загрузите файлы шаблонов — сотрудники смогут скачивать их
 					</p>
 				</div>
@@ -473,7 +473,7 @@ function DocsTab() {
 				</Button>
 			</div>
 			{isLoading ? (
-				<div className="flex items-center justify-center py-8 text-sm text-gray-400 gap-2">
+				<div className="flex items-center justify-center py-8 text-sm text-gray-600 gap-2">
 					<Loader2 className="w-4 h-4 animate-spin" /> Загрузка…
 				</div>
 			) : (
@@ -637,7 +637,7 @@ export default function RentalSettings() {
 								}
 								placeholder="ОсОО Ваша Компания"
 							/>
-							<p className="text-xs text-gray-400 mt-1">
+							<p className="text-xs text-gray-600 mt-1">
 								Отображается в документах и актах сверки
 							</p>
 						</div>
@@ -777,7 +777,7 @@ export default function RentalSettings() {
 										setBilling((f) => ({ ...f, accrualDay: e.target.value }))
 									}
 								/>
-								<p className="text-xs text-gray-400 mt-1">
+								<p className="text-xs text-gray-600 mt-1">
 									День месяца для авто-начислений
 								</p>
 							</div>
@@ -794,7 +794,7 @@ export default function RentalSettings() {
 										setBilling((f) => ({ ...f, dueDays: e.target.value }))
 									}
 								/>
-								<p className="text-xs text-gray-400 mt-1">
+								<p className="text-xs text-gray-600 mt-1">
 									После даты начисления
 								</p>
 							</div>
@@ -906,7 +906,7 @@ export default function RentalSettings() {
 											key={i}
 											className="flex items-start gap-2 text-sm text-gray-600"
 										>
-											<ChevronRight className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+											<ChevronRight className="w-3.5 h-3.5 text-gray-600 mt-0.5 flex-shrink-0" />
 											{req}
 										</li>
 									))}
@@ -915,7 +915,7 @@ export default function RentalSettings() {
 									<Info className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
 									<p className="text-xs text-amber-700">{channelInfo.note}</p>
 								</div>
-								<p className="text-xs text-gray-400">
+								<p className="text-xs text-gray-600">
 									Обратитесь к администратору системы для подключения канала
 									уведомлений.
 								</p>

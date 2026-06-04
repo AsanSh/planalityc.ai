@@ -117,7 +117,7 @@ export default function ConstructionExpenseAnalysis() {
 						По статьям расходов
 					</div>
 					{categorySorted.length === 0 ? (
-						<div className="text-center py-8 text-gray-400 text-sm">
+						<div className="text-center py-8 text-gray-600 text-sm">
 							Нет расходных операций
 						</div>
 					) : (
@@ -138,7 +138,7 @@ export default function ConstructionExpenseAnalysis() {
 												<span className="font-mono font-medium">
 													{fmtFull(amount)}
 												</span>
-												<span className="text-xs text-gray-400 ml-2">
+												<span className="text-xs text-gray-600 ml-2">
 													{pct.toFixed(1)}%
 												</span>
 											</div>
@@ -168,7 +168,7 @@ export default function ConstructionExpenseAnalysis() {
 						По проектам
 					</div>
 					{Object.keys(byProject).length === 0 ? (
-						<div className="text-center py-8 text-gray-400 text-sm">
+						<div className="text-center py-8 text-gray-600 text-sm">
 							Нет расходов по проектам
 						</div>
 					) : (
@@ -189,7 +189,7 @@ export default function ConstructionExpenseAnalysis() {
 													<span className="font-mono font-medium">
 														{fmtFull(amount)}
 													</span>
-													<span className="text-xs text-gray-400 ml-2">
+													<span className="text-xs text-gray-600 ml-2">
 														{pct.toFixed(1)}%
 													</span>
 												</div>

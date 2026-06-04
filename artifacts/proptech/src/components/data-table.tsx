@@ -316,7 +316,7 @@ export function DataTable<T>({
 				{toolbar}
 				{enableSearch && (
 					<div className="relative min-w-[220px] flex-1 sm:flex-none">
-						<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+						<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600" />
 						<Input
 							value={globalFilter}
 							onChange={(e) => setGlobalFilter(e.target.value)}
@@ -375,7 +375,7 @@ export function DataTable<T>({
 										<button
 											type="button"
 											title="Левее"
-											className="text-gray-400 hover:text-gray-700 disabled:opacity-30"
+											className="text-gray-600 hover:text-gray-700 disabled:opacity-30"
 											onClick={() => moveColumn(col.id, -1)}
 										>
 											<ArrowLeft className="w-3.5 h-3.5" />
@@ -383,7 +383,7 @@ export function DataTable<T>({
 										<button
 											type="button"
 											title="Правее"
-											className="text-gray-400 hover:text-gray-700 disabled:opacity-30"
+											className="text-gray-600 hover:text-gray-700 disabled:opacity-30"
 											onClick={() => moveColumn(col.id, 1)}
 										>
 											<ArrowRight className="w-3.5 h-3.5" />
@@ -521,7 +521,7 @@ export function DataTable<T>({
 							<tr>
 								<td
 									colSpan={leafColumns.length + (showRowIndex ? 1 : 0)}
-									className="text-center py-16 text-gray-400"
+									className="text-center py-16 text-gray-600"
 								>
 									Загрузка…
 								</td>
@@ -530,7 +530,7 @@ export function DataTable<T>({
 							<tr>
 								<td
 									colSpan={leafColumns.length + (showRowIndex ? 1 : 0)}
-									className="text-center py-16 text-gray-400"
+									className="text-center py-16 text-gray-600"
 								>
 									{emptyState ?? "Нет данных"}
 								</td>
@@ -553,7 +553,7 @@ export function DataTable<T>({
 									)}
 								>
 									{showRowIndex && (
-										<td className="border border-gray-300 px-2 py-1 text-center text-gray-400 text-[11px] sticky left-0 bg-inherit w-10">
+										<td className="border border-gray-300 px-2 py-1 text-center text-gray-600 text-[11px] sticky left-0 bg-inherit w-10">
 											{rowIndex + 1}
 										</td>
 									)}

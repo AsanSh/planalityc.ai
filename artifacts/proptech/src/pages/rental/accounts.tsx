@@ -616,7 +616,7 @@ export default function RentalAccounts() {
 									</SelectContent>
 								</Select>
 								{fromAcc && (
-									<p className="text-xs text-gray-400 mt-1">
+									<p className="text-xs text-gray-600 mt-1">
 										Баланс: {fmt(fromAcc.currentBalance, fromAcc.currency)}
 									</p>
 								)}
@@ -643,7 +643,7 @@ export default function RentalAccounts() {
 									</SelectContent>
 								</Select>
 								{toAcc && (
-									<p className="text-xs text-gray-400 mt-1">
+									<p className="text-xs text-gray-600 mt-1">
 										Баланс: {fmt(toAcc.currentBalance, toAcc.currency)}
 									</p>
 								)}

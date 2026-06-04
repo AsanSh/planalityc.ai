@@ -847,7 +847,7 @@ export default function ConstructionProjects() {
 					))}
 				</div>
 			) : filtered.length === 0 ? (
-				<div className="text-center py-16 text-gray-400">
+				<div className="text-center py-16 text-gray-600">
 					<HardHat className="w-12 h-12 mx-auto mb-3 opacity-20" />
 					<p className="font-medium">
 						{search ? "Ничего не найдено" : "Проектов пока нет"}
@@ -871,7 +871,7 @@ export default function ConstructionProjects() {
 						return (
 							<div
 								key={p.id}
-								className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-lg hover:shadow-slate-900/8"
+								className="group overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-lg hover:shadow-slate-900/8"
 							>
 								<div className="grid gap-3 p-4 lg:grid-cols-[1.05fr_0.95fr]">
 									<div className="min-w-0">
@@ -979,7 +979,7 @@ export default function ConstructionProjects() {
 
 									<div className="space-y-3">
 									{cost.total > 0 && (
-											<div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-orange-50 p-3.5">
+											<div className="rounded-lg border border-amber-100 bg-gradient-to-br from-amber-50 to-orange-50 p-3.5">
 												<p className="text-xs font-bold uppercase tracking-[0.16em] text-orange-600">
 												{projectCostLabel(p.currency || "KGS")}
 											</p>
@@ -998,7 +998,7 @@ export default function ConstructionProjects() {
 									)}
 
 									{area > 0 && (plannedCostPerSqm > 0 || currentCostPerSqm > 0) && (
-											<div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
+											<div className="rounded-lg border border-slate-200 bg-slate-50 p-3.5">
 												<p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
 												Стоимость за кв.м
 											</p>
@@ -1023,7 +1023,7 @@ export default function ConstructionProjects() {
 										</div>
 									)}
 
-										<div className="rounded-2xl border border-slate-100 bg-white p-3.5">
+										<div className="rounded-lg border border-slate-100 bg-white p-3.5">
 											<div className="flex items-start gap-3">
 												<div className="rounded-2xl bg-cyan-50 p-2 text-cyan-700">
 													<CalendarDays className="h-4 w-4" />

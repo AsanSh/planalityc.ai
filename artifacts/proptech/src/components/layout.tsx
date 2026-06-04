@@ -97,7 +97,7 @@ const MODULES: Module[] = [
 	{
 		id: "construction",
 		label: "Контур продаж",
-		shortLabel: "Контур продаж",
+		shortLabel: "Продажи",
 		icon: Grid3X3,
 		color: "#0ea5e9",
 		urlPrefix: ["/construction"],
@@ -973,7 +973,7 @@ export function Layout({ children }: { children: ReactNode }) {
 					{/* Module switcher */}
 					{showModuleSwitcher ? (
 						<div
-							className="relative"
+							className="relative flex-shrink-0"
 							ref={modulePickerRef}
 							onMouseEnter={() => setModulePickerOpen(true)}
 							onMouseLeave={() => setModulePickerOpen(false)}
@@ -998,17 +998,18 @@ export function Layout({ children }: { children: ReactNode }) {
 										<Link key={m.id} href={getModuleEntryHref(m)}>
 											<div
 												className={cn(
-													"group flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium transition-all",
+													"group flex h-10 items-center justify-center rounded-xl text-sm font-semibold transition-all",
 													active
-														? "bg-slate-950 text-white shadow-sm"
-														: "text-slate-500 hover:bg-white hover:text-slate-950",
+														? "min-w-[124px] gap-2 bg-slate-950 px-3 text-white shadow-sm"
+														: "w-10 text-slate-500 hover:bg-white hover:text-slate-950",
 												)}
+												title={m.label}
 											>
 												<Icon
 													className="h-4 w-4 flex-shrink-0"
 													style={{ color: active ? "#67e8f9" : m.color }}
 												/>
-												<span className="max-xl:hidden">{m.shortLabel}</span>
+												{active && <span className="truncate">{m.shortLabel}</span>}
 											</div>
 										</Link>
 									);
@@ -1084,7 +1085,7 @@ export function Layout({ children }: { children: ReactNode }) {
 					<button
 						type="button"
 						onClick={() => setCommandOpen(true)}
-						className="flex-1 max-w-lg relative hidden sm:flex items-center w-full pl-9 pr-14 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg hover:border-gray-300 text-left text-gray-500 transition-all"
+						className="relative hidden min-w-[280px] flex-1 items-center rounded-xl border border-gray-200 bg-gray-50 py-2 pl-9 pr-14 text-left text-sm text-gray-500 transition-all hover:border-gray-300 sm:flex"
 					>
 						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
 						<span>Поиск по проектам, контрагентам, договорам…</span>
@@ -1101,7 +1102,7 @@ export function Layout({ children }: { children: ReactNode }) {
 						<Search className="w-5 h-5" />
 					</button>
 
-					<div className="flex-1" />
+					<div className="hidden" />
 
 					{/* Create button */}
 					{showQuickCreate && (

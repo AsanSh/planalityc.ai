@@ -7,6 +7,7 @@ import {
 	type PeriodValue,
 } from "@/components/am/DateRangePicker";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 const fmt2 = (v: number) =>
 	new Intl.NumberFormat("ru-KG", {
@@ -467,6 +468,19 @@ export default function ConstructionPnL() {
 		const months = monthIndexesInPeriod(period, year);
 		return months.length ? months : Array.from({ length: 12 }, (_, i) => i);
 	}, [period, year]);
+	const periodTotals = useMemo(() => {
+		const byId = (id: string) => {
+			const row = rows.find((r) => r.id === id);
+			return row ? selectedDisplayTotal(row, visibleMonths) : 0;
+		};
+		return {
+			revenue: byId("revenue"),
+			costs: byId("direct_costs"),
+			gross: byId("gross_profit"),
+			margin: byId("gp_pct"),
+			net: byId("net_profit"),
+		};
+	}, [rows, visibleMonths]);
 	const labelPad = [0, 12, 24, 36];
 	const stickyBg: Record<string, string> = {
 		section: "bg-gray-100",
@@ -507,6 +521,24 @@ export default function ConstructionPnL() {
 				<div className="flex flex-wrap items-center gap-2">
 					<DateRangePicker value={period} onChange={setPeriod} />
 				</div>
+			</div>
+			<div className="mb-4 grid gap-3 md:grid-cols-5">
+				{[
+					{ label: "Выручка", value: fmt2(periodTotals.revenue), tone: "text-cyan-700", bg: "bg-cyan-50 border-cyan-100" },
+					{ label: "Расходы", value: fmt2(Math.abs(periodTotals.costs)), tone: "text-rose-700", bg: "bg-rose-50 border-rose-100" },
+					{ label: "Валовая прибыль", value: fmt2(periodTotals.gross), tone: periodTotals.gross < 0 ? "text-rose-700" : "text-emerald-700", bg: "bg-white border-slate-200" },
+					{ label: "Маржа", value: fmtPct(periodTotals.margin), tone: periodTotals.margin < 0 ? "text-rose-700" : "text-blue-700", bg: "bg-white border-slate-200" },
+					{ label: "Чистая прибыль", value: fmt2(periodTotals.net), tone: periodTotals.net < 0 ? "text-rose-700" : "text-white", bg: "bg-slate-950 border-slate-950" },
+				].map((card) => (
+					<div key={card.label} className={`rounded-2xl border p-4 shadow-sm ${card.bg}`}>
+						<div className={cn("text-xs font-semibold uppercase tracking-wide", card.bg.includes("slate-950") ? "text-white/55" : "text-slate-400")}>
+							{card.label}
+						</div>
+						<div className={cn("mt-2 font-mono text-xl font-black", card.tone)}>
+							{card.value}
+						</div>
+					</div>
+				))}
 			</div>
 			<div className="flex-1 overflow-auto rounded-[24px] border border-slate-200 bg-white shadow-sm">
 				<table

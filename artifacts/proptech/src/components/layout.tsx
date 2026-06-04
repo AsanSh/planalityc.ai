@@ -591,7 +591,8 @@ interface SectionGroupProps {
 	role: string;
 	permissions: string[];
 	allowedModules: ModuleId[];
-	defaultOpen?: boolean;
+	open: boolean;
+	onToggle: () => void;
 }
 
 function navItemMatches(location: string, href: string): boolean {
@@ -619,7 +620,8 @@ function SectionGroup({
 	role,
 	permissions,
 	allowedModules,
-	defaultOpen,
+	open,
+	onToggle,
 }: SectionGroupProps) {
 	const items = section.items.map((item) => ({
 		...item,
@@ -631,24 +633,35 @@ function SectionGroup({
 	const bestMatch = matchingItems.sort(
 		(a, b) => b.href.length - a.href.length,
 	)[0];
-	const isActive = !!bestMatch;
-	const [open, setOpen] = useState(isActive || !!defaultOpen);
+	const isActiveSection = !!bestMatch;
 
 	return (
-		<div className="mb-1">
+		<div
+			className={cn(
+				"rounded-2xl border transition-all duration-200",
+				open
+					? "border-cyan-400/18 bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+					: "border-transparent",
+			)}
+		>
 			<button
-				onClick={() => setOpen((o) => !o)}
-				className="w-full flex items-center justify-between px-2 py-1 rounded-md text-[11px] font-semibold text-white/30 hover:text-white/50 uppercase tracking-wider transition-colors"
+				onClick={onToggle}
+				className={cn(
+					"w-full flex items-center justify-between gap-2 rounded-2xl px-3 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors",
+					open || isActiveSection
+						? "text-cyan-100"
+						: "text-white/35 hover:text-white/65",
+				)}
 			>
-				{section.title}
+				<span className="truncate">{section.title}</span>
 				{open ? (
-					<ChevronDown className="w-3 h-3" />
+					<ChevronDown className="w-3.5 h-3.5 text-cyan-300" />
 				) : (
-					<ChevronRight className="w-3 h-3" />
+					<ChevronRight className="w-3.5 h-3.5 text-white/30" />
 				)}
 			</button>
 			{open && (
-				<div className="ml-1 space-y-0.5">
+				<div className="space-y-1 px-2 pb-2">
 					{items.map((item) => {
 						// Only mark as active if this is the most specific match
 						const active = bestMatch?.href === item.href;
@@ -657,10 +670,10 @@ function SectionGroup({
 							<Link key={item.href} href={item.href}>
 								<div
 									className={cn(
-										"flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] cursor-pointer transition-all duration-150 group",
+										"flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] cursor-pointer transition-all duration-150 group",
 										active
-											? "bg-cyan-600 text-white shadow-sm shadow-cyan-950/20"
-											: "text-white/60 hover:text-white hover:bg-white/8",
+											? "bg-cyan-500 text-white shadow-lg shadow-cyan-950/20"
+											: "text-white/58 hover:text-white hover:bg-white/[0.075]",
 									)}
 								>
 									<Icon
@@ -668,7 +681,7 @@ function SectionGroup({
 											"w-3.5 h-3.5 flex-shrink-0",
 											active
 												? "text-white"
-												: "text-white/40 group-hover:text-white/70",
+												: "text-white/35 group-hover:text-cyan-200",
 										)}
 									/>
 									<span className="truncate">{item.label}</span>
@@ -694,6 +707,7 @@ export function Layout({ children }: { children: ReactNode }) {
 	const [modulePickerOpen, setModulePickerOpen] = useState(false);
 	const [createOpen, setCreateOpen] = useState(false);
 	const [mobileNavOpen, setMobileNavOpen] = useState(false);
+	const [openSectionTitle, setOpenSectionTitle] = useState<string | null>(null);
 	const { open: commandOpen, setOpen: setCommandOpen } = useCommandPalette();
 	useFinanceHotkeys(!!user);
 	const modulePickerRef = useRef<HTMLDivElement>(null);
@@ -745,6 +759,44 @@ export function Layout({ children }: { children: ReactNode }) {
 	);
 	const showQuickCreate = quickActions.length > 0;
 	const showModuleSwitcher = visibleModules.length > 1;
+	const adminRoles = new Set(["company_admin", "admin", "super_admin"]);
+	const isAdminUser = adminRoles.has(String((user as { role?: string })?.role ?? role));
+
+	const navSections = useMemo(() => {
+		const userRole = (user as { role?: string })?.role;
+		const isPtoRole = userRole === "pto" || userRole === "engineer";
+		let sections = activeModule.sections;
+		if (isPtoRole && activeModule.id === "construction") {
+			sections = sections.filter((s) =>
+				["Главный поток", "Себестоимость"].includes(s.title),
+			);
+		}
+		if (!isAdminUser) {
+			sections = sections.filter(
+				(s) => !["AI-Инструменты", "AI и документы"].includes(s.title),
+			);
+		}
+		return sections;
+	}, [activeModule, user, isAdminUser]);
+
+	useEffect(() => {
+		const activeSection = navSections.find((section) =>
+			section.items.some((item) => {
+				const href = resolveNavItemHref(
+					item,
+					activeModule.id,
+					role,
+					permissions,
+					allowedModules,
+				);
+				return navItemMatches(pathWithSearch, href);
+			}),
+		);
+		setOpenSectionTitle(activeSection?.title ?? navSections[0]?.title ?? null);
+		// Sync the sidebar only when navigation context changes. Manual section
+		// toggles should not be immediately overwritten by array identity changes.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [activeModule.id, pathWithSearch]);
 
 	const initials =
 		user?.firstName && user?.lastName
@@ -789,9 +841,6 @@ export function Layout({ children }: { children: ReactNode }) {
 		setMobileNavOpen(false);
 	}, [pathWithSearch]);
 
-	const adminRoles = new Set(["company_admin", "admin", "super_admin"]);
-	const isAdminUser = adminRoles.has(String((user as { role?: string })?.role ?? role));
-
 	return (
 		<div
 			className="flex h-screen overflow-hidden"
@@ -815,61 +864,52 @@ export function Layout({ children }: { children: ReactNode }) {
 			{/* ───── SIDEBAR ───── */}
 			<aside
 				className={cn(
-					"w-[220px] flex-shrink-0 flex flex-col overflow-hidden z-50",
+					"w-[244px] flex-shrink-0 flex flex-col overflow-hidden z-50",
 					"fixed md:relative inset-y-0 left-0 transition-transform duration-200",
 					mobileNavOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
 				)}
 				style={{
-					background: "linear-gradient(180deg, #06111F 0%, #0B1F2F 100%)",
+					background:
+						"radial-gradient(circle at 20% 0%, rgba(14,165,233,0.22), transparent 26%), radial-gradient(circle at 100% 24%, rgba(20,184,166,0.15), transparent 30%), linear-gradient(180deg, #030A12 0%, #071827 46%, #08131E 100%)",
 				}}
 			>
 				{/* Logo */}
-				<div className="px-4 py-4 border-b border-white/10">
+				<div className="px-4 py-4 border-b border-white/8">
 					<PlanalitycLogo variant="sidebar" />
 				</div>
 
 				{/* Nav */}
 				<nav
-					className="flex-1 overflow-y-auto py-3 px-3 space-y-2 scrollbar-thin"
+					className="flex-1 overflow-y-auto py-3 px-3 space-y-2.5 scrollbar-thin"
 					style={{ scrollbarColor: "#ffffff12 transparent" }}
 				>
-					{(() => {
-						const userRole = (user as { role?: string })?.role;
-						const isPtoRole = userRole === "pto" || userRole === "engineer";
-						let sections = activeModule.sections;
-						if (isPtoRole && activeModule.id === "construction") {
-							sections = sections.filter((s) =>
-								["Управление", "Ресурсы"].includes(s.title),
-							);
-						}
-						if (!isAdminUser) {
-							sections = sections.filter((s) => s.title !== "AI-Инструменты");
-						}
-						return sections.map((section, i) => (
-							<SectionGroup
-								key={section.title}
-								section={section}
-								location={pathWithSearch}
-								moduleId={activeModule.id}
-								role={role}
-								permissions={permissions}
-								allowedModules={allowedModules}
-								defaultOpen={
-									section.title === "AI-Инструменты" ? false : i === 0
-								}
-							/>
-						));
-					})()}
+					{navSections.map((section) => (
+						<SectionGroup
+							key={section.title}
+							section={section}
+							location={pathWithSearch}
+							moduleId={activeModule.id}
+							role={role}
+							permissions={permissions}
+							allowedModules={allowedModules}
+							open={openSectionTitle === section.title}
+							onToggle={() =>
+								setOpenSectionTitle((current) =>
+									current === section.title ? null : section.title,
+								)
+							}
+						/>
+					))}
 				</nav>
 
 				{/* Quick create — отдельная панель, чтобы не путать с разделами меню */}
 				{showQuickCreate && (
-					<div className="px-3 pb-3 pt-2 border-t border-white/10">
+					<div className="px-3 pb-3 pt-2 border-t border-white/8">
 						<div
-							className="rounded-lg px-2 py-2.5 border border-cyan-400/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+							className="rounded-2xl px-2.5 py-3 border border-cyan-400/18 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
 							style={{
 								background:
-									"linear-gradient(165deg, rgba(8, 47, 73, 0.72) 0%, rgba(12, 28, 42, 0.96) 100%)",
+									"linear-gradient(165deg, rgba(8, 47, 73, 0.78) 0%, rgba(12, 28, 42, 0.94) 100%)",
 							}}
 						>
 							<div className="flex items-center gap-1.5 px-1 mb-1.5">
@@ -880,7 +920,7 @@ export function Layout({ children }: { children: ReactNode }) {
 							</div>
 							{quickActions.map((qa) => (
 								<Link key={qa.href} href={qa.href}>
-									<div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-white/55 hover:text-white hover:bg-cyan-500/16 text-[12px] cursor-pointer transition-all">
+									<div className="flex items-center gap-2 px-2 py-2 rounded-xl text-white/58 hover:text-white hover:bg-cyan-500/14 text-[12px] cursor-pointer transition-all">
 										<Plus className="w-3 h-3 text-cyan-300 flex-shrink-0" />
 										{qa.label}
 									</div>
@@ -891,8 +931,8 @@ export function Layout({ children }: { children: ReactNode }) {
 				)}
 
 				{/* User */}
-				<div className="px-3 py-3 border-t border-white/10">
-					<div className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-white/8 transition-all cursor-pointer group">
+				<div className="px-3 py-3 border-t border-white/8">
+					<div className="flex items-center gap-2.5 px-2 py-2 rounded-2xl hover:bg-white/8 transition-all cursor-pointer group">
 						<div
 							className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-[11px] flex-shrink-0"
 							style={{ background: "linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%)" }}
@@ -932,10 +972,16 @@ export function Layout({ children }: { children: ReactNode }) {
 
 					{/* Module switcher */}
 					{showModuleSwitcher ? (
-						<div className="relative" ref={modulePickerRef}>
+						<div
+							className="relative"
+							ref={modulePickerRef}
+							onMouseEnter={() => setModulePickerOpen(true)}
+							onMouseLeave={() => setModulePickerOpen(false)}
+							onFocus={() => setModulePickerOpen(true)}
+						>
 							<button
 								onClick={() => setModulePickerOpen((o) => !o)}
-								className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 text-sm font-medium text-gray-700 bg-white transition-all whitespace-nowrap"
+								className="flex lg:hidden items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 text-sm font-medium text-gray-700 bg-white transition-all whitespace-nowrap"
 							>
 								<ModuleIcon
 									className="w-4 h-4 flex-shrink-0"
@@ -944,10 +990,34 @@ export function Layout({ children }: { children: ReactNode }) {
 								<span>{activeModule.shortLabel}</span>
 								<ChevronDown className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
 							</button>
+							<div className="hidden lg:flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-slate-50/90 p-1 shadow-inner">
+								{visibleModules.map((m) => {
+									const Icon = m.icon;
+									const active = m.id === activeModule.id;
+									return (
+										<Link key={m.id} href={getModuleEntryHref(m)}>
+											<div
+												className={cn(
+													"group flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium transition-all",
+													active
+														? "bg-slate-950 text-white shadow-sm"
+														: "text-slate-500 hover:bg-white hover:text-slate-950",
+												)}
+											>
+												<Icon
+													className="h-4 w-4 flex-shrink-0"
+													style={{ color: active ? "#67e8f9" : m.color }}
+												/>
+												<span className="max-xl:hidden">{m.shortLabel}</span>
+											</div>
+										</Link>
+									);
+								})}
+							</div>
 							{modulePickerOpen && (
 								<div
-									className="absolute top-full left-0 mt-1 bg-white rounded-xl border border-gray-100 shadow-xl py-1 overflow-hidden"
-									style={{ zIndex: 9999, minWidth: "210px" }}
+									className="absolute top-full left-0 mt-2 w-[280px] overflow-hidden rounded-3xl border border-slate-200 bg-white/95 p-2 shadow-2xl shadow-slate-900/16 backdrop-blur"
+									style={{ zIndex: 9999 }}
 								>
 									{visibleModules.map((m) => {
 										const Icon = m.icon;
@@ -956,18 +1026,43 @@ export function Layout({ children }: { children: ReactNode }) {
 											<Link key={m.id} href={moduleHref}>
 												<div
 													className={cn(
-														"flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer transition-colors whitespace-nowrap",
+														"flex items-center gap-3 rounded-2xl px-3 py-3 text-sm cursor-pointer transition-all whitespace-nowrap",
 														m.id === activeModule.id
-															? "bg-cyan-50 text-cyan-950"
-															: "hover:bg-gray-50 text-gray-900",
+															? "bg-slate-950 text-white shadow-sm"
+															: "hover:bg-slate-50 text-slate-800",
 													)}
 													onClick={() => setModulePickerOpen(false)}
 												>
-													<Icon
-														className="w-4 h-4 flex-shrink-0"
-														style={{ color: m.color }}
-													/>
-													{m.label}
+													<div
+														className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-100"
+														style={{
+															background:
+																m.id === activeModule.id
+																	? "rgba(255,255,255,0.12)"
+																	: `${m.color}14`,
+														}}
+													>
+														<Icon
+															className="w-4 h-4 flex-shrink-0"
+															style={{
+																color:
+																	m.id === activeModule.id ? "#67e8f9" : m.color,
+															}}
+														/>
+													</div>
+													<div className="min-w-0">
+														<div className="truncate font-semibold">{m.label}</div>
+														<div
+															className={cn(
+																"text-xs",
+																m.id === activeModule.id
+																	? "text-white/45"
+																	: "text-slate-400",
+															)}
+														>
+															{m.sections.length} разделов
+														</div>
+													</div>
 												</div>
 											</Link>
 										);

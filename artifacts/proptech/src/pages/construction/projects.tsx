@@ -871,22 +871,22 @@ export default function ConstructionProjects() {
 						return (
 							<div
 								key={p.id}
-								className="group overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-lg hover:shadow-slate-900/8"
+								className="group overflow-hidden rounded-[28px] border border-white/80 bg-white/78 shadow-2xl shadow-slate-950/8 backdrop-blur-xl transition-all hover:-translate-y-1 hover:border-cyan-300/70 hover:shadow-cyan-950/12"
 							>
-								<div className="grid gap-3 p-4 lg:grid-cols-[1.05fr_0.95fr]">
-									<div className="min-w-0">
+								<div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
+									<div className="min-w-0 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 p-4 text-white">
 										<div className="flex items-start justify-between gap-3">
 											<div className="min-w-0">
-												<p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+												<p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300/85">
 													Проект / ЖК
 												</p>
-												<h3 className="mt-1 truncate text-xl font-black text-slate-950">
+												<h3 className="mt-1 truncate text-xl font-black text-white">
 												{p.name}
 											</h3>
 											{(p.address || p.region) && (
 													<div className="mt-1 flex items-center gap-1.5">
-														<MapPin className="h-3.5 w-3.5 flex-shrink-0 text-slate-400" />
-														<p className="truncate text-sm text-slate-500">
+														<MapPin className="h-3.5 w-3.5 flex-shrink-0 text-cyan-200/70" />
+														<p className="truncate text-sm text-slate-300">
 														{p.address || p.region}
 													</p>
 												</div>
@@ -898,26 +898,26 @@ export default function ConstructionProjects() {
 										>
 											{STATUS_LABEL[p.status] || p.status}
 										</Badge>
-									</div>
+										</div>
 
 										<div className="mt-3 grid gap-2 sm:grid-cols-3">
-											<div className="rounded-xl bg-slate-50 p-2.5">
+											<div className="rounded-2xl border border-white/10 bg-white/8 p-2.5 backdrop-blur">
 												<p className="text-[11px] text-slate-400">Тип</p>
-												<p className="mt-1 truncate text-sm font-bold text-slate-800">
+												<p className="mt-1 truncate text-sm font-bold text-white">
 												{BUILD_TYPE_LABELS[p.buildingType]
 													?.split("(")[0]
 													.trim() || p.buildingType}
 											</p>
 										</div>
-											<div className="rounded-xl bg-slate-50 p-2.5">
+											<div className="rounded-2xl border border-white/10 bg-white/8 p-2.5 backdrop-blur">
 												<p className="text-[11px] text-slate-400">Этажей</p>
-												<p className="mt-1 text-lg font-black text-slate-900">
+												<p className="mt-1 text-lg font-black text-white">
 												{p.totalFloors || "—"}
 											</p>
 										</div>
-											<div className="rounded-xl bg-slate-50 p-2.5">
+											<div className="rounded-2xl border border-white/10 bg-white/8 p-2.5 backdrop-blur">
 												<p className="text-[11px] text-slate-400">Юнитов</p>
-												<p className="mt-1 text-lg font-black text-slate-900">
+												<p className="mt-1 text-lg font-black text-white">
 												{p.totalUnits || "—"}
 											</p>
 										</div>
@@ -951,18 +951,18 @@ export default function ConstructionProjects() {
 										</div>
 									)}
 
-										<div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+										<div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
 											<Button
 												size="sm"
 												variant="outline"
-												className="h-9 flex-1 rounded-xl text-sm"
+												className="h-9 flex-1 border-white/15 bg-white/10 text-white hover:bg-white/15"
 												onClick={() => setDialog(p)}
 											>
 												<Edit2 className="mr-2 h-4 w-4" /> Редактировать
 											</Button>
 											<a
 												href={`/construction/chess?projectId=${p.id}`}
-												className="inline-flex h-9 items-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
+												className="inline-flex h-9 items-center gap-2 rounded-full bg-cyan-400 px-4 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-950/20 transition hover:bg-cyan-300"
 											>
 												<Grid3X3 className="h-4 w-4" /> Шахматка
 											</a>
@@ -977,13 +977,13 @@ export default function ConstructionProjects() {
 										</div>
 									</div>
 
-									<div className="space-y-3">
+									<div className="space-y-3 p-4">
 									{cost.total > 0 && (
-											<div className="rounded-lg border border-amber-100 bg-gradient-to-br from-amber-50 to-orange-50 p-3.5">
-												<p className="text-xs font-bold uppercase tracking-[0.16em] text-orange-600">
+											<div className="rounded-[24px] border border-amber-200/90 bg-gradient-to-br from-amber-50 via-white to-cyan-50 p-4 shadow-inner">
+												<p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">
 												{projectCostLabel(p.currency || "KGS")}
 											</p>
-												<p className="mt-2 text-2xl font-black text-orange-700">
+												<p className="mt-2 text-2xl font-black text-slate-950">
 												{fmtProjectAmount(cost.total)} {sym}
 											</p>
 											{breakdown && (
@@ -998,7 +998,7 @@ export default function ConstructionProjects() {
 									)}
 
 									{area > 0 && (plannedCostPerSqm > 0 || currentCostPerSqm > 0) && (
-											<div className="rounded-lg border border-slate-200 bg-slate-50 p-3.5">
+											<div className="rounded-[22px] border border-slate-200/80 bg-white/70 p-3.5 shadow-sm shadow-slate-950/4">
 												<p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
 												Стоимость за кв.м
 											</p>
@@ -1023,7 +1023,7 @@ export default function ConstructionProjects() {
 										</div>
 									)}
 
-										<div className="rounded-lg border border-slate-100 bg-white p-3.5">
+										<div className="rounded-[22px] border border-cyan-100 bg-cyan-50/55 p-3.5">
 											<div className="flex items-start gap-3">
 												<div className="rounded-2xl bg-cyan-50 p-2 text-cyan-700">
 													<CalendarDays className="h-4 w-4" />

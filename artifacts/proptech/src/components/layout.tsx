@@ -1051,7 +1051,7 @@ export function Layout({ children }: { children: ReactNode }) {
 			{/* ───── MAIN AREA ───── */}
 			<div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 				{/* ── TOP HEADER ── */}
-				<header className="h-14 bg-white/92 backdrop-blur border-b border-gray-100 flex items-center px-3 md:px-5 gap-2 md:gap-3 flex-shrink-0 relative z-50 shadow-sm">
+				<header className="min-h-16 border-b border-white/70 bg-white/62 backdrop-blur-2xl flex items-center px-3 md:px-5 gap-2 md:gap-3 flex-shrink-0 relative z-50 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.45)]">
 					<button
 						type="button"
 						className="md:hidden p-2 rounded-lg hover:bg-gray-100 text-gray-600"
@@ -1081,7 +1081,7 @@ export function Layout({ children }: { children: ReactNode }) {
 								<span>{activeModuleShortLabel}</span>
 								<ChevronDown className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
 							</button>
-							<div className="hidden lg:flex items-center gap-1 rounded-lg border border-slate-200/80 bg-slate-50/90 p-1 shadow-inner">
+							<div className="hidden lg:flex items-center gap-1 rounded-[22px] border border-white/80 bg-white/66 p-1.5 shadow-xl shadow-slate-950/8 backdrop-blur-xl">
 								{visibleModules.map((m) => {
 									const Icon = m.icon;
 									const active = m.id === activeModule.id;
@@ -1090,9 +1090,9 @@ export function Layout({ children }: { children: ReactNode }) {
 											<div
 												className={cn(
 													"group flex h-10 items-center justify-center rounded-xl text-sm font-semibold transition-all",
-													active
-														? "min-w-[124px] gap-2 bg-slate-950 px-3 text-white shadow-sm"
-														: "w-10 text-slate-500 hover:bg-white hover:text-slate-950",
+														active
+															? "min-w-[132px] gap-2 bg-gradient-to-br from-slate-950 to-cyan-950 px-3 text-white shadow-lg shadow-cyan-950/20"
+															: "w-10 text-slate-500 hover:bg-white/80 hover:text-slate-950",
 												)}
 												title={m.label}
 											>
@@ -1182,11 +1182,11 @@ export function Layout({ children }: { children: ReactNode }) {
 					<button
 						type="button"
 						onClick={() => setCommandOpen(true)}
-							className="relative hidden min-w-0 max-w-[760px] flex-1 items-center rounded-xl border border-gray-200 bg-gray-50 py-2 pl-9 pr-14 text-left text-sm text-gray-500 transition-all hover:border-gray-300 sm:flex"
-					>
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 pointer-events-none" />
-						<span>Поиск по проектам, контрагентам, договорам…</span>
-						<span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded font-mono">
+							className="relative hidden min-w-0 max-w-[820px] flex-1 items-center rounded-[22px] border border-white/80 bg-white/66 py-3 pl-11 pr-16 text-left text-sm text-slate-500 shadow-xl shadow-slate-950/6 backdrop-blur-xl transition-all hover:border-cyan-200 hover:bg-white/86 sm:flex"
+						>
+							<Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-700/70 pointer-events-none" />
+							<span>Поиск по проектам, контрагентам, договорам…</span>
+							<span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 bg-slate-100/90 px-1.5 py-0.5 rounded-lg font-mono">
 							⌘W
 						</span>
 					</button>
@@ -1206,7 +1206,7 @@ export function Layout({ children }: { children: ReactNode }) {
 						<div className="relative" ref={createRef}>
 							<button
 								onClick={() => setCreateOpen((o) => !o)}
-								className="flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-lg text-sm font-semibold text-white transition-all shadow-sm hover:shadow-md whitespace-nowrap bg-cyan-700 hover:bg-cyan-800 shadow-cyan-950/10"
+									className="flex h-11 items-center gap-1.5 rounded-full bg-gradient-to-r from-cyan-700 to-teal-600 px-3 text-sm font-bold text-white shadow-xl shadow-cyan-950/18 transition-all hover:-translate-y-0.5 hover:shadow-cyan-950/25 md:px-5 whitespace-nowrap"
 							>
 								<Plus className="w-4 h-4" />
 								Создать
@@ -1214,13 +1214,13 @@ export function Layout({ children }: { children: ReactNode }) {
 							</button>
 							{createOpen && (
 								<div
-									className="absolute top-full right-0 mt-1 w-52 bg-white rounded-xl border border-gray-100 shadow-xl py-1"
+										className="absolute top-full right-0 mt-2 w-56 overflow-hidden rounded-3xl border border-white/80 bg-white/95 p-1.5 shadow-2xl shadow-slate-950/16 backdrop-blur-xl"
 									style={{ zIndex: 9999 }}
 								>
 									{quickActions.map((qa) => (
 										<Link key={qa.href} href={qa.href}>
 											<div
-												className="px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+													className="rounded-2xl px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-cyan-50 cursor-pointer transition-colors"
 												onClick={() => setCreateOpen(false)}
 											>
 												{qa.label}

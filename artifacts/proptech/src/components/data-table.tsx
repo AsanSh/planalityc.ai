@@ -299,10 +299,10 @@ export function DataTable<T>({
 			title={title}
 			onClick={() => setDensity(d)}
 			className={cn(
-				"p-1.5 rounded-md transition-colors",
+				"p-1.5 rounded-full transition-colors",
 				density === d
-					? "bg-gray-900 text-white"
-					: "text-gray-500 hover:bg-gray-100",
+					? "bg-slate-950 text-white shadow-sm"
+					: "text-slate-500 hover:bg-white/80",
 			)}
 		>
 			<Icon className="w-4 h-4" />
@@ -312,7 +312,7 @@ export function DataTable<T>({
 	return (
 		<div className="space-y-3">
 			{!hideToolbar && (
-			<div className="flex items-center gap-2 flex-wrap">
+			<div className="am-shell-filter p-2 flex items-center gap-2 flex-wrap">
 				{toolbar}
 				{enableSearch && (
 					<div className="relative min-w-[220px] flex-1 sm:flex-none">
@@ -321,13 +321,13 @@ export function DataTable<T>({
 							value={globalFilter}
 							onChange={(e) => setGlobalFilter(e.target.value)}
 							placeholder={searchPlaceholder}
-							className="pl-8 h-9 w-full sm:w-64 border-gray-200"
+							className="pl-8 h-10 w-full sm:w-64"
 						/>
 					</div>
 				)}
 				<div className="flex-1" />
 				{toolbarEnd}
-				<div className="flex items-center gap-0.5 border border-gray-200 rounded-lg p-0.5">
+				<div className="flex items-center gap-0.5 rounded-full border border-slate-200/90 bg-white/70 p-0.5 shadow-sm shadow-slate-950/5">
 					{densityBtn("compact", Rows4, "Компактно")}
 					{densityBtn("normal", Rows3, "Средне")}
 					{densityBtn("comfortable", Rows2, "Просторно")}
@@ -335,7 +335,7 @@ export function DataTable<T>({
 				<Button
 					variant="outline"
 					size="sm"
-					className="h-9 gap-1.5 text-sm border-gray-200"
+					className="h-10 gap-1.5 text-sm"
 					onClick={exportCsv}
 				>
 					<Download className="w-4 h-4" /> CSV
@@ -345,7 +345,7 @@ export function DataTable<T>({
 						<Button
 							variant="outline"
 							size="sm"
-							className="h-9 gap-1.5 text-sm border-gray-200"
+							className="h-10 gap-1.5 text-sm"
 						>
 							<SlidersHorizontal className="w-4 h-4" /> Столбцы
 						</Button>
@@ -402,7 +402,7 @@ export function DataTable<T>({
 					"overflow-auto",
 					isExcel
 						? "border border-gray-300 rounded-sm bg-white"
-						: "bg-white rounded-xl border border-gray-100 shadow-sm",
+						: "am-card rounded-[24px] border border-white/70 bg-white/80 shadow-xl shadow-slate-950/8 backdrop-blur-xl",
 				)}
 				style={maxHeight ? { maxHeight } : undefined}
 			>
@@ -422,7 +422,7 @@ export function DataTable<T>({
 								className={
 									isExcel
 										? "bg-[#E8EAED]"
-										: "bg-gray-50/80 border-b border-gray-100"
+										: "border-b border-slate-200/70 bg-slate-900 text-white"
 								}
 							>
 								{showRowIndex && (
@@ -452,7 +452,7 @@ export function DataTable<T>({
 												"relative select-none group/col",
 												isExcel
 													? "border border-gray-300 py-1.5 px-2 font-semibold text-gray-700 whitespace-nowrap text-[11px] sticky top-0 z-20 shadow-[0_1px_0_0_#d1d5db]"
-													: "px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-am-text-muted whitespace-nowrap",
+													: "px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/78 whitespace-nowrap sticky top-0 z-20",
 												align === "right"
 													? "text-right"
 													: align === "center"
@@ -547,8 +547,8 @@ export function DataTable<T>({
 											? rowIndex % 2 === 0
 												? "bg-white"
 												: "bg-[#F8F9FA]"
-											: "border-b border-gray-50 transition-colors",
-										onRowClick && "cursor-pointer hover:bg-blue-50/30",
+											: "border-b border-slate-100/80 bg-white/70 transition-colors odd:bg-white/55",
+										onRowClick && "cursor-pointer hover:bg-cyan-50/70",
 										rowClassName?.(row.original),
 									)}
 								>
@@ -580,7 +580,7 @@ export function DataTable<T>({
 												className={cn(
 													isExcel
 														? "border border-gray-300 px-2 py-1 text-gray-800 overflow-hidden"
-														: ["px-3", padding, "overflow-hidden"],
+														: ["px-3 text-slate-700", padding, "overflow-hidden"],
 													align === "right"
 														? "text-right"
 														: align === "center"

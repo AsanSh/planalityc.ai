@@ -107,7 +107,7 @@ export function ModuleCommandCenter({
 }: ModuleCommandCenterProps) {
 	return (
 		<section className="construction-hero relative overflow-hidden rounded-[28px] border border-white/60 bg-[#eef7f5] p-5 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)] md:p-7">
-			<div className="relative z-10 grid gap-5 xl:grid-cols-[1.05fr_1.45fr]">
+			<div className="relative z-10 grid items-start gap-5 xl:grid-cols-[1.05fr_1.45fr]">
 				<div className="flex flex-col justify-between gap-5">
 					<div>
 						<div className="mb-3 inline-flex rounded-full bg-white/70 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
@@ -146,7 +146,7 @@ export function ModuleCommandCenter({
 					</div>
 				</div>
 
-				<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+				<div className="grid content-start gap-3 sm:grid-cols-2 xl:grid-cols-4">
 					{metrics.map((metric) => {
 						const Icon = metric.icon;
 						const tone = toneMap[metric.tone || "cyan"];
@@ -154,7 +154,7 @@ export function ModuleCommandCenter({
 							<Link
 								key={metric.label}
 								href={metric.href}
-								className={`construction-card-in group rounded-3xl border border-white/80 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${tone.card}`}
+								className={`construction-card-in group min-h-[168px] rounded-3xl border border-white/80 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${tone.card}`}
 							>
 								<div className="flex items-start justify-between gap-3">
 									<div className={`rounded-2xl p-2.5 ${tone.icon}`}>

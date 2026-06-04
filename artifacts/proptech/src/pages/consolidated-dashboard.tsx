@@ -389,7 +389,7 @@ export default function ConsolidatedDashboard() {
 
 	return (
 		<div className="max-w-7xl">
-		<div className="flex flex-col lg:flex-row gap-6 items-start">
+		<div className="flex flex-col gap-6">
 
 		<div className="flex-1 min-w-0 space-y-6 w-full">
 			<section className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -618,12 +618,12 @@ export default function ConsolidatedDashboard() {
 			</div>
 		</div>
 
-		<div className="w-full lg:w-72 flex-shrink-0 space-y-4 lg:sticky lg:top-4">
-			<div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+		<div className="grid w-full gap-4 lg:grid-cols-4">
+			<div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 lg:col-span-2">
 				<p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
 					Подключаемые модули
 				</p>
-				<div className="mt-3 space-y-2">
+				<div className="mt-3 grid gap-2 sm:grid-cols-2">
 					{SECOND_LAYER_MODULES.map((module) => (
 						<Link key={module.label} href={module.href}>
 							<div className="rounded-lg border border-slate-200 p-3 hover:border-cyan-200 hover:bg-cyan-50/40 cursor-pointer transition-colors">
@@ -642,7 +642,7 @@ export default function ConsolidatedDashboard() {
 				</div>
 			</div>
 
-			<div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+			<div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 				<div className="px-4 py-3 border-b flex items-center justify-between">
 					<div className="flex items-center gap-2">
 						<CheckSquare className="w-4 h-4 text-blue-600" />
@@ -693,7 +693,7 @@ export default function ConsolidatedDashboard() {
 				))}
 			</div>
 
-			<div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+			<div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 				<div className="px-4 py-3 border-b flex items-center justify-between">
 					<div className="flex items-center gap-2">
 						<TrendingUp className="w-4 h-4 text-gray-500" />
@@ -729,7 +729,7 @@ export default function ConsolidatedDashboard() {
 				)}
 			</div>
 
-			<div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 space-y-2">
+			<div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2">
 				<p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Быстрый переход</p>
 				{quickLinks.map((l) => (
 					<Link key={l.label} href={l.href}>

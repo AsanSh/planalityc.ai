@@ -900,7 +900,11 @@ export default function ConstructionChess() {
 	const [ptoEditUnit, setPtoEditUnit] = useState<Unit | null>(null);
 	const isPTO = forcedRoleByUser || (isAdmin && adminModeOverride === "pto");
 	const isPricingMode = isCommercialDirector || (isAdmin && adminModeOverride === "pricing");
-	const [projectId, setProjectId] = useState<number | null>(null);
+	const [projectId, setProjectId] = useState<number | null>(() => {
+		const raw = new URLSearchParams(window.location.search).get("projectId");
+		const parsed = raw ? Number(raw) : NaN;
+		return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+	});
 	const [selectedUnit, setSelectedUnit] = useState<Unit | null | "new">(null);
 	const [pricingUnit, setPricingUnit] = useState<Unit | null>(null);
 	const [saleFlow, setSaleFlow] = useState<{
@@ -975,6 +979,12 @@ export default function ConstructionChess() {
 	const floors = Array.from(
 		new Set(filteredUnits.map((u) => u.floor || 0)),
 	).sort((a, b) => b - a);
+	const maxUnitsOnFloor = Math.max(
+		1,
+		...floors.map(
+			(floor) => filteredUnits.filter((u) => (u.floor || 0) === floor).length,
+		),
+	);
 
 	const selectedProject = projects.find((p) => p.id === projectId);
 
@@ -1193,17 +1203,17 @@ export default function ConstructionChess() {
 			</div>
 
 			{/* Project selector */}
-			<div className="bg-white rounded-xl border border-gray-200 p-4">
-				<div className="flex items-center gap-3 flex-wrap">
-					<Label className="text-sm font-medium whitespace-nowrap">
-						Проект:
+			<div className="rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm">
+				<div className="flex items-center gap-3 overflow-x-auto">
+					<Label className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400 whitespace-nowrap">
+						Проект
 					</Label>
-					<div className="flex gap-2 flex-wrap">
+					<div className="flex min-w-max gap-2">
 						{projects.map((p) => (
 							<button
 								key={p.id}
 								onClick={() => setProjectId(p.id)}
-								className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${projectId === p.id ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+								className={`rounded-2xl px-3 py-2 text-xs font-bold transition-colors ${projectId === p.id ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
 							>
 								{p.name}
 							</button>
@@ -1219,68 +1229,66 @@ export default function ConstructionChess() {
 				</div>
 			) : (
 				<>
-					{/* Legend + Stats */}
-					<div className="flex flex-wrap gap-3">
-						{unpublishedCount > 0 && (
-							<div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-gray-50 border-gray-200">
-								<Lock className="w-3.5 h-3.5 text-gray-500" />
-								<span className="text-xs font-medium text-gray-600">
-									Не опубликовано
-								</span>
-								<span className="text-xs font-bold text-gray-800">{unpublishedCount}</span>
+					{/* Legend + filters */}
+					<div className="rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm">
+						<div className="flex flex-wrap items-center justify-between gap-3">
+							<div className="flex flex-wrap gap-2">
+								{unpublishedCount > 0 && (
+									<div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+										<Lock className="h-3.5 w-3.5 text-slate-500" />
+										<span className="text-xs font-medium text-slate-600">
+											Не опубликовано
+										</span>
+										<span className="text-xs font-bold text-slate-800">{unpublishedCount}</span>
+									</div>
+								)}
+								{stats.map((s) => (
+									<div
+										key={s.key}
+										className={`flex items-center gap-2 rounded-2xl border px-3 py-2 ${s.bg} ${s.border}`}
+									>
+										<div
+											className={`h-3 w-3 rounded ${s.bg.replace("hover:", "").replace("50", "400").split(" ")[0]}`}
+										/>
+										<span className={`text-xs font-medium ${s.text}`}>
+											{s.label}
+										</span>
+										<span className={`text-xs font-bold ${s.text}`}>{s.count}</span>
+									</div>
+								))}
 							</div>
-						)}
-						{stats.map((s) => (
-							<div
-								key={s.key}
-								className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${s.bg} ${s.border}`}
-							>
-								<div
-									className={`w-3 h-3 rounded ${s.bg.replace("hover:", "").replace("50", "400").split(" ")[0]}`}
-								/>
-								<span className={`text-xs font-medium ${s.text}`}>
-									{s.label}
-								</span>
-								<span className={`text-xs font-bold ${s.text}`}>{s.count}</span>
+							<div className="flex flex-wrap gap-2">
+								{(
+									[
+										{ id: "grid" as ViewMode, label: "Шахматка", icon: Grid3X3 },
+										{ id: "by-unit" as ViewMode, label: "По квартире", icon: Building2 },
+										{
+											id: "by-counterparty" as ViewMode,
+											label: "По контрагенту",
+											icon: Users,
+										},
+									] as const
+								).map(({ id, label, icon: Icon }) => (
+									<button
+										key={id}
+										type="button"
+										onClick={() => setViewMode(id)}
+										className={`inline-flex items-center gap-1.5 rounded-2xl px-3 py-2 text-xs font-bold transition-colors ${viewMode === id ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+									>
+										<Icon className="h-3.5 w-3.5" />
+										{label}
+									</button>
+								))}
 							</div>
-						))}
-					</div>
-
-					{/* View mode */}
-					<div className="flex flex-wrap gap-2 items-center">
-						<span className="text-xs text-gray-500 mr-1">Вид:</span>
-						{(
-							[
-								{ id: "grid" as ViewMode, label: "Шахматка", icon: Grid3X3 },
-								{ id: "by-unit" as ViewMode, label: "По квартире", icon: Building2 },
-								{
-									id: "by-counterparty" as ViewMode,
-									label: "По контрагенту",
-									icon: Users,
-								},
-							] as const
-						).map(({ id, label, icon: Icon }) => (
-							<button
-								key={id}
-								type="button"
-								onClick={() => setViewMode(id)}
-								className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${viewMode === id ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-							>
-								<Icon className="w-3.5 h-3.5" />
-								{label}
-							</button>
-						))}
-					</div>
-
-					{/* Filters */}
-					<div className="flex flex-wrap gap-2">
-						{blocks.length > 2 &&
-							blocks.map((b) => (
+						</div>
+						<div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+							{blocks.length > 2 &&
+								blocks.map((b) => (
 								<button
 									key={b}
 									type="button"
 									onClick={() => setBlockFilter(b)}
-									className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${blockFilter === b ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+										className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${blockFilter === b ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
 								>
 									{b === "all" ? "Все секции" : `Секция ${b}`}
 								</button>
@@ -1288,7 +1296,7 @@ export default function ConstructionChess() {
 						<button
 							type="button"
 							onClick={() => setStatusFilter("all")}
-							className={`px-3 py-1.5 rounded-full text-xs font-medium ${statusFilter === "all" ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-700"}`}
+								className={`rounded-full px-3 py-1.5 text-xs font-medium ${statusFilter === "all" ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}`}
 						>
 							Все статусы
 						</button>
@@ -1299,12 +1307,13 @@ export default function ConstructionChess() {
 									key={s.code}
 									type="button"
 									onClick={() => setStatusFilter(s.code)}
-									className={`px-3 py-1.5 rounded-full text-xs font-medium ${statusFilter === s.code ? `${v.bg} ${v.text} border ${v.border}` : "bg-gray-100 text-gray-700"}`}
+										className={`rounded-full px-3 py-1.5 text-xs font-medium ${statusFilter === s.code ? `${v.bg} ${v.text} border ${v.border}` : "bg-slate-100 text-slate-600"}`}
 								>
 									{v.label}
 								</button>
 							);
 						})}
+						</div>
 					</div>
 
 					{viewMode === "by-unit" && (
@@ -1388,7 +1397,7 @@ export default function ConstructionChess() {
 							)}
 						<MatrixTableFrame
 							title="Сетка квартир"
-							maxHeight="calc(100vh - 280px)"
+							maxHeight="calc(100vh - 248px)"
 							onExportCsv={() =>
 								exportChessUnitsCsv(
 									filteredUnits,
@@ -1396,13 +1405,14 @@ export default function ConstructionChess() {
 								)
 							}
 						>
-							<div className="p-4 min-w-max">
+							<div className="min-w-max bg-slate-50/70 p-4">
 								{floors.length === 0 ? (
 									<div className="p-4 text-center text-gray-400">
 										Нет данных для отображения
 									</div>
 								) : (
-									floors.map((floor) => {
+									<div className="space-y-2">
+									{floors.map((floor) => {
 										const floorUnits = filteredUnits
 											.filter((u) => (u.floor || 0) === floor)
 											.sort((a, b) =>
@@ -1413,12 +1423,14 @@ export default function ConstructionChess() {
 										return (
 											<div
 												key={floor}
-												className="flex items-center gap-2 mb-1.5"
+													className="grid items-center gap-3"
+													style={{
+														gridTemplateColumns: `56px repeat(${maxUnitsOnFloor}, 72px)`,
+													}}
 											>
-												<div className="w-12 text-right text-[10px] font-bold text-gray-400 pr-1 flex-shrink-0">
+													<div className="text-right text-xs font-black text-slate-400">
 													{floor > 0 ? `${floor}эт` : "—"}
 												</div>
-												<div className="flex gap-1 flex-wrap">
 													{floorUnits.map((unit) => {
 														const cfg = gridCfgFor(
 															statusGridMap,
@@ -1439,8 +1451,7 @@ export default function ConstructionChess() {
 																		? `${unit.unitNumber} · не опубликовано коммерческим директором`
 																		: `${unit.unitNumber} · ${unit.area ? `${unit.area} м²` : ""} · ${cfg.label}`
 																}
-																className={`w-14 rounded border-2 text-center transition-all flex flex-col items-center justify-center p-0.5 relative ${lockedForSales ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:shadow-sm"} ${cellBg} ${cellBorder}`}
-																style={{ minHeight: "48px" }}
+																	className={`relative flex h-16 w-[72px] flex-col items-center justify-center rounded-2xl border-2 text-center shadow-sm transition-all ${lockedForSales ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:-translate-y-0.5 hover:shadow-md"} ${cellBg} ${cellBorder}`}
 																onClick={() => {
 																	if (isPTO) setPtoEditUnit(unit);
 																	else openUnit(unit);
@@ -1452,7 +1463,7 @@ export default function ConstructionChess() {
 																{!isPTO && cellModified && (
 																	<div className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[7px] font-bold px-0.5 rounded z-10">Δ</div>
 																)}
-																<span className={`text-[10px] font-bold ${lockedForSales ? "text-gray-500" : cfg.text}`}>
+																	<span className={`text-sm font-black ${lockedForSales ? "text-gray-500" : cfg.text}`}>
 																	{unit.unitNumber}
 																</span>
 																{isPTO ? (
@@ -1471,10 +1482,11 @@ export default function ConstructionChess() {
 															</div>
 														);
 													})}
-												</div>
 											</div>
 										);
 									})
+									}
+									</div>
 								)}
 							</div>
 						</MatrixTableFrame>

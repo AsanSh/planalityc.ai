@@ -37,6 +37,8 @@ import {
 	Package,
 	PieChart,
 	PiggyBank,
+	Pin,
+	PinOff,
 	Plus,
 	Receipt,
 	Rss,
@@ -610,6 +612,7 @@ interface SectionGroupProps {
 	permissions: string[];
 	allowedModules: ModuleId[];
 	open: boolean;
+	collapsed?: boolean;
 	onToggle: () => void;
 }
 
@@ -639,6 +642,7 @@ function SectionGroup({
 	permissions,
 	allowedModules,
 	open,
+	collapsed = false,
 	onToggle,
 }: SectionGroupProps) {
 	const items = section.items.map((item) => ({
@@ -655,8 +659,10 @@ function SectionGroup({
 
 	return (
 		<div
+			title={collapsed ? section.title : undefined}
 			className={cn(
 				"rounded-2xl border transition-all duration-200",
+				collapsed && "border-transparent",
 				open
 					? "border-cyan-400/18 bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
 					: "border-transparent",
@@ -666,20 +672,25 @@ function SectionGroup({
 				onClick={onToggle}
 				className={cn(
 					"w-full flex items-center justify-between gap-2 rounded-2xl px-3 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors",
+					collapsed && "justify-center px-2",
 					open || isActiveSection
 						? "text-cyan-100"
 						: "text-white/35 hover:text-white/65",
 				)}
 			>
-				<span className="truncate">{section.title}</span>
-				{open ? (
+				{collapsed ? (
+					<span className="h-1.5 w-1.5 rounded-full bg-current" />
+				) : (
+					<span className="truncate">{section.title}</span>
+				)}
+				{!collapsed && (open ? (
 					<ChevronDown className="w-3.5 h-3.5 text-cyan-300" />
 				) : (
 					<ChevronRight className="w-3.5 h-3.5 text-white/30" />
-				)}
+				))}
 			</button>
 			{open && (
-				<div className="space-y-1 px-2 pb-2">
+				<div className={cn("space-y-1 px-2 pb-2", collapsed && "px-0")}>
 					{items.map((item) => {
 						// Only mark as active if this is the most specific match
 						const active = bestMatch?.href === item.href;
@@ -689,10 +700,12 @@ function SectionGroup({
 								<div
 									className={cn(
 										"flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] cursor-pointer transition-all duration-150 group",
+										collapsed && "justify-center px-2",
 										active
 											? "bg-cyan-500 text-white shadow-lg shadow-cyan-950/20"
 											: "text-white/58 hover:text-white hover:bg-white/[0.075]",
 									)}
+									title={collapsed ? item.label : undefined}
 								>
 									<Icon
 										className={cn(
@@ -702,7 +715,7 @@ function SectionGroup({
 												: "text-white/35 group-hover:text-cyan-200",
 										)}
 									/>
-									<span className="truncate">{item.label}</span>
+									{!collapsed && <span className="truncate">{item.label}</span>}
 								</div>
 							</Link>
 						);
@@ -725,11 +738,19 @@ export function Layout({ children }: { children: ReactNode }) {
 	const [modulePickerOpen, setModulePickerOpen] = useState(false);
 	const [createOpen, setCreateOpen] = useState(false);
 	const [mobileNavOpen, setMobileNavOpen] = useState(false);
+	const [sidebarPinned, setSidebarPinned] = useState(
+		() => localStorage.getItem("planalityc_sidebar_pinned") === "1",
+	);
+	const [sidebarHovered, setSidebarHovered] = useState(false);
 	const [openSectionTitle, setOpenSectionTitle] = useState<string | null>(null);
 	const { open: commandOpen, setOpen: setCommandOpen } = useCommandPalette();
 	useFinanceHotkeys(!!user);
 	const modulePickerRef = useRef<HTMLDivElement>(null);
 	const createRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		localStorage.setItem("planalityc_sidebar_pinned", sidebarPinned ? "1" : "0");
+	}, [sidebarPinned]);
 
 	useEffect(() => {
 		function handleClickOutside(e: MouseEvent) {
@@ -778,6 +799,7 @@ export function Layout({ children }: { children: ReactNode }) {
 		[activeModule.id, role, permissions, allowedModules],
 	);
 	const showQuickCreate = quickActions.length > 0;
+	const sidebarCollapsed = !sidebarPinned && !sidebarHovered;
 	const showModuleSwitcher = visibleModules.length > 1;
 	const adminRoles = new Set(["company_admin", "admin", "super_admin"]);
 	const isAdminUser = adminRoles.has(String((user as { role?: string })?.role ?? role));
@@ -883,9 +905,13 @@ export function Layout({ children }: { children: ReactNode }) {
 
 			{/* ───── SIDEBAR ───── */}
 			<aside
+				onMouseEnter={() => setSidebarHovered(true)}
+				onMouseLeave={() => setSidebarHovered(false)}
 				className={cn(
-					"w-[244px] flex-shrink-0 flex flex-col overflow-hidden z-50",
+					"flex-shrink-0 flex flex-col overflow-hidden z-50",
 					"fixed md:relative inset-y-0 left-0 transition-transform duration-200",
+					sidebarCollapsed ? "md:w-[72px]" : "md:w-[244px]",
+					"w-[244px]",
 					mobileNavOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
 				)}
 				style={{
@@ -894,8 +920,29 @@ export function Layout({ children }: { children: ReactNode }) {
 				}}
 			>
 				{/* Logo */}
-				<div className="px-4 py-4 border-b border-white/8">
-					<PlanalitycLogo variant="sidebar" />
+				<div
+					className={cn(
+						"border-b border-white/8",
+						sidebarCollapsed ? "px-3 py-4" : "px-4 py-4",
+					)}
+				>
+					<div className={cn("flex items-center", sidebarCollapsed ? "flex-col justify-center gap-2" : "justify-between gap-2")}>
+						<PlanalitycLogo
+							variant={sidebarCollapsed ? "mark" : "sidebar"}
+							className={sidebarCollapsed ? "h-9 w-9" : undefined}
+						/>
+						<button
+							type="button"
+							onClick={() => setSidebarPinned((p) => !p)}
+							title={sidebarPinned ? "Свернуть меню" : "Закрепить меню"}
+							className={cn(
+								"hidden h-8 w-8 items-center justify-center rounded-xl text-white/45 transition hover:bg-white/10 hover:text-white md:flex",
+								sidebarCollapsed && "h-7 w-7 bg-white/5",
+							)}
+						>
+							{sidebarPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+						</button>
+					</div>
 				</div>
 
 				{/* Nav */}
@@ -913,6 +960,7 @@ export function Layout({ children }: { children: ReactNode }) {
 							permissions={permissions}
 							allowedModules={allowedModules}
 							open={openSectionTitle === section.title}
+							collapsed={sidebarCollapsed}
 							onToggle={() =>
 								setOpenSectionTitle((current) =>
 									current === section.title ? null : section.title,
@@ -925,6 +973,20 @@ export function Layout({ children }: { children: ReactNode }) {
 				{/* Quick create — отдельная панель, чтобы не путать с разделами меню */}
 				{showQuickCreate && (
 					<div className="px-3 pb-3 pt-2 border-t border-white/8">
+						{sidebarCollapsed ? (
+							<div className="flex flex-col items-center gap-1">
+								{quickActions.slice(0, 4).map((qa) => (
+									<Link key={qa.href} href={qa.href}>
+										<div
+											title={qa.label}
+											className="flex h-10 w-10 items-center justify-center rounded-2xl text-cyan-300 hover:bg-cyan-500/14 hover:text-white"
+										>
+											<Plus className="h-4 w-4" />
+										</div>
+									</Link>
+								))}
+							</div>
+						) : (
 						<div
 							className="rounded-2xl px-2.5 py-3 border border-cyan-400/18 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
 							style={{
@@ -947,6 +1009,7 @@ export function Layout({ children }: { children: ReactNode }) {
 								</Link>
 							))}
 						</div>
+						)}
 					</div>
 				)}
 
@@ -959,7 +1022,7 @@ export function Layout({ children }: { children: ReactNode }) {
 						>
 							{initials}
 						</div>
-						<div className="flex-1 min-w-0">
+						<div className={cn("flex-1 min-w-0", sidebarCollapsed && "hidden")}>
 							<div className="text-white text-[12px] font-medium truncate leading-none">
 								{displayName}
 							</div>
@@ -969,7 +1032,7 @@ export function Layout({ children }: { children: ReactNode }) {
 						</div>
 						<button
 							onClick={logout}
-							className="opacity-0 group-hover:opacity-100 transition-opacity"
+							className={cn("opacity-0 group-hover:opacity-100 transition-opacity", sidebarCollapsed && "hidden")}
 						>
 							<LogOut className="w-3.5 h-3.5 text-white/40 hover:text-white/70" />
 						</button>

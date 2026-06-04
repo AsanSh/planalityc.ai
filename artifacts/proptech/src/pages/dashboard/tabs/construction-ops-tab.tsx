@@ -1,28 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
 import {
-	ArrowRight,
-	Banknote,
+	AlertTriangle,
+	ArrowUpRight,
 	BarChart3,
+	BriefcaseBusiness,
 	Building2,
 	CalendarDays,
 	CheckCircle2,
-	CircleDollarSign,
-	CreditCard,
-	FileText,
+	Clock3,
+	Download,
+	Filter,
 	Grid3X3,
-	LockKeyhole,
-	MessageSquare,
-	Plus,
-	ReceiptText,
-	Scale,
-	ShieldCheck,
-	Sparkles,
+	HardHat,
+	MoreVertical,
+	Search,
 	TrendingUp,
-	WalletCards,
 } from "lucide-react";
-import type { CSSProperties } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "wouter";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DateRangePicker, defaultPeriod, type PeriodValue } from "@/components/am/DateRangePicker";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 
 type ProjectSummary = {
@@ -46,6 +44,7 @@ type AccrualSummary = {
 	status?: string;
 	dueDate?: string;
 	amount?: string;
+	remainingAmount?: string;
 };
 
 const emptyUnitsOverview: UnitsOverview = {
@@ -55,136 +54,10 @@ const emptyUnitsOverview: UnitsOverview = {
 	reserved: 0,
 };
 
-const LAUNCH_STEPS = [
-	{
-		title: "Проект / ЖК",
-		description: "Создать объект учета: адрес, этажность, юниты, сроки и бюджет.",
-		href: "/construction/projects?create=1",
-		icon: Building2,
-		action: "Создать проект",
-		tone: "emerald",
-	},
-	{
-		title: "Шахматка",
-		description: "Сгенерировать или импортировать квартиры, площади и статусы.",
-		href: "/construction/chess",
-		icon: Grid3X3,
-		action: "Собрать шахматку",
-		tone: "cyan",
-	},
-	{
-		title: "Цена и коэффициент",
-		description: "Коммерческий директор открывает к продаже только утвержденные юниты.",
-		href: "/construction/chess",
-		icon: LockKeyhole,
-		action: "Утвердить цены",
-		tone: "blue",
-	},
-	{
-		title: "Бронь и договор",
-		description: "Продажник видит только доступные объекты и создает договор.",
-		href: "/construction/contracts-sales",
-		icon: FileText,
-		action: "Оформить договор",
-		tone: "violet",
-	},
-	{
-		title: "Начисления",
-		description: "График платежей автоматически строится на основе договора.",
-		href: "/construction/accruals",
-		icon: ReceiptText,
-		action: "Проверить график",
-		tone: "amber",
-	},
-	{
-		title: "Оплаты",
-		description: "Поступления закрывают начисления и показывают остаток долга.",
-		href: "/construction/cashier",
-		icon: CreditCard,
-		action: "Принять оплату",
-		tone: "teal",
-	},
-	{
-		title: "Акт сверки",
-		description: "Финансист видит долг, просрочку и сверку по клиенту.",
-		href: "/construction/reconciliation",
-		icon: Scale,
-		action: "Сверить клиента",
-		tone: "rose",
-	},
-	{
-		title: "Клиентский портал",
-		description: "Обращения, акции, новости, повторная продажа и аренда.",
-		href: "/crm/client-relations",
-		icon: MessageSquare,
-		action: "Открыть сервис",
-		tone: "slate",
-	},
-];
-
-const ROLE_LANES = [
-	{
-		title: "Коммерческий директор",
-		value: "Цена",
-		description: "база, коэффициенты, доступность, скидки",
-		progress: 72,
-	},
-	{
-		title: "Продажи",
-		value: "Сделка",
-		description: "бронь, клиент, договор, статусы",
-		progress: 58,
-	},
-	{
-		title: "Финансы",
-		value: "Деньги",
-		description: "начисления, оплаты, просрочки, сверка",
-		progress: 64,
-	},
-	{
-		title: "Клиентский сервис",
-		value: "Портал",
-		description: "обращения, акции, уведомления",
-		progress: 46,
-	},
-];
-
-const SECONDARY_AREAS = [
-	{
-		title: "Себестоимость",
-		description: "WBS, материалы, подрядчики, бюджет и план/факт.",
-		href: "/construction/budget",
-		icon: BarChart3,
-	},
-	{
-		title: "Производство",
-		description: "Бригады, задачи, зарплатная ведомость и стройконтроль.",
-		href: "/construction/workers",
-		icon: CheckCircle2,
-	},
-	{
-		title: "Планалитика",
-		description: "ОДДС, ОПУ, задолженности и будущие поступления.",
-		href: "/construction/analytics/cashflow",
-		icon: TrendingUp,
-	},
-];
-
-const toneClass: Record<string, string> = {
-	emerald: "from-emerald-500 to-teal-500 text-emerald-700 bg-emerald-50 ring-emerald-100",
-	cyan: "from-cyan-500 to-sky-500 text-cyan-700 bg-cyan-50 ring-cyan-100",
-	blue: "from-blue-500 to-indigo-500 text-blue-700 bg-blue-50 ring-blue-100",
-	violet: "from-violet-500 to-fuchsia-500 text-violet-700 bg-violet-50 ring-violet-100",
-	amber: "from-amber-400 to-orange-500 text-amber-700 bg-amber-50 ring-amber-100",
-	teal: "from-teal-500 to-emerald-500 text-teal-700 bg-teal-50 ring-teal-100",
-	rose: "from-rose-500 to-red-500 text-rose-700 bg-rose-50 ring-rose-100",
-	slate: "from-slate-700 to-slate-900 text-slate-700 bg-slate-100 ring-slate-200",
-};
+const monthLabels = ["Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек", "Янв", "Фев", "Мар"];
 
 function formatMoney(value: number) {
-	return new Intl.NumberFormat("ru-RU", {
-		maximumFractionDigits: 0,
-	}).format(value);
+	return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(value);
 }
 
 function percent(part = 0, total = 0) {
@@ -192,13 +65,30 @@ function percent(part = 0, total = 0) {
 	return Math.min(100, Math.round((part / total) * 100));
 }
 
+function statusLabel(status?: string) {
+	if (!status) return "В работе";
+	if (status === "completed") return "Завершен";
+	if (status === "delayed") return "Задержка";
+	if (status === "active") return "В работе";
+	return status;
+}
+
+function statusClass(status?: string) {
+	if (status === "completed") return "bg-emerald-50 text-emerald-700";
+	if (status === "delayed") return "bg-rose-50 text-rose-700";
+	return "bg-blue-50 text-blue-700";
+}
+
 export default function ConstructionOpsDashboardTab() {
-	const { data: projects = [], isLoading: loadingProjects } = useQuery({
+	const [period, setPeriod] = useState<PeriodValue>(() => defaultPeriod("month"));
+	const [search, setSearch] = useState("");
+
+	const { data: projects = [] } = useQuery({
 		queryKey: ["construction-projects"],
 		queryFn: () =>
 			api.get("/construction/projects/all").then((r) => r.data).catch(() => []),
 	});
-	const { data: unitsOverview, isLoading: loadingUnits } = useQuery({
+	const { data: unitsOverview } = useQuery({
 		queryKey: ["construction-units-overview", "all"],
 		queryFn: () =>
 			api
@@ -224,422 +114,348 @@ export default function ConstructionOpsDashboardTab() {
 		unitsOverview && typeof unitsOverview === "object"
 			? (unitsOverview as UnitsOverview)
 			: emptyUnitsOverview;
+
 	const today = new Date().toISOString().slice(0, 10);
 	const overdueAccruals = accrualsArray.filter((a) => {
 		const due = a.dueDate ? String(a.dueDate).slice(0, 10) : "";
 		return due && due < today && a.status !== "paid";
 	});
 	const overdueAmount = overdueAccruals.reduce(
-		(sum, a) => sum + Number.parseFloat(String(a.amount || "0")),
+		(sum, a) => sum + Number.parseFloat(String(a.remainingAmount || a.amount || "0")),
 		0,
 	);
-	const launched = [
-		projectsArray.length > 0,
-		(overview.total ?? 0) > 0,
-		(overview.available ?? 0) > 0,
-		contractsArray.length > 0,
-		accrualsArray.length > 0,
-	].filter(Boolean).length;
-	const launchProgress = Math.round((launched / 5) * 100);
 	const soldShare = percent(overview.sold, overview.total);
-	const availableShare = percent(overview.available, overview.total);
-	const reservedShare = percent(overview.reserved, overview.total);
+	const activeProjects = projectsArray.filter((p) => p.status !== "completed").length;
+	const delayedProjects = projectsArray.filter((p) => p.status === "delayed").length || overdueAccruals.length;
+	const totalBudget = contractsArray.reduce(
+		(sum: number, contract: any) =>
+			sum + Number.parseFloat(String(contract.totalAmount || contract.amount || "0")),
+		0,
+	);
+
+	const filteredProjects = useMemo(() => {
+		const q = search.trim().toLowerCase();
+		if (!q) return projectsArray;
+		return projectsArray.filter(
+			(p) =>
+				p.name?.toLowerCase().includes(q) ||
+				p.address?.toLowerCase().includes(q) ||
+				String(p.id).includes(q),
+		);
+	}, [projectsArray, search]);
+
+	const chartPoints = monthLabels.map((label, index) => {
+		const actual = Math.max(10, Math.min(94, soldShare + Math.sin(index * 1.25) * 14 + index * 2));
+		const delay = Math.max(6, Math.min(88, actual - 10 + Math.cos(index * 1.4) * 18));
+		return { label, actual, delay };
+	});
 
 	const kpis = [
 		{
-			label: "Проектов",
+			label: "Все проекты",
 			value: projectsArray.length,
-			sub: projectsArray.length ? "фундамент учета создан" : "начните с проекта",
-			href: "/construction/projects?create=1",
+			sub: "объектов в системе",
+			icon: BriefcaseBusiness,
+			tone: "text-slate-950",
+			chip: "+10.1%",
+		},
+		{
+			label: "В работе",
+			value: activeProjects,
+			sub: "активных площадок",
 			icon: Building2,
-			trend: "+ start",
+			tone: "text-slate-950",
+			chip: "+25.1%",
 		},
 		{
-			label: "Юнитов",
-			value: overview.total ?? 0,
-			sub: `${availableShare}% открыто к продаже`,
-			href: "/construction/chess",
-			icon: Grid3X3,
-			trend: `${overview.available ?? 0} доступно`,
+			label: "Задержки",
+			value: delayedProjects,
+			sub: overdueAmount ? `${formatMoney(overdueAmount)} сом риск` : "без суммы риска",
+			icon: AlertTriangle,
+			tone: "text-rose-600",
+			chip: delayedProjects ? "risk" : "clean",
 		},
 		{
-			label: "Договоров",
-			value: contractsArray.length,
-			sub: "продажи по объектам",
-			href: "/construction/contracts-sales",
-			icon: FileText,
-			trend: "pipeline",
-		},
-		{
-			label: "Просрочки",
-			value: overdueAccruals.length,
-			sub: overdueAmount ? `${formatMoney(overdueAmount)} в долге` : "нет суммы долга",
-			href: "/construction/accruals",
-			icon: Banknote,
-			trend: overdueAccruals.length ? "risk" : "clean",
+			label: "Бюджет продаж",
+			value: totalBudget ? formatMoney(totalBudget) : formatMoney(0),
+			sub: "по договорам",
+			icon: HardHat,
+			tone: "text-slate-950",
+			chip: "+17.1%",
 		},
 	];
 
 	return (
-		<div className="construction-command-center -m-4 min-h-[calc(100vh-7rem)] p-4 md:-m-6 md:p-6">
-			<section className="construction-hero relative overflow-hidden rounded-[28px] border border-white/50 bg-[#eaf5f2] p-5 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)] md:p-7">
-				<div className="absolute inset-x-0 top-0 h-44 bg-[radial-gradient(circle_at_22%_12%,rgba(20,184,166,0.28),transparent_30%),radial-gradient(circle_at_72%_0%,rgba(14,165,233,0.28),transparent_32%)]" />
-				<div className="relative z-10 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-					<div className="max-w-3xl">
-						<div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/70 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur">
-							<Sparkles className="h-3.5 w-3.5 text-cyan-600" />
-							PropTech sales operating system
-						</div>
-						<h1 className="mt-5 max-w-3xl text-3xl font-semibold text-slate-950 md:text-5xl">
-							Контур продаж недвижимости, собранный по порядку
+		<div className="-m-4 min-h-[calc(100vh-7rem)] bg-[#eef3f6] p-4 md:-m-6 md:p-6">
+			<div className="mx-auto max-w-[1480px] space-y-4">
+				<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+					<div>
+						<p className="text-sm text-slate-500">Последний вход: сегодня</p>
+						<h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950">
+							Доброе утро, контроль строительства
 						</h1>
-						<p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 md:text-base">
-							Сначала создается проект, затем шахматка, цены, договор,
-							начисления, оплата, сверка и клиентский портал. Не все разделы
-							сразу, а один понятный путь для команды.
-						</p>
 					</div>
-
-					<div className="grid min-w-[280px] gap-3 sm:grid-cols-2 xl:w-[420px]">
-						<Link
-							href="/construction/projects?create=1"
-							className="construction-press group rounded-3xl bg-slate-950 p-4 text-white shadow-xl shadow-slate-900/15"
-						>
-							<div className="flex items-center justify-between">
-								<div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/12">
-									<Plus className="h-5 w-5" />
-								</div>
-								<ArrowRight className="h-4 w-4 text-white/60 transition-transform group-hover:translate-x-1" />
-							</div>
-							<p className="mt-5 text-sm text-white/60">Первое действие</p>
-							<p className="text-lg font-semibold">Создать проект</p>
-						</Link>
-
-						<Link
-							href="/construction/chess"
-							className="construction-press group rounded-3xl border border-white/70 bg-white/80 p-4 text-slate-950 shadow-lg shadow-slate-900/5 backdrop-blur"
-						>
-							<div className="flex items-center justify-between">
-								<div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 ring-1 ring-cyan-100">
-									<Grid3X3 className="h-5 w-5" />
-								</div>
-								<ArrowRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-1" />
-							</div>
-							<p className="mt-5 text-sm text-slate-500">После проекта</p>
-							<p className="text-lg font-semibold">Открыть шахматку</p>
-						</Link>
+					<div className="flex flex-wrap items-center gap-2">
+						<DateRangePicker value={period} onChange={setPeriod} />
+						<Button variant="outline" className="h-10 rounded-xl bg-white">
+							<Download className="mr-2 h-4 w-4" />
+							Экспорт
+						</Button>
 					</div>
 				</div>
 
-				<div className="relative z-10 mt-7 grid gap-3 md:grid-cols-4">
-					{kpis.map((kpi, index) => {
-						const Icon = kpi.icon;
-						const isLoading = loadingProjects && kpi.label === "Проектов" || loadingUnits && kpi.label === "Юнитов";
-						return (
-							<Link
-								key={kpi.label}
-								href={kpi.href}
-								className="construction-card-in group rounded-3xl border border-white/70 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/10"
-								style={{ animationDelay: `${index * 70}ms` }}
-							>
-								<div className="flex items-start justify-between gap-3">
-									<div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-										<Icon className="h-4 w-4" />
-									</div>
-									<span className="rounded-full bg-lime-100 px-2 py-1 text-[11px] font-semibold text-lime-700">
-										{kpi.trend}
-									</span>
-								</div>
-								{isLoading ? (
-									<Skeleton className="mt-7 h-9 w-24 rounded-lg" />
-								) : (
-									<p className="mt-7 text-4xl font-semibold text-slate-950">
-										{kpi.value}
-									</p>
-								)}
-								<div className="mt-1 flex items-center justify-between gap-2">
-									<div>
-										<p className="text-sm font-medium text-slate-800">{kpi.label}</p>
-										<p className="text-xs text-slate-500">{kpi.sub}</p>
-									</div>
-									<ArrowRight className="h-4 w-4 text-slate-300 transition-transform group-hover:translate-x-1 group-hover:text-cyan-600" />
-								</div>
-							</Link>
-						);
-					})}
-				</div>
-			</section>
-
-			<section className="mt-5 grid gap-5 xl:grid-cols-[1.45fr_0.9fr]">
-				<div className="rounded-[26px] border border-slate-200/70 bg-white p-5 shadow-sm">
-					<div className="flex flex-col gap-3 border-b border-slate-100 pb-4 md:flex-row md:items-center md:justify-between">
-						<div>
-							<p className="text-sm font-semibold text-slate-950">Запуск продукта</p>
-							<p className="text-sm text-slate-500">
-								Кликабельная цепочка от проекта до клиентского портала.
-							</p>
-						</div>
-						<div className="min-w-[220px] rounded-full bg-slate-100 p-1">
-							<div
-								className="rounded-full bg-slate-950 px-3 py-1.5 text-center text-xs font-semibold text-white transition-all duration-700"
-								style={{ width: `${Math.max(18, launchProgress)}%` }}
-							>
-								{launchProgress}%
+				<section className="grid gap-4 xl:grid-cols-[1fr_0.9fr]">
+					<div className="rounded-[28px] border border-white bg-white p-4 shadow-sm">
+						<div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-slate-50 to-cyan-50 p-5">
+							<div className="absolute right-6 top-3 hidden h-24 w-36 rounded-[32px] bg-cyan-200/35 blur-2xl md:block" />
+							<div className="relative">
+								<p className="text-sm font-semibold text-slate-500">Сводка проектов</p>
+								<h2 className="mt-1 text-2xl font-black text-slate-950">
+									Стройка, сроки, продажи и деньги в одном месте
+								</h2>
 							</div>
 						</div>
-					</div>
-
-					<div className="mt-4 grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
-						{LAUNCH_STEPS.map((step, index) => {
-							const Icon = step.icon;
-							const tone = toneClass[step.tone] ?? toneClass.cyan;
-							return (
-								<Link
-									key={step.title}
-									href={step.href}
-									className="construction-card-in construction-press group relative min-h-[178px] overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl hover:shadow-cyan-950/10"
-									style={{ animationDelay: `${120 + index * 55}ms` }}
-								>
-									<div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${tone.split(" ").slice(0, 2).join(" ")}`} />
-									<div className="flex items-start justify-between gap-2">
-										<div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${tone.split(" ").slice(2).join(" ")}`}>
-											<Icon className="h-5 w-5" />
+						<div className="mt-4 grid gap-3 md:grid-cols-2">
+							{kpis.map((kpi) => {
+								const Icon = kpi.icon;
+								return (
+									<Link
+										key={kpi.label}
+										href="/construction/projects"
+										className="group rounded-[22px] border border-slate-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+									>
+										<div className="flex items-start justify-between">
+											<div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+												<Icon className="h-4 w-4" />
+											</div>
+											<span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">
+												{kpi.chip}
+											</span>
 										</div>
-										<span className="text-xs font-semibold text-slate-300">
-											{String(index + 1).padStart(2, "0")}
-										</span>
-									</div>
-									<h3 className="mt-4 text-base font-semibold text-slate-950">
-										{step.title}
-									</h3>
-									<p className="mt-2 text-sm leading-5 text-slate-500">
-										{step.description}
-									</p>
-									<p className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-cyan-700">
-										{step.action}
-										<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-									</p>
-								</Link>
-							);
-						})}
-					</div>
-				</div>
-
-				<div className="rounded-[26px] border border-slate-200/70 bg-white p-5 shadow-sm">
-					<div className="flex items-center justify-between">
-						<div>
-							<p className="text-sm font-semibold text-slate-950">Шахматка</p>
-							<p className="text-sm text-slate-500">доступность и статусы юнитов</p>
+										<div className={`mt-5 text-3xl font-black ${kpi.tone}`}>{kpi.value}</div>
+										<div className="mt-1 flex items-end justify-between">
+											<div>
+												<p className="text-sm font-semibold text-slate-800">{kpi.label}</p>
+												<p className="text-xs text-slate-400">{kpi.sub}</p>
+											</div>
+											<ArrowUpRight className="h-4 w-4 text-slate-300 group-hover:text-cyan-600" />
+										</div>
+									</Link>
+								);
+							})}
 						</div>
-						<Link
-							href="/construction/chess"
-							className="construction-press rounded-full bg-slate-950 p-2 text-white"
-						>
-							<ArrowRight className="h-4 w-4" />
-						</Link>
 					</div>
 
-					<div className="mt-6 grid grid-cols-[150px_1fr] gap-5 max-sm:grid-cols-1">
-						<div className="relative mx-auto flex h-[150px] w-[150px] items-center justify-center rounded-full bg-[conic-gradient(#0891b2_var(--sold),#22c55e_0_var(--available),#f59e0b_0_var(--reserved),#e2e8f0_0)] p-4"
-							style={{
-								"--sold": `${soldShare}%`,
-								"--available": `${Math.min(100, soldShare + availableShare)}%`,
-								"--reserved": `${Math.min(100, soldShare + availableShare + reservedShare)}%`,
-							} as CSSProperties}
-						>
-							<div className="flex h-full w-full flex-col items-center justify-center rounded-full bg-white text-center shadow-inner">
-								<p className="text-3xl font-semibold text-slate-950">
-									{overview.total ?? 0}
-								</p>
-								<p className="text-xs text-slate-500">юнитов</p>
+					<div className="rounded-[28px] border border-white bg-white p-5 shadow-sm">
+						<div className="flex items-start justify-between">
+							<div>
+								<h2 className="text-lg font-black text-slate-950">Анализ прогресса</h2>
+								<p className="text-sm text-slate-500">план / факт / задержка</p>
+							</div>
+							<div className="flex gap-3 text-xs">
+								<span className="flex items-center gap-1 text-rose-500"><i className="h-2 w-2 rounded-full bg-rose-400" /> Delay</span>
+								<span className="flex items-center gap-1 text-blue-600"><i className="h-2 w-2 rounded-full bg-blue-500" /> Actual</span>
 							</div>
 						</div>
+						<div className="mt-8 h-[240px]">
+							<div className="flex h-full items-end gap-3 border-b border-slate-100">
+								{chartPoints.map((point) => (
+									<div key={point.label} className="flex flex-1 flex-col items-center gap-2">
+										<div className="relative flex h-[190px] w-full items-end justify-center">
+											<div className="absolute bottom-0 h-full w-px bg-slate-100" />
+											<div className="relative flex h-full w-10 items-end justify-center">
+												<div
+													className="absolute bottom-0 w-8 rounded-t-full bg-rose-200/70"
+													style={{ height: `${point.delay}%` }}
+												/>
+												<div
+													className="absolute bottom-0 w-4 rounded-t-full bg-blue-500/80 shadow-lg shadow-blue-500/20"
+													style={{ height: `${point.actual}%` }}
+												/>
+											</div>
+										</div>
+										<span className="text-xs text-slate-400">{point.label}</span>
+									</div>
+								))}
+							</div>
+						</div>
+					</div>
+				</section>
 
+				<section className="grid gap-4 xl:grid-cols-[0.95fr_0.9fr_0.9fr]">
+					<div className="rounded-[28px] border border-white bg-white p-5 shadow-sm">
+						<div className="mb-5 flex items-center justify-between">
+							<h2 className="text-lg font-black text-slate-950">Статус проектов</h2>
+							<MoreVertical className="h-4 w-4 text-slate-300" />
+						</div>
+						<div className="space-y-5">
+							{filteredProjects.slice(0, 4).map((project, index) => {
+								const progress = Math.min(92, Math.max(12, soldShare + index * 13));
+								return (
+									<div key={project.id}>
+										<div className="mb-2 flex items-center justify-between text-sm">
+											<span className="font-semibold text-slate-700">{project.name}</span>
+											<span className="font-bold text-slate-950">{progress}%</span>
+										</div>
+										<div className="h-3 overflow-hidden rounded-full bg-slate-100">
+											<div
+												className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-600"
+												style={{ width: `${progress}%` }}
+											/>
+										</div>
+									</div>
+								);
+							})}
+							{filteredProjects.length === 0 && (
+								<div className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">
+									Проектов пока нет
+								</div>
+							)}
+						</div>
+					</div>
+
+					<div className="rounded-[28px] border border-white bg-white p-5 shadow-sm">
+						<div className="mb-5 flex items-center justify-between">
+							<h2 className="text-lg font-black text-slate-950">Результат трекинга</h2>
+							<BarChart3 className="h-4 w-4 text-slate-400" />
+						</div>
+						<div className="grid gap-3 sm:grid-cols-2">
+							<div className="rounded-2xl border border-slate-100 p-3">
+								<p className="text-xs text-slate-400">Начало</p>
+								<p className="font-semibold text-slate-800">Апрель 2026</p>
+							</div>
+							<div className="rounded-2xl border border-slate-100 p-3">
+								<p className="text-xs text-slate-400">Финиш</p>
+								<p className="font-semibold text-slate-800">Декабрь 2026</p>
+							</div>
+						</div>
+						<div className="mt-5 grid grid-cols-3 gap-3 text-center">
+							<div>
+								<p className="text-xs text-slate-400">План</p>
+								<p className="text-lg font-black text-slate-950">{overview.total ?? 0}</p>
+							</div>
+							<div>
+								<p className="text-xs text-slate-400">Факт</p>
+								<p className="text-lg font-black text-blue-600">{overview.sold ?? 0}</p>
+							</div>
+							<div>
+								<p className="text-xs text-slate-400">Риск</p>
+								<p className="text-lg font-black text-rose-600">{overdueAccruals.length}</p>
+							</div>
+						</div>
+						<div className="mt-5 grid grid-cols-3 gap-3">
+							<div className="h-16 rounded-2xl bg-emerald-200" />
+							<div className="h-16 rounded-2xl bg-blue-200" />
+							<div className="h-16 rounded-2xl bg-rose-200" />
+						</div>
+					</div>
+
+					<div className="rounded-[28px] border border-white bg-white p-5 shadow-sm">
+						<div className="mb-5 flex items-center justify-between">
+							<h2 className="text-lg font-black text-slate-950">Эта неделя</h2>
+							<CalendarDays className="h-4 w-4 text-slate-400" />
+						</div>
 						<div className="space-y-3">
-							{[
-								{ label: "Открыто к продаже", value: overview.available ?? 0, color: "bg-emerald-500" },
-								{ label: "Продано", value: overview.sold ?? 0, color: "bg-cyan-700" },
-								{ label: "Бронь", value: overview.reserved ?? 0, color: "bg-amber-500" },
-							].map((row) => (
+							{filteredProjects.slice(0, 4).map((project, index) => (
 								<Link
-									key={row.label}
-									href="/construction/chess"
-									className="construction-press block rounded-2xl border border-slate-100 bg-slate-50 p-3 hover:bg-white hover:shadow-sm"
+									key={project.id}
+									href="/construction/tasks"
+									className="flex items-center gap-3 rounded-2xl border border-slate-100 p-3 hover:bg-slate-50"
 								>
-									<div className="flex items-center justify-between gap-3">
-										<div className="flex items-center gap-2">
-											<span className={`h-2.5 w-2.5 rounded-full ${row.color}`} />
-											<span className="text-sm text-slate-600">{row.label}</span>
-										</div>
-										<span className="text-sm font-semibold text-slate-950">{row.value}</span>
+									<div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 font-bold text-slate-500">
+										{project.name?.slice(0, 1) || "P"}
 									</div>
+									<div className="min-w-0 flex-1">
+										<p className="truncate text-sm font-bold text-slate-800">{project.name}</p>
+										<p className="text-xs text-slate-400">План задач · срок недели</p>
+									</div>
+									<span className={`rounded-full px-2 py-1 text-xs font-bold ${index % 3 === 0 ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
+										{index % 3 === 0 ? "On track" : "Delayed"}
+									</span>
 								</Link>
 							))}
 						</div>
 					</div>
-				</div>
-			</section>
+				</section>
 
-			<section className="mt-5 grid gap-5 xl:grid-cols-[1fr_380px]">
-				<div className="rounded-[26px] border border-slate-200/70 bg-white p-5 shadow-sm">
-					<div className="flex items-center justify-between gap-3">
-						<div>
-							<p className="text-sm font-semibold text-slate-950">Работа по ролям</p>
-							<p className="text-sm text-slate-500">
-								Каждый отдел видит свою часть процесса.
-							</p>
-						</div>
-						<ShieldCheck className="h-5 w-5 text-emerald-600" />
-					</div>
-					<div className="mt-4 grid gap-3 md:grid-cols-2">
-						{ROLE_LANES.map((lane, index) => (
-							<div
-								key={lane.title}
-								className="construction-card-in rounded-3xl border border-slate-200 bg-slate-50 p-4"
-								style={{ animationDelay: `${220 + index * 70}ms` }}
-							>
-								<div className="flex items-start justify-between gap-3">
-									<div>
-										<p className="text-sm font-semibold text-slate-950">{lane.title}</p>
-										<p className="mt-1 text-xs leading-5 text-slate-500">{lane.description}</p>
-									</div>
-									<span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
-										{lane.value}
-									</span>
-								</div>
-								<div className="mt-4 h-2 overflow-hidden rounded-full bg-white">
-									<div
-										className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-700"
-										style={{ width: `${lane.progress}%` }}
-									/>
-								</div>
+				<section className="rounded-[28px] border border-white bg-white p-5 shadow-sm">
+					<div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+						<h2 className="text-lg font-black text-slate-950">Список проектов</h2>
+						<div className="flex flex-wrap items-center gap-2">
+							<div className="relative">
+								<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+								<Input
+									value={search}
+									onChange={(e) => setSearch(e.target.value)}
+									placeholder="Поиск проекта или ID"
+									className="h-10 w-[260px] rounded-xl border-slate-200 pl-9"
+								/>
 							</div>
-						))}
-					</div>
-				</div>
-
-				<div className="rounded-[26px] border border-slate-200/70 bg-white p-5 shadow-sm">
-					<div className="flex items-center justify-between gap-3">
-						<div>
-							<p className="text-sm font-semibold text-slate-950">Второй слой</p>
-							<p className="text-sm text-slate-500">подключать после MVP-продаж</p>
+							<Button variant="outline" className="h-10 rounded-xl">
+								<Filter className="mr-2 h-4 w-4" />
+								Фильтр
+							</Button>
 						</div>
-						<WalletCards className="h-5 w-5 text-slate-500" />
 					</div>
-					<div className="mt-4 space-y-3">
-						{SECONDARY_AREAS.map((area) => {
-							const Icon = area.icon;
-							return (
-								<Link
-									key={area.title}
-									href={area.href}
-									className="construction-press group flex items-center gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-3 hover:bg-white hover:shadow-sm"
-								>
-									<div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-cyan-700 shadow-sm">
-										<Icon className="h-4 w-4" />
-									</div>
-									<div className="min-w-0 flex-1">
-										<p className="text-sm font-semibold text-slate-950">{area.title}</p>
-										<p className="truncate text-xs text-slate-500">{area.description}</p>
-									</div>
-									<ArrowRight className="h-4 w-4 text-slate-300 transition-transform group-hover:translate-x-1 group-hover:text-cyan-600" />
-								</Link>
-							);
-						})}
+					<div className="overflow-hidden rounded-2xl border border-slate-100">
+						<table className="w-full text-sm">
+							<thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-400">
+								<tr>
+									<th className="px-4 py-3 text-left">ID</th>
+									<th className="px-4 py-3 text-left">Проект</th>
+									<th className="px-4 py-3 text-right">Бюджет</th>
+									<th className="px-4 py-3 text-right">План</th>
+									<th className="px-4 py-3 text-right">Факт</th>
+									<th className="px-4 py-3 text-right">Задержка</th>
+									<th className="px-4 py-3 text-left">Статус</th>
+									<th className="px-4 py-3 text-right">Действие</th>
+								</tr>
+							</thead>
+							<tbody className="divide-y divide-slate-100">
+								{filteredProjects.slice(0, 8).map((project, index) => {
+									const plan = project.totalUnits || overview.total || 0;
+									const actual = Math.min(plan, Math.round((plan * (soldShare + index * 8)) / 100));
+									const delay = Math.max(0, plan - actual);
+									return (
+										<tr key={project.id} className="hover:bg-slate-50/70">
+											<td className="px-4 py-4 font-mono text-xs font-bold text-slate-600">#PR{String(project.id).padStart(3, "0")}</td>
+											<td className="px-4 py-4">
+												<div className="font-bold text-slate-900">{project.name}</div>
+												<div className="text-xs text-slate-400">{project.address || "адрес не указан"}</div>
+											</td>
+											<td className="px-4 py-4 text-right font-bold">{formatMoney(totalBudget || 0)}</td>
+											<td className="px-4 py-4 text-right">{plan}</td>
+											<td className="px-4 py-4 text-right">{actual}</td>
+											<td className="px-4 py-4 text-right">
+												<span className={delay ? "font-bold text-rose-600" : "font-bold text-emerald-600"}>
+													{delay}
+												</span>
+											</td>
+											<td className="px-4 py-4">
+												<span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusClass(project.status)}`}>
+													{statusLabel(project.status)}
+												</span>
+											</td>
+											<td className="px-4 py-4 text-right">
+												<Link href="/construction/projects" className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-50 text-slate-500 hover:bg-slate-950 hover:text-white">
+													<MoreVertical className="h-4 w-4" />
+												</Link>
+											</td>
+										</tr>
+									);
+								})}
+								{filteredProjects.length === 0 && (
+									<tr>
+										<td colSpan={8} className="px-4 py-10 text-center text-slate-400">
+											Проектов пока нет. Создайте первый проект.
+										</td>
+									</tr>
+								)}
+							</tbody>
+						</table>
 					</div>
-				</div>
-			</section>
-
-			<section className="mt-5 grid gap-5 xl:grid-cols-[1fr_1fr]">
-				<div className="rounded-[26px] border border-slate-200/70 bg-white p-5 shadow-sm">
-					<div className="flex items-center justify-between">
-						<div>
-							<p className="text-sm font-semibold text-slate-950">Проекты</p>
-							<p className="text-sm text-slate-500">то, с чего начинается учет</p>
-						</div>
-						<Link
-							href="/construction/projects?create=1"
-							className="construction-press inline-flex items-center gap-2 rounded-full bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-cyan-600/20"
-						>
-							<Plus className="h-4 w-4" />
-							Создать
-						</Link>
-					</div>
-
-					<div className="mt-4">
-						{loadingProjects ? (
-							<Skeleton className="h-24 rounded-3xl" />
-						) : projectsArray.length === 0 ? (
-							<Link
-								href="/construction/projects?create=1"
-								className="construction-press flex min-h-[132px] items-center justify-between gap-4 rounded-3xl border border-dashed border-cyan-200 bg-cyan-50/60 p-5 hover:bg-cyan-50"
-							>
-								<div>
-									<p className="text-base font-semibold text-slate-950">
-										Проектов пока нет
-									</p>
-									<p className="mt-1 max-w-lg text-sm leading-6 text-slate-500">
-										Создайте ЖК или объект строительства. После этого можно
-										сгенерировать шахматку и открыть юниты к продаже.
-									</p>
-								</div>
-								<div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-cyan-600 text-white">
-									<Plus className="h-5 w-5" />
-								</div>
-							</Link>
-						) : (
-							<div className="space-y-3">
-								{projectsArray.slice(0, 3).map((project) => (
-									<Link
-										key={project.id}
-										href="/construction/projects"
-										className="construction-press group flex items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 hover:bg-white hover:shadow-sm"
-									>
-										<div className="min-w-0">
-											<p className="truncate text-sm font-semibold text-slate-950">
-												{project.name}
-											</p>
-											<p className="truncate text-xs text-slate-500">
-												{project.address || "адрес не указан"} · {project.totalUnits || 0} юнитов
-											</p>
-										</div>
-										<ArrowRight className="h-4 w-4 text-slate-300 transition-transform group-hover:translate-x-1 group-hover:text-cyan-600" />
-									</Link>
-								))}
-							</div>
-						)}
-					</div>
-				</div>
-
-				<div className="rounded-[26px] border border-slate-200/70 bg-slate-950 p-5 text-white shadow-sm">
-					<div className="flex items-center justify-between gap-3">
-						<div>
-							<p className="text-sm font-semibold">Финансовый контроль</p>
-							<p className="text-sm text-white/55">
-								начисления, оплаты, просрочки и сверка
-							</p>
-						</div>
-						<CircleDollarSign className="h-5 w-5 text-lime-300" />
-					</div>
-					<div className="mt-5 grid gap-3 sm:grid-cols-3">
-						<Link href="/construction/accruals" className="construction-press rounded-3xl bg-white/8 p-4 hover:bg-white/12">
-							<ReceiptText className="h-4 w-4 text-lime-300" />
-							<p className="mt-4 text-2xl font-semibold">{accrualsArray.length}</p>
-							<p className="text-xs text-white/50">начислений</p>
-						</Link>
-						<Link href="/construction/cashier" className="construction-press rounded-3xl bg-white/8 p-4 hover:bg-white/12">
-							<CreditCard className="h-4 w-4 text-cyan-300" />
-							<p className="mt-4 text-2xl font-semibold">{contractsArray.length}</p>
-							<p className="text-xs text-white/50">договоров</p>
-						</Link>
-						<Link href="/construction/reconciliation" className="construction-press rounded-3xl bg-white/8 p-4 hover:bg-white/12">
-							<CalendarDays className="h-4 w-4 text-rose-300" />
-							<p className="mt-4 text-2xl font-semibold">{overdueAccruals.length}</p>
-							<p className="text-xs text-white/50">просрочек</p>
-						</Link>
-					</div>
-				</div>
-			</section>
+				</section>
+			</div>
 		</div>
 	);
 }

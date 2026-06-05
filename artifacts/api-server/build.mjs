@@ -129,6 +129,14 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
   } catch (e) {
     console.warn("templates copy skipped:", e?.message);
   }
+
+  const migrationsSrc = path.resolve(artifactDir, "drizzle", "migrations");
+  const migrationsDst = path.resolve(distDir, "drizzle", "migrations");
+  try {
+    await cp(migrationsSrc, migrationsDst, { recursive: true });
+  } catch (e) {
+    console.warn("migrations copy skipped:", e?.message);
+  }
 }
 
 buildAll().catch((err) => {

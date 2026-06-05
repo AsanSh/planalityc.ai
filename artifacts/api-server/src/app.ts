@@ -13,6 +13,14 @@ import { generalLimiter, authLimiter, apiLimiter } from "./middleware/rate-limit
 import { xssProtection } from "./middleware/validation";
 
 const app: Express = express();
+const migrationsReady = runMigrations()
+  .then(() => {
+    logger.info("DB migrations: ready before request handling");
+  })
+  .catch((err) => {
+    logger.error({ err }, "Fatal: DB migrations failed");
+    throw err;
+  });
 
 // Vercel exposes serverless handlers under /api/*; Express routes live at /auth, /companies, etc.
 app.use((req, _res, next) => {
@@ -122,10 +130,13 @@ app.use("/auth/forgot-password", authLimiter);
 app.use("/", generalLimiter);
 app.use("/", apiLimiter);
 
-// Run Drizzle migrations on startup
-runMigrations().catch((err) => {
-  logger.error({ err }, "Fatal: DB migrations failed, exiting");
-  process.exit(1);
+app.use(async (_req, _res, next) => {
+  try {
+    await migrationsReady;
+    next();
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Health check endpoint

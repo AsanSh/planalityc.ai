@@ -1824,54 +1824,58 @@ router.patch("/units/:id", async (req: AuthenticatedRequest, res): Promise<void>
 });
 
 router.patch("/units/:id/pricing", async (req: AuthenticatedRequest, res): Promise<void> => {
-  if (!canApproveUnitPricing(req.userRole)) {
-    res.status(403).json({ error: "Утверждать цены может только коммерческий директор или администратор" });
-    return;
+  try {
+    if (!canApproveUnitPricing(req.userRole)) {
+      res.status(403).json({ error: "Утверждать цены может только коммерческий директор или администратор" });
+      return;
+    }
+
+    const id = parseInt(req.params.id as string, 10);
+    const basePricePerSqm = parseFloat(String(req.body?.basePricePerSqm ?? ""));
+    const saleCoefficient = parseFloat(String(req.body?.saleCoefficient ?? ""));
+    const publish = req.body?.isPublishedForSale !== false;
+
+    if (!Number.isFinite(basePricePerSqm) || basePricePerSqm <= 0) {
+      res.status(400).json({ error: "Укажите базовую цену за м² больше 0" });
+      return;
+    }
+    if (!Number.isFinite(saleCoefficient) || saleCoefficient <= 0) {
+      res.status(400).json({ error: "Укажите коэффициент продажи больше 0" });
+      return;
+    }
+
+    const [unit] = await db.select().from(constructionUnitsTable).where(
+      and(eq(constructionUnitsTable.id, id), eq(constructionUnitsTable.companyId, req.scopedCompanyId!)),
+    );
+    if (!unit) {
+      res.status(404).json({ error: "Квартира не найдена" });
+      return;
+    }
+
+    const area = parseFloat(String(unit.area || "0"));
+    const approvedSalePricePerSqm = Math.round(basePricePerSqm * saleCoefficient * 100) / 100;
+    const approvedTotalPrice = area > 0 ? Math.round(area * approvedSalePricePerSqm * 100) / 100 : null;
+
+    const [row] = await db.update(constructionUnitsTable)
+      .set({
+        basePricePerSqm: String(basePricePerSqm),
+        saleCoefficient: String(saleCoefficient),
+        approvedSalePricePerSqm: String(approvedSalePricePerSqm),
+        approvedTotalPrice: approvedTotalPrice != null ? String(approvedTotalPrice) : null,
+        pricePerSqm: String(approvedSalePricePerSqm),
+        totalPrice: approvedTotalPrice != null ? String(approvedTotalPrice) : null,
+        isPublishedForSale: publish,
+        priceApprovedBy: req.userId || null,
+        priceApprovedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(constructionUnitsTable.id, id), eq(constructionUnitsTable.companyId, req.scopedCompanyId!)))
+      .returning();
+
+    res.json(row);
+  } catch (e) {
+    sendServerError(res, e, "Не удалось сохранить коммерческую цену");
   }
-
-  const id = parseInt(req.params.id as string, 10);
-  const basePricePerSqm = parseFloat(String(req.body?.basePricePerSqm ?? ""));
-  const saleCoefficient = parseFloat(String(req.body?.saleCoefficient ?? ""));
-  const publish = req.body?.isPublishedForSale !== false;
-
-  if (!Number.isFinite(basePricePerSqm) || basePricePerSqm <= 0) {
-    res.status(400).json({ error: "Укажите базовую цену за м² больше 0" });
-    return;
-  }
-  if (!Number.isFinite(saleCoefficient) || saleCoefficient <= 0) {
-    res.status(400).json({ error: "Укажите коэффициент продажи больше 0" });
-    return;
-  }
-
-  const [unit] = await db.select().from(constructionUnitsTable).where(
-    and(eq(constructionUnitsTable.id, id), eq(constructionUnitsTable.companyId, req.scopedCompanyId!)),
-  );
-  if (!unit) {
-    res.status(404).json({ error: "Квартира не найдена" });
-    return;
-  }
-
-  const area = parseFloat(String(unit.area || "0"));
-  const approvedSalePricePerSqm = Math.round(basePricePerSqm * saleCoefficient * 100) / 100;
-  const approvedTotalPrice = area > 0 ? Math.round(area * approvedSalePricePerSqm * 100) / 100 : null;
-
-  const [row] = await db.update(constructionUnitsTable)
-    .set({
-      basePricePerSqm: String(basePricePerSqm),
-      saleCoefficient: String(saleCoefficient),
-      approvedSalePricePerSqm: String(approvedSalePricePerSqm),
-      approvedTotalPrice: approvedTotalPrice != null ? String(approvedTotalPrice) : null,
-      pricePerSqm: String(approvedSalePricePerSqm),
-      totalPrice: approvedTotalPrice != null ? String(approvedTotalPrice) : null,
-      isPublishedForSale: publish,
-      priceApprovedBy: req.userId || null,
-      priceApprovedAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(and(eq(constructionUnitsTable.id, id), eq(constructionUnitsTable.companyId, req.scopedCompanyId!)))
-    .returning();
-
-  res.json(row);
 });
 
 router.post("/units/bulk", async (req: AuthenticatedRequest, res): Promise<void> => {

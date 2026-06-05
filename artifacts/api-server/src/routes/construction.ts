@@ -1961,111 +1961,119 @@ router.get("/units/overview", async (req: AuthenticatedRequest, res): Promise<vo
 
 /** Импорт квартир из Excel (JSON-строки) */
 router.post("/units/import", async (req: AuthenticatedRequest, res): Promise<void> => {
-  // Проверка прав
-  if (!canImportUnits(req.userRole)) {
-    res.status(403).json({
-      error: "Импорт квартир доступен только администраторам и ПТО"
-    });
-    return;
-  }
-
-  const companyId = req.scopedCompanyId!;
-  const projectId = parseInt(String(req.body.projectId || ""), 10);
-  const rows: Record<string, unknown>[] = Array.isArray(req.body.rows) ? req.body.rows : [];
-
-  if (!projectId) {
-    res.status(400).json({ error: "projectId обязателен" });
-    return;
-  }
-
-  // Ограничение количества строк
-  const MAX_IMPORT_ROWS = 1000;
-  if (rows.length === 0) {
-    res.status(400).json({ error: "Нет строк для импорта" });
-    return;
-  }
-  if (rows.length > MAX_IMPORT_ROWS) {
-    res.status(400).json({
-      error: `Максимум ${MAX_IMPORT_ROWS} строк за раз. У вас: ${rows.length}. Разбейте на несколько файлов.`
-    });
-    return;
-  }
-
-  const existing = await db.select().from(constructionUnitsTable).where(
-    and(
-      eq(constructionUnitsTable.companyId, companyId),
-      eq(constructionUnitsTable.projectId, projectId),
-    ),
-  );
-  const byNumber = new Map(
-    existing.map((u) => [String(u.unitNumber).trim().toLowerCase(), u]),
-  );
-
-  let created = 0;
-  let updated = 0;
-  const errors: { row: number; message: string }[] = [];
-
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    const unitNumber = String(row.unitNumber ?? row["Номер"] ?? "").trim();
-    if (!unitNumber) {
-      errors.push({ row: i + 2, message: "Не указан номер квартиры" });
-      continue;
-    }
-
-    const floorRaw = row.floor ?? row["Этаж"];
-    const block = String(row.block ?? row["Секция"] ?? "").trim() || null;
-    const unitType = String(row.unitType ?? row["Тип"] ?? "apartment").trim() || "apartment";
-    const roomCountRaw = row.roomCount ?? row["Комнат"];
-    const area = parseFloat(String(row.area ?? row["Площадь м²"] ?? row["Площадь"] ?? "0"));
-    const pricePerSqm = parseFloat(String(row.pricePerSqm ?? row["Цена за м²"] ?? "0"));
-    const currency = String(row.currency ?? row["Валюта"] ?? "KGS").trim() || "KGS";
-    const status = await resolveUnitStatus(
-      companyId,
-      String(row.status ?? row["Статус"] ?? "available"),
-    );
-    const notes = String(row.notes ?? row["Заметки"] ?? "").trim() || null;
-
-    const payload = {
-      unitNumber,
-      floor: floorRaw != null && floorRaw !== "" ? parseInt(String(floorRaw), 10) : null,
-      block,
-      unitType,
-      roomCount: roomCountRaw != null && roomCountRaw !== "" ? parseInt(String(roomCountRaw), 10) : null,
-      area: area > 0 ? String(area) : null,
-      pricePerSqm: pricePerSqm > 0 ? String(pricePerSqm) : null,
-      totalPrice: area > 0 && pricePerSqm > 0 ? String(area * pricePerSqm) : null,
-      currency,
-      status,
-      notes,
-    };
-
-    const key = unitNumber.toLowerCase();
-    const prev = byNumber.get(key);
-    try {
-      if (prev) {
-        await db.update(constructionUnitsTable)
-          .set(payload)
-          .where(and(eq(constructionUnitsTable.id, prev.id), eq(constructionUnitsTable.companyId, companyId)));
-        updated++;
-      } else {
-        const [inserted] = await db.insert(constructionUnitsTable).values({
-          companyId,
-          projectId,
-          ...payload,
-        }).returning();
-        byNumber.set(key, inserted);
-        created++;
-      }
-    } catch (e) {
-      errors.push({
-        row: i + 2,
-        message: e instanceof Error ? e.message : "Ошибка сохранения",
+  try {
+    // Проверка прав
+    if (!canImportUnits(req.userRole)) {
+      res.status(403).json({
+        error: "Импорт квартир доступен только администраторам и ПТО"
       });
+      return;
     }
-  }
 
-  res.json({ created, updated, errors, total: rows.length });
+    const companyId = req.scopedCompanyId!;
+    const projectId = parseInt(String(req.body.projectId || ""), 10);
+    const rows: Record<string, unknown>[] = Array.isArray(req.body.rows) ? req.body.rows : [];
+
+    if (!projectId) {
+      res.status(400).json({ error: "projectId обязателен" });
+      return;
+    }
+
+    // Ограничение количества строк
+    const MAX_IMPORT_ROWS = 1000;
+    if (rows.length === 0) {
+      res.status(400).json({ error: "Нет строк для импорта" });
+      return;
+    }
+    if (rows.length > MAX_IMPORT_ROWS) {
+      res.status(400).json({
+        error: `Максимум ${MAX_IMPORT_ROWS} строк за раз. У вас: ${rows.length}. Разбейте на несколько файлов.`
+      });
+      return;
+    }
+
+    const existing = await db.select().from(constructionUnitsTable).where(
+      and(
+        eq(constructionUnitsTable.companyId, companyId),
+        eq(constructionUnitsTable.projectId, projectId),
+      ),
+    );
+    const byNumber = new Map(
+      existing.map((u) => [String(u.unitNumber).trim().toLowerCase(), u]),
+    );
+
+    let created = 0;
+    let updated = 0;
+    const errors: { row: number; message: string }[] = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const unitNumber = String(row.unitNumber ?? row["Номер"] ?? "").trim();
+      if (!unitNumber) {
+        errors.push({ row: i + 2, message: "Не указан номер квартиры" });
+        continue;
+      }
+
+      const floorRaw = row.floor ?? row["Этаж"];
+      const block = String(row.block ?? row["Секция"] ?? "").trim() || null;
+      const unitType = String(row.unitType ?? row["Тип"] ?? "apartment").trim() || "apartment";
+      const roomCountRaw = row.roomCount ?? row["Комнат"];
+      const area = parseFloat(String(row.area ?? row["Площадь м²"] ?? row["Площадь"] ?? "0"));
+      const pricePerSqm = parseFloat(String(row.pricePerSqm ?? row["Цена за м²"] ?? "0"));
+      const currency = String(row.currency ?? row["Валюта"] ?? "KGS").trim() || "KGS";
+      const status = await resolveUnitStatus(
+        companyId,
+        String(row.status ?? row["Статус"] ?? "available"),
+      );
+      const notes = String(row.notes ?? row["Заметки"] ?? "").trim() || null;
+
+      const payload = {
+        unitNumber,
+        floor: floorRaw != null && floorRaw !== "" ? parseInt(String(floorRaw), 10) : null,
+        block,
+        unitType,
+        roomCount: roomCountRaw != null && roomCountRaw !== "" ? parseInt(String(roomCountRaw), 10) : null,
+        area: area > 0 ? String(area) : null,
+        pricePerSqm: pricePerSqm > 0 ? String(pricePerSqm) : null,
+        totalPrice: area > 0 && pricePerSqm > 0 ? String(area * pricePerSqm) : null,
+        currency,
+        status,
+        notes,
+      };
+
+      const key = unitNumber.toLowerCase();
+      const prev = byNumber.get(key);
+      try {
+        if (prev) {
+          await db.update(constructionUnitsTable)
+            .set(payload)
+            .where(and(eq(constructionUnitsTable.id, prev.id), eq(constructionUnitsTable.companyId, companyId)));
+          updated++;
+        } else {
+          const [inserted] = await db.insert(constructionUnitsTable).values({
+            companyId,
+            projectId,
+            ...payload,
+          }).returning();
+          byNumber.set(key, inserted);
+          created++;
+        }
+      } catch (e) {
+        errors.push({
+          row: i + 2,
+          message: e instanceof Error ? e.message : "Ошибка сохранения",
+        });
+      }
+    }
+
+    res.json({ created, updated, errors, total: rows.length });
+  } catch (error) {
+    console.error("[units/import] Unexpected error:", error);
+    res.status(500).json({
+      error: "Ошибка импорта",
+      details: error instanceof Error ? error.message : String(error)
+    });
+  }
 });
 
 // ── CURRENCY RATES ────────────────────────────────────────────────────────────

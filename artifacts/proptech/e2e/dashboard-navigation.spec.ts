@@ -62,14 +62,9 @@ test.describe("Dashboard navigation smoke", () => {
 			await expect(page).toHaveURL(/(\/crm\/|tab=sales)/);
 		}
 
-		// Unified Dashboard — смена вкладки
+		// Unified Dashboard keeps content visible; module switching lives in the fixed top rail.
 		await page.goto("/dashboard?tab=control");
-		await expect(page.getByRole("tab", { name: "Центр управления" })).toBeVisible();
-
-		const financeTab = page.getByRole("tab", { name: "Финансы" });
-		if (await financeTab.isVisible()) {
-			await financeTab.click();
-			await expect(page).toHaveURL(/tab=finance/);
-		}
+		await expect(page.locator('[role="tabpanel"]')).toBeVisible();
+		await expect(page.locator('[role="tablist"]')).toHaveCount(0);
 	});
 });

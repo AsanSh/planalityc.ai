@@ -1060,7 +1060,7 @@ export function Layout({ children }: { children: ReactNode }) {
 								<span>{activeModuleShortLabel}</span>
 								<ChevronDown className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
 							</button>
-							<div className="hidden lg:flex items-center gap-1 rounded-[22px] border border-white/80 bg-white/66 p-1.5 shadow-xl shadow-slate-950/8 backdrop-blur-xl">
+							<div className="relative hidden lg:flex items-center gap-1 rounded-[26px] border border-white/80 bg-white/76 p-1.5 shadow-[0_22px_60px_-34px_rgba(8,47,73,0.65)] backdrop-blur-2xl before:pointer-events-none before:absolute before:inset-x-5 before:-top-px before:h-px before:bg-gradient-to-r before:from-transparent before:via-cyan-300/80 before:to-transparent">
 								{visibleModules.map((m) => {
 									const Icon = m.icon;
 									const active = m.id === activeModule.id;
@@ -1068,15 +1068,18 @@ export function Layout({ children }: { children: ReactNode }) {
 										<Link key={m.id} href={getModuleEntryHref(m)}>
 											<div
 												className={cn(
-													"group relative flex h-10 items-center justify-center rounded-xl text-sm font-semibold transition-all",
+													"group relative flex h-11 items-center justify-center rounded-2xl text-sm font-semibold transition-all duration-200",
 														active
-															? "min-w-[132px] gap-2 bg-gradient-to-br from-slate-950 to-cyan-950 px-3 text-white shadow-lg shadow-cyan-950/20"
-															: "w-10 text-slate-500 hover:bg-white/80 hover:text-slate-950",
+															? "min-w-[142px] gap-2 bg-[radial-gradient(circle_at_18%_18%,rgba(34,211,238,0.24),transparent_34%),linear-gradient(135deg,#020617_0%,#082f49_58%,#0f766e_100%)] px-4 text-white shadow-[0_18px_34px_-22px_rgba(8,145,178,0.95)] ring-1 ring-cyan-200/20"
+															: "w-11 text-slate-500 hover:-translate-y-0.5 hover:bg-white/90 hover:text-slate-950 hover:shadow-sm",
 												)}
 												title={m.label}
 											>
+												{active && (
+													<span className="pointer-events-none absolute inset-x-4 -bottom-1 h-1 rounded-full bg-cyan-300/80 blur-[1px]" />
+												)}
 												<Icon
-													className="h-4 w-4 flex-shrink-0"
+													className={cn("h-[18px] w-[18px] flex-shrink-0", active && "drop-shadow-[0_0_10px_rgba(103,232,249,0.65)]")}
 													style={{ color: active ? "#67e8f9" : m.color }}
 												/>
 												{active && (

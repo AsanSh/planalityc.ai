@@ -70,6 +70,7 @@ import {
 import { PlanalitycLogo } from "@/components/brand/PlanalitycLogo";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import UserProfileDropdown from "@/components/user-profile-dropdown";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useModuleAccess } from "@/hooks/use-module-access";
 import { useAuth } from "@/lib/auth";
 import { detectModuleFromPath, type ModuleId } from "@/lib/module-access";
@@ -1227,6 +1228,9 @@ export function Layout({ children }: { children: ReactNode }) {
 
 					{/* Messages */}
 					<ChatPanel />
+
+					{/* Theme Toggle */}
+					<ThemeToggle />
 
 					{/* Divider */}
 					<div className="w-px h-6 bg-gray-100" />

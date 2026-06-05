@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { SonnerToaster } from "@/components/ui/sonner-toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { ThemeProvider } from "@/lib/theme";
 import { useModuleAccess } from "@/hooks/use-module-access";
 import { isChunkLoadError, reloadForFreshAssets } from "@/lib/chunk-reload";
 import NotFound from "@/pages/not-found";
@@ -736,15 +737,17 @@ function Router() {
 function App() {
 	return (
 		<QueryClientProvider client={queryClient}>
-			<TooltipProvider>
-				<AuthProvider>
-					<WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-						<Router />
-					</WouterRouter>
-					<Toaster />
-					<SonnerToaster />
-				</AuthProvider>
-			</TooltipProvider>
+			<ThemeProvider>
+				<TooltipProvider>
+					<AuthProvider>
+						<WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+							<Router />
+						</WouterRouter>
+						<Toaster />
+						<SonnerToaster />
+					</AuthProvider>
+				</TooltipProvider>
+			</ThemeProvider>
 		</QueryClientProvider>
 	);
 }

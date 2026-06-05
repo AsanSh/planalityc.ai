@@ -48,7 +48,31 @@ export function ChessUnitsImportDialog({
 		errors: { row: number; message: string }[];
 	} | null>(null);
 
+	const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+	const ALLOWED_TYPES = ['.xlsx', '.xls'];
+
 	const handleFile = async (file: File) => {
+		// Проверка размера
+		if (file.size > MAX_FILE_SIZE) {
+			toast({
+				title: "Файл слишком большой",
+				description: `Максимум ${MAX_FILE_SIZE / 1024 / 1024}MB. У вас: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
+				variant: "destructive",
+			});
+			return;
+		}
+
+		// Проверка типа
+		const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+		if (!ALLOWED_TYPES.includes(ext)) {
+			toast({
+				title: "Неверный формат файла",
+				description: "Поддерживаются только .xlsx и .xls",
+				variant: "destructive",
+			});
+			return;
+		}
+
 		try {
 			const parsed = await parseUnitsFile(file);
 			setRows(parsed);

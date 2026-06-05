@@ -109,6 +109,10 @@ function canApproveUnitPricing(role: string | undefined): boolean {
   return ["super_admin", "admin", "company_admin", "commercial_director"].includes(role || "");
 }
 
+function canImportUnits(role: string | undefined): boolean {
+  return ["super_admin", "admin", "company_admin", "pto", "engineer"].includes(role || "");
+}
+
 // ── PROJECTS ──────────────────────────────────────────────────────────────────
 
 // GET /projects/all — все проекты без пагинации (для дропдаунов)
@@ -1957,6 +1961,14 @@ router.get("/units/overview", async (req: AuthenticatedRequest, res): Promise<vo
 
 /** Импорт квартир из Excel (JSON-строки) */
 router.post("/units/import", async (req: AuthenticatedRequest, res): Promise<void> => {
+  // Проверка прав
+  if (!canImportUnits(req.userRole)) {
+    res.status(403).json({
+      error: "Импорт квартир доступен только администраторам и ПТО"
+    });
+    return;
+  }
+
   const companyId = req.scopedCompanyId!;
   const projectId = parseInt(String(req.body.projectId || ""), 10);
   const rows: Record<string, unknown>[] = Array.isArray(req.body.rows) ? req.body.rows : [];
@@ -1965,8 +1977,17 @@ router.post("/units/import", async (req: AuthenticatedRequest, res): Promise<voi
     res.status(400).json({ error: "projectId обязателен" });
     return;
   }
+
+  // Ограничение количества строк
+  const MAX_IMPORT_ROWS = 1000;
   if (rows.length === 0) {
     res.status(400).json({ error: "Нет строк для импорта" });
+    return;
+  }
+  if (rows.length > MAX_IMPORT_ROWS) {
+    res.status(400).json({
+      error: `Максимум ${MAX_IMPORT_ROWS} строк за раз. У вас: ${rows.length}. Разбейте на несколько файлов.`
+    });
     return;
   }
 

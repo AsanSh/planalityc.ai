@@ -170,6 +170,37 @@ const SECONDARY_AREAS = [
 	},
 ];
 
+const CHESS_QUICK_ACTIONS = [
+	{
+		title: "Проект",
+		description: "создать объект",
+		href: "/construction/projects?create=1",
+		icon: Building2,
+		tone: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+	},
+	{
+		title: "Шахматка",
+		description: "юниты и статусы",
+		href: "/construction/chess",
+		icon: Grid3X3,
+		tone: "bg-cyan-50 text-cyan-700 ring-cyan-100",
+	},
+	{
+		title: "Цены",
+		description: "коэффициенты",
+		href: "/construction/chess",
+		icon: LockKeyhole,
+		tone: "bg-blue-50 text-blue-700 ring-blue-100",
+	},
+	{
+		title: "Договор",
+		description: "бронь клиента",
+		href: "/construction/contracts-sales",
+		icon: FileText,
+		tone: "bg-violet-50 text-violet-700 ring-violet-100",
+	},
+];
+
 const toneClass: Record<string, string> = {
 	emerald: "from-emerald-500 to-teal-500 text-emerald-700 bg-emerald-50 ring-emerald-100",
 	cyan: "from-cyan-500 to-sky-500 text-cyan-700 bg-cyan-50 ring-cyan-100",
@@ -476,6 +507,56 @@ export default function ConstructionOpsDashboardTab() {
 								</Link>
 							))}
 						</div>
+					</div>
+
+					<div className="mt-6 rounded-3xl border border-slate-100 bg-slate-50 p-4">
+						<div className="flex items-center justify-between gap-3">
+							<div>
+								<p className="text-sm font-semibold text-slate-950">
+									Готовность запуска
+								</p>
+								<p className="text-xs text-slate-500">
+									что нужно закрыть до активных продаж
+								</p>
+							</div>
+							<span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
+								{launchProgress}%
+							</span>
+						</div>
+						<div className="mt-4 h-2 overflow-hidden rounded-full bg-white">
+							<div
+								className="h-full rounded-full bg-gradient-to-r from-cyan-500 via-emerald-400 to-lime-300 transition-all duration-700"
+								style={{ width: `${Math.max(8, launchProgress)}%` }}
+							/>
+						</div>
+					</div>
+
+					<div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+						{CHESS_QUICK_ACTIONS.map((action) => {
+							const Icon = action.icon;
+							return (
+								<Link
+									key={action.title}
+									href={action.href}
+									className="construction-press group rounded-3xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-lg hover:shadow-cyan-950/10"
+								>
+									<div className="flex items-start justify-between gap-3">
+										<div
+											className={`flex h-10 w-10 items-center justify-center rounded-2xl ring-1 ${action.tone}`}
+										>
+											<Icon className="h-4 w-4" />
+										</div>
+										<ArrowRight className="h-4 w-4 text-slate-300 transition-transform group-hover:translate-x-1 group-hover:text-cyan-600" />
+									</div>
+									<p className="mt-4 text-sm font-semibold text-slate-950">
+										{action.title}
+									</p>
+									<p className="mt-1 text-xs text-slate-500">
+										{action.description}
+									</p>
+								</Link>
+							);
+						})}
 					</div>
 				</div>
 			</section>

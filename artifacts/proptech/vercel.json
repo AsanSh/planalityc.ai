@@ -3,15 +3,10 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "installCommand": "npm install",
+  "installCommand": "npm install --include=dev",
   "devCommand": "npm run dev",
   "env": {
     "VITE_API_URL": "https://proptech-api.vercel.app"
-  },
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
-    }
   },
   "rewrites": [
     {

@@ -9,6 +9,7 @@ import {
 import { eq, and, desc, sql, ilike, getTableColumns } from "drizzle-orm";
 import { requireAuth, AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
+import { requireEnabledModule } from "../middleware/modules";
 import { sendServerError } from "../lib/http-errors";
 import {
   buildContractDocumentMeta,
@@ -40,7 +41,7 @@ import {
 
 const router = Router();
 
-router.use(requireAuth, requireTenantCompany);
+router.use(requireAuth, requireTenantCompany, requireEnabledModule("finance"));
 
 function unitIsSellable(unit: typeof constructionUnitsTable.$inferSelect): boolean {
   return (

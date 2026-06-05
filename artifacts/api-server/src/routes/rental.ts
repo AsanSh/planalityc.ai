@@ -18,6 +18,7 @@ import {
   uploadRentalDocumentTemplate,
 } from "../lib/rental-document-templates";
 import { requireTenantCompany } from "../middleware/tenant";
+import { requireEnabledModule } from "../middleware/modules";
 import {
   BANK_ACCOUNT_MODULE,
   accountExistsInModule,
@@ -68,7 +69,7 @@ async function logOp(
 
 const router: ReturnType<typeof Router> = Router();
 
-router.use(requireAuth, requireTenantCompany);
+router.use(requireAuth, requireTenantCompany, requireEnabledModule("rental"));
 
 // ---------- HELPERS ----------
 

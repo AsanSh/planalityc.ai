@@ -13,7 +13,7 @@ import { useAuth } from "@/lib/auth";
 const AUTH_GRADIENT =
 	"linear-gradient(155deg, #06111f 0%, #0b1f2f 46%, #0e7490 100%)";
 
-type SignupModule = "construction" | "rental" | "warehouse" | "crm";
+type SignupModule = "construction" | "finance" | "rental" | "warehouse" | "crm";
 
 const SIGNUP_MODULES: Array<{
 	key: SignupModule;
@@ -23,7 +23,12 @@ const SIGNUP_MODULES: Array<{
 	{
 		key: "construction",
 		title: "Строительство",
-		description: "проекты, шахматка, договоры, финансы",
+		description: "проекты, этапы, задачи, шахматка",
+	},
+	{
+		key: "finance",
+		title: "Финансы",
+		description: "операции, счета, бюджет, ОДДС и ОПУ",
 	},
 	{
 		key: "rental",
@@ -373,6 +378,7 @@ export default function Register() {
 													<button
 														key={module.key}
 														type="button"
+														aria-pressed={active}
 														onClick={() => toggleModule(module.key)}
 														className={`rounded-2xl border p-3 text-left transition-all ${
 															active

@@ -9,8 +9,9 @@ import {
 
 describe("api module-registry", () => {
   it("keeps signup business modules mapped to persisted settings keys", () => {
-    assert.deepEqual(SIGNUP_MODULE_TO_SETTINGS_KEYS.construction, ["construction", "sales", "reports"]);
-    assert.deepEqual(SIGNUP_MODULE_TO_SETTINGS_KEYS.rental, ["rental", "reports"]);
+    assert.deepEqual(SIGNUP_MODULE_TO_SETTINGS_KEYS.construction, ["construction", "sales"]);
+    assert.deepEqual(SIGNUP_MODULE_TO_SETTINGS_KEYS.finance, ["finance", "reports"]);
+    assert.deepEqual(SIGNUP_MODULE_TO_SETTINGS_KEYS.rental, ["rental"]);
     assert.deepEqual(SIGNUP_MODULE_TO_SETTINGS_KEYS.warehouse, ["warehouse"]);
     assert.deepEqual(SIGNUP_MODULE_TO_SETTINGS_KEYS.crm, ["crm", "notifications"]);
   });
@@ -21,6 +22,7 @@ describe("api module-registry", () => {
     assert.equal(byKey.get("construction")?.canonicalKey, "construction");
     assert.equal(byKey.get("warehouse")?.canonicalKey, "procurement");
     assert.equal(byKey.get("crm")?.canonicalKey, "crm");
+    assert.equal(byKey.get("finance")?.canonicalKey, "finance");
     assert.equal(byKey.get("reports")?.canonicalKey, "finance");
   });
 
@@ -28,6 +30,7 @@ describe("api module-registry", () => {
     assert.deepEqual(DEFAULT_ENABLED_MODULE_KEYS, [
       "construction",
       "sales",
+      "finance",
       "rental",
       "warehouse",
       "crm",

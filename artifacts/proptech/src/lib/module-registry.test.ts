@@ -11,6 +11,8 @@ describe("module-registry", () => {
 	it("maps backend settings keys to current UI modules", () => {
 		assert.equal(moduleIdFromSettingsKey("construction"), "construction");
 		assert.equal(moduleIdFromSettingsKey("sales"), "construction");
+		assert.equal(moduleIdFromSettingsKey("finance"), "finance");
+		assert.equal(moduleIdFromSettingsKey("reports"), "finance");
 		assert.equal(moduleIdFromSettingsKey("crm"), "proptech");
 		assert.equal(moduleIdFromSettingsKey("warehouse"), "warehouse");
 		assert.equal(moduleIdFromSettingsKey("rental"), "rental");
@@ -22,7 +24,7 @@ describe("module-registry", () => {
 		assert.deepEqual(settingsKeysToModuleIds(["warehouse"]), ["warehouse"]);
 		assert.deepEqual(
 			settingsKeysToModuleIds(["construction", "sales", "reports"]),
-			["construction", "consolidated"],
+			["construction", "finance", "consolidated"],
 		);
 		assert.deepEqual(
 			settingsKeysToModuleIds(["construction", "warehouse", "crm"]),
@@ -34,7 +36,7 @@ describe("module-registry", () => {
 	it("derives canonical modules for integration checks", () => {
 		assert.deepEqual(
 			canonicalModulesFromUiModules(["construction", "warehouse"]).sort(),
-			["construction", "finance", "procurement"].sort(),
+			["construction", "procurement"].sort(),
 		);
 		assert.deepEqual(
 			canonicalModulesFromUiModules(["rental"]).sort(),
@@ -52,8 +54,12 @@ describe("module-registry", () => {
 			false,
 		);
 		assert.equal(
-			isModuleIntegrationEnabled(["construction"], "construction.finance"),
+			isModuleIntegrationEnabled(["construction", "finance"], "construction.finance"),
 			true,
+		);
+		assert.equal(
+			isModuleIntegrationEnabled(["construction"], "construction.finance"),
+			false,
 		);
 		assert.equal(
 			isModuleIntegrationEnabled(["rental"], "rent.finance"),

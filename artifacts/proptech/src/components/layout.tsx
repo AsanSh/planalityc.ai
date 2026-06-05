@@ -73,6 +73,7 @@ import UserProfileDropdown from "@/components/user-profile-dropdown";
 import { useModuleAccess } from "@/hooks/use-module-access";
 import { useAuth } from "@/lib/auth";
 import { detectModuleFromPath, type ModuleId } from "@/lib/module-access";
+import { getModuleDefinition } from "@/lib/module-registry";
 import { resolveQuickActions } from "@/lib/quick-create-access";
 import { resolveNavItemHref } from "@/lib/nav-hrefs";
 import { cn } from "@/lib/utils";
@@ -96,14 +97,16 @@ interface Module {
 	sections: NavSection[];
 }
 
+const moduleMeta = (id: ModuleId) => getModuleDefinition(id)!;
+
 const MODULES: Module[] = [
 	{
 		id: "construction",
-		label: "Строительство",
-		shortLabel: "Стройка",
+		label: moduleMeta("construction").label,
+		shortLabel: moduleMeta("construction").shortLabel,
 		icon: Grid3X3,
 		color: "#0ea5e9",
-		urlPrefix: ["/construction"],
+		urlPrefix: moduleMeta("construction").routePrefixes,
 		sections: [
 			{
 				title: "Главный поток",
@@ -161,52 +164,6 @@ const MODULES: Module[] = [
 						href: "/construction/contractors",
 						label: "Подрядчики",
 						icon: Briefcase,
-					},
-				],
-			},
-			{
-				title: "Финансы и контроль",
-				items: [
-					{ href: "/construction/accounts", label: "Счета", icon: Landmark },
-					{
-						href: "/construction/payroll",
-						label: "Зарплатная ведомость",
-						icon: Banknote,
-					},
-					{
-						href: "/construction/analytics/cashflow",
-						label: "ОДДС",
-						icon: BarChart3,
-					},
-					{
-						href: "/construction/analytics/pnl",
-						label: "ОПУ",
-						icon: LineChart,
-					},
-					{
-						href: "/construction/analytics/expenses",
-						label: "Анализ расходов",
-						icon: PieChart,
-					},
-					{
-						href: "/construction/analytics/debt",
-						label: "Задолженности",
-						icon: AlertTriangle,
-					},
-					{
-						href: "/construction/planning/forecast",
-						label: "Будущие поступления",
-						icon: Calendar,
-					},
-					{
-						href: "/construction/planning/overdue",
-						label: "Просрочки",
-						icon: AlertTriangle,
-					},
-					{
-						href: "/construction/planning/approvals",
-						label: "Согласование",
-						icon: CheckSquare,
 					},
 				],
 			},
@@ -285,12 +242,110 @@ const MODULES: Module[] = [
 		],
 	},
 	{
+		id: "finance",
+		label: moduleMeta("finance").label,
+		shortLabel: moduleMeta("finance").shortLabel,
+		icon: Wallet,
+		color: "#0891b2",
+		urlPrefix: moduleMeta("finance").routePrefixes,
+		sections: [
+			{
+				title: "Обзор и операции",
+				items: [
+					{ href: "/dashboard?tab=finance", label: "Обзор", icon: LayoutDashboard },
+					{ href: "/construction/accounts", label: "Счета", icon: Landmark },
+					{
+						href: "/construction/operations",
+						label: "Операции",
+						icon: ArrowRightLeft,
+					},
+					{ href: "/construction/budget", label: "Бюджет и план/факт", icon: Wallet },
+					{
+						href: "/construction/payroll",
+						label: "Зарплатная ведомость",
+						icon: Banknote,
+					},
+				],
+			},
+			{
+				title: "Договоры и платежи",
+				items: [
+					{
+						href: "/construction/accruals",
+						label: "Начисления",
+						icon: ListOrdered,
+					},
+					{
+						href: "/construction/cashier",
+						label: "Приём платежей",
+						icon: DollarSign,
+					},
+					{
+						href: "/construction/reconciliation",
+						label: "Акт сверки",
+						icon: Scale,
+					},
+					{
+						href: "/construction/planning/forecast",
+						label: "Будущие поступления",
+						icon: Calendar,
+					},
+					{
+						href: "/construction/planning/overdue",
+						label: "Просрочки",
+						icon: AlertTriangle,
+					},
+					{
+						href: "/construction/planning/approvals",
+						label: "Согласование",
+						icon: CheckSquare,
+					},
+				],
+			},
+			{
+				title: "Финансовая аналитика",
+				items: [
+					{
+						href: "/construction/analytics/cashflow",
+						label: "ОДДС",
+						icon: BarChart3,
+					},
+					{
+						href: "/construction/analytics/pnl",
+						label: "ОПУ",
+						icon: LineChart,
+					},
+					{
+						href: "/construction/analytics/expenses",
+						label: "Анализ расходов",
+						icon: PieChart,
+					},
+					{
+						href: "/construction/analytics/debt",
+						label: "Задолженности",
+						icon: AlertTriangle,
+					},
+					{
+						href: "/reports/cashflow",
+						label: "Сводный ДДС",
+						icon: BarChart3,
+					},
+					{
+						href: "/reports/payments",
+						label: "История платежей",
+						icon: Activity,
+					},
+				],
+			},
+		],
+	},
+	{
 		id: "rental",
-		label: "Аренда",
-		shortLabel: "Аренда",
+		label: moduleMeta("rental").label,
+		shortLabel: moduleMeta("rental").shortLabel,
 		icon: Home,
 		color: "#14b8a6",
-		urlPrefix: ["/rental"],
+		urlPrefix: moduleMeta("rental").routePrefixes,
 		sections: [
 			{
 				title: "Управление",
@@ -389,11 +444,11 @@ const MODULES: Module[] = [
 	},
 	{
 		id: "proptech",
-		label: "CRM / Продажи",
-		shortLabel: "CRM",
+		label: moduleMeta("proptech").label,
+		shortLabel: moduleMeta("proptech").shortLabel,
 		icon: Target,
 		color: "#2563eb",
-		urlPrefix: ["/proptech", "/sales", "/crm"],
+		urlPrefix: moduleMeta("proptech").routePrefixes,
 		sections: [
 			{
 				title: "CRM",
@@ -431,11 +486,11 @@ const MODULES: Module[] = [
 	},
 	{
 		id: "warehouse",
-		label: "Закуп / Снабжение",
-		shortLabel: "Закуп",
+		label: moduleMeta("warehouse").label,
+		shortLabel: moduleMeta("warehouse").shortLabel,
 		icon: ShoppingBag,
 		color: "#0f766e",
-		urlPrefix: ["/warehouse"],
+		urlPrefix: moduleMeta("warehouse").routePrefixes,
 		sections: [
 			{
 				title: "Управление",
@@ -509,22 +564,11 @@ const MODULES: Module[] = [
 	},
 	{
 		id: "consolidated",
-		label: "Сводное",
-		shortLabel: "Сводное",
+		label: moduleMeta("consolidated").label,
+		shortLabel: moduleMeta("consolidated").shortLabel,
 		icon: Globe,
 		color: "#6b7280",
-		urlPrefix: [
-			"/dashboard",
-			"/counterparties",
-			"/properties",
-			"/users",
-			"/settings",
-			"/design-system",
-			"/import",
-			"/activity",
-			"/companies",
-			"/reports",
-		],
+		urlPrefix: moduleMeta("consolidated").routePrefixes,
 		sections: [
 			{
 				title: "Главная",

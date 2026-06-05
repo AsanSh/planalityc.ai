@@ -1,9 +1,10 @@
-export type BusinessModuleKey = "construction" | "rental" | "warehouse" | "crm";
+export type BusinessModuleKey = "construction" | "finance" | "rental" | "warehouse" | "crm";
 
 export type SettingsModuleKey =
   | "rental"
   | "sales"
   | "reports"
+  | "finance"
   | "notifications"
   | "crm"
   | "maintenance"
@@ -60,6 +61,14 @@ export const AVAILABLE_MODULES: AvailableModule[] = [
     description: "Детальная отчётность: долги, денежный поток, сводки по периодам",
     icon: "BarChart3",
     category: "analytics",
+  },
+  {
+    key: "finance",
+    canonicalKey: "finance",
+    name: "Финансовый учет",
+    description: "Приходы, расходы, счета, бюджеты, ОДДС, ОПУ и платежный календарь",
+    icon: "Wallet",
+    category: "core",
   },
   {
     key: "notifications",
@@ -120,8 +129,9 @@ export const AVAILABLE_MODULES: AvailableModule[] = [
 ];
 
 export const SIGNUP_MODULE_TO_SETTINGS_KEYS: Record<BusinessModuleKey, SettingsModuleKey[]> = {
-  construction: ["construction", "sales", "reports"],
-  rental: ["rental", "reports"],
+  construction: ["construction", "sales"],
+  finance: ["finance", "reports"],
+  rental: ["rental"],
   warehouse: ["warehouse"],
   crm: ["crm", "notifications"],
 };
@@ -129,6 +139,7 @@ export const SIGNUP_MODULE_TO_SETTINGS_KEYS: Record<BusinessModuleKey, SettingsM
 export const DEFAULT_ENABLED_MODULE_KEYS: SettingsModuleKey[] = [
   "construction",
   "sales",
+  "finance",
   "rental",
   "warehouse",
   "crm",

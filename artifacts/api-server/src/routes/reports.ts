@@ -6,6 +6,7 @@ import {
 } from "../lib/db";
 import { requireAuth, AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
+import { requireEnabledModule } from "../middleware/modules";
 import {
   buildAllDirectionReports,
   buildCounterpartyDashboard,
@@ -15,7 +16,7 @@ import {
 
 const router: ReturnType<typeof Router> = Router();
 
-router.use(requireAuth, requireTenantCompany);
+router.use(requireAuth, requireTenantCompany, requireEnabledModule("finance"));
 
 // GET /reports/debt — задолженности арендаторов
 router.get("/reports/debt", async (req: AuthenticatedRequest, res): Promise<void> => {

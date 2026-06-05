@@ -7,6 +7,7 @@ import {
 } from "../lib/db";
 import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middleware/auth";
+import { requireEnabledModule } from "../middleware/modules";
 import { requireTenantCompany } from "../middleware/tenant";
 import { sendServerError } from "../lib/http-errors";
 import {
@@ -21,7 +22,7 @@ import {
 import { randomUUID } from "node:crypto";
 
 const router = Router();
-router.use(requireAuth, requireTenantCompany);
+router.use(requireAuth, requireTenantCompany, requireEnabledModule("finance"));
 
 const CONSTRUCTION_ACCOUNTS = BANK_ACCOUNT_MODULE.construction;
 const VALID_SOURCES = new Set(["one_c", "bank", "manual"]);

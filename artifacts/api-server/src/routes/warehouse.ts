@@ -13,6 +13,7 @@ import {
 } from "../lib/db";
 import { requireAuth, requireRole, AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
+import { requireEnabledModule } from "../middleware/modules";
 import {
   buildContractDocumentMeta,
   parseContractDocumentMeta,
@@ -32,7 +33,7 @@ function mapSupplierResponse(row: typeof warehouseSuppliersTable.$inferSelect) {
 
 const router: ReturnType<typeof Router> = Router();
 
-router.use(requireAuth, requireTenantCompany);
+router.use(requireAuth, requireTenantCompany, requireEnabledModule("warehouse"));
 
 // Helper function for activity logging
 async function logWarehouseActivity(

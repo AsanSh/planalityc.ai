@@ -17,6 +17,7 @@ import {
 
 import { requireAuth, requireRole, AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
+import { requireEnabledModule } from "../middleware/modules";
 import crypto from "crypto";
 import {
   upsertLeadFromIntake,
@@ -167,7 +168,7 @@ router.post("/crm/webhooks/instagram/:webhookKey", async (req, res): Promise<voi
   }
 });
 
-router.use(requireAuth, requireTenantCompany);
+router.use(requireAuth, requireTenantCompany, requireEnabledModule("crm"));
 
 // Helper function to log CRM operations
 async function logCrmOp(

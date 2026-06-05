@@ -13,6 +13,7 @@ import {
   requireTenantCompany,
   getScopedCompanyId,
 } from "../middleware/tenant";
+import { requireEnabledModule } from "../middleware/modules";
 import { sendServerError } from "../lib/http-errors";
 
 const router = Router();
@@ -122,7 +123,7 @@ router.get(
 );
 
 // All remaining endpoints require a tenant company.
-router.use("/payroll", requireTenantCompany);
+router.use("/payroll", requireTenantCompany, requireEnabledModule("finance"));
 
 // GET /construction/payroll/employees — flat list with legal entity assignment
 router.get(

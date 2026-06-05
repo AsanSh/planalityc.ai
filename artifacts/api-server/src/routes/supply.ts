@@ -12,9 +12,10 @@ import {
 } from "../lib/db";
 import { requireAuth, requireRole, type AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
+import { requireEnabledModule } from "../middleware/modules";
 
 const router: ReturnType<typeof Router> = Router();
-router.use(requireAuth, requireTenantCompany);
+router.use(requireAuth, requireTenantCompany, requireEnabledModule("warehouse"));
 
 const REQUEST_STATUSES = new Set(["pending", "approved", "rejected", "ordered", "cancelled"]);
 const REQUEST_PRIORITIES = new Set(["low", "normal", "high", "urgent"]);

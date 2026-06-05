@@ -31,6 +31,7 @@ import { ensureCounterpartyWithRole } from "../lib/counterparty-sync";
 import { uploadFile } from "../lib/file-storage";
 import { requireAuth, AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
+import { isModuleEnabledForCompany, requireEnabledModule } from "../middleware/modules";
 import { sendServerError } from "../lib/http-errors";
 import { getPaginationParams, createPaginatedResponse, getPaginationQuery } from "../lib/pagination";
 import { validateQuery, commonSchemas } from "../middleware/validation";
@@ -102,7 +103,7 @@ import { UNIT_STATUS_COLOR_PRESETS, type UnitStatusColorKey } from "../lib/defau
 
 const router: ReturnType<typeof Router> = Router();
 
-router.use(requireAuth, requireTenantCompany);
+router.use(requireAuth, requireTenantCompany, requireEnabledModule("construction"));
 
 function canApproveUnitPricing(role: string | undefined): boolean {
   return ["super_admin", "admin", "company_admin", "commercial_director"].includes(role || "");
@@ -777,6 +778,10 @@ router.post("/tasks", async (req: AuthenticatedRequest, res): Promise<void> => {
     }
   }
   if (supplyRequestIdNum) {
+    if (!(await isModuleEnabledForCompany(req.scopedCompanyId!, "warehouse"))) {
+      res.status(403).json({ error: "Модуль снабжения не подключён" });
+      return;
+    }
     const [supplyRequest] = await db.select({ id: supplyRequestsTable.id, projectId: supplyRequestsTable.projectId })
       .from(supplyRequestsTable)
       .where(and(
@@ -923,6 +928,10 @@ router.patch("/tasks/:id", async (req: AuthenticatedRequest, res): Promise<void>
     }
   }
   if (parsedSupplyRequestId) {
+    if (!(await isModuleEnabledForCompany(req.scopedCompanyId!, "warehouse"))) {
+      res.status(403).json({ error: "Модуль снабжения не подключён" });
+      return;
+    }
     const [supplyRequest] = await db.select({ id: supplyRequestsTable.id, projectId: supplyRequestsTable.projectId })
       .from(supplyRequestsTable)
       .where(and(
@@ -1050,7 +1059,7 @@ router.patch("/tasks/:id", async (req: AuthenticatedRequest, res): Promise<void>
   res.json(row);
 });
 
-router.post("/tasks/:id/quick-supply-request", async (req: AuthenticatedRequest, res): Promise<void> => {
+router.post("/tasks/:id/quick-supply-request", requireEnabledModule("warehouse"), async (req: AuthenticatedRequest, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!Number.isFinite(id)) {
     res.status(400).json({ error: "Invalid task id" });

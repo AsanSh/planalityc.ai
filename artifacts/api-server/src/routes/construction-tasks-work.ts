@@ -26,10 +26,11 @@ import {
   type ScheduledSlaStep,
 } from "../lib/task-sla-reminders";
 import { requireAuth, type AuthenticatedRequest } from "../middleware/auth";
+import { requireEnabledModule } from "../middleware/modules";
 import { requireTenantCompany } from "../middleware/tenant";
 
 const router = Router();
-router.use(requireAuth, requireTenantCompany);
+router.use(requireAuth, requireTenantCompany, requireEnabledModule("construction"));
 
 type TaskRiskActionPlanStep = {
   title: string;
@@ -1122,4 +1123,3 @@ router.post("/tasks/:id/attachments", async (req: AuthenticatedRequest, res): Pr
 });
 
 export default router;
-

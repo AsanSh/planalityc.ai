@@ -46,8 +46,8 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 		label: "Центр управления",
 		shortLabel: "Сводное",
 		description: "Общее ядро компании: пользователи, контрагенты, настройки, импорт и сводная аналитика.",
-		settingsKeys: ["core", "reports", "analytics"],
-		routePrefixes: ["/dashboard", "/consolidated", "/counterparties", "/users", "/settings", "/reports"],
+		settingsKeys: ["core", "analytics", "properties", "users", "counterparties", "settings", "admin"],
+		routePrefixes: ["/dashboard", "/consolidated", "/counterparties", "/properties", "/users", "/settings", "/design-system", "/import", "/activity", "/companies", "/reports"],
 		dashboardTabs: ["control", "analytics"],
 		defaultPath: "/dashboard?tab=control",
 		ownedEntities: ["company", "user", "role", "counterparty", "notification"],
@@ -61,7 +61,7 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 		description: "Проекты, этапы, задачи, шахматка, продажи объектов и строительный контроль.",
 		settingsKeys: ["construction", "sales"],
 		routePrefixes: ["/construction"],
-		dashboardTabs: ["construction", "finance"],
+		dashboardTabs: ["construction"],
 		defaultPath: "/dashboard?tab=construction",
 		ownedEntities: ["project", "stage", "task", "unit", "salesContract"],
 		integrations: [
@@ -81,6 +81,35 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 				description: "Передача доступных юнитов в CRM и клиентский сервис.",
 			},
 		],
+	},
+	{
+		id: "finance",
+		canonicalId: "finance",
+		label: "Финансы",
+		shortLabel: "Финансы",
+		description: "Счета, операции, зарплата, ОДДС, ОПУ, бюджет, задолженности и платежный календарь.",
+		settingsKeys: ["finance", "reports"],
+		routePrefixes: [
+			"/construction/accounts",
+			"/construction/operations",
+			"/construction/accruals",
+			"/construction/cashier",
+			"/construction/reconciliation",
+			"/construction/payroll",
+			"/construction/budget",
+			"/construction/analytics",
+			"/construction/planning/forecast",
+			"/construction/planning/overdue",
+			"/construction/planning/approvals",
+			"/reports/cashflow",
+			"/reports/payments",
+			"/reports/debt",
+			"/reports/directions",
+		],
+		dashboardTabs: ["finance"],
+		defaultPath: "/dashboard?tab=finance",
+		ownedEntities: ["account", "operation", "budget", "accrual", "payment", "payrollEmployee", "approvalRequest"],
+		integrations: [],
 	},
 	{
 		id: "warehouse",
@@ -164,12 +193,39 @@ const UI_MODULE_TO_CANONICAL = MODULE_REGISTRY.reduce<Record<ModuleId, Canonical
 	{} as Record<ModuleId, CanonicalModuleId>,
 );
 
+const ROUTE_PREFIX_TO_MODULE_ID = MODULE_REGISTRY.flatMap((moduleDef) =>
+	moduleDef.routePrefixes.map((prefix) => ({ prefix, moduleId: moduleDef.id })),
+).sort((a, b) => b.prefix.length - a.prefix.length);
+
+const DASHBOARD_TAB_TO_MODULE_ID = MODULE_REGISTRY.reduce<Partial<Record<DashboardTabId, ModuleId>>>(
+	(acc, moduleDef) => {
+		for (const tab of moduleDef.dashboardTabs) acc[tab] = moduleDef.id;
+		return acc;
+	},
+	{},
+);
+
 export function getModuleDefinition(moduleId: ModuleId): ModuleDefinition | undefined {
 	return MODULE_REGISTRY.find((moduleDef) => moduleDef.id === moduleId);
 }
 
 export function moduleIdFromSettingsKey(key: string): ModuleId | null {
 	return SETTINGS_KEY_TO_MODULE_ID[key] ?? null;
+}
+
+export function getSettingsKeyModuleId(key: string): ModuleId | null {
+	return moduleIdFromSettingsKey(key);
+}
+
+export function getDashboardTabModuleId(tab: DashboardTabId): ModuleId | null {
+	return DASHBOARD_TAB_TO_MODULE_ID[tab] ?? null;
+}
+
+export function getRouteModuleId(path: string): ModuleId | null {
+	for (const { prefix, moduleId } of ROUTE_PREFIX_TO_MODULE_ID) {
+		if (path === prefix || path.startsWith(`${prefix}/`)) return moduleId;
+	}
+	return null;
 }
 
 export function settingsKeysToModuleIds(keys: string[] | undefined): ModuleId[] | null {
@@ -194,7 +250,6 @@ export function canonicalModulesFromUiModules(moduleIds: ModuleId[]): CanonicalM
 	for (const moduleId of moduleIds) {
 		const mapped = UI_MODULE_TO_CANONICAL[moduleId];
 		if (mapped) canonical.add(mapped);
-		if (moduleId === "construction") canonical.add(FINANCE_CANONICAL_MODULE);
 		if (moduleId === "rental") canonical.add("investors");
 	}
 	return [...canonical];

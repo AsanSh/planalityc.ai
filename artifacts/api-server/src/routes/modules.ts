@@ -16,7 +16,7 @@ const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth, requireTenantCompany);
 
 const configureModulesSchema = z.object({
-  modules: z.array(z.enum(["construction", "rental", "warehouse", "crm"])).min(1),
+  modules: z.array(z.enum(["construction", "finance", "rental", "warehouse", "crm"])).min(1),
 });
 
 // GET /modules — список модулей с состоянием для компании

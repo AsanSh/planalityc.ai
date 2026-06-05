@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const baseURL =
-	process.env.E2E_BASE_URL || "https://proptech-sigma-eight.vercel.app";
+	process.env.E2E_BASE_URL || "https://planalitycai.vercel.app";
 
 export default defineConfig({
 	testDir: "./e2e",

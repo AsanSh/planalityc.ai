@@ -63,6 +63,17 @@ describe("UI integrity", () => {
 		assert.deepEqual(offenders, []);
 	});
 
+	it("product source does not ship mock/demo branches or alert-only actions", () => {
+		const scannedRoots = ["pages", "components", "features"].map((dir) => join(srcRoot, dir));
+		const forbidden = /\bmock\b|\bdemo\b|alert\s*\(|coming soon|not implemented|не реализ|заглуш/i;
+		const offenders = scannedRoots
+			.flatMap(walk)
+			.filter((file) => !file.endsWith(".test.ts"))
+			.filter((file) => forbidden.test(readFileSync(file, "utf8")))
+			.map((file) => relative(srcRoot, file));
+		assert.deepEqual(offenders, []);
+	});
+
 	it("notification and chat entry points are available in the shared layout", () => {
 		assert.match(layoutSource, /<NotificationBell\s*\/>/);
 		assert.match(layoutSource, /<ChatPanel\s*\/>/);

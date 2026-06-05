@@ -8,6 +8,7 @@ import cronRouter from "./routes/cron";
 import { logger } from "./lib/logger";
 import { db } from "./lib/db";
 import { runMigrations } from "./lib/migrate";
+import { captureException } from "./lib/sentry";
 import { generalLimiter, authLimiter, apiLimiter } from "./middleware/rate-limiter";
 import { xssProtection } from "./middleware/validation";
 
@@ -156,6 +157,11 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     { err, req: { method: req.method, url: req.url } },
     "Unhandled error"
   );
+  void captureException(err, {
+    method: req.method,
+    path: req.url?.split("?")[0],
+    statusCode: res.statusCode >= 400 ? res.statusCode : undefined,
+  });
 
   // Provide user-friendly error messages in Russian
   let userMessage = "Внутренняя ошибка сервера";

@@ -4,94 +4,20 @@ import { z } from "zod";
 import { db, moduleSettingsTable } from "../lib/db";
 import { requireAuth, requireRole, AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
+import {
+  AVAILABLE_MODULES,
+  DEFAULT_ENABLED_MODULE_KEYS,
+  SIGNUP_MODULE_TO_SETTINGS_KEYS,
+  type BusinessModuleKey,
+} from "../lib/module-registry";
 
 const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth, requireTenantCompany);
 
-const AVAILABLE_MODULES = [
-  {
-    key: "rental",
-    name: "Управление арендой",
-    description: "Договоры аренды, начисления, платежи, депозиты, отчёты собственников",
-    icon: "Home",
-    category: "core",
-  },
-  {
-    key: "sales",
-    name: "Управление продажами",
-    description: "Объекты на продажу, шахматка, договоры купли-продажи, рассрочка",
-    icon: "Building2",
-    category: "core",
-  },
-  {
-    key: "reports",
-    name: "Финансовые отчёты",
-    description: "Детальная отчётность: долги, денежный поток, сводки по периодам",
-    icon: "BarChart3",
-    category: "analytics",
-  },
-  {
-    key: "notifications",
-    name: "Уведомления клиентов",
-    description: "Автоматические SMS и email уведомления арендаторам о начислениях и задолженностях",
-    icon: "Bell",
-    category: "communication",
-  },
-  {
-    key: "crm",
-    name: "CRM для клиентов",
-    description: "Воронка продаж, лиды, история взаимодействий с покупателями",
-    icon: "Users",
-    category: "communication",
-  },
-  {
-    key: "maintenance",
-    name: "Заявки на обслуживание",
-    description: "Приём и отслеживание заявок от арендаторов, учёт ремонтных работ",
-    icon: "Wrench",
-    category: "operations",
-  },
-  {
-    key: "analytics",
-    name: "Аналитика и BI",
-    description: "Расширенная аналитика: доходность по объектам, прогнозы, сравнения",
-    icon: "TrendingUp",
-    category: "analytics",
-  },
-  {
-    key: "documents",
-    name: "Электронный документооборот",
-    description: "Хранение, подписание и управление документами, шаблоны договоров",
-    icon: "FileText",
-    category: "operations",
-  },
-  {
-    key: "construction",
-    name: "Контроль строительства",
-    description: "Проекты, этапы, задачи, бюджет, операции, шахматка, ИИ-инструменты",
-    icon: "HardHat",
-    category: "core",
-  },
-  {
-    key: "warehouse",
-    name: "Закупки и склад",
-    description: "Материалы, поставщики, поступления, списания, инвентаризация",
-    icon: "Package",
-    category: "operations",
-  },
-];
-
 const configureModulesSchema = z.object({
   modules: z.array(z.enum(["construction", "rental", "warehouse", "crm"])).min(1),
 });
-
-const SIGNUP_MODULE_TO_SETTINGS_KEYS: Record<string, string[]> = {
-  construction: ["construction", "sales", "reports"],
-  rental: ["rental", "reports"],
-  warehouse: ["warehouse"],
-  crm: ["crm", "notifications"],
-};
 
 // GET /modules — список модулей с состоянием для компании
 router.get("/modules", async (req: AuthenticatedRequest, res): Promise<void> => {
@@ -158,7 +84,7 @@ router.post("/modules/configure", requireRole("admin", "company_admin"), async (
 
   const enabled = new Set<string>();
   for (const key of parsed.data.modules) {
-    for (const mapped of SIGNUP_MODULE_TO_SETTINGS_KEYS[key] ?? []) enabled.add(mapped);
+    for (const mapped of SIGNUP_MODULE_TO_SETTINGS_KEYS[key as BusinessModuleKey] ?? []) enabled.add(mapped);
   }
 
   const availableKeys = AVAILABLE_MODULES.map((m) => m.key);
@@ -194,7 +120,7 @@ router.get("/modules/enabled", async (req: AuthenticatedRequest, res): Promise<v
 
   const enabledKeys = settings.map(s => s.moduleKey);
   if (enabledKeys.length === 0) {
-    res.json(["construction", "sales", "rental", "warehouse", "crm", "reports"]);
+    res.json(DEFAULT_ENABLED_MODULE_KEYS);
     return;
   }
 

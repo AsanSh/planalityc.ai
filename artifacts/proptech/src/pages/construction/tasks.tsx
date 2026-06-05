@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useModuleAccess } from "@/hooks/use-module-access";
 import { api } from "@/lib/api";
 import { getApiBase } from "@/lib/api-base";
 import { defaultPeriod, inPeriod, PeriodPicker, type PeriodValue } from "@/components/period-picker";
@@ -226,7 +227,7 @@ function stageLabel(stage: Stage, parentMap: Record<number, Stage>): string {
 }
 
 function TaskDialog({
-	task, projects, users, contractors, salesContracts, supplyRequests, currentUserId, onClose, onSaved,
+	task, projects, users, contractors, salesContracts, supplyRequests, currentUserId, canUseProcurement, onClose, onSaved,
 }: {
 	task: Task | null | "new";
 	projects: Project[];
@@ -235,6 +236,7 @@ function TaskDialog({
 	salesContracts: SalesContract[];
 	supplyRequests: SupplyRequest[];
 	currentUserId: number | undefined;
+	canUseProcurement: boolean;
 	onClose: () => void;
 	onSaved: () => void;
 }) {
@@ -367,7 +369,7 @@ function TaskDialog({
 							: null,
 					contractorId: form.contractorId ? parseInt(form.contractorId, 10) : null,
 					salesContractId: form.salesContractId ? parseInt(form.salesContractId, 10) : null,
-					supplyRequestId: form.supplyRequestId ? parseInt(form.supplyRequestId, 10) : null,
+					supplyRequestId: canUseProcurement && form.supplyRequestId ? parseInt(form.supplyRequestId, 10) : null,
 				}),
 			});
 			if (!res.ok) {
@@ -524,20 +526,22 @@ function TaskDialog({
 								</SelectContent>
 							</Select>
 						</div>
-						<div>
-							<Label>Заявка снабжения</Label>
-							<Select value={form.supplyRequestId || "none"} onValueChange={(v) => set("supplyRequestId", v === "none" ? "" : v)}>
-								<SelectTrigger className="mt-1"><SelectValue placeholder="Не связана" /></SelectTrigger>
-								<SelectContent>
-									<SelectItem value="none">— Не связана —</SelectItem>
-									{availableSupplyRequests.map((r) => (
-										<SelectItem key={r.id} value={String(r.id)}>
-											Заявка #{r.id}{r.status ? ` · ${r.status}` : ""}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
+						{canUseProcurement && (
+							<div>
+								<Label>Заявка снабжения</Label>
+								<Select value={form.supplyRequestId || "none"} onValueChange={(v) => set("supplyRequestId", v === "none" ? "" : v)}>
+									<SelectTrigger className="mt-1"><SelectValue placeholder="Не связана" /></SelectTrigger>
+									<SelectContent>
+										<SelectItem value="none">— Не связана —</SelectItem>
+										{availableSupplyRequests.map((r) => (
+											<SelectItem key={r.id} value={String(r.id)}>
+												Заявка #{r.id}{r.status ? ` · ${r.status}` : ""}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						)}
 					</div>
 					<div className="flex justify-end gap-2 pt-1">
 						<Button type="button" variant="outline" onClick={onClose} disabled={loading}>Отмена</Button>
@@ -563,7 +567,7 @@ function Avatar({ name, size = "sm" }: { name: string; size?: "sm" | "md" }) {
 }
 
 function TaskCard({
-	task, userMap, projectMap, stageLabelText, contractorMap, salesContractMap, supplyRequestMap, onEdit, onDelete, onStatusChange, onQuickSupplyRequest, onQuickSalesContract, kanbanDraggable = false,
+	task, userMap, projectMap, stageLabelText, contractorMap, salesContractMap, supplyRequestMap, canUseProcurement, onEdit, onDelete, onStatusChange, onQuickSupplyRequest, onQuickSalesContract, kanbanDraggable = false,
 }: {
 	task: Task;
 	userMap: Record<number, ApiUser>;
@@ -572,6 +576,7 @@ function TaskCard({
 	contractorMap: Record<number, string>;
 	salesContractMap: Record<number, string>;
 	supplyRequestMap: Record<number, string>;
+	canUseProcurement: boolean;
 	onEdit: (t: Task) => void;
 	onDelete: (id: number) => void;
 	onStatusChange: (task: Task, status: string) => void;
@@ -669,7 +674,7 @@ function TaskCard({
 					>
 						<Edit2 className="w-3.5 h-3.5" />
 					</button>
-					{!task.supplyRequestId && (
+					{canUseProcurement && !task.supplyRequestId && (
 						<button
 							type="button"
 							onClick={(e) => {
@@ -740,7 +745,7 @@ function TaskCard({
 						📄 {salesContractMap[Number(task.salesContractId)] || `#${task.salesContractId}`}
 					</span>
 				)}
-				{task.supplyRequestId && (
+				{canUseProcurement && task.supplyRequestId && (
 					<span className="text-[10px] text-teal-700 truncate max-w-[130px]">
 						📦 {supplyRequestMap[Number(task.supplyRequestId)] || `#${task.supplyRequestId}`}
 					</span>
@@ -783,6 +788,7 @@ function TasksTable({
 	contractorMap,
 	salesContractMap,
 	supplyRequestMap,
+	canUseProcurement,
 	onRowClick,
 	footer,
 }: {
@@ -793,6 +799,7 @@ function TasksTable({
 	contractorMap: Record<number, string>;
 	salesContractMap: Record<number, string>;
 	supplyRequestMap: Record<number, string>;
+	canUseProcurement: boolean;
 	onRowClick: (task: Task) => void;
 	footer?: React.ReactNode;
 }) {
@@ -926,7 +933,7 @@ function TasksTable({
 					const parts: string[] = [];
 					if (t.contractorId) parts.push(contractorMap[Number(t.contractorId)] || `Подрядчик #${t.contractorId}`);
 					if (t.salesContractId) parts.push(salesContractMap[Number(t.salesContractId)] || `Договор #${t.salesContractId}`);
-					if (t.supplyRequestId) parts.push(supplyRequestMap[Number(t.supplyRequestId)] || `Заявка #${t.supplyRequestId}`);
+					if (canUseProcurement && t.supplyRequestId) parts.push(supplyRequestMap[Number(t.supplyRequestId)] || `Заявка #${t.supplyRequestId}`);
 					return (
 						<div className="text-xs text-gray-600 max-w-[220px] truncate">
 							{parts.length ? parts.join(" · ") : "—"}
@@ -984,7 +991,7 @@ function TasksTable({
 				},
 			},
 		],
-		[userMap, projectMap, stageLabelByTaskId, contractorMap, salesContractMap, supplyRequestMap],
+		[userMap, projectMap, stageLabelByTaskId, contractorMap, salesContractMap, supplyRequestMap, canUseProcurement],
 	);
 
 	return (
@@ -1275,6 +1282,8 @@ export default function ConstructionTasks() {
 	const qc = useQueryClient();
 	const { toast } = useToast();
 	const { user: authUser } = useAuth();
+	const { canUseIntegration } = useModuleAccess();
+	const canUseProcurement = canUseIntegration("construction.procurement");
 	const currentUserId = authUser?.id;
 	const me = currentUserId != null ? Number(currentUserId) : null;
 	const [dialog, setDialog] = useState<Task | null | "new">(null);
@@ -1344,6 +1353,7 @@ export default function ConstructionTasks() {
 	const { data: supplyRequests = [] } = useQuery<SupplyRequest[]>({
 		queryKey: ["supply-requests-all"],
 		queryFn: () => api.get("/supply/requests").then((r) => Array.isArray(r.data) ? r.data : []),
+		enabled: canUseProcurement,
 	});
 	const { data: taskDependencies = [] } = useQuery<TaskDependency[]>({
 		queryKey: ["construction-task-dependencies", projectFilter],
@@ -1477,6 +1487,7 @@ export default function ConstructionTasks() {
 	};
 
 	const handleQuickSupplyRequest = async (task: Task) => {
+		if (!canUseProcurement) return;
 		try {
 			await api.post(`/construction/tasks/${task.id}/quick-supply-request`);
 			toast({ title: "Заявка снабжения создана и привязана к задаче" });
@@ -1736,6 +1747,7 @@ export default function ConstructionTasks() {
 											contractorMap={contractorMap}
 											salesContractMap={salesContractMap}
 											supplyRequestMap={supplyRequestMap}
+											canUseProcurement={canUseProcurement}
 											onEdit={setDialog}
 											onDelete={handleDelete}
 											onStatusChange={handleStatusChange}
@@ -1769,6 +1781,7 @@ export default function ConstructionTasks() {
 								contractorMap={contractorMap}
 								salesContractMap={salesContractMap}
 								supplyRequestMap={supplyRequestMap}
+								canUseProcurement={canUseProcurement}
 								onRowClick={(task) => navigate(`/construction/tasks/${task.id}`)}
 								footer={tableGroupBy === "none" ? tableFooter : undefined}
 							/>
@@ -1797,6 +1810,7 @@ export default function ConstructionTasks() {
 				salesContracts={salesContracts}
 				supplyRequests={supplyRequests}
 				currentUserId={currentUserId}
+				canUseProcurement={canUseProcurement}
 				onClose={() => setDialog(null)}
 				onSaved={() => qc.invalidateQueries({ queryKey: ["construction-tasks"] })}
 			/>

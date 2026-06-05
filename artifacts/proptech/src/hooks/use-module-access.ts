@@ -9,33 +9,17 @@ import {
 	type ModuleId,
 } from "@/lib/module-access";
 import { parseCustomRoleId } from "@/lib/custom-role-id";
+import {
+	isModuleIntegrationEnabled,
+	settingsKeysToModuleIds,
+	type ModuleIntegrationId,
+} from "@/lib/module-registry";
 
 interface CompanyRoleRow {
 	id: number;
 	name: string;
 	permissions: string[];
 	isActive: boolean;
-}
-
-const SETTINGS_KEY_TO_MODULE: Record<string, ModuleId> = {
-	construction: "construction",
-	sales: "construction",
-	rental: "rental",
-	warehouse: "warehouse",
-	crm: "proptech",
-};
-
-function modulesFromEnabledKeys(keys: string[] | undefined): ModuleId[] | null {
-	if (!Array.isArray(keys) || keys.length === 0) return null;
-	const business = new Set<ModuleId>();
-	for (const key of keys) {
-		const moduleId = SETTINGS_KEY_TO_MODULE[key];
-		if (moduleId) business.add(moduleId);
-	}
-	if (business.size === 0) return null;
-	const result = [...business];
-	if (result.length > 1) result.push("consolidated");
-	return result;
 }
 
 export function useModuleAccess() {
@@ -66,7 +50,7 @@ export function useModuleAccess() {
 
 	const allowedModules = useMemo(() => {
 		const byRole = resolveAllowedModules(role, permissions);
-		const byCompany = modulesFromEnabledKeys(enabledKeys);
+		const byCompany = settingsKeysToModuleIds(enabledKeys);
 		if (!byCompany) return byRole;
 		if (byRole.includes("consolidated") && !byCompany.includes("consolidated")) {
 			byCompany.push("consolidated");
@@ -89,5 +73,7 @@ export function useModuleAccess() {
 		canAccess: (path: string) =>
 			canAccessPath(path, allowedModules, role, permissions),
 		hasModule: (moduleId: ModuleId) => allowedModules.includes(moduleId),
+		canUseIntegration: (integrationId: ModuleIntegrationId) =>
+			isModuleIntegrationEnabled(allowedModules, integrationId),
 	};
 }

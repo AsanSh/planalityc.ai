@@ -8,6 +8,7 @@ import { SonnerToaster } from "@/components/ui/sonner-toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { useModuleAccess } from "@/hooks/use-module-access";
+import { isChunkLoadError, reloadForFreshAssets } from "@/lib/chunk-reload";
 import NotFound from "@/pages/not-found";
 
 class PageErrorBoundary extends React.Component<
@@ -23,20 +24,26 @@ class PageErrorBoundary extends React.Component<
 	}
 	render() {
 		if (this.state.error) {
+			const isStaleAssetError = isChunkLoadError(this.state.error);
 			return (
 				<div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center p-6">
-					<div className="text-4xl">⚠️</div>
+					<div className="text-4xl">!</div>
 					<h2 className="text-lg font-semibold text-gray-800">
 						Страница не загрузилась
 					</h2>
 					<p className="text-sm text-gray-500 max-w-md">
-						{this.state.error.message}
+						{isStaleAssetError
+							? "Версия приложения обновилась. Нажмите кнопку ниже, чтобы загрузить свежие файлы."
+							: this.state.error.message}
 					</p>
 					<button
-						onClick={() => this.setState({ error: null })}
+						onClick={() => {
+							if (reloadForFreshAssets(this.state.error)) return;
+							this.setState({ error: null });
+						}}
 						className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
 					>
-						Попробовать снова
+						{isStaleAssetError ? "Обновить страницу" : "Попробовать снова"}
 					</button>
 				</div>
 			);

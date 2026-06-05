@@ -1,26 +1,57 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
-const email = process.env.E2E_EMAIL;
-const password = process.env.E2E_PASSWORD;
+const email =
+	process.env.E2E_EMAIL ||
+	`e2e-${Date.now()}-${Math.random().toString(16).slice(2)}@planalityc.test`;
+const password = process.env.E2E_PASSWORD || "PlanalitycE2E!2026";
+const hasProvidedCredentials = Boolean(process.env.E2E_EMAIL && process.env.E2E_PASSWORD);
+const canAutoRegister = process.env.E2E_AUTO_REGISTER === "1";
 
-test.describe("Dashboard navigation smoke", () => {
-	test.beforeEach(() => {
-		test.skip(
-			!email || !password,
-			"Задайте E2E_EMAIL и E2E_PASSWORD для smoke-теста",
-		);
-	});
+async function loginOrRegister(page: Page) {
+	test.skip(
+		!hasProvidedCredentials && !canAutoRegister,
+		"Задайте E2E_EMAIL/E2E_PASSWORD или включите E2E_AUTO_REGISTER=1",
+	);
 
-	test("login → смена модуля → вкладка Dashboard", async ({ page }) => {
-		await page.goto("/login");
-		await page.locator('input[type="email"]').fill(email!);
-		await page.locator('input[type="password"]').fill(password!);
-		await page.locator('button[type="submit"]').click();
+	await page.goto("/login");
+	await page.locator('input[type="email"]').fill(email);
+	await page.locator('input[type="password"]').fill(password);
+	await page.locator('button[type="submit"]').click();
 
+	try {
 		await page.waitForURL(
 			/(dashboard|construction|rental|crm|warehouse|properties)/,
-			{ timeout: 20_000 },
+			{ timeout: 12_000 },
 		);
+		return;
+	} catch {
+		if (hasProvidedCredentials) {
+			throw new Error("E2E credentials were provided but login failed");
+		}
+	}
+
+	await page.goto("/register");
+	await page.getByPlaceholder("ООО «СтройИнвест»").fill("Planalityc E2E");
+	await page.getByPlaceholder("12345678901234").fill("99999999999999");
+	await page.getByPlaceholder("+996 700 000 000").fill("+996 700 000 000");
+	await page.getByPlaceholder("info@company.kg").fill(email);
+	await page.getByRole("button", { name: /Далее/ }).click();
+
+	await page.getByPlaceholder("Айбек").fill("E2E");
+	await page.getByPlaceholder("Асанов").fill("Tester");
+	await page.getByPlaceholder("Минимум 12 символов").fill(password);
+	await page.getByPlaceholder("Повторите пароль").fill(password);
+	await page.getByRole("button", { name: /Зарегистрироваться/ }).click();
+
+	await page.waitForURL(
+		/(dashboard|construction|rental|crm|warehouse|properties)/,
+		{ timeout: 20_000 },
+	);
+}
+
+test.describe("Dashboard navigation smoke", () => {
+	test("login → смена модуля → вкладка Dashboard", async ({ page }) => {
+		await loginOrRegister(page);
 
 		// Модули теперь переключаются без dropdown: активный модуль подписан,
 		// остальные раскрывают label на hover и ведут сразу на свой маршрут.
@@ -33,7 +64,7 @@ test.describe("Dashboard navigation smoke", () => {
 
 		// Unified Dashboard — смена вкладки
 		await page.goto("/dashboard?tab=control");
-		await expect(page.getByRole("heading", { name: "Обзор" })).toBeVisible();
+		await expect(page.getByRole("tab", { name: "Центр управления" })).toBeVisible();
 
 		const financeTab = page.getByRole("tab", { name: "Финансы" });
 		if (await financeTab.isVisible()) {

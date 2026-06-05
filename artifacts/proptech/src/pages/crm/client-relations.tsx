@@ -12,6 +12,7 @@ import {
 	Users,
 	Wrench,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 
 const SEGMENTS = [
@@ -55,7 +56,56 @@ const CAMPAIGNS = [
 	"Инвесторам: аналитика роста стоимости и рыночная цена за м²",
 ];
 
+type Announcement = {
+	id: string;
+	title: string;
+	segment: string;
+	channel: string;
+	status: "Черновик" | "Опубликовано";
+};
+
+const ANNOUNCEMENTS_KEY = "planalityc-client-announcements";
+
 export default function ClientRelations() {
+	const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+	const [title, setTitle] = useState("");
+	const [segment, setSegment] = useState(SEGMENTS[0]?.label ?? "Клиенты ЖК");
+	const [channel, setChannel] = useState("Портал");
+
+	useEffect(() => {
+		try {
+			const raw = window.localStorage.getItem(ANNOUNCEMENTS_KEY);
+			if (raw) setAnnouncements(JSON.parse(raw) as Announcement[]);
+		} catch {
+			setAnnouncements([]);
+		}
+	}, []);
+
+	useEffect(() => {
+		window.localStorage.setItem(ANNOUNCEMENTS_KEY, JSON.stringify(announcements));
+	}, [announcements]);
+
+	const publishedCount = useMemo(
+		() => announcements.filter((item) => item.status === "Опубликовано").length,
+		[announcements],
+	);
+
+	const createAnnouncement = (status: Announcement["status"]) => {
+		const normalizedTitle = title.trim();
+		if (!normalizedTitle) return;
+		setAnnouncements((items) => [
+			{
+				id: crypto.randomUUID(),
+				title: normalizedTitle,
+				segment,
+				channel,
+				status,
+			},
+			...items,
+		]);
+		setTitle("");
+	};
+
 	return (
 		<div className="max-w-7xl space-y-6">
 			<section className="rounded-xl border border-slate-200 bg-slate-950 p-5 text-white shadow-sm">
@@ -76,6 +126,12 @@ export default function ClientRelations() {
 					<Link href="/crm/clients">
 						<div className="inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-700">
 							Перейти к клиентам
+							<ArrowRight className="h-4 w-4" />
+						</div>
+					</Link>
+					<Link href="/portal-login">
+						<div className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/15 hover:bg-white/15">
+							Открыть портал
 							<ArrowRight className="h-4 w-4" />
 						</div>
 					</Link>
@@ -138,6 +194,89 @@ export default function ClientRelations() {
 
 				<div className="space-y-4">
 					<div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+						<div className="flex items-center justify-between gap-3">
+							<div className="flex items-center gap-2">
+								<Megaphone className="h-4 w-4 text-cyan-700" />
+								<h2 className="text-sm font-semibold text-slate-950">
+									Объявления для клиентов
+								</h2>
+							</div>
+							<span className="rounded-full bg-cyan-50 px-2 py-1 text-xs font-semibold text-cyan-700">
+								{publishedCount} опубликовано
+							</span>
+						</div>
+						<div className="mt-3 space-y-3">
+							<input
+								value={title}
+								onChange={(event) => setTitle(event.target.value)}
+								placeholder="Например: акция на ремонт для ЖК"
+								className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
+							/>
+							<div className="grid gap-2 sm:grid-cols-2">
+								<select
+									value={segment}
+									onChange={(event) => setSegment(event.target.value)}
+									className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
+								>
+									{SEGMENTS.map((item) => (
+										<option key={item.label} value={item.label}>
+											{item.label}
+										</option>
+									))}
+								</select>
+								<select
+									value={channel}
+									onChange={(event) => setChannel(event.target.value)}
+									className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
+								>
+									<option>Портал</option>
+									<option>Email</option>
+									<option>WhatsApp</option>
+									<option>Портал + Email</option>
+								</select>
+							</div>
+							<div className="grid gap-2 sm:grid-cols-2">
+								<button
+									type="button"
+									onClick={() => createAnnouncement("Черновик")}
+									className="h-10 rounded-lg border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50"
+								>
+									Сохранить черновик
+								</button>
+								<button
+									type="button"
+									onClick={() => createAnnouncement("Опубликовано")}
+									className="h-10 rounded-lg bg-cyan-600 text-sm font-semibold text-white hover:bg-cyan-700 disabled:opacity-50"
+									disabled={!title.trim()}
+								>
+									Опубликовать
+								</button>
+							</div>
+						</div>
+						<div className="mt-4 space-y-2">
+							{announcements.length === 0 ? (
+								<div className="rounded-lg border border-dashed border-slate-200 p-4 text-xs text-slate-500">
+									Пока нет публикаций. Создайте первое объявление для портала или рассылки.
+								</div>
+							) : (
+								announcements.map((item) => (
+									<div key={item.id} className="rounded-lg border border-slate-200 p-3">
+										<div className="flex items-start justify-between gap-3">
+											<p className="text-sm font-semibold text-slate-950">{item.title}</p>
+											<span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">
+												{item.status}
+											</span>
+										</div>
+										<p className="mt-1 text-xs text-slate-500">
+											{item.segment} · {item.channel}
+										</p>
+									</div>
+								))
+							)}
+						</div>
+					</div>
+
+					<div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
 						<div className="flex items-center gap-2">
 							<Send className="h-4 w-4 text-cyan-700" />
 							<h2 className="text-sm font-semibold text-slate-950">
@@ -165,19 +304,20 @@ export default function ClientRelations() {
 							“Связаться с менеджером” должны идти из портала в CRM-задачи.
 						</p>
 					</div>
-
-					<div className="rounded-xl border border-cyan-200 bg-cyan-50 p-4">
-						<div className="flex items-center gap-2">
-							<Bell className="h-4 w-4 text-cyan-700" />
-							<p className="text-sm font-semibold text-cyan-950">
-								Следующий шаг
+					<Link href="/construction/contracts-sales">
+						<div className="cursor-pointer rounded-xl border border-cyan-200 bg-cyan-50 p-4 hover:bg-cyan-100/70">
+							<div className="flex items-center gap-2">
+								<Bell className="h-4 w-4 text-cyan-700" />
+								<p className="text-sm font-semibold text-cyan-950">
+									Порталы контрагентов
+								</p>
+							</div>
+							<p className="mt-2 text-xs leading-5 text-cyan-900/80">
+								Открываются из договоров: клиент видит объект, платежи, документы,
+								акт сверки и обращения.
 							</p>
 						</div>
-						<p className="mt-2 text-xs leading-5 text-cyan-900/80">
-							Связать публикации, сегменты и обращения с реальными клиентами,
-							договорами и portal accounts.
-						</p>
-					</div>
+					</Link>
 				</div>
 			</section>
 		</div>

@@ -138,11 +138,6 @@ const MODULES: Module[] = [
 						label: "Акт сверки",
 						icon: Scale,
 					},
-					{
-						href: "/crm/client-relations",
-						label: "Клиентский сервис",
-						icon: MessageCircle,
-					},
 				],
 			},
 			{
@@ -213,6 +208,11 @@ const MODULES: Module[] = [
 				title: "Производство",
 				items: [
 					{ href: "/construction/workers", label: "Бригады", icon: Hammer },
+					{
+						href: "/crm/client-relations",
+						label: "Клиентский сервис",
+						icon: MessageCircle,
+					},
 					{
 						href: "/construction/payroll",
 						label: "Зарплатная ведомость",
@@ -569,16 +569,6 @@ const MODULES: Module[] = [
 ];
 
 function getModuleEntryHref(mod: Module): string {
-	if (mod.id === "consolidated") {
-		return "/dashboard?tab=control";
-	}
-	for (const section of mod.sections) {
-		for (const item of section.items) {
-			if (!item.href.startsWith("/dashboard")) {
-				return item.href;
-			}
-		}
-	}
 	return mod.sections[0]?.items[0]?.href || "/dashboard";
 }
 

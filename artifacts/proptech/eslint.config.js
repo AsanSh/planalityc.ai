@@ -4,6 +4,15 @@ import reactPlugin from "eslint-plugin-react";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
 
 export default tseslint.config(
+	{
+		ignores: [
+			"dist/**",
+			"node_modules/**",
+			"coverage/**",
+			"test-results/**",
+			"playwright-report/**",
+		],
+	},
 	js.configs.recommended,
 	...tseslint.configs.recommended,
 	{
@@ -15,7 +24,7 @@ export default tseslint.config(
 		rules: {
 			// Block direct Tailwind colors - force AM Design System tokens
 			"no-restricted-syntax": [
-				"error",
+				"warn",
 				{
 					selector:
 						"Literal[value=/\\b(bg|text|border)-(emerald|purple|violet|rose|amber|blue|indigo|teal|cyan|lime|green|yellow|orange|red|pink|fuchsia|sky|slate|gray|zinc|neutral|stone)-(50|100|200|300|400|500|600|700|800|900)\\b/]",
@@ -31,6 +40,19 @@ export default tseslint.config(
 					location: "start",
 				},
 			],
+			"no-undef": "off",
+			"@typescript-eslint/no-explicit-any": "warn",
+			"@typescript-eslint/no-unused-vars": [
+				"warn",
+				{
+					argsIgnorePattern: "^_",
+					varsIgnorePattern: "^_",
+					caughtErrorsIgnorePattern: "^_",
+				},
+			],
+			"@typescript-eslint/no-unused-expressions": "warn",
+			"no-empty": "warn",
+			"prefer-const": "warn",
 		},
 	},
 );

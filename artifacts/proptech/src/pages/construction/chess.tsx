@@ -539,25 +539,7 @@ function UnitPricingDialog({
 				saleCoefficient: String(coefficient),
 				isPublishedForSale: form.isPublishedForSale,
 			};
-			try {
-				await api.patch(`/construction/units/${unit.id}/pricing`, pricingPayload);
-			} catch (error) {
-				if (!(error instanceof Error) || !("status" in error) || error.status !== 404) {
-					throw error;
-				}
-				await api.patch(`/construction/units/${unit.id}`, {
-					unitNumber: unit.unitNumber,
-					floor: unit.floor,
-					block: unit.block || "",
-					unitType: unit.unitType || "apartment",
-					roomCount: unit.roomCount || "",
-					area: unit.area || "",
-					pricePerSqm: String(approvedPps),
-					currency: unit.currency || "KGS",
-					status: form.isPublishedForSale ? "available" : unit.status,
-					notes: unit.notes || "",
-				});
-			}
+			await api.patch(`/construction/units/${unit.id}/pricing`, pricingPayload);
 			toast({
 				title: form.isPublishedForSale
 					? "Цена утверждена и объект опубликован"

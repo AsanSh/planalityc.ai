@@ -234,7 +234,7 @@ export default function CRMDashboard() {
 	return (
 		<div className="space-y-6">
 			<ModuleCommandCenter
-				eyebrow="Контур продаж"
+				eyebrow="CRM и клиентский сервис"
 				title="От лида до шахматки, договора и клиентского портала"
 				description="Продажи должны идти по одному маршруту: входящий лид, клиент, объект, сделка, договор и сопровождение. Это убирает риск двойной продажи и потерянных действий."
 				primaryHref="/crm/leads"

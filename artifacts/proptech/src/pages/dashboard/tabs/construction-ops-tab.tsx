@@ -11,7 +11,6 @@ import {
 	FileText,
 	Grid3X3,
 	LockKeyhole,
-	MessageSquare,
 	Plus,
 	ReceiptText,
 	Scale,
@@ -112,14 +111,6 @@ const LAUNCH_STEPS = [
 		action: "Сверить клиента",
 		tone: "rose",
 	},
-	{
-		title: "Клиентский портал",
-		description: "Обращения, акции, новости, повторная продажа и аренда.",
-		href: "/crm/client-relations",
-		icon: MessageSquare,
-		action: "Открыть сервис",
-		tone: "slate",
-	},
 ];
 
 const ROLE_LANES = [
@@ -142,10 +133,10 @@ const ROLE_LANES = [
 		progress: 64,
 	},
 	{
-		title: "Клиентский сервис",
-		value: "Портал",
-		description: "обращения, акции, уведомления",
-		progress: 46,
+		title: "Руководитель проекта",
+		value: "Контроль",
+		description: "сроки, задачи, WBS, просрочки",
+		progress: 62,
 	},
 ];
 
@@ -209,7 +200,6 @@ const toneClass: Record<string, string> = {
 	amber: "from-amber-400 to-orange-500 text-amber-700 bg-amber-50 ring-amber-100",
 	teal: "from-teal-500 to-emerald-500 text-teal-700 bg-teal-50 ring-teal-100",
 	rose: "from-rose-500 to-red-500 text-rose-700 bg-rose-50 ring-rose-100",
-	slate: "from-slate-700 to-slate-900 text-slate-700 bg-slate-100 ring-slate-200",
 };
 
 function formatMoney(value: number) {
@@ -322,12 +312,13 @@ export default function ConstructionOpsDashboardTab() {
 							PropTech sales operating system
 						</div>
 						<h1 className="mt-5 max-w-3xl text-3xl font-semibold text-slate-950 md:text-5xl">
-							Контур продаж недвижимости, собранный по порядку
+							Строительство и продажи недвижимости, собранные по порядку
 						</h1>
 						<p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 md:text-base">
 							Сначала создается проект, затем шахматка, цены, договор,
 							начисления, оплата, сверка и клиентский портал. Не все разделы
-							сразу, а один понятный путь для команды.
+							сразу, а один понятный путь для команды. Клиентский сервис вынесен
+							в CRM, чтобы не смешивать производство и работу с покупателями.
 						</p>
 					</div>
 

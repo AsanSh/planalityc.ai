@@ -35,7 +35,7 @@ export const PRIMARY_DASHBOARD_TAB_ORDER: DashboardTabId[] = [
 
 export const DASHBOARD_TAB_LABELS: Record<DashboardTabId, string> = {
 	control: "Центр управления",
-	construction: "Контур продаж",
+	construction: "Строительство",
 	finance: "Финансы",
 	supply: "Снабжение",
 	sales: "Продажи",

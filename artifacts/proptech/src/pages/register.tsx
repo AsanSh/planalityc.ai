@@ -13,6 +13,35 @@ import { useAuth } from "@/lib/auth";
 const AUTH_GRADIENT =
 	"linear-gradient(155deg, #06111f 0%, #0b1f2f 46%, #0e7490 100%)";
 
+type SignupModule = "construction" | "rental" | "warehouse" | "crm";
+
+const SIGNUP_MODULES: Array<{
+	key: SignupModule;
+	title: string;
+	description: string;
+}> = [
+	{
+		key: "construction",
+		title: "Строительство",
+		description: "проекты, шахматка, договоры, финансы",
+	},
+	{
+		key: "rental",
+		title: "Аренда",
+		description: "объекты, арендаторы, платежи, отчеты",
+	},
+	{
+		key: "warehouse",
+		title: "Закуп",
+		description: "заявки, поставщики, склад, списания",
+	},
+	{
+		key: "crm",
+		title: "CRM",
+		description: "лиды, клиенты, портал и объявления",
+	},
+];
+
 async function registerOrg(body: Record<string, string>) {
 	const { data } = await api.post("/auth/register", body);
 	return data;
@@ -24,6 +53,9 @@ export default function Register() {
 	const { toast } = useToast();
 	const [loading, setLoading] = useState(false);
 	const [step, setStep] = useState<"company" | "admin">("company");
+	const [selectedModules, setSelectedModules] = useState<SignupModule[]>([
+		"construction",
+	]);
 
 	const [form, setForm] = useState({
 		companyName: "",
@@ -40,6 +72,15 @@ export default function Register() {
 
 	const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
 		setForm((f) => ({ ...f, [field]: e.target.value }));
+
+	const toggleModule = (key: SignupModule) => {
+		setSelectedModules((current) => {
+			if (current.includes(key)) {
+				return current.length === 1 ? current : current.filter((m) => m !== key);
+			}
+			return [...current, key];
+		});
+	};
 
 	const handleNext = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -142,7 +183,18 @@ export default function Register() {
 			});
 
 			// Set new token
+			localStorage.setItem("auth_token", data.token);
 			login(data.token);
+			localStorage.setItem(
+				"planalityc_signup_modules",
+				JSON.stringify(selectedModules),
+			);
+			try {
+				await api.post("/modules/configure", { modules: selectedModules });
+			} catch {
+				// Настройка модулей не должна ломать регистрацию. Администратор
+				// сможет включить модули позже в настройках системы.
+			}
 
 			toast({
 				title: "Регистрация завершена",
@@ -309,6 +361,48 @@ export default function Register() {
 											placeholder="г. Бишкек, ул. Манаса 72"
 											className="mt-1.5 h-11 rounded-lg border-slate-200 bg-slate-50/80 focus:bg-white focus-visible:ring-cyan-600/20"
 										/>
+									</div>
+									<div>
+										<Label className="text-sm font-medium text-gray-700">
+											Какие модули нужны компании? *
+										</Label>
+										<div className="mt-2 grid gap-2 sm:grid-cols-2">
+											{SIGNUP_MODULES.map((module) => {
+												const active = selectedModules.includes(module.key);
+												return (
+													<button
+														key={module.key}
+														type="button"
+														onClick={() => toggleModule(module.key)}
+														className={`rounded-2xl border p-3 text-left transition-all ${
+															active
+																? "border-cyan-300 bg-cyan-50 shadow-sm shadow-cyan-900/5"
+																: "border-slate-200 bg-slate-50/80 hover:border-slate-300 hover:bg-white"
+														}`}
+													>
+														<div className="flex items-center justify-between gap-3">
+															<p className="text-sm font-semibold text-slate-950">
+																{module.title}
+															</p>
+															<span
+																className={`h-4 w-4 rounded-full border ${
+																	active
+																		? "border-cyan-700 bg-cyan-700"
+																		: "border-slate-300 bg-white"
+																}`}
+															/>
+														</div>
+														<p className="mt-1 text-xs leading-5 text-slate-500">
+															{module.description}
+														</p>
+													</button>
+												);
+											})}
+										</div>
+										<p className="mt-2 text-xs leading-5 text-slate-500">
+											Позже администратор сможет подключить дополнительные модули
+											в настройках системы.
+										</p>
 									</div>
 									<Button
 										type="submit"

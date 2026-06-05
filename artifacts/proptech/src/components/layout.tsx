@@ -16,6 +16,7 @@ import {
 	ClipboardList,
 	Coins,
 	CreditCard,
+	CircleHelp,
 	DollarSign,
 	Factory,
 	FileText,
@@ -98,8 +99,8 @@ interface Module {
 const MODULES: Module[] = [
 	{
 		id: "construction",
-		label: "Контур продаж",
-		shortLabel: "Продажи",
+		label: "Строительство",
+		shortLabel: "Стройка",
 		icon: Grid3X3,
 		color: "#0ea5e9",
 		urlPrefix: ["/construction"],
@@ -168,6 +169,11 @@ const MODULES: Module[] = [
 				items: [
 					{ href: "/construction/accounts", label: "Счета", icon: Landmark },
 					{
+						href: "/construction/payroll",
+						label: "Зарплатная ведомость",
+						icon: Banknote,
+					},
+					{
 						href: "/construction/analytics/cashflow",
 						label: "ОДДС",
 						icon: BarChart3,
@@ -208,16 +214,6 @@ const MODULES: Module[] = [
 				title: "Производство",
 				items: [
 					{ href: "/construction/workers", label: "Бригады", icon: Hammer },
-					{
-						href: "/crm/client-relations",
-						label: "Клиентский сервис",
-						icon: MessageCircle,
-					},
-					{
-						href: "/construction/payroll",
-						label: "Зарплатная ведомость",
-						icon: Banknote,
-					},
 					{
 						href: "/construction/planning/broadcast",
 						label: "Рассылка",
@@ -278,6 +274,11 @@ const MODULES: Module[] = [
 						href: "/construction/settings",
 						label: "Настройки",
 						icon: Settings,
+					},
+					{
+						href: "/construction/help",
+						label: "Помощь",
+						icon: CircleHelp,
 					},
 				],
 			},
@@ -381,6 +382,7 @@ const MODULES: Module[] = [
 					{ href: "/rental/employees", label: "Сотрудники", icon: UserCircle },
 					{ href: "/rental/admin/log", label: "Лог операций", icon: Activity },
 					{ href: "/rental/settings", label: "Настройки", icon: Settings },
+					{ href: "/rental/help", label: "Помощь", icon: CircleHelp },
 				],
 			},
 		],
@@ -408,6 +410,11 @@ const MODULES: Module[] = [
 						href: "/crm/client-relations",
 						label: "Клиентский сервис",
 						icon: MessageCircle,
+					},
+					{
+						href: "/crm/help",
+						label: "Помощь",
+						icon: CircleHelp,
 					},
 					{ href: "/crm/employees", label: "Сотрудники", icon: Users },
 					{ href: "/crm/counterparties", label: "Контрагенты", icon: Briefcase },
@@ -457,6 +464,7 @@ const MODULES: Module[] = [
 						label: "Согласования",
 						icon: ShieldCheck,
 					},
+					{ href: "/warehouse/help", label: "Помощь", icon: CircleHelp },
 				],
 			},
 			{
@@ -583,7 +591,7 @@ function getDashboardTabLabel(path: string): string | null {
 	const tab = new URLSearchParams(path.slice(queryIndex + 1)).get("tab");
 	const labels: Record<string, string> = {
 		control: "Сводное",
-		construction: "Контур",
+		construction: "Стройка",
 		finance: "Финансы",
 		supply: "Закуп",
 		sales: "Продажи",
@@ -750,9 +758,15 @@ export function Layout({ children }: { children: ReactNode }) {
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, []);
 
-	const visibleModules = MODULES.filter((m) =>
+	const allowedVisibleModules = MODULES.filter((m) =>
 		allowedModules.includes(m.id),
 	);
+	const businessModules = allowedVisibleModules.filter((m) => m.id !== "consolidated");
+	const activeModuleId = detectModule(pathWithSearch);
+	const visibleModules =
+		businessModules.length <= 1 && activeModuleId !== "consolidated"
+			? businessModules
+			: allowedVisibleModules;
 
 	useEffect(() => {
 		if (accessLoading || !user) return;
@@ -761,10 +775,9 @@ export function Layout({ children }: { children: ReactNode }) {
 		}
 	}, [accessLoading, user, pathWithSearch, canAccess, homePath, setLocation]);
 
-	const activeModuleId = detectModule(pathWithSearch);
 	const activeModule =
-		visibleModules.find((m) => m.id === activeModuleId) ||
-		visibleModules[0] ||
+		allowedVisibleModules.find((m) => m.id === activeModuleId) ||
+		allowedVisibleModules[0] ||
 		MODULES.find((m) => m.id === activeModuleId) ||
 		MODULES[MODULES.length - 1];
 	const ModuleIcon = activeModule.icon;

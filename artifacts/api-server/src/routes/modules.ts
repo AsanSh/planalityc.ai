@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { eq, and } from "drizzle-orm";
+import { z } from "zod";
 import { db, moduleSettingsTable } from "../lib/db";
 import { requireAuth, requireRole, AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
@@ -81,6 +82,17 @@ const AVAILABLE_MODULES = [
   },
 ];
 
+const configureModulesSchema = z.object({
+  modules: z.array(z.enum(["construction", "rental", "warehouse", "crm"])).min(1),
+});
+
+const SIGNUP_MODULE_TO_SETTINGS_KEYS: Record<string, string[]> = {
+  construction: ["construction", "sales", "reports"],
+  rental: ["rental", "reports"],
+  warehouse: ["warehouse"],
+  crm: ["crm", "notifications"],
+};
+
 // GET /modules — список модулей с состоянием для компании
 router.get("/modules", async (req: AuthenticatedRequest, res): Promise<void> => {
   const cid = req.scopedCompanyId!;
@@ -133,6 +145,45 @@ router.post("/modules/:key/toggle", requireRole("admin", "company_admin"), async
   res.json({ ...result, module });
 });
 
+// POST /modules/configure — задать набор бизнес-модулей компании
+router.post("/modules/configure", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+  const parsed = configureModulesSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Выберите минимум один модуль" });
+    return;
+  }
+
+  const cid = req.scopedCompanyId!;
+  if (!cid) { res.status(400).json({ error: "Нет привязки к организации" }); return; }
+
+  const enabled = new Set<string>();
+  for (const key of parsed.data.modules) {
+    for (const mapped of SIGNUP_MODULE_TO_SETTINGS_KEYS[key] ?? []) enabled.add(mapped);
+  }
+
+  const availableKeys = AVAILABLE_MODULES.map((m) => m.key);
+  for (const key of availableKeys) {
+    const shouldEnable = enabled.has(key);
+    const [existing] = await db.select().from(moduleSettingsTable)
+      .where(and(eq(moduleSettingsTable.companyId, cid), eq(moduleSettingsTable.moduleKey, key)));
+
+    if (existing) {
+      await db.update(moduleSettingsTable)
+        .set({ isEnabled: shouldEnable, enabledAt: shouldEnable ? new Date() : null })
+        .where(eq(moduleSettingsTable.id, existing.id));
+    } else {
+      await db.insert(moduleSettingsTable).values({
+        companyId: cid,
+        moduleKey: key,
+        isEnabled: shouldEnable,
+        enabledAt: shouldEnable ? new Date() : null,
+      });
+    }
+  }
+
+  res.json({ modules: [...enabled] });
+});
+
 // GET /modules/enabled — список включённых ключей модулей
 router.get("/modules/enabled", async (req: AuthenticatedRequest, res): Promise<void> => {
   const cid = req.scopedCompanyId!;
@@ -142,7 +193,10 @@ router.get("/modules/enabled", async (req: AuthenticatedRequest, res): Promise<v
     .where(and(eq(moduleSettingsTable.companyId, cid), eq(moduleSettingsTable.isEnabled, true)));
 
   const enabledKeys = settings.map(s => s.moduleKey);
-  if (!enabledKeys.includes("rental")) enabledKeys.push("rental");
+  if (enabledKeys.length === 0) {
+    res.json(["construction", "sales", "rental", "warehouse", "crm", "reports"]);
+    return;
+  }
 
   res.json(enabledKeys);
 });

@@ -98,6 +98,7 @@ import CrmSalesProperties from "@/pages/crm/sales-properties";
 import Dashboard from "@/pages/dashboard";
 import ImportCenter from "@/pages/import-center";
 import Login from "@/pages/login";
+import ModuleHelp from "@/pages/module-help";
 import PortalLogin from "@/pages/portal-login";
 import ResetPassword from "@/pages/reset-password";
 import ForgotPassword from "@/pages/forgot-password";
@@ -524,6 +525,9 @@ function Router() {
 			<Route path="/construction/settings">
 				<ProtectedRoute component={ConstructionSettings} />
 			</Route>
+			<Route path="/construction/help">
+				<ProtectedRoute component={ModuleHelp} />
+			</Route>
 
 			{/* ── AI-инструменты ── */}
 			<Route path="/construction/ai/chat">
@@ -569,6 +573,9 @@ function Router() {
 			</Route>
 			<Route path="/crm/client-relations">
 				<ProtectedRoute component={ClientRelations} />
+			</Route>
+			<Route path="/crm/help">
+				<ProtectedRoute component={ModuleHelp} />
 			</Route>
 			<Route path="/crm/deals">
 				<ProtectedRoute component={CrmDeals} />
@@ -631,6 +638,9 @@ function Router() {
 			<Route path="/rental/settings">
 				<ProtectedRoute component={RentalSettings} />
 			</Route>
+			<Route path="/rental/help">
+				<ProtectedRoute component={ModuleHelp} />
+			</Route>
 			<Route path="/rental/admin/log">
 				<ProtectedRoute component={RentalOperationsLog} />
 			</Route>
@@ -689,6 +699,9 @@ function Router() {
 			</Route>
 			<Route path="/warehouse/settings">
 				<ProtectedRoute component={WarehouseSettings} />
+			</Route>
+			<Route path="/warehouse/help">
+				<ProtectedRoute component={ModuleHelp} />
 			</Route>
 
 			{/* ── Системные настройки ── */}

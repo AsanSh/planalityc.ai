@@ -1048,7 +1048,8 @@ function RequestsTab({
 			base.push({
 				id: "__decision",
 				header: "Решение",
-				size: 200,
+				size: 330,
+				minSize: 300,
 				enableSorting: false,
 				cell: ({ row }) => {
 					const r = row.original;
@@ -1057,21 +1058,21 @@ function RequestsTab({
 					}
 					return (
 						<div
-							className="flex flex-col gap-2 min-w-[180px]"
+							className="flex min-w-[290px] flex-col gap-2 pr-2"
 							onClick={(e) => e.stopPropagation()}
 						>
 							<Textarea
-								className="min-h-[36px] text-xs"
+								className="min-h-[42px] resize-none rounded-2xl text-xs"
 								placeholder="Комментарий руководителя"
 								value={comments[r.id] ?? ""}
 								onChange={(e) =>
 									setComments((c) => ({ ...c, [r.id]: e.target.value }))
 								}
 							/>
-							<div className="flex gap-2">
+							<div className="flex flex-wrap gap-2">
 								<Button
 									size="sm"
-									className="gap-1"
+									className="h-9 flex-1 gap-1 rounded-full"
 									disabled={decideMut.isPending}
 									onClick={() =>
 										decideMut.mutate({
@@ -1087,7 +1088,7 @@ function RequestsTab({
 								<Button
 									size="sm"
 									variant="outline"
-									className="gap-1"
+									className="h-9 flex-1 gap-1 rounded-full"
 									disabled={decideMut.isPending}
 									onClick={() =>
 										decideMut.mutate({

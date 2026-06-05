@@ -13,6 +13,7 @@ import { generalLimiter, authLimiter, apiLimiter } from "./middleware/rate-limit
 import { xssProtection } from "./middleware/validation";
 
 const app: Express = express();
+app.set("trust proxy", 1);
 const migrationsReady = runMigrations()
   .then(() => {
     logger.info("DB migrations: ready before request handling");

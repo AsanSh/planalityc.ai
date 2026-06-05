@@ -12,6 +12,7 @@
   ],
   "functions": {
     "api/index.ts": {
+      "includeFiles": "dist/drizzle/migrations/**",
       "maxDuration": 120,
       "memory": 1024
     }

@@ -101,6 +101,12 @@ interface Project {
 	totalUnits?: number;
 }
 
+function parseNumberInput(value: unknown) {
+	const normalized = String(value ?? "").replace(/\s/g, "").replace(",", ".");
+	const parsed = parseFloat(normalized);
+	return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function isUnitPublishedForSale(unit: Pick<Unit, "isPublishedForSale" | "approvedSalePricePerSqm">) {
 	return unit.isPublishedForSale === true && parseFloat(String(unit.approvedSalePricePerSqm || "0")) > 0;
 }
@@ -512,9 +518,9 @@ function UnitPricingDialog({
 	});
 	const [loading, setLoading] = useState(false);
 
-	const base = parseFloat(form.basePricePerSqm || "0");
-	const coefficient = parseFloat(form.saleCoefficient || "0");
-	const area = parseFloat(unit.area || "0");
+	const base = parseNumberInput(form.basePricePerSqm);
+	const coefficient = parseNumberInput(form.saleCoefficient);
+	const area = parseNumberInput(unit.area);
 	const approvedPps = Number.isFinite(base * coefficient) ? base * coefficient : 0;
 	const approvedTotal = area > 0 && approvedPps > 0 ? area * approvedPps : 0;
 
@@ -528,11 +534,30 @@ function UnitPricingDialog({
 		}
 		setLoading(true);
 		try {
-			await api.patch(`/construction/units/${unit.id}/pricing`, {
-				basePricePerSqm: form.basePricePerSqm,
-				saleCoefficient: form.saleCoefficient,
+			const pricingPayload = {
+				basePricePerSqm: String(base),
+				saleCoefficient: String(coefficient),
 				isPublishedForSale: form.isPublishedForSale,
-			});
+			};
+			try {
+				await api.patch(`/construction/units/${unit.id}/pricing`, pricingPayload);
+			} catch (error) {
+				if (!(error instanceof Error) || !("status" in error) || error.status !== 404) {
+					throw error;
+				}
+				await api.patch(`/construction/units/${unit.id}`, {
+					unitNumber: unit.unitNumber,
+					floor: unit.floor,
+					block: unit.block || "",
+					unitType: unit.unitType || "apartment",
+					roomCount: unit.roomCount || "",
+					area: unit.area || "",
+					pricePerSqm: String(approvedPps),
+					currency: unit.currency || "KGS",
+					status: form.isPublishedForSale ? "available" : unit.status,
+					notes: unit.notes || "",
+				});
+			}
 			toast({
 				title: form.isPublishedForSale
 					? "Цена утверждена и объект опубликован"

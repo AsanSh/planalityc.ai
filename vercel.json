@@ -5,7 +5,7 @@
   "buildCommand": "pnpm run build",
   "outputDirectory": "artifacts/proptech/dist",
   "env": {
-    "VITE_API_URL": "https://api-server-rho-six.vercel.app"
+    "VITE_API_URL": "https://proptech-api.vercel.app"
   },
   "rewrites": [
     {

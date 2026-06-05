@@ -1,8 +1,20 @@
 # 📊 Status: Planalityc.ai PropTech
 
-**Последнее обновление:** 5 июня 2026, 01:30  
+**Последнее обновление:** 5 июня 2026, 01:40  
 **Текущая ветка:** `main`  
-**Последний коммит:** `14c93d9` - feat(ui): Комплексное улучшение дизайна и accessibility (P0-P2)
+**Последний коммит:** `e07497c` - docs: Добавлен STATUS.md  
+**Предыдущий коммит:** `14c93d9` - feat(ui): Комплексное улучшение дизайна и accessibility (P0-P2)  
+**Статус деплоя:** ✅ УСПЕШНО задеплоено на Vercel production
+
+## 🚀 Production URLs
+
+**🌐 Main Production:** https://planalitycai.vercel.app  
+**🔗 Deployment URL:** https://planalityc-45d8s021f-asans-projects-88edff6a.vercel.app  
+**🔍 Inspector:** https://vercel.com/asans-projects-88edff6a/planalityc.ai/7Mir2vrKga3Fkgg8jC8oPsSgL89f
+
+**Deployment ID:** `dpl_7Mir2vrKga3Fkgg8jC8oPsSgL89f`  
+**Build Time:** 2 минуты  
+**Status:** `READY` ✅
 
 ---
 

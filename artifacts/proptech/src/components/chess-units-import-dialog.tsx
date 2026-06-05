@@ -99,13 +99,26 @@ export function ChessUnitsImportDialog({
 				errors: { row: number; message: string }[];
 			}>("/construction/units/import", { projectId, rows });
 			setResult(data);
+			if (data.created > 0 || data.updated > 0) {
+				toast({
+					title: "Импорт завершён",
+					description: `Создано: ${data.created}, обновлено: ${data.updated}${data.errors.length > 0 ? `, ошибок: ${data.errors.length}` : ""}`,
+				});
+				onImported();
+			} else if (data.errors.length > 0) {
+				toast({
+					title: "Импорт завершён с ошибками",
+					description: `${data.errors.length} строк не удалось обработать`,
+					variant: "destructive",
+				});
+			}
+		} catch (e: unknown) {
+			const msg = e instanceof Error ? e.message : "Неизвестная ошибка";
 			toast({
-				title: "Импорт завершён",
-				description: `Создано: ${data.created}, обновлено: ${data.updated}`,
+				title: "Ошибка импорта",
+				description: msg,
+				variant: "destructive",
 			});
-			onImported();
-		} catch {
-			toast({ title: "Ошибка импорта", variant: "destructive" });
 		} finally {
 			setLoading(false);
 		}

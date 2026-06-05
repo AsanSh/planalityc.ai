@@ -110,7 +110,31 @@ function canApproveUnitPricing(role: string | undefined): boolean {
 }
 
 function canImportUnits(role: string | undefined): boolean {
-  return ["super_admin", "admin", "company_admin", "pto", "engineer"].includes(role || "");
+  return ["super_admin", "admin", "company_admin", "pto", "engineer", "commercial_director"].includes(role || "");
+}
+
+/** Карта русских названий типов → коды в БД */
+const UNIT_TYPE_RU_MAP: Record<string, string> = {
+  квартира: "apartment",
+  apartment: "apartment",
+  студия: "studio",
+  studio: "studio",
+  офис: "office",
+  office: "office",
+  коммерческое: "commercial",
+  "коммерческий": "commercial",
+  commercial: "commercial",
+  паркинг: "parking",
+  parking: "parking",
+  кладовая: "storage",
+  storage: "storage",
+  другое: "other",
+  other: "other",
+};
+
+function resolveUnitType(raw: unknown): string {
+  const s = String(raw ?? "").trim().toLowerCase();
+  return UNIT_TYPE_RU_MAP[s] || "apartment";
 }
 
 // ── PROJECTS ──────────────────────────────────────────────────────────────────
@@ -1965,7 +1989,7 @@ router.post("/units/import", async (req: AuthenticatedRequest, res): Promise<voi
     // Проверка прав
     if (!canImportUnits(req.userRole)) {
       res.status(403).json({
-        error: "Импорт квартир доступен только администраторам и ПТО"
+        error: "Импорт квартир доступен только администраторам, коммерческому директору и ПТО"
       });
       return;
     }
@@ -1979,7 +2003,6 @@ router.post("/units/import", async (req: AuthenticatedRequest, res): Promise<voi
       return;
     }
 
-    // Ограничение количества строк
     const MAX_IMPORT_ROWS = 1000;
     if (rows.length === 0) {
       res.status(400).json({ error: "Нет строк для импорта" });
@@ -1991,6 +2014,28 @@ router.post("/units/import", async (req: AuthenticatedRequest, res): Promise<voi
       });
       return;
     }
+
+    // Загружаем статусы ОДИН РАЗ для всего импорта (не N раз в цикле)
+    const unitStatusRows = await ensureUnitStatuses(companyId);
+    const statusByCode = new Map(unitStatusRows.map((s) => [s.code.toLowerCase(), s.code]));
+    const statusByLabel = new Map(unitStatusRows.map((s) => [s.label.trim().toLowerCase(), s.code]));
+    const LEGACY_MAP: Record<string, string> = {
+      свободна: "available", available: "available",
+      забронирована: "reserved", бронь: "reserved", reserved: "reserved",
+      продана: "sold", sold: "sold",
+      заселена: "occupied", occupied: "occupied",
+      строится: "construction", construction: "construction",
+      registered: "sold",
+    };
+    const resolveStatus = (raw: unknown): string => {
+      const s = String(raw ?? "").trim().toLowerCase();
+      if (!s) return statusByCode.get("available") || "available";
+      const legacy = LEGACY_MAP[s];
+      if (legacy && statusByCode.has(legacy)) return legacy;
+      if (statusByCode.has(s)) return statusByCode.get(s)!;
+      if (statusByLabel.has(s)) return statusByLabel.get(s)!;
+      return statusByCode.get("available") || "available";
+    };
 
     const existing = await db.select().from(constructionUnitsTable).where(
       and(
@@ -2016,26 +2061,24 @@ router.post("/units/import", async (req: AuthenticatedRequest, res): Promise<voi
 
       const floorRaw = row.floor ?? row["Этаж"];
       const block = String(row.block ?? row["Секция"] ?? "").trim() || null;
-      const unitType = String(row.unitType ?? row["Тип"] ?? "apartment").trim() || "apartment";
+      // Конвертируем тип из Excel (рус/eng) → код в БД
+      const unitType = resolveUnitType(row.unitType ?? row["Тип"]);
       const roomCountRaw = row.roomCount ?? row["Комнат"];
-      const area = parseFloat(String(row.area ?? row["Площадь м²"] ?? row["Площадь"] ?? "0"));
-      const pricePerSqm = parseFloat(String(row.pricePerSqm ?? row["Цена за м²"] ?? "0"));
+      const area = parseFloat(String(row.area ?? row["Площадь м²"] ?? row["Площадь"] ?? "0").replace(",", "."));
+      const pricePerSqm = parseFloat(String(row.pricePerSqm ?? row["Цена за м²"] ?? "0").replace(",", "."));
       const currency = String(row.currency ?? row["Валюта"] ?? "KGS").trim() || "KGS";
-      const status = await resolveUnitStatus(
-        companyId,
-        String(row.status ?? row["Статус"] ?? "available"),
-      );
+      const status = resolveStatus(row.status ?? row["Статус"]);
       const notes = String(row.notes ?? row["Заметки"] ?? "").trim() || null;
 
       const payload = {
         unitNumber,
-        floor: floorRaw != null && floorRaw !== "" ? parseInt(String(floorRaw), 10) : null,
+        floor: floorRaw != null && String(floorRaw).trim() !== "" ? parseInt(String(floorRaw), 10) : null,
         block,
         unitType,
-        roomCount: roomCountRaw != null && roomCountRaw !== "" ? parseInt(String(roomCountRaw), 10) : null,
-        area: area > 0 ? String(area) : null,
-        pricePerSqm: pricePerSqm > 0 ? String(pricePerSqm) : null,
-        totalPrice: area > 0 && pricePerSqm > 0 ? String(area * pricePerSqm) : null,
+        roomCount: roomCountRaw != null && String(roomCountRaw).trim() !== "" ? parseInt(String(roomCountRaw), 10) : null,
+        area: area > 0 && Number.isFinite(area) ? String(area) : null,
+        pricePerSqm: pricePerSqm > 0 && Number.isFinite(pricePerSqm) ? String(pricePerSqm) : null,
+        totalPrice: area > 0 && pricePerSqm > 0 && Number.isFinite(area * pricePerSqm) ? String(area * pricePerSqm) : null,
         currency,
         status,
         notes,

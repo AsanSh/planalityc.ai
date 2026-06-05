@@ -35,6 +35,10 @@ export default defineConfig({
     dedupe: ["react", "react-dom"],
   },
   root: path.resolve(import.meta.dirname),
+  optimizeDeps: {
+    // xlsx — CJS-пакет, явно включаем в pre-bundling чтобы Vite не ломал его в ESM-окружении
+    include: ["xlsx"],
+  },
   build: {
     outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,

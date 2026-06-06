@@ -137,6 +137,17 @@ function resolveUnitType(raw: unknown): string {
   return UNIT_TYPE_RU_MAP[s] || "apartment";
 }
 
+function parseDecimalInput(value: unknown): number {
+  const normalized = String(value ?? "").replace(/\s/g, "").replace(",", ".");
+  const parsed = parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function parsePositiveIntInput(value: unknown): number | null {
+  const parsed = parseInt(String(value ?? ""), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
 // ── PROJECTS ──────────────────────────────────────────────────────────────────
 
 // GET /projects/all — все проекты без пагинации (для дропдаунов)
@@ -1821,11 +1832,17 @@ router.get("/units", async (req: AuthenticatedRequest, res): Promise<void> => {
 
 router.post("/units", async (req: AuthenticatedRequest, res): Promise<void> => {
   const { projectId, unitNumber, floor, block, unitType, roomCount, area, pricePerSqm, currency, status, notes } = req.body;
-  const a = parseFloat(area || "0");
-  const pps = parseFloat(pricePerSqm || "0");
+  const projectIdNum = parsePositiveIntInput(projectId);
+  const unitNumberValue = String(unitNumber || "").trim();
+  if (!projectIdNum || !unitNumberValue) {
+    res.status(400).json({ error: "projectId и unitNumber обязательны" });
+    return;
+  }
+  const a = parseDecimalInput(area);
+  const pps = parseDecimalInput(pricePerSqm);
   const [row] = await db.insert(constructionUnitsTable).values({
-    companyId: req.scopedCompanyId!, projectId, unitNumber, floor: floor ? parseInt(floor) : null,
-    block, unitType: unitType || "apartment", roomCount: roomCount ? parseInt(roomCount) : null,
+    companyId: req.scopedCompanyId!, projectId: projectIdNum, unitNumber: unitNumberValue, floor: floor ? parseInt(floor) : null,
+    block, unitType: resolveUnitType(unitType), roomCount: roomCount ? parseInt(roomCount) : null,
     area: a > 0 ? String(a) : null, pricePerSqm: pps > 0 ? String(pps) : null,
     totalPrice: a > 0 && pps > 0 ? String(a * pps) : null,
     currency: currency || "KGS", status: status || "available", notes,
@@ -1836,12 +1853,17 @@ router.post("/units", async (req: AuthenticatedRequest, res): Promise<void> => {
 router.patch("/units/:id", async (req: AuthenticatedRequest, res): Promise<void> => {
   const id = parseInt(req.params.id as string);
   const { unitNumber, floor, block, unitType, roomCount, area, pricePerSqm, currency, status, buyerId, contractDate, notes } = req.body;
-  const a = parseFloat(area || "0");
-  const pps = parseFloat(pricePerSqm || "0");
+  const unitNumberValue = String(unitNumber || "").trim();
+  if (!unitNumberValue) {
+    res.status(400).json({ error: "unitNumber обязателен" });
+    return;
+  }
+  const a = parseDecimalInput(area);
+  const pps = parseDecimalInput(pricePerSqm);
   const [row] = await db.update(constructionUnitsTable)
     .set({
-      unitNumber, floor: floor ? parseInt(floor) : null, block,
-      unitType, roomCount: roomCount ? parseInt(roomCount) : null,
+      unitNumber: unitNumberValue, floor: floor ? parseInt(floor) : null, block,
+      unitType: resolveUnitType(unitType), roomCount: roomCount ? parseInt(roomCount) : null,
       area: a > 0 ? String(a) : null, pricePerSqm: pps > 0 ? String(pps) : null,
       totalPrice: a > 0 && pps > 0 ? String(a * pps) : null,
       currency, status, buyerId: buyerId || null, contractDate: contractDate || null, notes,
@@ -1859,8 +1881,8 @@ router.patch("/units/:id/pricing", async (req: AuthenticatedRequest, res): Promi
     }
 
     const id = parseInt(req.params.id as string, 10);
-    const basePricePerSqm = parseFloat(String(req.body?.basePricePerSqm ?? ""));
-    const saleCoefficient = parseFloat(String(req.body?.saleCoefficient ?? ""));
+    const basePricePerSqm = parseDecimalInput(req.body?.basePricePerSqm);
+    const saleCoefficient = parseDecimalInput(req.body?.saleCoefficient);
     const publish = req.body?.isPublishedForSale !== false;
 
     if (!Number.isFinite(basePricePerSqm) || basePricePerSqm <= 0) {
@@ -1908,21 +1930,44 @@ router.patch("/units/:id/pricing", async (req: AuthenticatedRequest, res): Promi
 
 router.post("/units/bulk", async (req: AuthenticatedRequest, res): Promise<void> => {
   const { projectId, floors, unitsPerFloor, block, unitType, area, pricePerSqm, currency } = req.body;
-  const a = parseFloat(area || "0");
-  const pps = parseFloat(pricePerSqm || "0");
+  const projectIdNum = parsePositiveIntInput(projectId);
+  const floorCount = parsePositiveIntInput(floors);
+  const unitsPerFloorCount = parsePositiveIntInput(unitsPerFloor);
+  if (!projectIdNum || !floorCount || !unitsPerFloorCount) {
+    res.status(400).json({ error: "projectId, floors и unitsPerFloor должны быть больше 0" });
+    return;
+  }
+  if (floorCount * unitsPerFloorCount > 1000) {
+    res.status(400).json({ error: "Максимум 1000 квартир за одну генерацию" });
+    return;
+  }
+  const a = parseDecimalInput(area);
+  const pps = parseDecimalInput(pricePerSqm);
+  const existing = await db.select().from(constructionUnitsTable).where(
+    and(
+      eq(constructionUnitsTable.companyId, req.scopedCompanyId!),
+      eq(constructionUnitsTable.projectId, projectIdNum),
+    ),
+  );
+  const existingNumbers = new Set(existing.map((u) => String(u.unitNumber).trim().toLowerCase()));
   const values: any[] = [];
-  for (let f = 1; f <= parseInt(floors); f++) {
-    for (let u = 1; u <= parseInt(unitsPerFloor); u++) {
+  for (let f = 1; f <= floorCount; f++) {
+    for (let u = 1; u <= unitsPerFloorCount; u++) {
       const unitNum = `${f}${String(u).padStart(2, "0")}`;
+      if (existingNumbers.has(unitNum.toLowerCase())) continue;
       values.push({
-        companyId: req.scopedCompanyId!, projectId, unitNumber: unitNum,
-        floor: f, block: block || null, unitType: unitType || "apartment",
+        companyId: req.scopedCompanyId!, projectId: projectIdNum, unitNumber: unitNum,
+        floor: f, block: block || null, unitType: resolveUnitType(unitType),
         area: a > 0 ? String(a) : null,
         pricePerSqm: pps > 0 ? String(pps) : null,
         totalPrice: a > 0 && pps > 0 ? String(a * pps) : null,
         currency: currency || "KGS", status: "available",
       });
     }
+  }
+  if (values.length === 0) {
+    res.json([]);
+    return;
   }
   const rows = await db.insert(constructionUnitsTable).values(values).returning();
   res.status(201).json(rows);

@@ -115,6 +115,15 @@ function approvedPricePerSqm(unit: Pick<Unit, "approvedSalePricePerSqm" | "price
 	return unit.approvedSalePricePerSqm || unit.pricePerSqm || "";
 }
 
+type ApiError = Error & {
+	status?: number;
+	body?: {
+		existingUnits?: number;
+		error?: string;
+		message?: string;
+	};
+};
+
 function UnitDialog({
 	unit,
 	projectId,
@@ -380,14 +389,19 @@ function BulkGenerateDialog({
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!form.floors || !form.unitsPerFloor) {
+		const floors = parseInt(form.floors || "0", 10);
+		const unitsPerFloor = parseInt(form.unitsPerFloor || "0", 10);
+		if (!Number.isFinite(floors) || floors <= 0 || !Number.isFinite(unitsPerFloor) || unitsPerFloor <= 0) {
 			toast({ title: "Укажите этажи и квартиры", variant: "destructive" });
 			return;
 		}
 		setLoading(true);
 		try {
-			await api.post("/construction/units/bulk", { ...form, projectId });
-			toast({ title: `Сгенерировано ${total} квартир` });
+			const { data } = await api.post<Unit[]>("/construction/units/bulk", { ...form, projectId });
+			toast({
+				title: data.length > 0 ? `Сгенерировано ${data.length} квартир` : "Новых квартир не создано",
+				description: data.length === 0 ? "Такие номера уже есть в шахматке" : undefined,
+			});
 			onSaved();
 			onClose();
 		} catch {
@@ -945,7 +959,7 @@ export default function ConstructionChess() {
 		},
 	});
 
-	const { data: units = [], isLoading } = useQuery<Unit[]>({
+	const { data: units = [], isLoading, refetch: refetchUnits } = useQuery<Unit[]>({
 		queryKey: ["construction-units", projectId],
 		queryFn: () =>
 			api
@@ -956,7 +970,7 @@ export default function ConstructionChess() {
 		enabled: !!projectId,
 	});
 
-	const { data: overview = [] } = useQuery<OverviewUnit[]>({
+	const { data: overview = [], refetch: refetchOverview } = useQuery<OverviewUnit[]>({
 		queryKey: ["construction-units-overview", projectId],
 		queryFn: () =>
 			api
@@ -1046,6 +1060,11 @@ export default function ConstructionChess() {
 		});
 	};
 
+	const refreshUnitsNow = async () => {
+		invalidateAll();
+		await Promise.allSettled([refetchUnits(), refetchOverview()]);
+	};
+
 	const seedFromProject = async (force = false) => {
 		if (!projectId) return;
 		if (
@@ -1066,8 +1085,19 @@ export default function ConstructionChess() {
 				title: "Шахматка создана",
 				description: `Добавлено ${data.unitsCreated} квартир`,
 			});
-			qc.invalidateQueries({ queryKey: ["construction-units", projectId] });
+			await refreshUnitsNow();
 		} catch (e: unknown) {
+			const err = e as ApiError;
+			if (err.status === 409) {
+				await refreshUnitsNow();
+				toast({
+					title: "Квартиры уже есть",
+					description: err.body?.existingUnits
+						? `Найдено ${err.body.existingUnits} квартир. Список обновлён.`
+						: "Список шахматки обновлён.",
+				});
+				return;
+			}
 			toast({
 				title: "Ошибка",
 				description: e instanceof Error ? e.message : "Не удалось создать квартиры",
@@ -1407,7 +1437,7 @@ export default function ConstructionChess() {
 							maxHeight="calc(100vh - 248px)"
 							onExportCsv={() =>
 								exportChessUnitsCsv(
-									filteredUnits,
+									filteredOverview,
 									(code) => gridCfgFor(statusGridMap, code).label,
 								)
 							}

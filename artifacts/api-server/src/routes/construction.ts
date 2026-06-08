@@ -328,6 +328,112 @@ router.post("/projects/:id/generate-units", async (req: AuthenticatedRequest, re
   res.json({ success: true, unitsCreated });
 });
 
+/** KPI-bucket map (зеркало kpiBucket из фронта) */
+const KPI_TO_STATUSES: Record<string, string[]> = {
+  free:     ["available"],
+  reserved: ["reserved"],
+  sold:     ["sold", "registered"],
+  settled:  ["occupied"],
+  building: ["construction"],
+  closed:   ["closed", "draft", "unavailable"],
+};
+const STATUS_TO_BUCKET: Record<string, string> = {};
+for (const [bucket, statuses] of Object.entries(KPI_TO_STATUSES)) {
+  for (const s of statuses) STATUS_TO_BUCKET[s] = bucket;
+}
+
+/** GET /projects/:id/units/stats — KPI-счётчики шахматки */
+router.get("/projects/:id/units/stats", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
+  const companyId = req.scopedCompanyId!;
+
+  const rows = await db
+    .select({ status: constructionUnitsTable.status })
+    .from(constructionUnitsTable)
+    .where(and(
+      eq(constructionUnitsTable.companyId, companyId),
+      eq(constructionUnitsTable.projectId, projectId),
+    ));
+
+  const stats = { total: rows.length, free: 0, reserved: 0, sold: 0, settled: 0, building: 0, closed: 0 };
+  for (const { status } of rows) {
+    const bucket = STATUS_TO_BUCKET[status ?? ""] as keyof typeof stats | undefined;
+    if (bucket) (stats[bucket] as number) += 1;
+  }
+  res.json(stats);
+});
+
+/** GET /projects/:id/units — шахматка с фильтрацией + данные контрактов */
+router.get("/projects/:id/units", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
+  const companyId = req.scopedCompanyId!;
+  const { status: statusFilter, search } = req.query as { status?: string; search?: string };
+
+  const [units, contracts] = await Promise.all([
+    db.select()
+      .from(constructionUnitsTable)
+      .where(and(
+        eq(constructionUnitsTable.companyId, companyId),
+        eq(constructionUnitsTable.projectId, projectId),
+      ))
+      .orderBy(constructionUnitsTable.floor, constructionUnitsTable.unitNumber),
+    db.select()
+      .from(constructionSalesContractsTable)
+      .where(and(
+        eq(constructionSalesContractsTable.companyId, companyId),
+        eq(constructionSalesContractsTable.projectId, projectId),
+      ))
+      .orderBy(desc(constructionSalesContractsTable.createdAt)),
+  ]);
+
+  const contractByUnit = new Map<number, typeof contracts[0]>();
+  for (const c of contracts) {
+    if (!c.unitId || c.status === "cancelled") continue;
+    if (!contractByUnit.has(c.unitId)) contractByUnit.set(c.unitId, c);
+  }
+
+  let result = units.map((u) => {
+    const c = contractByUnit.get(u.id);
+    return {
+      ...u,
+      priceApproved: u.priceApprovedBy != null,
+      priceCoefficient: u.saleCoefficient, // alias для фронта
+      contract: c
+        ? {
+            id: c.id,
+            contractNumber: c.contractNumber,
+            buyerName: c.buyerName,
+            buyerPhone: c.buyerPhone,
+            totalAmount: c.totalAmount,
+            paidAmount: c.paidAmount,
+            remainingAmount: c.remainingAmount,
+            downPayment: c.downPayment,
+            status: c.status,
+            contractDate: c.contractDate,
+            currency: c.currency,
+          }
+        : null,
+    };
+  });
+
+  // Серверная фильтрация по KPI-bucket
+  if (statusFilter && KPI_TO_STATUSES[statusFilter]) {
+    const allowed = new Set(KPI_TO_STATUSES[statusFilter]);
+    result = result.filter((u) => allowed.has(u.status));
+  }
+  // Поиск по номеру, секции, имени покупателя
+  if (search?.trim()) {
+    const q = search.trim().toLowerCase();
+    result = result.filter((u) =>
+      u.unitNumber.toLowerCase().includes(q) ||
+      (u.block ?? "").toLowerCase().includes(q) ||
+      (u.contract?.buyerName ?? "").toLowerCase().includes(q),
+    );
+  }
+
+  res.json(result);
+});
+
 router.patch("/projects/:id", async (req: AuthenticatedRequest, res): Promise<void> => {
   const id = parseInt(req.params.id as string);
   const body = req.body;

@@ -758,18 +758,30 @@ export default function ConstructionProjects() {
 			api.get("/construction/projects/all").then((r) => r.data),
 	});
 
-	const { data: expensesRaw } = useQuery({
-		queryKey: ["construction-project-expenses"],
+	const { data: summariesRaw } = useQuery({
+		queryKey: ["construction-project-summaries"],
 		queryFn: () =>
-			api.get("/construction/analytics/project-expenses").then((r) => r.data),
+			api.get("/construction/analytics/project-summaries").then((r) => r.data),
 	});
 
 	const projectsArray = unwrapList<Project>(projectsRaw);
-	const expensesArray = unwrapList<{ projectId: number; totalExpenses: string }>(
-		expensesRaw,
-	);
-	const expensesMap = new Map(
-		expensesArray.map((e) => [e.projectId, parseFloat(e.totalExpenses || "0")]),
+	const summariesArray = unwrapList<{
+		projectId: number;
+		totalSpent: number | string;
+		totalConstructionArea: number | string;
+		totalSaleableArea: number | string;
+		actualCostPerSqm: number | string;
+	}>(summariesRaw);
+	const summariesMap = new Map(
+		summariesArray.map((s) => [
+			s.projectId,
+			{
+				totalSpent: parseFloat(String(s.totalSpent || "0")),
+				totalConstructionArea: parseFloat(String(s.totalConstructionArea || "0")),
+				totalSaleableArea: parseFloat(String(s.totalSaleableArea || "0")),
+				actualCostPerSqm: parseFloat(String(s.actualCostPerSqm || "0")),
+			},
+		]),
 	);
 	const filtered = projectsArray.filter(
 		(p) =>
@@ -863,10 +875,28 @@ export default function ConstructionProjects() {
 						const meta = parseDocumentMeta(p.documentMeta);
 						const templateMeta = parseContractTemplateMeta(p.contractTemplateMeta);
 
-						const totalExpenses = expensesMap.get(p.id) || 0;
-						const area = parseFloat(p.totalArea || "0");
-						const currentCostPerSqm = area > 0 ? totalExpenses / area : 0;
+						const summary = summariesMap.get(p.id);
+						const projectAreaFallback = parseFloat(p.totalArea || "0");
+						const totalConstructionArea =
+							summary && summary.totalConstructionArea > 0
+								? summary.totalConstructionArea
+								: projectAreaFallback;
+						const totalSaleableArea =
+							summary && summary.totalSaleableArea > 0
+								? summary.totalSaleableArea
+								: totalConstructionArea;
+						const totalSpent = summary?.totalSpent ?? 0;
 						const plannedCostPerSqm = parseFloat(p.costPerSqm || "0");
+						const actualCostPerSqm =
+							totalConstructionArea > 0
+								? totalSpent / totalConstructionArea
+								: summary?.actualCostPerSqm ?? 0;
+						const fmtArea = (value: number) =>
+							value > 0
+								? value.toLocaleString("ru-KG", {
+										maximumFractionDigits: 2,
+									})
+								: "—";
 
 						return (
 							<div
@@ -880,9 +910,20 @@ export default function ConstructionProjects() {
 												<p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300/85">
 													Проект / ЖК
 												</p>
-												<h3 className="mt-1 truncate text-xl font-black text-white">
-												{p.name}
-											</h3>
+												<div className="mt-1 flex min-w-0 items-center gap-2">
+													<h3 className="truncate text-xl font-black text-white">
+														{p.name}
+													</h3>
+													<Button
+														size="icon"
+														variant="ghost"
+														className="h-8 w-8 shrink-0 rounded-lg text-slate-300 hover:bg-white/10 hover:text-white"
+														title="Редактировать проект"
+														onClick={() => setDialog(p)}
+													>
+														<Edit2 className="h-4 w-4" />
+													</Button>
+												</div>
 											{(p.address || p.region) && (
 													<div className="mt-1 flex items-center gap-1.5">
 														<MapPin className="h-3.5 w-3.5 flex-shrink-0 text-cyan-200/70" />
@@ -951,25 +992,36 @@ export default function ConstructionProjects() {
 										</div>
 									)}
 
-										<div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
-											<Button
-												size="sm"
-												variant="outline"
-												className="h-9 flex-1 border-white/15 bg-white/10 text-white hover:bg-white/15"
-												onClick={() => setDialog(p)}
-											>
-												<Edit2 className="mr-2 h-4 w-4" /> Редактировать
-											</Button>
+										<div className="mt-3 grid gap-2 border-t border-white/10 pt-3 sm:grid-cols-2">
+											<div className="rounded-2xl border border-white/10 bg-white/8 p-2.5 backdrop-blur">
+												<p className="text-[11px] text-slate-400">
+													Общая строительная площадь
+												</p>
+												<p className="mt-1 text-sm font-black text-white">
+													{fmtArea(totalConstructionArea)} м²
+												</p>
+											</div>
+											<div className="rounded-2xl border border-white/10 bg-white/8 p-2.5 backdrop-blur">
+												<p className="text-[11px] text-slate-400">
+													Общая продажная площадь
+												</p>
+												<p className="mt-1 text-sm font-black text-white">
+													{fmtArea(totalSaleableArea)} м²
+												</p>
+											</div>
+										</div>
+
+										<div className="mt-3 flex flex-wrap items-center gap-2">
 											<a
 												href={`/construction/chess?projectId=${p.id}`}
-												className="inline-flex h-9 items-center gap-2 rounded-full bg-cyan-400 px-4 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-950/20 transition hover:bg-cyan-300"
+												className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-full bg-cyan-400 px-4 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-950/20 transition hover:bg-cyan-300"
 											>
 												<Grid3X3 className="h-4 w-4" /> Шахматка
 											</a>
 											<Button
 												size="icon"
 												variant="ghost"
-												className="h-9 w-9 rounded-xl text-rose-600 hover:text-rose-600"
+												className="h-9 w-9 rounded-xl text-rose-400 hover:bg-white/10 hover:text-rose-300"
 												onClick={() => handleDelete(p.id, p.name)}
 											>
 												<Trash2 className="h-4 w-4" />
@@ -997,31 +1049,44 @@ export default function ConstructionProjects() {
 										</div>
 									)}
 
-									{area > 0 && (plannedCostPerSqm > 0 || currentCostPerSqm > 0) && (
+									{(plannedCostPerSqm > 0 ||
+										actualCostPerSqm > 0 ||
+										totalSpent > 0) && (
 											<div className="rounded-[22px] border border-slate-200/80 bg-white/70 p-3.5 shadow-sm shadow-slate-950/4">
 												<p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-												Стоимость за кв.м
-											</p>
+													Себестоимость за м²
+												</p>
 												<div className="space-y-2">
-												{plannedCostPerSqm > 0 && (
-													<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-															<span className="text-sm text-slate-500">Плановая</span>
+													{plannedCostPerSqm > 0 && (
+														<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+															<span className="text-sm text-slate-500">
+																Запланированная
+															</span>
 															<span className="text-base font-black text-slate-900">
-															{fmtProjectAmount(plannedCostPerSqm)} {sym}/м²
-														</span>
-													</div>
-												)}
-												{currentCostPerSqm > 0 && (
-													<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-															<span className="text-sm text-slate-500">Текущая</span>
+																{fmtProjectAmount(plannedCostPerSqm)} {sym}/м²
+															</span>
+														</div>
+													)}
+													{actualCostPerSqm > 0 && (
+														<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+															<span className="text-sm text-slate-500">
+																Фактическая
+															</span>
 															<span className="text-base font-black text-orange-600">
-															{fmtProjectAmount(currentCostPerSqm)} {sym}/м²
-														</span>
-													</div>
-												)}
+																{fmtProjectAmount(actualCostPerSqm)} сом/м²
+															</span>
+														</div>
+													)}
+													{totalSpent > 0 && (
+														<p className="text-xs text-slate-400">
+															Потрачено: {fmtProjectAmount(totalSpent)} сом
+															{totalConstructionArea > 0 &&
+																` · ${fmtArea(totalConstructionArea)} м²`}
+														</p>
+													)}
+												</div>
 											</div>
-										</div>
-									)}
+										)}
 
 										<div className="rounded-[22px] border border-cyan-100 bg-cyan-50/55 p-3.5">
 											<div className="flex items-start gap-3">

@@ -9,7 +9,9 @@ export function parseNum(v: unknown): number {
 }
 
 export function canManageUnitPricing(role: string): boolean {
-	return ["admin", "company_admin", "owner", "finance", "pto", "commercial_director"].includes(role);
+	return ["super_admin", "admin", "company_admin", "owner", "commercial_director"].includes(
+		role,
+	);
 }
 
 export function isSalesOnlyRole(role: string): boolean {

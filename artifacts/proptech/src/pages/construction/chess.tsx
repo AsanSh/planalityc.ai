@@ -882,6 +882,7 @@ export default function ConstructionChess() {
 		if (blockFilter !== "all" && (u.block || "Без секции") !== blockFilter)
 			return false;
 		if (statusFilter !== "all" && u.status !== statusFilter) return false;
+		if (isSalesOnly && !isUnitPublishedForSale(u as Unit)) return false;
 		return true;
 	};
 

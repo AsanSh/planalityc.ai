@@ -204,7 +204,7 @@ export function UnitSaleDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-			<DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+			<DialogContent className="sm:max-w-4xl sm:w-[min(92vw,56rem)] max-h-[90vh] overflow-y-auto">
 				<DialogHeader>
 					<DialogTitle>{title}</DialogTitle>
 					<DialogDescription>
@@ -235,7 +235,7 @@ export function UnitSaleDialog({
 						</div>
 					</div>
 
-					<div className="grid gap-3 sm:grid-cols-4 gap-3">
+					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Сумма договора *</Label>
 							<Input
@@ -277,7 +277,7 @@ export function UnitSaleDialog({
 						</div>
 					</div>
 
-					<div className="bg-amber-50 border border-amber-100 rounded-lg px-4 py-3 text-sm grid gap-2 sm:grid-cols-3 text-center">
+					<div className="grid gap-3 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3 text-sm sm:grid-cols-3 sm:gap-4 sm:text-center">
 						<div>
 							<div className="text-xs text-gray-500">Остаток в рассрочку</div>
 							<div className="font-bold text-amber-700">{fmt(remaining)}</div>
@@ -301,14 +301,14 @@ export function UnitSaleDialog({
 						<Switch checked={flexible} onCheckedChange={setFlexible} />
 					</div>
 
-					<div className="border rounded-lg overflow-hidden">
-						<Table>
+					<div className="overflow-x-auto rounded-lg border">
+						<Table className="min-w-[520px] table-fixed">
 							<TableHeader>
 								<TableRow>
-									<TableHead className="w-8">№</TableHead>
-									<TableHead>Назначение</TableHead>
-									<TableHead>Дата</TableHead>
-									<TableHead className="text-right">Сумма</TableHead>
+									<TableHead className="w-10">№</TableHead>
+									<TableHead className="w-[38%]">Назначение</TableHead>
+									<TableHead className="w-[28%]">Дата</TableHead>
+									<TableHead className="w-[26%] text-right">Сумма</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -338,10 +338,10 @@ export function UnitSaleDialog({
 													}
 												/>
 											</TableCell>
-											<TableCell>
+											<TableCell className="text-right">
 												<Input
 													type="number"
-													className="h-8 text-xs text-right"
+													className="h-8 min-w-[7.5rem] text-xs tabular-nums text-right"
 													value={row.amount}
 													disabled={!flexible}
 													onChange={(e) =>

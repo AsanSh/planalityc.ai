@@ -58,6 +58,11 @@ import {
 	type UnitStatusDto,
 } from "@/lib/unit-statuses";
 import {
+	ChessUnitDetailPanel,
+	type ChessPanelMode,
+	type ChessPanelUnit,
+} from "@/components/chess-unit-detail-panel";
+import {
 	formatPricePerSqmCompact,
 	formatPriceSom,
 	hasUnitSalePrice,
@@ -555,6 +560,7 @@ function ChessGridCell({
 	isSalesOnly,
 	isPricingMode,
 	showCrmPriceHint,
+	selected,
 	onOpen,
 }: {
 	unit: Unit;
@@ -563,6 +569,7 @@ function ChessGridCell({
 	isSalesOnly: boolean;
 	isPricingMode: boolean;
 	showCrmPriceHint: boolean;
+	selected?: boolean;
 	onOpen: () => void;
 }) {
 	const cellModified = !!unit.areaModified;
@@ -632,7 +639,7 @@ function ChessGridCell({
 					? `${unit.unitNumber} · ${unit.area ? `${unit.area} м²` : ""} · ${cfg.label}`
 					: undefined
 			}
-			className={`relative flex h-16 w-[72px] flex-col items-center justify-center rounded-2xl border-2 text-center shadow-sm transition-all ${lockedForSales ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:-translate-y-0.5 hover:shadow-md"} ${cellBg} ${cellBorder}`}
+			className={`relative flex h-16 w-[72px] flex-col items-center justify-center rounded-2xl border-2 text-center shadow-sm transition-all ${lockedForSales ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:-translate-y-0.5 hover:shadow-md"} ${selected ? "ring-2 ring-slate-900 ring-offset-2" : ""} ${cellBg} ${cellBorder}`}
 			onClick={onOpen}
 		>
 			{lockedForSales && (
@@ -962,6 +969,7 @@ export default function ConstructionChess() {
 		return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 	});
 	const [selectedUnit, setSelectedUnit] = useState<Unit | null | "new">(null);
+	const [panelUnitId, setPanelUnitId] = useState<number | null>(null);
 	const [commercialPriceUnit, setCommercialPriceUnit] = useState<Unit | null>(null);
 	const [saleFlow, setSaleFlow] = useState<{
 		unit: Unit;
@@ -995,6 +1003,10 @@ export default function ConstructionChess() {
 		if (projectId != null) return;
 		if (projects.length > 0) setProjectId(projects[0].id);
 	}, [projectId, projects]);
+
+	useEffect(() => {
+		setPanelUnitId(null);
+	}, [projectId]);
 
 	const {
 		data: units = [],
@@ -1094,25 +1106,45 @@ export default function ConstructionChess() {
 		toast({ title: "Файл Excel скачан" });
 	};
 
+	const panelMode: ChessPanelMode = isPTO
+		? "pto"
+		: isPricingMode
+			? "pricing"
+			: isSalesOnly
+				? "sales"
+				: "crm";
+
+	const panelUnit = useMemo((): ChessPanelUnit | null => {
+		if (panelUnitId == null) return null;
+		const fromUnits = units.find((x) => x.id === panelUnitId);
+		const fromOverview = overview.find((x) => x.id === panelUnitId);
+		if (!fromUnits && !fromOverview) return null;
+		return {
+			...(fromUnits || {}),
+			...(fromOverview || {}),
+			id: panelUnitId,
+			unitNumber: fromOverview?.unitNumber || fromUnits?.unitNumber || "",
+			unitType: fromOverview?.unitType || fromUnits?.unitType || "apartment",
+			currency: fromOverview?.currency || fromUnits?.currency || "KGS",
+			status: fromOverview?.status || fromUnits?.status || "available",
+			contract: fromOverview?.contract ?? null,
+		} as ChessPanelUnit;
+	}, [panelUnitId, units, overview]);
+
 	const openUnit = (u: OverviewUnit | Unit) => {
-		if (isPTO) {
-			setPtoEditUnit(u as Unit);
-			return;
-		}
-		if (isPricingMode) {
-			setCommercialPriceUnit(u as Unit);
-			return;
-		}
 		if (isSalesOnly && !isUnitPublishedForSale(u as Unit)) {
 			toast({
 				title: "Объект пока не активен для продажи",
-				description: "Коммерческий директор должен утвердить коэффициент и опубликовать объект.",
+				description:
+					"Коммерческий директор должен утвердить коэффициент и опубликовать объект.",
 				variant: "destructive",
 			});
 			return;
 		}
-		setSelectedUnit(u as Unit);
+		setPanelUnitId((prev) => (prev === u.id ? null : u.id));
 	};
+
+	const closePanel = () => setPanelUnitId(null);
 
 	const invalidateAll = () => {
 		qc.invalidateQueries({ queryKey: ["construction-units", projectId] });
@@ -1203,6 +1235,45 @@ export default function ConstructionChess() {
 	}
 	const unpublishedCount = units.filter((u) => !isUnitPublishedForSale(u)).length;
 
+	const unitRecordForPanel = (u: ChessPanelUnit): Unit =>
+		(units.find((x) => x.id === u.id) || u) as Unit;
+
+	const unitDetailPanelProps = {
+		unit: panelUnit,
+		mode: panelMode,
+		statusBadgeMap,
+		open: !!panelUnit,
+		onClose: closePanel,
+		onEdit:
+			panelMode === "crm" || panelMode === "sales"
+				? () => panelUnit && setSelectedUnit(unitRecordForPanel(panelUnit))
+				: undefined,
+		onEditArea:
+			panelMode === "pto"
+				? () => panelUnit && setPtoEditUnit(unitRecordForPanel(panelUnit))
+				: undefined,
+		onConfigurePrice:
+			panelMode === "pricing"
+				? () => panelUnit && setCommercialPriceUnit(unitRecordForPanel(panelUnit))
+				: undefined,
+		onRequestSale: (status: "reserved" | "sold") => {
+			if (!panelUnit) return;
+			setSaleFlow({ unit: unitRecordForPanel(panelUnit), status });
+			closePanel();
+		},
+		canRequestSale:
+			!!panelUnit &&
+			(panelMode === "sales" || panelMode === "crm") &&
+			isUnitPublishedForSale(panelUnit),
+	};
+
+	const unitDetailPanelInline =
+		panelUnit != null ? (
+			<div className="hidden lg:block lg:w-[35%] shrink-0">
+				<ChessUnitDetailPanel {...unitDetailPanelProps} presentation="inline" />
+			</div>
+		) : null;
+
 	return (
 		<div className="am-page space-y-5">
 			<div className="am-page-header">
@@ -1222,7 +1293,7 @@ export default function ConstructionChess() {
 					</h1>
 					<p className="am-page-subtitle text-sm">
 						{isPTO
-							? "Управление площадями · клик по площади для редактирования"
+							? "Управление площадями · клик по квартире — карточка справа"
 							: isPricingMode
 								? "Коммерческое утверждение базовой цены и коэффициента продажи"
 							: isSalesOnly
@@ -1426,19 +1497,37 @@ export default function ConstructionChess() {
 					</div>
 
 					{viewMode === "by-unit" && (
-						<ChessByUnitView
-							units={filteredOverview}
-							onSelectUnit={openUnit}
-							statusBadgeMap={statusBadgeMap}
-						/>
+						<div
+							className={`flex gap-4 items-start ${panelUnitId ? "lg:flex-row" : "flex-col"}`}
+						>
+							<div
+								className={`min-w-0 ${panelUnitId ? "lg:w-[65%]" : "w-full"}`}
+							>
+								<ChessByUnitView
+									units={filteredOverview}
+									onSelectUnit={openUnit}
+									statusBadgeMap={statusBadgeMap}
+								/>
+							</div>
+							{unitDetailPanelInline}
+						</div>
 					)}
 
 					{viewMode === "by-counterparty" && (
-						<ChessByCounterpartyView
-							units={filteredOverview}
-							statusBadgeMap={statusBadgeMap}
-							onSelectUnit={openUnit}
-						/>
+						<div
+							className={`flex gap-4 items-start ${panelUnitId ? "lg:flex-row" : "flex-col"}`}
+						>
+							<div
+								className={`min-w-0 ${panelUnitId ? "lg:w-[65%]" : "w-full"}`}
+							>
+								<ChessByCounterpartyView
+									units={filteredOverview}
+									statusBadgeMap={statusBadgeMap}
+									onSelectUnit={openUnit}
+								/>
+							</div>
+							{unitDetailPanelInline}
+						</div>
 					)}
 
 					{/* Chess grid */}
@@ -1509,7 +1598,10 @@ export default function ConstructionChess() {
 							)}
 						</div>
 					) : (
-						<>
+						<div
+							className={`flex gap-4 items-start ${panelUnitId ? "lg:flex-row" : "flex-col"}`}
+						>
+						<div className={`min-w-0 space-y-3 ${panelUnitId ? "lg:w-[65%]" : "w-full"}`}>
 						{!isSalesOnly &&
 							selectedProject?.totalUnits &&
 							units.length > 0 &&
@@ -1592,10 +1684,8 @@ export default function ConstructionChess() {
 															isSalesOnly={isSalesOnly}
 															isPricingMode={isPricingMode}
 															showCrmPriceHint={showCrmPriceHint}
-															onOpen={() => {
-																if (isPTO) setPtoEditUnit(unit);
-																else openUnit(unit);
-															}}
+															selected={panelUnitId === unit.id}
+															onOpen={() => openUnit(unit)}
 														/>
 													))}
 											</div>
@@ -1606,7 +1696,9 @@ export default function ConstructionChess() {
 								)}
 							</div>
 						</MatrixTableFrame>
-						</>
+						</div>
+						{unitDetailPanelInline}
+						</div>
 						))}
 				</>
 			)}
@@ -1681,6 +1773,8 @@ export default function ConstructionChess() {
 				onClose={() => setPtoEditUnit(null)}
 				onSaved={invalidateAll}
 			/>
+
+			<ChessUnitDetailPanel {...unitDetailPanelProps} presentation="sheet" />
 		</div>
 	);
 }

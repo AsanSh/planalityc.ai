@@ -211,6 +211,15 @@ export default function SalesGrid() {
 		]);
 	};
 
+	const handleMoveUnit = async (unitId: number, toFloor: number) => {
+		try {
+			await api.patch(`/construction/units/${unitId}`, { floor: toFloor });
+			invalidateAll();
+		} catch (e) {
+			toast({ title: getApiErrorMessage(e, "Не удалось переместить юнит"), variant: "destructive" });
+		}
+	};
+
 	const openUnit = (u: SalesGridUnit) => {
 		if (isSalesOnly && !isUnitPublishedForSale(u)) {
 			toast({
@@ -513,7 +522,8 @@ export default function SalesGrid() {
 										onOpenUnit={openUnit}
 										onBulkToggle={toggleBulkUnit}
 										onBulkFloor={toggleBulkFloor}
-									/>
+									onMoveUnit={handleMoveUnit}
+								/>
 								) : effectiveView === "list" ? (
 									<ListView
 										units={filteredUnits}

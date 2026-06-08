@@ -1176,4 +1176,41 @@ router.get("/analytics/project-expenses", async (req: AuthenticatedRequest, res)
   res.json(rows);
 });
 
+router.get("/analytics/project-summaries", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const companyId = req.scopedCompanyId!;
+
+  const [unitStats, expenseStats] = await Promise.all([
+    db.select({
+      projectId: constructionUnitsTable.projectId,
+      totalConstructionArea: sql<number>`coalesce(sum(area::numeric), 0)`,
+      totalSaleableArea: sql<number>`coalesce(sum(case when status not in ('construction','closed','draft','unavailable') then area::numeric else 0 end), 0)`,
+    }).from(constructionUnitsTable)
+      .where(eq(constructionUnitsTable.companyId, companyId))
+      .groupBy(constructionUnitsTable.projectId),
+
+    db.select({
+      projectId: constructionOperationsTable.projectId,
+      totalSpent: sql<number>`coalesce(sum(amount_kgs::numeric), 0)`,
+    }).from(constructionOperationsTable)
+      .where(and(
+        eq(constructionOperationsTable.companyId, companyId),
+        eq(constructionOperationsTable.type, "expense"),
+        sql`project_id is not null`,
+      ))
+      .groupBy(constructionOperationsTable.projectId),
+  ]);
+
+  const expMap = new Map(expenseStats.map(e => [e.projectId, Number(e.totalSpent)]));
+  const result = unitStats.map(u => {
+    const totalSpent = expMap.get(u.projectId) ?? 0;
+    const totalConstructionArea = Number(u.totalConstructionArea);
+    const totalSaleableArea = Number(u.totalSaleableArea);
+    const actualCostPerSqm = totalConstructionArea > 0 ? totalSpent / totalConstructionArea : 0;
+    return { projectId: u.projectId, totalConstructionArea, totalSaleableArea, totalSpent, actualCostPerSqm };
+  });
+
+  res.json(result);
+});
+
 export default router;
+

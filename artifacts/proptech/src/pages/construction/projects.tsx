@@ -929,7 +929,7 @@ export default function ConstructionProjects() {
 													Проект / ЖК
 												</p>
 												<div className="mt-1 flex min-w-0 items-center gap-2">
-													<h3 className="truncate text-xl font-black text-white">
+													<h3 className="line-clamp-2 break-words text-xl font-black leading-tight text-white">
 														{p.name}
 													</h3>
 													<Button
@@ -1067,34 +1067,32 @@ export default function ConstructionProjects() {
 										</div>
 									)}
 
-									{(plannedCostPerSqm > 0 ||
-										actualCostPerSqm > 0 ||
-										totalSpent > 0) && (
+									{(plannedCostPerSqm > 0 || summary != null) && (
 											<div className="rounded-[22px] border border-slate-200/80 bg-white/70 p-3.5 shadow-sm shadow-slate-950/4">
 												<p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
 													Себестоимость за м²
 												</p>
 												<div className="space-y-2">
-													{plannedCostPerSqm > 0 && (
-														<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-															<span className="text-sm text-slate-500">
-																Запланированная
-															</span>
-															<span className="text-base font-black text-slate-900">
-																{fmtProjectAmount(plannedCostPerSqm)} {sym}/м²
-															</span>
-														</div>
-													)}
-													{actualCostPerSqm > 0 && (
-														<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-															<span className="text-sm text-slate-500">
-																Фактическая
-															</span>
-															<span className="text-base font-black text-orange-600">
-																{fmtProjectAmount(actualCostPerSqm)} сом/м²
-															</span>
-														</div>
-													)}
+													<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+														<span className="text-sm text-slate-500">
+															Запланированная
+														</span>
+														<span className="text-base font-black text-slate-900">
+															{plannedCostPerSqm > 0
+																? `${fmtProjectAmount(plannedCostPerSqm)} ${sym}/м²`
+																: "—"}
+														</span>
+													</div>
+													<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+														<span className="text-sm text-slate-500">
+															Фактическая
+														</span>
+														<span className={`text-base font-black ${actualCostPerSqm > 0 ? "text-orange-600" : "text-slate-400"}`}>
+															{actualCostPerSqm > 0
+																? `${fmtProjectAmount(actualCostPerSqm)} сом/м²`
+																: "—"}
+														</span>
+													</div>
 													{totalSpent > 0 && (
 														<p className="text-xs text-slate-400">
 															Потрачено: {fmtProjectAmount(totalSpent)} сом

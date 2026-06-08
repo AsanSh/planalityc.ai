@@ -14,6 +14,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
 	ChessByCounterpartyView,
 	ChessByUnitView,
 	type OverviewUnit,
@@ -52,6 +57,14 @@ import {
 	saleModeFor,
 	type UnitStatusDto,
 } from "@/lib/unit-statuses";
+import {
+	formatPricePerSqmCompact,
+	formatPriceSom,
+	hasUnitSalePrice,
+	isUnitPublishedForSale,
+	resolvedPricePerSqm,
+	resolvedTotalPrice,
+} from "@/lib/unit-pricing";
 
 function fmtNum(v: string | number | null | undefined) {
 	if (!v) return "—";
@@ -106,27 +119,6 @@ interface Project {
 	baseSalePricePerSqm?: string | null;
 	costPerSqm?: string | null;
 	currency?: string;
-}
-
-function isUnitPublishedForSale(
-	unit: Pick<
-		Unit,
-		| "isPublishedForSale"
-		| "approvedSalePricePerSqm"
-		| "priceApproved"
-		| "pricePerSqm"
-		| "listPrice"
-	>,
-) {
-	if (unit.priceApproved === true) {
-		return (
-			parseFloat(String(unit.approvedSalePricePerSqm || unit.pricePerSqm || unit.listPrice || "0")) > 0
-		);
-	}
-	return (
-		unit.isPublishedForSale === true &&
-		parseFloat(String(unit.approvedSalePricePerSqm || unit.pricePerSqm || "0")) > 0
-	);
 }
 
 function unitCoefficient(unit: Pick<Unit, "priceCoefficient" | "saleCoefficient">) {
@@ -556,6 +548,152 @@ function PtoAreaDisplay({ unit }: { unit: Unit }) {
 	);
 }
 
+function ChessGridCell({
+	unit,
+	cfg,
+	isPTO,
+	isSalesOnly,
+	isPricingMode,
+	showCrmPriceHint,
+	onOpen,
+}: {
+	unit: Unit;
+	cfg: ReturnType<typeof gridCfgFor>;
+	isPTO: boolean;
+	isSalesOnly: boolean;
+	isPricingMode: boolean;
+	showCrmPriceHint: boolean;
+	onOpen: () => void;
+}) {
+	const cellModified = !!unit.areaModified;
+	const published = isUnitPublishedForSale(unit);
+	const hasPrice = hasUnitSalePrice(unit);
+	const lockedForSales = isSalesOnly && !published;
+	const pps = resolvedPricePerSqm(unit);
+	const total = resolvedTotalPrice(unit);
+
+	const ptoBg = cellModified ? "bg-amber-100" : cfg.bg;
+	const ptoBorder = cellModified ? "border-amber-500" : cfg.border;
+	const cellBg = lockedForSales ? "bg-gray-100" : isPTO ? ptoBg : cfg.bg;
+	const cellBorder = lockedForSales
+		? "border-gray-200"
+		: isPTO
+			? ptoBorder
+			: cfg.border;
+
+	const showPriceHint =
+		!isPTO && (isSalesOnly || isPricingMode || showCrmPriceHint);
+
+	let priceHint: string | null = null;
+	if (showPriceHint) {
+		if (isSalesOnly) {
+			priceHint = published ? formatPricePerSqmCompact(pps) : "не открыта";
+		} else if (hasPrice) {
+			priceHint = formatPricePerSqmCompact(pps);
+		} else {
+			priceHint = "цена не установлена";
+		}
+	}
+
+	const tooltipLines: string[] = [unit.unitNumber];
+	if (unit.area) tooltipLines.push(`${unit.area} м²`);
+	if (isPTO) {
+		tooltipLines.push(cfg.label);
+	} else if (isSalesOnly) {
+		if (published) {
+			tooltipLines.push(`${formatPriceSom(pps)}/м²`);
+			tooltipLines.push(`Итого: ${formatPriceSom(total)}`);
+		} else {
+			tooltipLines.push("Не открыта для продажи");
+		}
+	} else if (hasPrice) {
+		tooltipLines.push(`${formatPriceSom(pps)}/м²`);
+		tooltipLines.push(`Итого: ${formatPriceSom(total)}`);
+		if (isPricingMode && published) {
+			tooltipLines.push(`Коэффициент: ×${unitCoefficient(unit)}`);
+		}
+	} else {
+		tooltipLines.push("Цена не установлена");
+	}
+	if (!isPTO) tooltipLines.push(cfg.label);
+
+	const priceHintClass = isSalesOnly
+		? published
+			? "text-emerald-700"
+			: "text-gray-500"
+		: hasPrice
+			? "text-emerald-700"
+			: "text-amber-700";
+
+	const cell = (
+		<div
+			title={
+				isPTO
+					? `${unit.unitNumber} · ${unit.area ? `${unit.area} м²` : ""} · ${cfg.label}`
+					: undefined
+			}
+			className={`relative flex h-16 w-[72px] flex-col items-center justify-center rounded-2xl border-2 text-center shadow-sm transition-all ${lockedForSales ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:-translate-y-0.5 hover:shadow-md"} ${cellBg} ${cellBorder}`}
+			onClick={onOpen}
+		>
+			{lockedForSales && (
+				<Lock className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-white p-0.5 text-gray-500 shadow" />
+			)}
+			{!isPTO && cellModified && (
+				<div className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[7px] font-bold px-0.5 rounded z-10">
+					Δ
+				</div>
+			)}
+			<span
+				className={`text-sm font-black ${lockedForSales ? "text-gray-500" : cfg.text}`}
+			>
+				{unit.unitNumber}
+			</span>
+			{isPTO ? (
+				<PtoAreaDisplay unit={unit} />
+			) : (
+				<>
+					{unit.area && (
+						<span
+							className={`text-[8px] ${lockedForSales ? "text-gray-600" : cfg.text} opacity-70`}
+						>
+							{unit.area}м²
+						</span>
+					)}
+					{unit.roomCount && (
+						<span
+							className={`text-[8px] ${lockedForSales ? "text-gray-600" : cfg.text} opacity-70`}
+						>
+							{unit.roomCount}к
+						</span>
+					)}
+					{priceHint && (
+						<span
+							className={`text-[7px] leading-tight font-medium px-0.5 ${priceHintClass}`}
+						>
+							{priceHint}
+						</span>
+					)}
+				</>
+			)}
+		</div>
+	);
+
+	if (isPTO) return cell;
+
+	return (
+		<Tooltip delayDuration={200}>
+			<TooltipTrigger asChild>{cell}</TooltipTrigger>
+			<TooltipContent side="top" className="max-w-[240px] text-center">
+				{tooltipLines.map((line, i) => (
+					<div key={line + i} className={i === 0 ? "font-semibold" : ""}>
+						{line}
+					</div>
+				))}
+			</TooltipContent>
+		</Tooltip>
+	);
+}
+
 /** Диалог редактирования площади ПТО */
 function PtoEditAreaDialog({
 	unit,
@@ -817,6 +955,7 @@ export default function ConstructionChess() {
 	const [ptoEditUnit, setPtoEditUnit] = useState<Unit | null>(null);
 	const isPTO = forcedRoleByUser || (isAdmin && adminModeOverride === "pto");
 	const isPricingMode = isCommercialDirector || (isAdmin && adminModeOverride === "pricing");
+	const showCrmPriceHint = isAdmin && adminModeOverride === "crm";
 	const [projectId, setProjectId] = useState<number | null>(() => {
 		const raw = new URLSearchParams(window.location.search).get("projectId");
 		const parsed = raw ? Number(raw) : NaN;
@@ -1444,57 +1583,21 @@ export default function ConstructionChess() {
 													<div className="text-right text-xs font-black text-slate-400">
 													{floor > 0 ? `${floor}эт` : "—"}
 												</div>
-													{floorUnits.map((unit) => {
-														const cfg = gridCfgFor(
-															statusGridMap,
-															unit.status,
-														);
-														const cellModified = !!(unit as any).areaModified;
-														const published = isUnitPublishedForSale(unit);
-														const lockedForSales = isSalesOnly && !published;
-														const ptoBg = cellModified ? "bg-amber-100" : cfg.bg;
-														const ptoBorder = cellModified ? "border-amber-500" : cfg.border;
-														const cellBg = lockedForSales ? "bg-gray-100" : isPTO ? ptoBg : cfg.bg;
-														const cellBorder = lockedForSales ? "border-gray-200" : isPTO ? ptoBorder : cfg.border;
-														return (
-															<div
-																key={unit.id}
-																title={
-																	lockedForSales
-																		? `${unit.unitNumber} · не опубликовано коммерческим директором`
-																		: `${unit.unitNumber} · ${unit.area ? `${unit.area} м²` : ""} · ${cfg.label}`
-																}
-																	className={`relative flex h-16 w-[72px] flex-col items-center justify-center rounded-2xl border-2 text-center shadow-sm transition-all ${lockedForSales ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:-translate-y-0.5 hover:shadow-md"} ${cellBg} ${cellBorder}`}
-																onClick={() => {
-																	if (isPTO) setPtoEditUnit(unit);
-																	else openUnit(unit);
-																}}
-															>
-																{lockedForSales && (
-																	<Lock className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-white p-0.5 text-gray-500 shadow" />
-																)}
-																{!isPTO && cellModified && (
-																	<div className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[7px] font-bold px-0.5 rounded z-10">Δ</div>
-																)}
-																	<span className={`text-sm font-black ${lockedForSales ? "text-gray-500" : cfg.text}`}>
-																	{unit.unitNumber}
-																</span>
-																{isPTO ? (
-																	<PtoAreaDisplay unit={unit as any} />
-																) : (
-																	<>
-																		{unit.area && <span className={`text-[8px] ${lockedForSales ? "text-gray-600" : cfg.text} opacity-70`}>{unit.area}м²</span>}
-																		{unit.roomCount && <span className={`text-[8px] ${lockedForSales ? "text-gray-600" : cfg.text} opacity-70`}>{unit.roomCount}к</span>}
-																		{isPricingMode && (
-																			<span className={`text-[8px] ${published ? "text-emerald-700" : "text-gray-600"} font-medium`}>
-																				{published ? `×${unitCoefficient(unit)}` : "нет цены"}
-																			</span>
-																		)}
-																	</>
-																)}
-															</div>
-														);
-													})}
+													{floorUnits.map((unit) => (
+														<ChessGridCell
+															key={unit.id}
+															unit={unit}
+															cfg={gridCfgFor(statusGridMap, unit.status)}
+															isPTO={isPTO}
+															isSalesOnly={isSalesOnly}
+															isPricingMode={isPricingMode}
+															showCrmPriceHint={showCrmPriceHint}
+															onOpen={() => {
+																if (isPTO) setPtoEditUnit(unit);
+																else openUnit(unit);
+															}}
+														/>
+													))}
 											</div>
 										);
 									})

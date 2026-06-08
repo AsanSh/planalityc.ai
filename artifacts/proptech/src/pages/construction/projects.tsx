@@ -168,7 +168,7 @@ function ProjectDialog({
 	project: Project | null | "new";
 	prefill?: ReturnType<typeof applyParsedToProjectForm> | null;
 	onClose: () => void;
-	onSaved: () => void;
+	onSaved: (projectId?: number, sync?: { created?: number; removed?: number; skipped?: number }) => void;
 	onRequestDocUpload?: () => void;
 }) {
 	const { toast } = useToast();
@@ -256,10 +256,31 @@ function ProjectDialog({
 			};
 
 			if (isEdit) {
-				await api.patch(
-					`/construction/projects/${(init as Project).id}`,
-					payload,
-				);
+				const projectId = (init as Project).id;
+				const { data } = await api.patch<
+					Project & { unitsCreated?: number; unitsRemoved?: number; unitsSkipped?: number }
+				>(`/construction/projects/${projectId}`, payload);
+				const created = data.unitsCreated ?? 0;
+				const removed = data.unitsRemoved ?? 0;
+				const skipped = data.unitsSkipped ?? 0;
+				const parts: string[] = [];
+				if (created > 0) parts.push(`добавлено ${created} квартир`);
+				if (removed > 0) parts.push(`удалено ${removed}`);
+				if (skipped > 0) parts.push(`${skipped} лишних не тронуто (есть клиент/договор)`);
+				toast({
+					title: "Проект обновлён",
+					description:
+						parts.length > 0
+							? `Шахматка: ${parts.join(", ")}`
+							: "Число квартир в шахматке уже совпадает с проектом",
+				});
+				onSaved(projectId, {
+					created,
+					removed,
+					skipped,
+				});
+				onClose();
+				return;
 			} else {
 				const { data } = await api.post<Project & { unitsCreated?: number }>(
 					"/construction/projects",
@@ -278,9 +299,6 @@ function ProjectDialog({
 				return;
 			}
 
-			toast({ title: "Проект обновлён" });
-			onSaved();
-			onClose();
 		} catch (err: unknown) {
 			const message =
 				err instanceof Error ? err.message : "Не удалось сохранить проект";
@@ -1131,9 +1149,20 @@ export default function ConstructionProjects() {
 					setDialog(null);
 					setPrefill(null);
 				}}
-				onSaved={() => {
+				onSaved={(projectId) => {
 					setPrefill(null);
 					queryClient.invalidateQueries({ queryKey: ["construction-projects"] });
+					if (projectId != null) {
+						queryClient.invalidateQueries({
+							queryKey: ["sales-grid-units", projectId],
+						});
+						queryClient.invalidateQueries({
+							queryKey: ["sales-grid-stats", projectId],
+						});
+						queryClient.invalidateQueries({
+							queryKey: ["construction-units", projectId],
+						});
+					}
 				}}
 				onRequestDocUpload={() => setDocUploadOpen(true)}
 			/>

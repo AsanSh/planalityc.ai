@@ -804,7 +804,11 @@ export default function ConstructionChess() {
 	const qc = useQueryClient();
 	const { user } = useAuth();
 	const userRole = (user as any)?.role;
-	const isAdmin = userRole === "admin" || userRole === "super_admin" || userRole === "company_admin";
+	const isAdmin =
+		userRole === "admin" ||
+		userRole === "super_admin" ||
+		userRole === "company_admin" ||
+		userRole === "owner";
 	const isCommercialDirector = userRole === "commercial_director";
 	const isSalesOnly = userRole === "sales_manager";
 	const forcedRoleByUser = userRole === "pto" || userRole === "engineer";
@@ -844,14 +848,21 @@ export default function ConstructionChess() {
 
 	const { data: projects = [] } = useQuery<Project[]>({
 		queryKey: ["construction-projects"],
-		queryFn: async () => {
-			const res = await api.get<Project[]>("/construction/projects/all");
-			if (res.data.length && !projectId) setProjectId(res.data[0].id);
-			return res.data;
-		},
+		queryFn: () =>
+			api.get<Project[]>("/construction/projects/all").then((r) => r.data),
 	});
 
-	const { data: units = [], isLoading, refetch: refetchUnits } = useQuery<Unit[]>({
+	useEffect(() => {
+		if (projectId != null) return;
+		if (projects.length > 0) setProjectId(projects[0].id);
+	}, [projectId, projects]);
+
+	const {
+		data: units = [],
+		isLoading,
+		isError: unitsLoadError,
+		refetch: refetchUnits,
+	} = useQuery<Unit[]>({
 		queryKey: ["construction-units", projectId],
 		queryFn: () =>
 			api
@@ -888,6 +899,11 @@ export default function ConstructionChess() {
 
 	const filteredUnits = units.filter(filterUnit);
 	const filteredOverview = overview.filter(filterUnit);
+	const hasUnitsInProject = units.length > 0;
+	const hasVisibleUnits = filteredUnits.length > 0;
+	const salesFilterHidesAll = isSalesOnly && hasUnitsInProject && !hasVisibleUnits;
+	const uiFiltersHideAll =
+		hasUnitsInProject && !hasVisibleUnits && !isSalesOnly;
 
 	// Group by floor descending
 	const floors = Array.from(
@@ -995,11 +1011,22 @@ export default function ConstructionChess() {
 		} catch (e: unknown) {
 			const err = e as ApiError;
 			if (err.status === 409) {
-				await refreshUnitsNow();
+				const refetched = await refetchUnits();
+				await refetchOverview();
+				const loaded = refetched.data?.length ?? 0;
+				const existing = err.body?.existingUnits;
+				if (loaded === 0 && existing && existing > 0) {
+					toast({
+						title: "Квартиры есть в базе, но список не загрузился",
+						description: `В проекте #${projectId} найдено ${existing} квартир. Обновите страницу (Cmd+Shift+R) или переключите проект и вернитесь обратно.`,
+						variant: "destructive",
+					});
+					return;
+				}
 				toast({
 					title: "Квартиры уже есть",
-					description: err.body?.existingUnits
-						? `Найдено ${err.body.existingUnits} квартир. Список обновлён.`
+					description: existing
+						? `Найдено ${existing} квартир. Список обновлён.`
 						: "Список шахматки обновлён.",
 				});
 				return;
@@ -1281,14 +1308,41 @@ export default function ConstructionChess() {
 						<div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-600">
 							Загрузка...
 						</div>
-					) : units.length === 0 ? (
+					) : unitsLoadError ? (
+						<div className="bg-white rounded-xl border border-rose-200 py-16 text-center text-rose-800">
+							<Grid3X3 className="w-12 h-12 mx-auto mb-3 opacity-20" />
+							<p className="font-medium">Не удалось загрузить шахматку</p>
+							<p className="text-sm mt-1 max-w-md mx-auto text-rose-700">
+								Проверьте подключение и повторите. Если ошибка повторяется — откройте
+								вкладку Network и посмотрите ответ запроса{" "}
+								<code className="text-xs">/construction/units</code>.
+							</p>
+							<Button
+								variant="outline"
+								className="mt-4"
+								onClick={() => refreshUnitsNow()}
+							>
+								Повторить загрузку
+							</Button>
+						</div>
+					) : salesFilterHidesAll ? (
+						<div className="bg-white rounded-xl border border-gray-200 py-16 text-center text-gray-600">
+							<Lock className="w-12 h-12 mx-auto mb-3 opacity-20" />
+							<p className="font-medium">Нет открытых квартир для продажи</p>
+							<p className="text-sm mt-1 max-w-md mx-auto">
+								В проекте {units.length} квартир, но коммерческий директор ещё не
+								утвердил цену и не открыл их для продажи. Переключитесь на вкладку
+								«Цены» (роль КД) или обратитесь к коммерческому директору.
+							</p>
+						</div>
+					) : !hasUnitsInProject ? (
 						<div className="bg-white rounded-xl border border-gray-200 py-16 text-center text-gray-600">
 							<Grid3X3 className="w-12 h-12 mx-auto mb-3 opacity-20" />
 							<p className="font-medium">Шахматка пуста</p>
 							<p className="text-sm mt-1 max-w-md mx-auto">
 								{isSalesOnly
 									? "Квартиры ещё не добавлены в шахматку. Обратитесь к администратору."
-									: "Квартиры создаются отдельно от карточки проекта. Если при создании проекта указали этажи и число квартир — нажмите кнопку ниже."}
+									: "Квартиры создаются отдельно от карточки проекта. Если при создании проекта указали этажи и число квартир — нажмите кнопку ниже один раз."}
 							</p>
 							{!isSalesOnly && (
 							<div className="flex flex-wrap justify-center gap-2 mt-4">
@@ -1350,8 +1404,24 @@ export default function ConstructionChess() {
 						>
 							<div className="min-w-max bg-slate-50/70 p-4">
 								{floors.length === 0 ? (
-									<div className="p-4 text-center text-gray-600">
-										Нет данных для отображения
+									<div className="p-4 text-center text-gray-600 space-y-3">
+										<p>
+											{uiFiltersHideAll
+												? `Фильтры скрыли все ${units.length} квартир. Сбросьте фильтр секции или статуса.`
+												: "Нет данных для отображения"}
+										</p>
+										{uiFiltersHideAll && (
+											<Button
+												size="sm"
+												variant="outline"
+												onClick={() => {
+													setBlockFilter("all");
+													setStatusFilter("all");
+												}}
+											>
+												Сбросить фильтры
+											</Button>
+										)}
 									</div>
 								) : (
 									<div className="space-y-2">

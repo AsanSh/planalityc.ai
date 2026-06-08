@@ -1,6 +1,5 @@
 import { Lock } from "lucide-react";
 import { useRef, useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
 	formatPricePerSqmCompact,
 	formatPriceSom,
@@ -17,6 +16,29 @@ import { UnitTooltip } from "./UnitTooltip";
 
 function unitCoef(u: SalesGridUnit) {
 	return u.priceCoefficient || u.saleCoefficient || "1";
+}
+
+const DOUBLE_TAP_MS = 300;
+
+function useBulkTapSelection(onBulkToggle?: () => void) {
+	const lastTapAt = useRef(0);
+	const suppressClickUntil = useRef(0);
+
+	const handleTouchEnd = () => {
+		if (!onBulkToggle) return;
+		const now = Date.now();
+		if (now - lastTapAt.current < DOUBLE_TAP_MS) {
+			lastTapAt.current = 0;
+			suppressClickUntil.current = now + DOUBLE_TAP_MS;
+			onBulkToggle();
+			return;
+		}
+		lastTapAt.current = now;
+	};
+
+	const shouldSuppressClick = () => Date.now() < suppressClickUntil.current;
+
+	return { handleTouchEnd, shouldSuppressClick };
 }
 
 export function UnitCell({
@@ -42,6 +64,9 @@ export function UnitCell({
 }) {
 	const ref = useRef<HTMLButtonElement>(null);
 	const [hover, setHover] = useState(false);
+	const { handleTouchEnd, shouldSuppressClick } = useBulkTapSelection(
+		showBulkCheckbox ? onBulkToggle : undefined,
+	);
 	const cfg = gridCfgFor(statusGridMap, unit.status);
 	const hex = STATUS_HEX[unit.status] || "#94a3b8";
 	const published = isUnitPublishedForSale(unit);
@@ -83,11 +108,24 @@ export function UnitCell({
 				ref={ref}
 				type="button"
 				disabled={locked}
+				title={showBulkCheckbox && !locked ? "ПКМ — выбрать · двойной тап" : undefined}
 				onMouseEnter={() => setHover(true)}
 				onMouseLeave={() => setHover(false)}
 				onFocus={() => setHover(true)}
 				onBlur={() => setHover(false)}
-				onClick={onOpen}
+				onContextMenu={(e) => {
+					if (!showBulkCheckbox || !onBulkToggle || locked) return;
+					e.preventDefault();
+					onBulkToggle();
+				}}
+				onTouchEnd={() => {
+					if (!showBulkCheckbox || locked) return;
+					handleTouchEnd();
+				}}
+				onClick={() => {
+					if (shouldSuppressClick()) return;
+					onOpen();
+				}}
 				className={cn(
 					"relative flex h-20 w-20 flex-col items-center justify-center rounded-xl border-2 text-center shadow-sm transition-all",
 					locked ? "cursor-not-allowed opacity-60 bg-gray-100 border-gray-200" : "cursor-pointer hover:-translate-y-0.5 hover:shadow-md",
@@ -107,21 +145,6 @@ export function UnitCell({
 							}
 				}
 			>
-				{showBulkCheckbox && onBulkToggle && (
-					<span
-						className="absolute top-0.5 left-0.5 z-10"
-						onClick={(e) => {
-							e.stopPropagation();
-							onBulkToggle();
-						}}
-					>
-						<Checkbox
-							checked={!!bulkChecked}
-							onCheckedChange={() => onBulkToggle()}
-							className="h-3.5 w-3.5"
-						/>
-					</span>
-				)}
 				{locked && (
 					<Lock className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 rounded-full bg-white p-0.5 text-gray-500 shadow" />
 				)}

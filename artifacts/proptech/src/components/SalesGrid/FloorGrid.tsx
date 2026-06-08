@@ -50,7 +50,7 @@ export function FloorGrid({
 										type="button"
 										onClick={() => onBulkFloor(floor, floorIds)}
 										className="flex h-20 w-12 flex-col items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-600 hover:bg-slate-200"
-										title={showBulkCheckbox ? "Выбрать этаж" : undefined}
+										title={showBulkCheckbox ? "Выбрать этаж (клик)" : undefined}
 									>
 										<span>{floor}</span>
 										<span className="text-[9px] font-normal text-slate-400">эт</span>

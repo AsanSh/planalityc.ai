@@ -434,6 +434,7 @@ export default function SalesGrid() {
 								<span className="text-xs text-slate-700">
 									Выбрано: <strong>{bulkSelectedIds.size}</strong>
 									{bulkFloor != null ? ` · этаж ${bulkFloor}` : ""}
+									<span className="ml-1 text-slate-500">· ПКМ или двойной тап</span>
 								</span>
 								<Button
 									size="sm"

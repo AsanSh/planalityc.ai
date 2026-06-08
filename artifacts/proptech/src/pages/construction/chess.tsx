@@ -10,7 +10,7 @@ import {
 	Users,
 	Building2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +43,7 @@ import { MatrixTableFrame } from "@/components/matrix-table-frame";
 import { ChessStatusSettingsDialog } from "@/components/chess-status-settings-dialog";
 import { exportChessUnitsCsv } from "@/lib/chess-grid-export";
 import { UnitSaleDialog } from "@/components/unit-sale-dialog";
+import { UnitCommercialPriceDialog } from "@/components/unit-commercial-price-dialog";
 import { api } from "@/lib/api";
 import {
 	buildStatusBadgeCfg,
@@ -81,9 +82,12 @@ interface Unit {
 	totalPrice?: string;
 	basePricePerSqm?: string;
 	saleCoefficient?: string;
+	priceCoefficient?: string;
 	approvedSalePricePerSqm?: string;
 	approvedTotalPrice?: string;
+	listPrice?: string | null;
 	isPublishedForSale?: boolean | null;
+	priceApproved?: boolean;
 	currency: string;
 	status: string;
 	notes?: string;
@@ -99,16 +103,34 @@ interface Project {
 	name: string;
 	totalFloors?: number;
 	totalUnits?: number;
+	baseSalePricePerSqm?: string | null;
+	costPerSqm?: string | null;
+	currency?: string;
 }
 
-function parseNumberInput(value: unknown) {
-	const normalized = String(value ?? "").replace(/\s/g, "").replace(",", ".");
-	const parsed = parseFloat(normalized);
-	return Number.isFinite(parsed) ? parsed : 0;
+function isUnitPublishedForSale(
+	unit: Pick<
+		Unit,
+		| "isPublishedForSale"
+		| "approvedSalePricePerSqm"
+		| "priceApproved"
+		| "pricePerSqm"
+		| "listPrice"
+	>,
+) {
+	if (unit.priceApproved === true) {
+		return (
+			parseFloat(String(unit.approvedSalePricePerSqm || unit.pricePerSqm || unit.listPrice || "0")) > 0
+		);
+	}
+	return (
+		unit.isPublishedForSale === true &&
+		parseFloat(String(unit.approvedSalePricePerSqm || unit.pricePerSqm || "0")) > 0
+	);
 }
 
-function isUnitPublishedForSale(unit: Pick<Unit, "isPublishedForSale" | "approvedSalePricePerSqm">) {
-	return unit.isPublishedForSale === true && parseFloat(String(unit.approvedSalePricePerSqm || "0")) > 0;
+function unitCoefficient(unit: Pick<Unit, "priceCoefficient" | "saleCoefficient">) {
+	return unit.priceCoefficient || unit.saleCoefficient || "1";
 }
 
 function approvedPricePerSqm(unit: Pick<Unit, "approvedSalePricePerSqm" | "pricePerSqm">) {
@@ -515,136 +537,6 @@ function BulkGenerateDialog({
 	);
 }
 
-function UnitPricingDialog({
-	unit,
-	onClose,
-	onSaved,
-}: {
-	unit: Unit;
-	onClose: () => void;
-	onSaved: () => void;
-}) {
-	const { toast } = useToast();
-	const [form, setForm] = useState({
-		basePricePerSqm: unit.basePricePerSqm || unit.pricePerSqm || "",
-		saleCoefficient: unit.saleCoefficient || "1",
-		isPublishedForSale: unit.isPublishedForSale !== false,
-	});
-	const [loading, setLoading] = useState(false);
-
-	const base = parseNumberInput(form.basePricePerSqm);
-	const coefficient = parseNumberInput(form.saleCoefficient);
-	const area = parseNumberInput(unit.area);
-	const approvedPps = Number.isFinite(base * coefficient) ? base * coefficient : 0;
-	const approvedTotal = area > 0 && approvedPps > 0 ? area * approvedPps : 0;
-
-	const save = async () => {
-		if (base <= 0 || coefficient <= 0) {
-			toast({
-				title: "Укажите базовую цену и коэффициент больше 0",
-				variant: "destructive",
-			});
-			return;
-		}
-		setLoading(true);
-		try {
-			const pricingPayload = {
-				basePricePerSqm: String(base),
-				saleCoefficient: String(coefficient),
-				isPublishedForSale: form.isPublishedForSale,
-			};
-			await api.patch(`/construction/units/${unit.id}/pricing`, pricingPayload);
-			toast({
-				title: form.isPublishedForSale
-					? "Цена утверждена и объект опубликован"
-					: "Цена сохранена, объект снят с продажи",
-			});
-			onSaved();
-			onClose();
-		} catch (e: unknown) {
-			toast({
-				title: "Не удалось сохранить цену",
-				description: e instanceof Error ? e.message : "Проверьте данные",
-				variant: "destructive",
-			});
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	return (
-		<Dialog open onOpenChange={(v) => !v && onClose()}>
-			<DialogContent className="sm:max-w-md">
-				<DialogHeader>
-					<DialogTitle>Коммерческая цена · {unit.unitNumber}</DialogTitle>
-				</DialogHeader>
-				<div className="space-y-4">
-					<div className="grid gap-3 sm:grid-cols-2">
-						<div>
-							<Label>Базовая цена за м²</Label>
-							<Input
-								className="mt-1"
-								type="number"
-								min="0"
-								step="0.01"
-								value={form.basePricePerSqm}
-								onChange={(e) =>
-									setForm((p) => ({ ...p, basePricePerSqm: e.target.value }))
-								}
-							/>
-						</div>
-						<div>
-							<Label>Коэффициент</Label>
-							<Input
-								className="mt-1"
-								type="number"
-								min="0"
-								step="0.01"
-								value={form.saleCoefficient}
-								onChange={(e) =>
-									setForm((p) => ({ ...p, saleCoefficient: e.target.value }))
-								}
-							/>
-						</div>
-					</div>
-					<div className="rounded-lg border bg-slate-50 p-3">
-						<div className="flex items-center justify-between text-sm">
-							<span className="text-muted-foreground">Утверждённая цена за м²</span>
-							<span className="font-semibold">
-								{fmtNum(approvedPps)} {unit.currency || "KGS"}
-							</span>
-						</div>
-						<div className="mt-1 flex items-center justify-between text-sm">
-							<span className="text-muted-foreground">Итого по объекту</span>
-							<span className="font-semibold">
-								{approvedTotal > 0 ? fmtNum(approvedTotal) : "—"} {unit.currency || "KGS"}
-							</span>
-						</div>
-					</div>
-					<label className="flex items-center gap-2 text-sm">
-						<input
-							type="checkbox"
-							checked={form.isPublishedForSale}
-							onChange={(e) =>
-								setForm((p) => ({ ...p, isPublishedForSale: e.target.checked }))
-							}
-						/>
-						Показывать продажникам как активный объект для продажи
-					</label>
-					<div className="flex justify-end gap-2">
-						<Button variant="outline" onClick={onClose} disabled={loading}>
-							Отмена
-						</Button>
-						<Button onClick={save} disabled={loading}>
-							{loading ? "Сохранение..." : "Сохранить"}
-						</Button>
-					</div>
-				</div>
-			</DialogContent>
-		</Dialog>
-	);
-}
-
 type ViewMode = "grid" | "by-unit" | "by-counterparty";
 
 /** Инлайн-редактор площади для ПТО */
@@ -927,7 +819,7 @@ export default function ConstructionChess() {
 		return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 	});
 	const [selectedUnit, setSelectedUnit] = useState<Unit | null | "new">(null);
-	const [pricingUnit, setPricingUnit] = useState<Unit | null>(null);
+	const [commercialPriceUnit, setCommercialPriceUnit] = useState<Unit | null>(null);
 	const [saleFlow, setSaleFlow] = useState<{
 		unit: Unit;
 		status: "reserved" | "sold";
@@ -1009,6 +901,15 @@ export default function ConstructionChess() {
 
 	const selectedProject = projects.find((p) => p.id === projectId);
 
+	const commercialUnitResolved = useMemo(() => {
+		if (!commercialPriceUnit) return null;
+		return (
+			units.find((u) => u.id === commercialPriceUnit.id) ??
+			overview.find((u) => u.id === commercialPriceUnit.id) ??
+			commercialPriceUnit
+		);
+	}, [commercialPriceUnit, units, overview]);
+
 	const handleExport = () => {
 		if (!selectedProject || overview.length === 0) {
 			toast({ title: "Нет данных для экспорта", variant: "destructive" });
@@ -1038,8 +939,12 @@ export default function ConstructionChess() {
 	};
 
 	const openUnit = (u: OverviewUnit | Unit) => {
+		if (isPTO) {
+			setPtoEditUnit(u as Unit);
+			return;
+		}
 		if (isPricingMode) {
-			setPricingUnit(u as Unit);
+			setCommercialPriceUnit(u as Unit);
 			return;
 		}
 		if (isSalesOnly && !isUnitPublishedForSale(u as Unit)) {
@@ -1511,7 +1416,7 @@ export default function ConstructionChess() {
 																		{unit.roomCount && <span className={`text-[8px] ${lockedForSales ? "text-gray-600" : cfg.text} opacity-70`}>{unit.roomCount}к</span>}
 																		{isPricingMode && (
 																			<span className={`text-[8px] ${published ? "text-emerald-700" : "text-gray-600"} font-medium`}>
-																				{published ? `×${unit.saleCoefficient || "1"}` : "нет цены"}
+																				{published ? `×${unitCoefficient(unit)}` : "нет цены"}
 																			</span>
 																		)}
 																	</>
@@ -1547,11 +1452,16 @@ export default function ConstructionChess() {
 					}}
 				/>
 			)}
-			{pricingUnit && (
-				<UnitPricingDialog
-					unit={pricingUnit}
-					onClose={() => setPricingUnit(null)}
-					onSaved={invalidateAll}
+			{commercialUnitResolved && selectedProject && (
+				<UnitCommercialPriceDialog
+					open
+					unit={commercialUnitResolved}
+					project={selectedProject}
+					onClose={() => setCommercialPriceUnit(null)}
+					onSaved={() => {
+						invalidateAll();
+						qc.invalidateQueries({ queryKey: ["construction-projects"] });
+					}}
 				/>
 			)}
 			<ChessStatusSettingsDialog

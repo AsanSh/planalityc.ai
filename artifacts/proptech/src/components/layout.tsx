@@ -451,35 +451,29 @@ const MODULES: Module[] = [
 		urlPrefix: moduleMeta("proptech").routePrefixes,
 		sections: [
 			{
-				title: "CRM",
+				title: "Продажи",
 				items: [
-					{
-						href: "/dashboard?tab=sales",
-						label: "Обзор",
-						icon: LayoutDashboard,
-					},
+					{ href: "/dashboard?tab=sales", label: "Обзор", icon: LayoutDashboard },
 					{ href: "/crm/leads", label: "Лиды", icon: Target },
-					{ href: "/crm/leads/intake", label: "Приём лидов", icon: Rss },
-					{ href: "/crm/clients", label: "Клиенты", icon: Users },
-					{
-						href: "/crm/client-relations",
-						label: "Клиентский сервис",
-						icon: MessageCircle,
-					},
-					{
-						href: "/crm/help",
-						label: "Помощь",
-						icon: CircleHelp,
-					},
-					{ href: "/crm/employees", label: "Сотрудники", icon: Users },
-					{ href: "/crm/counterparties", label: "Контрагенты", icon: Briefcase },
 					{ href: "/crm/deals", label: "Сделки", icon: TrendingUp },
 					{ href: "/crm/contracts-sales", label: "Договоры", icon: FileText },
-					{
-						href: "/crm/chess",
-						label: "Шахматка",
-						icon: Grid3X3,
-					},
+					{ href: "/crm/chess", label: "Шахматка", icon: Grid3X3 },
+				],
+			},
+			{
+				title: "Клиенты",
+				items: [
+					{ href: "/crm/clients", label: "Клиенты", icon: Users },
+					{ href: "/crm/leads/intake", label: "Приём лидов", icon: Rss },
+					{ href: "/crm/client-relations", label: "Клиентский сервис", icon: MessageCircle },
+				],
+			},
+			{
+				title: "Настройки CRM",
+				items: [
+					{ href: "/crm/employees", label: "Сотрудники", icon: UserCircle },
+					{ href: "/crm/counterparties", label: "Контрагенты", icon: Briefcase },
+					{ href: "/crm/help", label: "Помощь", icon: CircleHelp },
 				],
 			},
 		],
@@ -849,13 +843,32 @@ export function Layout({ children }: { children: ReactNode }) {
 		let sections = activeModule.sections;
 		if (isPtoRole && activeModule.id === "construction") {
 			sections = sections.filter((s) =>
-				["Главный поток", "Себестоимость"].includes(s.title),
+				["Главный поток", "Себестоимость", "Производство"].includes(s.title),
 			);
+			// ПТО не видит коммерческие пункты — только обзор, ЖК и шахматка
+			sections = sections.map((s) => {
+				if (s.title !== "Главный поток") return s;
+				return {
+					...s,
+					items: s.items.filter((item) =>
+						[
+							"/dashboard?tab=construction",
+							"/construction/projects",
+							"/construction/chess",
+						].includes(item.href),
+					),
+				};
+			});
 		}
 		if (!isAdminUser) {
 			sections = sections.filter(
 				(s) => !["AI-Инструменты", "AI и документы"].includes(s.title),
 			);
+			// Дизайн-система — только для администраторов
+			sections = sections.map((s) => ({
+				...s,
+				items: s.items.filter((item) => item.href !== "/design-system"),
+			}));
 		}
 		return sections;
 	}, [activeModule, user, isAdminUser]);

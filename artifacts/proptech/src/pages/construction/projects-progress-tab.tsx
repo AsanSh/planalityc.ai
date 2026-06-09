@@ -1,17 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
-import type { ColumnDef } from "@tanstack/react-table";
-import { Plus, Settings2, Trash2 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
-import { Tablo } from "@/components/am";
-import type { DataTableColumnMeta } from "@/components/data-table";
+import {
+	Banknote,
+	Building2,
+	ChevronDown,
+	Download,
+	Landmark,
+	Layers,
+	Plus,
+	Search,
+	Settings2,
+	Trash2,
+	TrendingDown,
+	TrendingUp,
+	Wallet,
+} from "lucide-react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { KpiCard, KpiRow } from "@/components/kpi-card";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,7 +31,16 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { api } from "@/lib/api";
 import {
 	loadProgressColumnConfig,
@@ -29,6 +48,7 @@ import {
 	saveProgressColumnConfig,
 	type ProgressColumnConfig,
 	type ProgressCustomColumn,
+	type ProgressGroupId,
 } from "@/lib/progress-projects-column-config";
 import { cn } from "@/lib/utils";
 
@@ -63,18 +83,18 @@ export type ProgressSummaryRow = {
 	[key: string]: string | number | boolean | undefined;
 };
 
-const COLUMN_GROUPS = [
-	{ id: "projectData", label: "ДАННЫЕ ПО ПРОЕКТУ" },
-	{ id: "collections", label: "СБОРЫ" },
-	{ id: "profitability", label: "ПРИБЫЛЬНОСТЬ" },
-	{ id: "cost", label: "СЕБЕСТОИМОСТЬ" },
-	{ id: "expenses", label: "ЗАТРАТЫ" },
-	{ id: "custom", label: "ДОПОЛНИТЕЛЬНО" },
-] as const;
+const COLUMN_GROUPS: { id: ProgressGroupId; label: string }[] = [
+	{ id: "projectData", label: "Данные по проекту" },
+	{ id: "collections", label: "Сборы" },
+	{ id: "profitability", label: "Прибыльность" },
+	{ id: "cost", label: "Себестоимость" },
+	{ id: "expenses", label: "Затраты" },
+	{ id: "custom", label: "Дополнительно" },
+];
 
 type BuiltinColumn = {
 	id: string;
-	groupId: string;
+	groupId: ProgressGroupId;
 	defaultLabel: string;
 	kind: "text" | "area" | "money" | "moneyPerSqm" | "percent";
 	accessor: (row: ProgressSummaryRow) => number | string;
@@ -253,12 +273,12 @@ const BUILTIN_COLUMNS: BuiltinColumn[] = [
 
 const fmtArea = (v: number) =>
 	v > 0
-		? v.toLocaleString("ru-KG", { maximumFractionDigits: 2 })
+		? `${v.toLocaleString("ru-KG", { maximumFractionDigits: 2 })} м²`
 		: "—";
 
 const fmtMoney = (v: number) =>
 	Math.abs(v) > 0
-		? v.toLocaleString("ru-KG", { maximumFractionDigits: 0 })
+		? `${v.toLocaleString("ru-KG", { maximumFractionDigits: 0 })} сом`
 		: "—";
 
 const fmtPercent = (v: number) =>
@@ -272,9 +292,15 @@ function formatCell(kind: BuiltinColumn["kind"], value: number | string): string
 	if (Number.isNaN(n)) return "—";
 	if (kind === "area") return fmtArea(n);
 	if (kind === "money") return fmtMoney(n);
-	if (kind === "moneyPerSqm") return n > 0 ? `${fmtMoney(n)} сом/м²` : "—";
+	if (kind === "moneyPerSqm") return n > 0 ? `${fmtMoney(n).replace(" сом", "")} сом/м²` : "—";
 	if (kind === "percent") return fmtPercent(n);
 	return String(value);
+}
+
+function moneyTone(value: number): "green" | "red" | "blue" | "yellow" {
+	if (value > 0) return "green";
+	if (value < 0) return "red";
+	return "blue";
 }
 
 function sumRows(rows: ProgressSummaryRow[], pick: (r: ProgressSummaryRow) => number): number {
@@ -323,7 +349,360 @@ function buildTotalsRow(rows: ProgressSummaryRow[]): ProgressSummaryRow {
 	};
 }
 
-function ColumnSettingsDialog({
+function SectionTitle({ children }: { children: ReactNode }) {
+	return (
+		<p className="text-[10px] font-bold uppercase tracking-wider text-am-text-muted">
+			{children}
+		</p>
+	);
+}
+
+function MetricTile({
+	label,
+	value,
+	tone = "neutral",
+}: {
+	label: string;
+	value: string;
+	tone?: "positive" | "negative" | "neutral" | "warning";
+}) {
+	return (
+		<div className="rounded-lg border border-am-border bg-am-bg px-3 py-2.5 min-h-[72px] shadow-sm">
+			<p className="text-[10px] font-semibold uppercase tracking-wide text-am-text-muted leading-snug line-clamp-2">
+				{label}
+			</p>
+			<p
+				className={cn(
+					"mt-1.5 text-sm sm:text-base font-bold tabular-nums leading-tight",
+					tone === "positive" && "text-emerald-700",
+					tone === "negative" && "text-rose-700",
+					tone === "warning" && "text-amber-700",
+					tone === "neutral" && "text-am-text-strong",
+				)}
+			>
+				{value}
+			</p>
+		</div>
+	);
+}
+
+function ProgressSummaryBar({ totals }: { totals: ProgressSummaryRow }) {
+	return (
+		<div className="sticky top-0 z-10 -mx-1 px-1 pb-3 pt-1 bg-gradient-to-b from-white via-white to-white/80 backdrop-blur-sm">
+			<div className="rounded-xl border border-slate-200 bg-slate-950 text-white shadow-md overflow-hidden">
+				<div className="px-4 py-2 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+					<p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+						Сводка по всем проектам
+					</p>
+					<p className="text-xs text-slate-400">
+						Продано {fmtArea(totals.soldArea).replace(" м²", "")} м² · остаток{" "}
+						{fmtArea(totals.unsoldArea).replace(" м²", "")} м²
+					</p>
+				</div>
+				<div className="p-3">
+					<KpiRow cols={6} className="gap-2">
+						<KpiCard
+							label="Законтрактовано"
+							value={fmtMoney(totals.contracted)}
+							icon={Banknote}
+							color="blue"
+							variant="strip"
+						/>
+						<KpiCard
+							label="Собрано"
+							value={fmtMoney(totals.collected)}
+							icon={Wallet}
+							color="green"
+							variant="strip"
+						/>
+						<KpiCard
+							label="Выручка"
+							value={fmtMoney(totals.totalRevenue)}
+							icon={TrendingUp}
+							color="green"
+							variant="strip"
+						/>
+						<KpiCard
+							label="Валовая прибыль"
+							value={fmtMoney(totals.grossProfit)}
+							icon={TrendingUp}
+							color={moneyTone(totals.grossProfit)}
+							variant="strip"
+						/>
+						<KpiCard
+							label="Просрочка"
+							value={fmtMoney(totals.overdueDebt)}
+							icon={TrendingDown}
+							color={totals.overdueDebt > 0 ? "red" : "blue"}
+							variant="strip"
+						/>
+						<KpiCard
+							label="Затраты"
+							value={fmtMoney(totals.totalSpent)}
+							icon={Landmark}
+							color="yellow"
+							variant="strip"
+						/>
+					</KpiRow>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function ProjectMetricSection({
+	title,
+	defaultOpen = true,
+	collapsible = false,
+	children,
+}: {
+	title: string;
+	defaultOpen?: boolean;
+	collapsible?: boolean;
+	children: ReactNode;
+}) {
+	if (!collapsible) {
+		return (
+			<div className="space-y-2">
+				<SectionTitle>{title}</SectionTitle>
+				{children}
+			</div>
+		);
+	}
+
+	return (
+		<Collapsible defaultOpen={defaultOpen}>
+			<div className="flex items-center justify-between gap-2">
+				<SectionTitle>{title}</SectionTitle>
+				<CollapsibleTrigger asChild>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="group h-7 px-2 text-xs text-am-text-muted gap-1"
+					>
+						<ChevronDown className="w-3.5 h-3.5 transition-transform group-data-[state=open]:rotate-180" />
+						<span className="hidden sm:inline">Развернуть</span>
+					</Button>
+				</CollapsibleTrigger>
+			</div>
+			<CollapsibleContent className="pt-2">{children}</CollapsibleContent>
+		</Collapsible>
+	);
+}
+
+function ProjectProgressCard({
+	row,
+	config,
+	labelFor,
+	onCustomValue,
+}: {
+	row: ProgressSummaryRow;
+	config: ProgressColumnConfig;
+	labelFor: (id: string, defaultLabel: string) => string;
+	onCustomValue: (columnId: string, projectId: number, raw: string) => void;
+}) {
+	const soldPct =
+		row.totalSaleableArea > 0
+			? Math.round((row.soldArea / row.totalSaleableArea) * 100)
+			: 0;
+
+	const colsForGroup = (groupId: ProgressGroupId) =>
+		BUILTIN_COLUMNS.filter((c) => c.groupId === groupId && c.id !== "projectName");
+
+	const customForGroup = (groupId: ProgressGroupId) =>
+		config.customColumns.filter((c) => c.groupId === groupId);
+
+	const show = (groupId: ProgressGroupId) => config.visibleGroups[groupId] !== false;
+
+	return (
+		<Collapsible defaultOpen>
+			<article className="rounded-xl border border-am-border bg-white shadow-sm overflow-hidden">
+				<CollapsibleTrigger asChild>
+					<button
+						type="button"
+						className="group w-full text-left px-4 py-3 flex flex-wrap items-center justify-between gap-3 hover:bg-slate-50/80 transition-colors"
+					>
+						<div className="flex items-center gap-3 min-w-0">
+							<div className="w-9 h-9 rounded-lg bg-am-brand-surface flex items-center justify-center shrink-0">
+								<Building2 className="w-4 h-4 text-am-brand" />
+							</div>
+							<div className="min-w-0">
+								<p className="font-semibold text-am-text-strong truncate">{row.projectName}</p>
+								<p className="text-xs text-am-text-muted mt-0.5">
+									Продано {soldPct}% · {fmtArea(row.soldArea)}
+								</p>
+							</div>
+						</div>
+						<div className="flex items-center gap-4 shrink-0">
+							<div className="text-right hidden sm:block">
+								<p className="text-[10px] uppercase tracking-wide text-am-text-muted">Прибыль</p>
+								<p
+									className={cn(
+										"text-sm font-bold tabular-nums",
+										row.grossProfit > 0
+											? "text-emerald-700"
+											: row.grossProfit < 0
+												? "text-rose-700"
+												: "text-am-text-strong",
+									)}
+								>
+									{fmtMoney(row.grossProfit)}
+								</p>
+							</div>
+							<div className="text-right hidden md:block">
+								<p className="text-[10px] uppercase tracking-wide text-am-text-muted">Собрано</p>
+								<p className="text-sm font-bold tabular-nums text-am-text-strong">
+									{fmtMoney(row.collected)}
+								</p>
+							</div>
+							<ChevronDown className="w-4 h-4 text-am-text-muted transition-transform group-data-[state=open]:rotate-180" />
+						</div>
+					</button>
+				</CollapsibleTrigger>
+
+				<CollapsibleContent>
+					<div className="px-4 pb-4 space-y-4 border-t border-am-border/60">
+						{show("projectData") && (
+							<ProjectMetricSection title="Данные по проекту">
+								<div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2">
+									{colsForGroup("projectData").map((col) => {
+										const val = col.accessor(row) as number;
+										return (
+											<MetricTile
+												key={col.id}
+												label={labelFor(col.id, col.defaultLabel)}
+												value={formatCell(col.kind, val)}
+											/>
+										);
+									})}
+								</div>
+							</ProjectMetricSection>
+						)}
+
+						{show("collections") && (
+							<ProjectMetricSection title="Сборы">
+								<div className="flex flex-wrap gap-2">
+									{colsForGroup("collections").map((col) => {
+										const val = col.accessor(row) as number;
+										return (
+											<div key={col.id} className="flex-1 min-w-[140px] max-w-[220px]">
+												<KpiCard
+													label={labelFor(col.id, col.defaultLabel)}
+													value={formatCell(col.kind, val)}
+													icon={Banknote}
+													color={moneyTone(val)}
+													variant="strip"
+												/>
+											</div>
+										);
+									})}
+								</div>
+							</ProjectMetricSection>
+						)}
+
+						{show("profitability") && (
+							<ProjectMetricSection title="Прибыльность">
+								<div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+									{colsForGroup("profitability").map((col) => {
+										const val = col.accessor(row) as number;
+										const tone =
+											col.kind === "percent"
+												? val > 0
+													? "warning"
+													: "neutral"
+												: val > 0
+													? "positive"
+													: val < 0
+														? "negative"
+														: "neutral";
+										return (
+											<MetricTile
+												key={col.id}
+												label={labelFor(col.id, col.defaultLabel)}
+												value={formatCell(col.kind, val)}
+												tone={tone}
+											/>
+										);
+									})}
+								</div>
+							</ProjectMetricSection>
+						)}
+
+						{show("cost") && (
+							<ProjectMetricSection title="Себестоимость" collapsible defaultOpen={false}>
+								<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+									{colsForGroup("cost").map((col) => {
+										const val = col.accessor(row) as number;
+										return (
+											<MetricTile
+												key={col.id}
+												label={labelFor(col.id, col.defaultLabel)}
+												value={formatCell(col.kind, val)}
+											/>
+										);
+									})}
+								</div>
+							</ProjectMetricSection>
+						)}
+
+						{show("expenses") && (
+							<ProjectMetricSection title="Затраты" collapsible defaultOpen={false}>
+								<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+									{colsForGroup("expenses").map((col) => {
+										const val = col.accessor(row) as number;
+										return (
+											<MetricTile
+												key={col.id}
+												label={labelFor(col.id, col.defaultLabel)}
+												value={formatCell(col.kind, val)}
+												tone={val > 0 ? "neutral" : "neutral"}
+											/>
+										);
+									})}
+								</div>
+							</ProjectMetricSection>
+						)}
+
+						{show("custom") && customForGroup("custom").length > 0 && (
+							<ProjectMetricSection title="Дополнительно">
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+									{customForGroup("custom").map((col) => {
+										const vals = config.customValues[col.id];
+										const num = vals?.[String(row.projectId)] ?? 0;
+										return (
+											<div
+												key={col.id}
+												className="rounded-lg border border-dashed border-am-border bg-slate-50/80 px-3 py-2.5"
+											>
+												<Label className="text-[10px] font-semibold uppercase tracking-wide text-am-text-muted">
+													{col.label}
+												</Label>
+												<Input
+													className="mt-1.5 h-8 font-mono tabular-nums text-right bg-white"
+													defaultValue={num !== 0 ? String(num) : ""}
+													placeholder="—"
+													onBlur={(e) =>
+														onCustomValue(col.id, row.projectId, e.target.value)
+													}
+													onKeyDown={(e) => {
+														if (e.key === "Enter")
+															(e.target as HTMLInputElement).blur();
+													}}
+												/>
+											</div>
+										);
+									})}
+								</div>
+							</ProjectMetricSection>
+						)}
+					</div>
+				</CollapsibleContent>
+			</article>
+		</Collapsible>
+	);
+}
+
+function SettingsSheet({
 	open,
 	onOpenChange,
 	config,
@@ -336,7 +715,7 @@ function ColumnSettingsDialog({
 }) {
 	const [draft, setDraft] = useState(config);
 	const [newLabel, setNewLabel] = useState("");
-	const [newGroup, setNewGroup] = useState<string>("custom");
+	const [newGroup, setNewGroup] = useState<ProgressGroupId>("custom");
 
 	const resetDraft = useCallback(() => setDraft(config), [config]);
 
@@ -344,6 +723,13 @@ function ColumnSettingsDialog({
 		setDraft((prev) => ({
 			...prev,
 			labelOverrides: { ...prev.labelOverrides, [columnId]: label },
+		}));
+	};
+
+	const toggleGroup = (groupId: ProgressGroupId, checked: boolean) => {
+		setDraft((prev) => ({
+			...prev,
+			visibleGroups: { ...prev.visibleGroups, [groupId]: checked },
 		}));
 	};
 
@@ -358,6 +744,7 @@ function ColumnSettingsDialog({
 		setDraft((prev) => ({
 			...prev,
 			customColumns: [...prev.customColumns, col],
+			visibleGroups: { ...prev.visibleGroups, custom: true },
 		}));
 		setNewLabel("");
 	};
@@ -374,93 +761,121 @@ function ColumnSettingsDialog({
 	};
 
 	return (
-		<Dialog
+		<Sheet
 			open={open}
 			onOpenChange={(v) => {
 				if (v) resetDraft();
 				onOpenChange(v);
 			}}
 		>
-			<DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-				<DialogHeader>
-					<DialogTitle>Настройка столбцов</DialogTitle>
-				</DialogHeader>
-				<p className="text-sm text-muted-foreground">
-					Переименуйте заголовки, добавьте свои числовые столбцы (значения
-					сохраняются локально). Порядок и видимость — в меню «Столбцы» таблицы.
-				</p>
-				<div className="space-y-3">
-					<p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-						Встроенные столбцы
-					</p>
-					{BUILTIN_COLUMNS.map((col) => (
-						<div key={col.id} className="grid gap-1">
-							<Label className="text-xs text-muted-foreground">{col.defaultLabel}</Label>
-							<Input
-								value={draft.labelOverrides[col.id] ?? col.defaultLabel}
-								onChange={(e) => updateLabel(col.id, e.target.value)}
-							/>
-						</div>
-					))}
-				</div>
-				<div className="space-y-3 pt-4 border-t">
-					<p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-						Свои столбцы
-					</p>
-					{draft.customColumns.map((col) => (
-						<div key={col.id} className="flex gap-2 items-end">
-							<div className="flex-1 grid gap-1">
-								<Label className="text-xs">Название</Label>
-								<Input
-									value={col.label}
-									onChange={(e) =>
-										setDraft((prev) => ({
-											...prev,
-											customColumns: prev.customColumns.map((c) =>
-												c.id === col.id ? { ...c, label: e.target.value } : c,
-											),
-										}))
-									}
+			<SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+				<SheetHeader>
+					<SheetTitle>Настройка прогресса</SheetTitle>
+					<SheetDescription>
+						Выберите блоки метрик, переименуйте подписи и добавьте свои поля.
+					</SheetDescription>
+				</SheetHeader>
+
+				<div className="space-y-6 py-4">
+					<div className="space-y-3">
+						<p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+							Блоки на карточке
+						</p>
+						{COLUMN_GROUPS.map((g) => (
+							<div
+								key={g.id}
+								className="flex items-center justify-between gap-3 rounded-lg border border-am-border px-3 py-2"
+							>
+								<Label htmlFor={`group-${g.id}`} className="text-sm font-medium">
+									{g.label}
+								</Label>
+								<Switch
+									id={`group-${g.id}`}
+									checked={draft.visibleGroups[g.id] !== false}
+									onCheckedChange={(checked) => toggleGroup(g.id, checked)}
 								/>
 							</div>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon"
-								className="text-rose-600 shrink-0"
-								onClick={() => removeCustom(col.id)}
+						))}
+					</div>
+
+					<div className="space-y-3 border-t pt-4">
+						<p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+							Подписи метрик
+						</p>
+						{BUILTIN_COLUMNS.filter((c) => c.id !== "projectName").map((col) => (
+							<div key={col.id} className="grid gap-1">
+								<Label className="text-xs text-muted-foreground">{col.defaultLabel}</Label>
+								<Input
+									value={draft.labelOverrides[col.id] ?? col.defaultLabel}
+									onChange={(e) => updateLabel(col.id, e.target.value)}
+								/>
+							</div>
+						))}
+					</div>
+
+					<div className="space-y-3 border-t pt-4">
+						<p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+							Свои поля
+						</p>
+						{draft.customColumns.map((col) => (
+							<div key={col.id} className="flex gap-2 items-end">
+								<div className="flex-1 grid gap-1">
+									<Label className="text-xs">Название</Label>
+									<Input
+										value={col.label}
+										onChange={(e) =>
+											setDraft((prev) => ({
+												...prev,
+												customColumns: prev.customColumns.map((c) =>
+													c.id === col.id ? { ...c, label: e.target.value } : c,
+												),
+											}))
+										}
+									/>
+								</div>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									className="text-rose-600 shrink-0"
+									onClick={() => removeCustom(col.id)}
+								>
+									<Trash2 className="w-4 h-4" />
+								</Button>
+							</div>
+						))}
+						<div className="flex flex-wrap gap-2 items-end">
+							<div className="flex-1 min-w-[140px] grid gap-1">
+								<Label className="text-xs">Новое поле</Label>
+								<Input
+									placeholder="Название"
+									value={newLabel}
+									onChange={(e) => setNewLabel(e.target.value)}
+								/>
+							</div>
+							<Select
+								value={newGroup}
+								onValueChange={(v) => setNewGroup(v as ProgressGroupId)}
 							>
-								<Trash2 className="w-4 h-4" />
+								<SelectTrigger className="w-[160px]">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{COLUMN_GROUPS.map((g) => (
+										<SelectItem key={g.id} value={g.id}>
+											{g.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<Button type="button" variant="outline" onClick={addCustom} className="gap-1">
+								<Plus className="w-4 h-4" /> Добавить
 							</Button>
 						</div>
-					))}
-					<div className="flex flex-wrap gap-2 items-end">
-						<div className="flex-1 min-w-[140px] grid gap-1">
-							<Label className="text-xs">Новый столбец</Label>
-							<Input
-								placeholder="Название"
-								value={newLabel}
-								onChange={(e) => setNewLabel(e.target.value)}
-							/>
-						</div>
-						<Select value={newGroup} onValueChange={setNewGroup}>
-							<SelectTrigger className="w-[160px]">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{COLUMN_GROUPS.map((g) => (
-									<SelectItem key={g.id} value={g.id}>
-										{g.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-						<Button type="button" variant="outline" onClick={addCustom} className="gap-1">
-							<Plus className="w-4 h-4" /> Добавить
-						</Button>
 					</div>
 				</div>
-				<DialogFooter>
+
+				<SheetFooter className="gap-2 sm:gap-0">
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
 						Отмена
 					</Button>
@@ -472,15 +887,51 @@ function ColumnSettingsDialog({
 					>
 						Сохранить
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</SheetFooter>
+			</SheetContent>
+		</Sheet>
 	);
+}
+
+function exportProgressCsv(
+	rows: ProgressSummaryRow[],
+	totals: ProgressSummaryRow,
+	labelFor: (id: string, defaultLabel: string) => string,
+	config: ProgressColumnConfig,
+) {
+	const exportCols = BUILTIN_COLUMNS.filter((c) => c.id !== "projectName");
+	const header = [
+		"Проект",
+		...exportCols.map((c) => labelFor(c.id, c.defaultLabel)),
+		...config.customColumns.map((c) => c.label),
+	].join(";");
+	const allRows = [totals, ...rows];
+	const lines = allRows.map((row) => {
+		const cells = [
+			row.projectName,
+			...exportCols.map((c) => formatCell(c.kind, c.accessor(row) as number | string)),
+			...config.customColumns.map((col) => {
+				if (row.isTotal) return "";
+				const vals = config.customValues[col.id];
+				const num = vals?.[String(row.projectId)] ?? 0;
+				return num !== 0 ? String(num) : "";
+			}),
+		];
+		return cells.join(";");
+	});
+	const blob = new Blob([`\uFEFF${[header, ...lines].join("\n")}`], {
+		type: "text/csv;charset=utf-8",
+	});
+	const a = document.createElement("a");
+	a.href = URL.createObjectURL(blob);
+	a.download = "progress-projects.csv";
+	a.click();
 }
 
 export function ProjectsProgressTab() {
 	const [columnConfig, setColumnConfig] = useState(loadProgressColumnConfig);
 	const [settingsOpen, setSettingsOpen] = useState(false);
+	const [search, setSearch] = useState("");
 
 	const { data, isLoading, isError } = useQuery({
 		queryKey: ["construction-projects-progress"],
@@ -492,10 +943,12 @@ export function ProjectsProgressTab() {
 
 	const projectRows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 	const totalsRow = useMemo(() => buildTotalsRow(projectRows), [projectRows]);
-	const tableData = useMemo(
-		() => [totalsRow, ...projectRows],
-		[totalsRow, projectRows],
-	);
+
+	const filteredRows = useMemo(() => {
+		const q = search.trim().toLowerCase();
+		if (!q) return projectRows;
+		return projectRows.filter((r) => r.projectName.toLowerCase().includes(q));
+	}, [projectRows, search]);
 
 	const labelFor = useCallback(
 		(columnId: string, defaultLabel: string) =>
@@ -525,97 +978,6 @@ export function ProjectsProgressTab() {
 		[],
 	);
 
-	const columns = useMemo((): ColumnDef<ProgressSummaryRow, unknown>[] => {
-		const customByGroup = new Map<string, ProgressCustomColumn[]>();
-		for (const c of columnConfig.customColumns) {
-			const list = customByGroup.get(c.groupId) ?? [];
-			list.push(c);
-			customByGroup.set(c.groupId, list);
-		}
-
-		const makeLeaf = (
-			col: BuiltinColumn | ProgressCustomColumn,
-			kind: BuiltinColumn["kind"],
-			isCustom: boolean,
-		): ColumnDef<ProgressSummaryRow, unknown> => {
-			const id = col.id;
-			const defaultLabel = isCustom
-				? (col as ProgressCustomColumn).label
-				: (col as BuiltinColumn).defaultLabel;
-			const meta: DataTableColumnMeta = {
-				align: kind === "text" ? undefined : "right",
-				financeAmount: kind === "money" || kind === "moneyPerSqm",
-				exportLabel: labelFor(id, defaultLabel),
-				...(id === "projectName" ? { pinned: "left" as const } : {}),
-			};
-			return {
-				id,
-				accessorFn: (row) => {
-					if (isCustom) {
-						if (row.isTotal) return "";
-						const vals = columnConfig.customValues[id];
-						return vals?.[String(row.projectId)] ?? "";
-					}
-					if (kind === "text") return (col as BuiltinColumn).accessor(row);
-					return (col as BuiltinColumn).accessor(row) as number;
-				},
-				header: labelFor(id, defaultLabel),
-				size: id === "projectName" ? 180 : 120,
-				meta,
-				cell: ({ row, getValue }) => {
-					const val = getValue();
-					if (isCustom && !row.original.isTotal) {
-						const num = parseFloat(String(val));
-						const display = Number.isFinite(num) && num !== 0 ? fmtMoney(num) : "—";
-						return (
-							<Input
-								className="h-7 font-mono tabular-nums text-right border-transparent bg-transparent hover:border-slate-200 focus:border-cyan-400"
-								defaultValue={Number.isFinite(num) && num !== 0 ? String(num) : ""}
-								placeholder="—"
-								onBlur={(e) =>
-									setCustomValue(id, row.original.projectId, e.target.value)
-								}
-								onKeyDown={(e) => {
-									if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-								}}
-								title={display}
-							/>
-						);
-					}
-					const text = formatCell(kind, val as number | string);
-					const isMoney = kind !== "text" && kind !== "area";
-					return (
-						<span
-							className={cn(
-								"block w-full",
-								kind === "text" ? "font-semibold" : "font-mono tabular-nums text-right",
-								isMoney && Number(val) > 0 && "text-emerald-700",
-								isMoney && Number(val) < 0 && "text-rose-700",
-							)}
-						>
-							{text}
-						</span>
-					);
-				},
-			};
-		};
-
-		return COLUMN_GROUPS.map((group) => {
-			const builtins = BUILTIN_COLUMNS.filter((c) => c.groupId === group.id);
-			const customs = customByGroup.get(group.id) ?? [];
-			const leaves: ColumnDef<ProgressSummaryRow, unknown>[] = [
-				...builtins.map((c) => makeLeaf(c, c.kind, false)),
-				...customs.map((c) => makeLeaf(c, "money", true)),
-			];
-			if (leaves.length === 0) return null;
-			return {
-				id: group.id,
-				header: group.label,
-				columns: leaves,
-			};
-		}).filter(Boolean) as ColumnDef<ProgressSummaryRow, unknown>[];
-	}, [columnConfig, labelFor, setCustomValue]);
-
 	const persistConfig = (next: ProgressColumnConfig) => {
 		setColumnConfig(next);
 		saveProgressColumnConfig(next);
@@ -624,8 +986,11 @@ export function ProjectsProgressTab() {
 	if (isLoading) {
 		return (
 			<div className="space-y-3">
-				<Skeleton className="h-10 w-full max-w-xl" />
-				<Skeleton className="h-64 w-full rounded-xl" />
+				<Skeleton className="h-24 w-full rounded-xl" />
+				<div className="grid gap-3 md:grid-cols-2">
+					<Skeleton className="h-48 w-full rounded-xl" />
+					<Skeleton className="h-48 w-full rounded-xl" />
+				</div>
 			</div>
 		);
 	}
@@ -639,37 +1004,67 @@ export function ProjectsProgressTab() {
 	}
 
 	return (
-		<div className="space-y-3">
-			<div className="flex flex-wrap items-center justify-between gap-2">
-				<p className="text-sm text-muted-foreground">
-					{projectRows.length} проектов · площади и продажи из шахматки, сборы из
-					договоров, затраты из расходов
-				</p>
-				<Button
-					variant="outline"
-					size="sm"
-					className="gap-2"
-					onClick={() => setSettingsOpen(true)}
-				>
-					<Settings2 className="w-4 h-4" /> Столбцы
-				</Button>
+		<div className="space-y-4">
+			<div className="flex flex-wrap items-center justify-between gap-3">
+				<div>
+					<p className="text-sm text-muted-foreground">
+						{projectRows.length} проектов · площади из шахматки, сборы из договоров,
+						затраты из расходов
+					</p>
+				</div>
+				<div className="flex flex-wrap items-center gap-2">
+					<div className="relative w-full sm:w-56">
+						<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-am-text-muted" />
+						<Input
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+							placeholder="Поиск проекта…"
+							className="pl-8 h-9"
+						/>
+					</div>
+					<Button
+						variant="outline"
+						size="sm"
+						className="gap-2"
+						onClick={() =>
+							exportProgressCsv(projectRows, totalsRow, labelFor, columnConfig)
+						}
+					>
+						<Download className="w-4 h-4" /> CSV
+					</Button>
+					<Button
+						variant="outline"
+						size="sm"
+						className="gap-2"
+						onClick={() => setSettingsOpen(true)}
+					>
+						<Settings2 className="w-4 h-4" /> Настройки
+					</Button>
+				</div>
 			</div>
-			<Tablo
-				tableId="progress-projects"
-				title="Прогресс по проектам"
-				columns={columns}
-				data={tableData}
-				variant="excel"
-				showRowIndex
-				enableSearch
-				searchPlaceholder="Поиск проекта…"
-				getRowId={(row) => (row.isTotal ? "total" : String(row.projectId))}
-				rowClassName={(row) =>
-					row.isTotal ? "bg-slate-100 font-bold border-t-2 border-slate-300" : ""
-				}
-				initialSorting={[]}
-			/>
-			<ColumnSettingsDialog
+
+			<ProgressSummaryBar totals={totalsRow} />
+
+			{filteredRows.length === 0 ? (
+				<div className="rounded-xl border border-dashed border-am-border bg-slate-50 px-6 py-10 text-center text-sm text-am-text-muted">
+					<Layers className="w-8 h-8 mx-auto mb-2 opacity-40" />
+					{search.trim() ? "Нет проектов по запросу" : "Нет данных по проектам"}
+				</div>
+			) : (
+				<div className="grid gap-3 xl:grid-cols-2">
+					{filteredRows.map((row) => (
+						<ProjectProgressCard
+							key={row.projectId}
+							row={row}
+							config={columnConfig}
+							labelFor={labelFor}
+							onCustomValue={setCustomValue}
+						/>
+					))}
+				</div>
+			)}
+
+			<SettingsSheet
 				open={settingsOpen}
 				onOpenChange={setSettingsOpen}
 				config={columnConfig}

@@ -1,4 +1,4 @@
-import { Building2, Download, Grid3X3, Users } from "lucide-react";
+import { Building2, Download, Grid3X3, Upload, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { SalesGridView } from "./types";
 
@@ -13,12 +13,14 @@ export function ViewSwitcher({
 	onChange,
 	onExportCsv,
 	onExportExcel,
+	onImport,
 	isMobile,
 }: {
 	view: SalesGridView;
 	onChange: (v: SalesGridView) => void;
 	onExportCsv?: () => void;
 	onExportExcel?: () => void;
+	onImport?: () => void;
 	isMobile?: boolean;
 }) {
 	return (
@@ -52,6 +54,12 @@ export function ViewSwitcher({
 					<Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={onExportExcel}>
 						<Download className="h-3.5 w-3.5" />
 						Excel
+					</Button>
+				)}
+				{onImport && (
+					<Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={onImport}>
+						<Upload className="h-3.5 w-3.5" />
+						Импорт
 					</Button>
 				)}
 			</div>

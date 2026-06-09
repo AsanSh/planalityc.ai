@@ -131,6 +131,7 @@ export function exportUnitsToExcel(
 	const ws = XLSX.utils.json_to_sheet(rows);
 	const wb = XLSX.utils.book_new();
 	XLSX.utils.book_append_sheet(wb, ws, "Квартиры");
-	const fname = `квартиры_${projectName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+	const safeName = projectName.replace(/[^\w\u0400-\u04FF-]+/g, "_").replace(/_+/g, "_");
+	const fname = `kvartiry-${safeName}-${new Date().toISOString().slice(0, 10)}.xlsx`;
 	XLSX.writeFile(wb, fname);
 }

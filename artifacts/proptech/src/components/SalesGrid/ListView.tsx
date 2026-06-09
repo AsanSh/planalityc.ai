@@ -8,6 +8,7 @@ import {
 	resolvedTotalPrice,
 } from "@/lib/unit-pricing";
 import { badgeCfgFor, type StatusBadgeCfg } from "@/lib/unit-statuses";
+import { EditableAreaCell } from "./EditableAreaCell";
 import type { SalesGridUnit } from "./types";
 
 const UNIT_TYPE_LABELS: Record<string, string> = {
@@ -19,19 +20,18 @@ const UNIT_TYPE_LABELS: Record<string, string> = {
 	storage: "Кладовая",
 };
 
-function fmtArea(v: string | null | undefined) {
-	if (!v) return "—";
-	return `${new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 2 }).format(parseFloat(v))} м²`;
-}
-
 export function ListView({
 	units,
 	statusBadgeMap,
 	onSelect,
+	canEditArea,
+	onAreaSave,
 }: {
 	units: SalesGridUnit[];
 	statusBadgeMap: Record<string, StatusBadgeCfg>;
 	onSelect: (u: SalesGridUnit) => void;
+	canEditArea?: boolean;
+	onAreaSave?: (unit: SalesGridUnit, area: number) => Promise<void>;
 }) {
 	const columns = useMemo<ColumnDef<SalesGridUnit>[]>(
 		() => [
@@ -72,7 +72,13 @@ export function ListView({
 			{
 				id: "area",
 				header: "Площадь",
-				accessorFn: (r) => fmtArea(r.area),
+				cell: ({ row }) => (
+					<EditableAreaCell
+						area={row.original.area}
+						editable={!!canEditArea && !!onAreaSave}
+						onSave={(val) => onAreaSave!(row.original, val)}
+					/>
+				),
 			},
 			{
 				id: "pricePerSqm",
@@ -117,7 +123,7 @@ export function ListView({
 				accessorFn: (r) => r.contract?.contractNumber || "—",
 			},
 		],
-		[statusBadgeMap, onSelect],
+		[statusBadgeMap, onSelect, canEditArea, onAreaSave],
 	);
 
 	return (

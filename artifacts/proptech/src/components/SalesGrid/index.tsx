@@ -110,6 +110,7 @@ export default function SalesGrid() {
 	} = state;
 
 	const canEditPrices = isCommercialDirector || (isAdmin && adminMode === "prices");
+	const canEditArea = canEditPrices || isPTO || (isAdmin && adminMode === "pto");
 	const canBulkFloor = canEditPrices;
 
 	const [selectedUnit, setSelectedUnit] = useState<ChessDialogUnit | null | "new">(null);
@@ -302,6 +303,27 @@ export default function SalesGrid() {
 		toast({ title: "Excel скачан" });
 	};
 
+	const handleAreaSave = async (unit: SalesGridUnit, newArea: number) => {
+		try {
+			if (isPTO) {
+				await api.patch(`/construction/units/${unit.id}/area`, {
+					area: newArea,
+					reason: "Список квартир",
+				});
+			} else {
+				await api.patch(`/construction/units/${unit.id}`, {
+					area: newArea,
+					recalcPrice: true,
+				});
+			}
+			toast({ title: "Площадь сохранена" });
+			await refreshAll();
+		} catch (e) {
+			toast({ title: getApiErrorMessage(e), variant: "destructive" });
+			throw e;
+		}
+	};
+
 	const handleExportCsv = () => {
 		if (filteredUnits.length === 0) return;
 		exportChessUnitsCsv(filteredUnits, (code) => badgeCfgFor(statusBadgeMap, code).label);
@@ -492,6 +514,11 @@ export default function SalesGrid() {
 								isMobile={isMobile}
 								onExportCsv={handleExportCsv}
 								onExportExcel={handleExportExcel}
+								onImport={
+									projectId && !isSalesOnly
+										? () => setShowImport(true)
+										: undefined
+								}
 							/>
 						</div>
 
@@ -529,6 +556,8 @@ export default function SalesGrid() {
 										units={filteredUnits}
 										statusBadgeMap={statusBadgeMap}
 										onSelect={openUnit}
+										canEditArea={canEditArea}
+										onAreaSave={canEditArea ? handleAreaSave : undefined}
 									/>
 								) : (
 									<AgentsView
@@ -658,6 +687,7 @@ export default function SalesGrid() {
 					open={showImport}
 					projectId={projectId}
 					projectName={selectedProject.name}
+					areaOnly={canEditArea && !isPTO}
 					onClose={() => setShowImport(false)}
 					onImported={invalidateAll}
 				/>

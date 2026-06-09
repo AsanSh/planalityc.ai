@@ -29,12 +29,15 @@ export function ChessUnitsImportDialog({
 	open,
 	projectId,
 	projectName,
+	areaOnly,
 	onClose,
 	onImported,
 }: {
 	open: boolean;
 	projectId: number;
 	projectName: string;
+	/** Только обновление площади (и цены/м²) существующих квартир — для коммерческого директора */
+	areaOnly?: boolean;
 	onClose: () => void;
 	onImported: () => void;
 }) {
@@ -43,13 +46,14 @@ export function ChessUnitsImportDialog({
 	const [rows, setRows] = useState<UnitImportRow[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [result, setResult] = useState<{
-		created: number;
+		created?: number;
 		updated: number;
-		errors: { row: number; message: string }[];
+		skipped?: number;
+		errors: { row: number; message: string; unitNumber?: string }[];
 	} | null>(null);
 
 	const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-	const ALLOWED_TYPES = ['.xlsx', '.xls'];
+	const ALLOWED_TYPES = [".xlsx", ".xls", ".csv"];
 
 	const handleFile = async (file: File) => {
 		// Проверка размера
@@ -67,7 +71,7 @@ export function ChessUnitsImportDialog({
 		if (!ALLOWED_TYPES.includes(ext)) {
 			toast({
 				title: "Неверный формат файла",
-				description: "Поддерживаются только .xlsx и .xls",
+				description: "Поддерживаются .xlsx, .xls и .csv",
 				variant: "destructive",
 			});
 			return;
@@ -93,16 +97,29 @@ export function ChessUnitsImportDialog({
 		if (rows.length === 0) return;
 		setLoading(true);
 		try {
+			const endpoint = areaOnly
+				? `/construction/projects/${projectId}/units/bulk-update`
+				: "/construction/units/import";
+			const payload = areaOnly
+				? { updates: rows, mode: "area_only" }
+				: { projectId, rows };
 			const { data } = await api.post<{
-				created: number;
+				created?: number;
 				updated: number;
-				errors: { row: number; message: string }[];
-			}>("/construction/units/import", { projectId, rows });
+				skipped?: number;
+				errors: { row: number; message: string; unitNumber?: string }[];
+			}>(endpoint, payload);
 			setResult(data);
-			if (data.created > 0 || data.updated > 0) {
+			if ((data.created ?? 0) > 0 || data.updated > 0) {
+				const parts = [
+					data.created ? `создано: ${data.created}` : null,
+					`обновлено: ${data.updated}`,
+					data.skipped ? `пропущено: ${data.skipped}` : null,
+					data.errors.length > 0 ? `ошибок: ${data.errors.length}` : null,
+				].filter(Boolean);
 				toast({
 					title: "Импорт завершён",
-					description: `Создано: ${data.created}, обновлено: ${data.updated}${data.errors.length > 0 ? `, ошибок: ${data.errors.length}` : ""}`,
+					description: parts.join(", "),
 				});
 				onImported();
 			} else if (data.errors.length > 0) {
@@ -142,10 +159,14 @@ export function ChessUnitsImportDialog({
 		>
 			<DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
 				<DialogHeader>
-					<DialogTitle>Импорт квартир из Excel</DialogTitle>
+					<DialogTitle>
+						{areaOnly ? "Импорт площадей из Excel" : "Импорт квартир из Excel"}
+					</DialogTitle>
 					<DialogDescription>
-						Проект: {projectName}. Скачайте шаблон, заполните и загрузите файл.
-						Существующие квартиры с тем же номером будут обновлены.
+						Проект: {projectName}.{" "}
+						{areaOnly
+							? "Загрузите файл с колонками «Номер», «Этаж» (при дублях), «Площадь м²». Обновляются только существующие квартиры."
+							: "Скачайте шаблон, заполните и загрузите файл. Существующие квартиры с тем же номером будут обновлены."}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -173,7 +194,7 @@ export function ChessUnitsImportDialog({
 					<input
 						ref={inputRef}
 						type="file"
-						accept=".xlsx,.xls"
+						accept=".xlsx,.xls,.csv"
 						className="hidden"
 						onChange={(e) => {
 							const f = e.target.files?.[0];

@@ -97,6 +97,8 @@ interface Project {
 	totalFloors?: number;
 	totalUnits?: number;
 	totalArea?: string;
+	totalConstructionArea?: string;
+	totalSaleableArea?: string;
 	costPerSqm?: string;
 	currency: string;
 	exchangeRateSource: string;
@@ -149,6 +151,8 @@ const emptyForm = () => ({
 	totalFloors: "",
 	totalUnits: "",
 	totalArea: "",
+	totalConstructionArea: "",
+	totalSaleableArea: "",
 	costPerSqm: "",
 	currency: "KGS",
 	exchangeRateSource: "nbkr",
@@ -190,6 +194,8 @@ function ProjectDialog({
 				totalFloors: String(init.totalFloors || ""),
 				totalUnits: String(init.totalUnits || ""),
 				totalArea: init.totalArea || "",
+				totalConstructionArea: init.totalConstructionArea || "",
+				totalSaleableArea: init.totalSaleableArea || "",
 				costPerSqm: init.costPerSqm || "",
 				currency: init.currency,
 				exchangeRateSource: init.exchangeRateSource,
@@ -249,6 +255,8 @@ function ProjectDialog({
 				totalFloors: form.totalFloors ? parseInt(form.totalFloors, 10) : null,
 				totalUnits: form.totalUnits ? parseInt(form.totalUnits, 10) : null,
 				totalArea: form.totalArea ? parseFloat(form.totalArea) : null,
+				totalConstructionArea: form.totalConstructionArea ? parseFloat(form.totalConstructionArea) : null,
+				totalSaleableArea: form.totalSaleableArea ? parseFloat(form.totalSaleableArea) : null,
 				costPerSqm: form.costPerSqm ? parseFloat(form.costPerSqm) : null,
 				exchangeRate: form.exchangeRate ? parseFloat(form.exchangeRate) : 1,
 				totalBudget: estimatedKgs,
@@ -459,16 +467,28 @@ function ProjectDialog({
 									При сохранении проекта квартиры появятся в шахматке автоматически
 								</p>
 							</div>
-							<div className="sm:col-span-2 flex flex-col">
-								<Label className="leading-tight mb-1.5">Общая площадь (кв.м)</Label>
+							<div className="flex flex-col">
+								<Label className="leading-tight mb-1.5">Общая строительная площадь (м²)</Label>
 								<Input
 									className="mt-auto"
 									type="number"
 									min="0"
 									step="0.01"
-									value={form.totalArea}
-									onChange={(e) => set("totalArea", e.target.value)}
+									value={form.totalConstructionArea}
+									onChange={(e) => set("totalConstructionArea", e.target.value)}
 									placeholder="8400"
+								/>
+							</div>
+							<div className="flex flex-col">
+								<Label className="leading-tight mb-1.5">Общая продажная площадь (м²)</Label>
+								<Input
+									className="mt-auto"
+									type="number"
+									min="0"
+									step="0.01"
+									value={form.totalSaleableArea}
+									onChange={(e) => set("totalSaleableArea", e.target.value)}
+									placeholder="7200"
 								/>
 							</div>
 						</div>
@@ -894,15 +914,17 @@ export default function ConstructionProjects() {
 						const templateMeta = parseContractTemplateMeta(p.contractTemplateMeta);
 
 						const summary = summariesMap.get(p.id);
-						const projectAreaFallback = parseFloat(p.totalArea || "0");
+						// Ручные значения из проекта имеют приоритет над вычисленными из юнитов
+						const manualConstructionArea = parseFloat(p.totalConstructionArea || "0");
+						const manualSaleableArea = parseFloat(p.totalSaleableArea || "0");
 						const totalConstructionArea =
-							summary && summary.totalConstructionArea > 0
-								? summary.totalConstructionArea
-								: projectAreaFallback;
+							manualConstructionArea > 0
+								? manualConstructionArea
+								: (summary?.totalConstructionArea ?? parseFloat(p.totalArea || "0"));
 						const totalSaleableArea =
-							summary && summary.totalSaleableArea > 0
-								? summary.totalSaleableArea
-								: totalConstructionArea;
+							manualSaleableArea > 0
+								? manualSaleableArea
+								: (summary?.totalSaleableArea ?? totalConstructionArea);
 						const totalSpent = summary?.totalSpent ?? 0;
 						const plannedCostPerSqm = parseFloat(p.costPerSqm || "0");
 						const actualCostPerSqm =

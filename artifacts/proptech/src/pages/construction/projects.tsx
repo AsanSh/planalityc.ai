@@ -38,7 +38,9 @@ import {
 	ProjectDocumentUploadDialog,
 	type ParsedProjectDocument,
 } from "@/components/project-document-upload";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
+import { ProjectsProgressTab } from "@/pages/construction/projects-progress-tab";
 import {
 	currencySymbol,
 	fmtProjectAmount,
@@ -227,13 +229,15 @@ function ProjectDialog({
 		if (dm) setDocumentMeta(dm);
 	}, [prefill]);
 
-	const area = parseFloat(form.totalArea || "0");
+	const areaStr = form.totalConstructionArea || form.totalArea || "0";
+	const area = parseFloat(areaStr);
 	const cps = parseFloat(form.costPerSqm || "0");
 	const rate = parseFloat(form.exchangeRate || "1");
 	const estimatedLocal = area * cps;
 	const estimatedKgs =
 		form.currency === "KGS" ? estimatedLocal : estimatedLocal * rate;
 	const displayCost = projectCostInCurrency({
+		totalConstructionArea: form.totalConstructionArea,
 		totalArea: form.totalArea,
 		costPerSqm: form.costPerSqm,
 		currency: form.currency,
@@ -578,6 +582,7 @@ function ProjectDialog({
 									{currencySymbol(form.currency)}
 								</p>
 								{projectCostBreakdown({
+									totalConstructionArea: form.totalConstructionArea,
 									totalArea: form.totalArea,
 									costPerSqm: form.costPerSqm,
 									currency: form.currency,
@@ -585,6 +590,7 @@ function ProjectDialog({
 								}) && (
 									<p className="text-xs text-amber-600 mt-0.5">
 										{projectCostBreakdown({
+											totalConstructionArea: form.totalConstructionArea,
 											totalArea: form.totalArea,
 											costPerSqm: form.costPerSqm,
 											currency: form.currency,
@@ -776,6 +782,7 @@ export default function ConstructionProjects() {
 		typeof applyParsedToProjectForm
 	> | null>(null);
 	const [search, setSearch] = useState("");
+	const [pageTab, setPageTab] = useState("cards");
 
 	useEffect(() => {
 		const params = new URLSearchParams(window.location.search);
@@ -881,6 +888,17 @@ export default function ConstructionProjects() {
 				</div>
 			</div>
 
+			<Tabs value={pageTab} onValueChange={setPageTab}>
+				<TabsList className="mb-4">
+					<TabsTrigger value="cards">Карточки</TabsTrigger>
+					<TabsTrigger value="progress">ПРОГРЕСС</TabsTrigger>
+				</TabsList>
+
+				<TabsContent value="progress" className="mt-0">
+					<ProjectsProgressTab />
+				</TabsContent>
+
+				<TabsContent value="cards" className="mt-0 space-y-4">
 			<div className="mb-2">
 				<Input
 					placeholder="Поиск по названию или адресу..."
@@ -1111,7 +1129,7 @@ export default function ConstructionProjects() {
 														</span>
 														<span className={`text-base font-black ${actualCostPerSqm > 0 ? "text-orange-600" : "text-slate-400"}`}>
 															{actualCostPerSqm > 0
-																? `${fmtProjectAmount(actualCostPerSqm)} сом/м²`
+																? `${fmtProjectAmount(actualCostPerSqm)} ${sym}/м²`
 																: "—"}
 														</span>
 													</div>
@@ -1160,6 +1178,8 @@ export default function ConstructionProjects() {
 					})}
 				</div>
 			)}
+				</TabsContent>
+			</Tabs>
 
 			<ProjectDialog
 				key={dialog === "new" ? `new-${prefill?.name || "empty"}` : String(dialog)}

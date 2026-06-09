@@ -51,17 +51,16 @@ export function FloorGrid({
 						const floorIds = rowUnits.map((u) => u.id);
 						const isDropTarget = dragOverFloor === floor;
 
-						const tdBase = [
-							idx !== 0 ? "border-t-2 border-slate-300" : "",
-							isDropTarget ? "bg-blue-50/60" : "",
-							"transition-colors duration-100",
-						]
-							.filter(Boolean)
-							.join(" ");
-
 						return (
 							<tr
 								key={floor}
+								className={[
+									idx !== 0 ? "border-t-2 border-slate-300" : "",
+									isDropTarget ? "bg-blue-50/60" : "",
+									"transition-colors duration-100",
+								]
+									.filter(Boolean)
+									.join(" ")}
 								onDragOver={(e) => {
 									e.preventDefault();
 									setDragOverFloor(floor);
@@ -76,7 +75,7 @@ export function FloorGrid({
 									dragUnitId.current = null;
 								}}
 							>
-								<td className={`sticky left-0 z-10 bg-white pr-2 align-middle ${tdBase}`}>
+								<td className="sticky left-0 z-10 bg-white pr-2 align-middle">
 									<button
 										type="button"
 										onClick={() => onBulkFloor(floor, floorIds)}
@@ -95,12 +94,12 @@ export function FloorGrid({
 								{Array.from({ length: maxCols }).map((_, col) => {
 									const unit = rowUnits[col];
 									if (!unit) {
-										return <td key={col} className={`p-1 ${tdBase}`} />;
+										return <td key={col} className="p-1" />;
 									}
 									return (
 										<td
 											key={unit.id}
-											className={`p-1 ${tdBase}`}
+											className="p-1"
 											draggable
 											onDragStart={() => {
 												dragUnitId.current = unit.id;

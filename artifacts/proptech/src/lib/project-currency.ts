@@ -1,6 +1,5 @@
 export type ProjectCurrencyFields = {
 	totalArea?: string | null;
-	totalConstructionArea?: string | null;
 	costPerSqm?: string | null;
 	currency?: string | null;
 	exchangeRate?: string | null;
@@ -28,8 +27,7 @@ export function fmtProjectAmount(v: string | number | null | undefined) {
 
 /** Себестоимость в валюте проекта (то, что видит пользователь) */
 export function projectCostInCurrency(p: ProjectCurrencyFields) {
-	// totalConstructionArea имеет приоритет над устаревшим totalArea
-	const area = parseFloat(p.totalConstructionArea || p.totalArea || "0");
+	const area = parseFloat(p.totalArea || "0");
 	const cps = parseFloat(p.costPerSqm || "0");
 	const currency = p.currency || "KGS";
 	const rate = parseFloat(p.exchangeRate || "1") || 1;

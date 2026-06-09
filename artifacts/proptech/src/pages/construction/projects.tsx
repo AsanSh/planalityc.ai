@@ -227,15 +227,13 @@ function ProjectDialog({
 		if (dm) setDocumentMeta(dm);
 	}, [prefill]);
 
-	const areaStr = form.totalConstructionArea || form.totalArea || "0";
-	const area = parseFloat(areaStr);
+	const area = parseFloat(form.totalArea || "0");
 	const cps = parseFloat(form.costPerSqm || "0");
 	const rate = parseFloat(form.exchangeRate || "1");
 	const estimatedLocal = area * cps;
 	const estimatedKgs =
 		form.currency === "KGS" ? estimatedLocal : estimatedLocal * rate;
 	const displayCost = projectCostInCurrency({
-		totalConstructionArea: form.totalConstructionArea,
 		totalArea: form.totalArea,
 		costPerSqm: form.costPerSqm,
 		currency: form.currency,
@@ -580,7 +578,6 @@ function ProjectDialog({
 									{currencySymbol(form.currency)}
 								</p>
 								{projectCostBreakdown({
-									totalConstructionArea: form.totalConstructionArea,
 									totalArea: form.totalArea,
 									costPerSqm: form.costPerSqm,
 									currency: form.currency,
@@ -588,7 +585,6 @@ function ProjectDialog({
 								}) && (
 									<p className="text-xs text-amber-600 mt-0.5">
 										{projectCostBreakdown({
-											totalConstructionArea: form.totalConstructionArea,
 											totalArea: form.totalArea,
 											costPerSqm: form.costPerSqm,
 											currency: form.currency,
@@ -1115,7 +1111,7 @@ export default function ConstructionProjects() {
 														</span>
 														<span className={`text-base font-black ${actualCostPerSqm > 0 ? "text-orange-600" : "text-slate-400"}`}>
 															{actualCostPerSqm > 0
-																? `${fmtProjectAmount(actualCostPerSqm)} ${sym}/м²`
+																? `${fmtProjectAmount(actualCostPerSqm)} сом/м²`
 																: "—"}
 														</span>
 													</div>

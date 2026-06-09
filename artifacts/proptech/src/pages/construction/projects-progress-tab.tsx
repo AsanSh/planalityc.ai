@@ -14,8 +14,9 @@ import {
 	TrendingUp,
 	Wallet,
 } from "lucide-react";
-import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { KpiCard, KpiRow } from "@/components/kpi-card";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { CurrencyToggle } from "@/components/currency-toggle";
+import { KpiCard } from "@/components/kpi-card";
 import { Button } from "@/components/ui/button";
 import {
 	Collapsible,
@@ -50,7 +51,35 @@ import {
 	type ProgressCustomColumn,
 	type ProgressGroupId,
 } from "@/lib/progress-projects-column-config";
+import {
+	nbkrUsdRateLabel,
+	unitInKgs,
+	type DisplayCurrency,
+	type NbkrRate,
+	type NbkrResponse,
+} from "@/lib/nbkr-currency";
 import { cn } from "@/lib/utils";
+
+const PROGRESS_CURRENCY_KEY = "progress-currency";
+
+type ProjectMeta = {
+	id: number;
+	currency?: string | null;
+	exchangeRate?: string | null;
+};
+
+function loadProgressCurrency(): DisplayCurrency {
+	try {
+		const v = localStorage.getItem(PROGRESS_CURRENCY_KEY);
+		return v === "USD" ? "USD" : "KGS";
+	} catch {
+		return "KGS";
+	}
+}
+
+function saveProgressCurrency(v: DisplayCurrency) {
+	localStorage.setItem(PROGRESS_CURRENCY_KEY, v);
+}
 
 export type ProgressSummaryRow = {
 	projectId: number;
@@ -276,25 +305,80 @@ const fmtArea = (v: number) =>
 		? `${v.toLocaleString("ru-KG", { maximumFractionDigits: 2 })} м²`
 		: "—";
 
-const fmtMoney = (v: number) =>
-	Math.abs(v) > 0
-		? `${v.toLocaleString("ru-KG", { maximumFractionDigits: 0 })} сом`
-		: "—";
-
 const fmtPercent = (v: number) =>
 	v > 0
 		? `${v.toLocaleString("ru-KG", { maximumFractionDigits: 1 })}%`
 		: "—";
 
-function formatCell(kind: BuiltinColumn["kind"], value: number | string): string {
-	if (kind === "text") return String(value || "—");
-	const n = typeof value === "number" ? value : parseFloat(String(value));
-	if (Number.isNaN(n)) return "—";
-	if (kind === "area") return fmtArea(n);
-	if (kind === "money") return fmtMoney(n);
-	if (kind === "moneyPerSqm") return n > 0 ? `${fmtMoney(n).replace(" сом", "")} сом/м²` : "—";
-	if (kind === "percent") return fmtPercent(n);
-	return String(value);
+type ProgressFormatters = {
+	fmtMoney: (kgs: number, projectId?: number) => string;
+	fmtMoneyPerSqm: (kgs: number, projectId?: number) => string;
+	formatCell: (
+		kind: BuiltinColumn["kind"],
+		value: number | string,
+		projectId?: number,
+	) => string;
+};
+
+function createProgressFormatters(
+	displayCurrency: DisplayCurrency,
+	rates: Record<string, NbkrRate>,
+	projectMetaById: Record<number, ProjectMeta>,
+): ProgressFormatters {
+	const usdRateGlobal = unitInKgs("USD", rates) || 1;
+
+	const kgsToDisplayAmount = (kgs: number, projectId?: number) => {
+		if (displayCurrency === "KGS") return kgs;
+		const meta = projectId != null ? projectMetaById[projectId] : undefined;
+		const projectRate =
+			meta?.currency && meta.currency !== "KGS"
+				? parseFloat(meta.exchangeRate || "0") || 0
+				: 0;
+		if (projectRate > 0) return kgs / projectRate;
+		return kgs / usdRateGlobal;
+	};
+
+	const fmtMoney = (kgs: number, projectId?: number) => {
+		if (Math.abs(kgs) <= 0) return "—";
+		const amount = kgsToDisplayAmount(kgs, projectId);
+		if (displayCurrency === "USD") {
+			return new Intl.NumberFormat("en-US", {
+				style: "currency",
+				currency: "USD",
+				maximumFractionDigits: 0,
+			}).format(amount);
+		}
+		return `${amount.toLocaleString("ru-KG", { maximumFractionDigits: 0 })} сом`;
+	};
+
+	const fmtMoneyPerSqm = (kgs: number, projectId?: number) => {
+		if (kgs <= 0) return "—";
+		const amount = kgsToDisplayAmount(kgs, projectId);
+		if (displayCurrency === "USD") {
+			const formatted = new Intl.NumberFormat("en-US", {
+				maximumFractionDigits: 0,
+			}).format(amount);
+			return `$${formatted}/м²`;
+		}
+		return `${amount.toLocaleString("ru-KG", { maximumFractionDigits: 0 })} сом/м²`;
+	};
+
+	const formatCell = (
+		kind: BuiltinColumn["kind"],
+		value: number | string,
+		projectId?: number,
+	) => {
+		if (kind === "text") return String(value || "—");
+		const n = typeof value === "number" ? value : parseFloat(String(value));
+		if (Number.isNaN(n)) return "—";
+		if (kind === "area") return fmtArea(n);
+		if (kind === "money") return fmtMoney(n, projectId);
+		if (kind === "moneyPerSqm") return fmtMoneyPerSqm(n, projectId);
+		if (kind === "percent") return fmtPercent(n);
+		return String(value);
+	};
+
+	return { fmtMoney, fmtMoneyPerSqm, formatCell };
 }
 
 function moneyTone(value: number): "green" | "red" | "blue" | "yellow" {
@@ -357,6 +441,30 @@ function SectionTitle({ children }: { children: ReactNode }) {
 	);
 }
 
+function MetricStrip({
+	itemCount,
+	children,
+	className,
+}: {
+	itemCount: number;
+	children: ReactNode;
+	className?: string;
+}) {
+	const cellMin = itemCount >= 6 ? 124 : 136;
+	return (
+		<div className={cn("overflow-x-auto -mx-0.5 px-0.5 pb-0.5", className)}>
+			<div
+				className="grid gap-2 w-full"
+				style={{
+					gridTemplateColumns: `repeat(${itemCount}, minmax(${cellMin}px, 1fr))`,
+				}}
+			>
+				{children}
+			</div>
+		</div>
+	);
+}
+
 function MetricTile({
 	label,
 	value,
@@ -367,18 +475,22 @@ function MetricTile({
 	tone?: "positive" | "negative" | "neutral" | "warning";
 }) {
 	return (
-		<div className="rounded-lg border border-am-border bg-am-bg px-3 py-2.5 min-h-[72px] shadow-sm">
-			<p className="text-[10px] font-semibold uppercase tracking-wide text-am-text-muted leading-snug line-clamp-2">
+		<div className="rounded-lg border border-am-border bg-am-bg px-3 py-2.5 h-[76px] shadow-sm flex flex-col justify-between min-w-0">
+			<p
+				className="text-[10px] font-semibold uppercase tracking-wide text-am-text-muted leading-snug truncate"
+				title={label}
+			>
 				{label}
 			</p>
 			<p
 				className={cn(
-					"mt-1.5 text-sm sm:text-base font-bold tabular-nums leading-tight",
+					"text-sm sm:text-base font-bold tabular-nums leading-tight truncate",
 					tone === "positive" && "text-emerald-700",
 					tone === "negative" && "text-rose-700",
 					tone === "warning" && "text-amber-700",
 					tone === "neutral" && "text-am-text-strong",
 				)}
+				title={value}
 			>
 				{value}
 			</p>
@@ -386,64 +498,59 @@ function MetricTile({
 	);
 }
 
-function ProgressSummaryBar({ totals }: { totals: ProgressSummaryRow }) {
+function ProgressSummaryBar({
+	totals,
+	fmtMoney,
+}: {
+	totals: ProgressSummaryRow;
+	fmtMoney: (kgs: number, projectId?: number) => string;
+}) {
+	const items = [
+		{ label: "Законтрактовано", value: fmtMoney(totals.contracted), icon: Banknote, color: "blue" as const },
+		{ label: "Собрано", value: fmtMoney(totals.collected), icon: Wallet, color: "green" as const },
+		{ label: "Выручка", value: fmtMoney(totals.totalRevenue), icon: TrendingUp, color: "green" as const },
+		{
+			label: "Валовая прибыль",
+			value: fmtMoney(totals.grossProfit),
+			icon: TrendingUp,
+			color: moneyTone(totals.grossProfit),
+		},
+		{
+			label: "Просрочка",
+			value: fmtMoney(totals.overdueDebt),
+			icon: TrendingDown,
+			color: totals.overdueDebt > 0 ? ("red" as const) : ("blue" as const),
+		},
+		{ label: "Затраты", value: fmtMoney(totals.totalSpent), icon: Landmark, color: "yellow" as const },
+	];
+
 	return (
-		<div className="sticky top-0 z-10 -mx-1 px-1 pb-3 pt-1 bg-gradient-to-b from-white via-white to-white/80 backdrop-blur-sm">
-			<div className="rounded-xl border border-slate-200 bg-slate-950 text-white shadow-md overflow-hidden">
-				<div className="px-4 py-2 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
-					<p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-						Сводка по всем проектам
-					</p>
-					<p className="text-xs text-slate-400">
-						Продано {fmtArea(totals.soldArea).replace(" м²", "")} м² · остаток{" "}
-						{fmtArea(totals.unsoldArea).replace(" м²", "")} м²
-					</p>
-				</div>
-				<div className="p-3">
-					<KpiRow cols={6} className="gap-2">
-						<KpiCard
-							label="Законтрактовано"
-							value={fmtMoney(totals.contracted)}
-							icon={Banknote}
-							color="blue"
-							variant="strip"
-						/>
-						<KpiCard
-							label="Собрано"
-							value={fmtMoney(totals.collected)}
-							icon={Wallet}
-							color="green"
-							variant="strip"
-						/>
-						<KpiCard
-							label="Выручка"
-							value={fmtMoney(totals.totalRevenue)}
-							icon={TrendingUp}
-							color="green"
-							variant="strip"
-						/>
-						<KpiCard
-							label="Валовая прибыль"
-							value={fmtMoney(totals.grossProfit)}
-							icon={TrendingUp}
-							color={moneyTone(totals.grossProfit)}
-							variant="strip"
-						/>
-						<KpiCard
-							label="Просрочка"
-							value={fmtMoney(totals.overdueDebt)}
-							icon={TrendingDown}
-							color={totals.overdueDebt > 0 ? "red" : "blue"}
-							variant="strip"
-						/>
-						<KpiCard
-							label="Затраты"
-							value={fmtMoney(totals.totalSpent)}
-							icon={Landmark}
-							color="yellow"
-							variant="strip"
-						/>
-					</KpiRow>
+		<div className="rounded-xl border border-slate-200 bg-slate-950 text-white shadow-md overflow-hidden">
+			<div className="px-4 py-2 border-b border-slate-800 flex items-center justify-between gap-2 min-w-0">
+				<p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0">
+					Сводка по всем проектам
+				</p>
+				<p className="text-xs text-slate-400 truncate text-right">
+					Продано {fmtArea(totals.soldArea).replace(" м²", "")} м² · остаток{" "}
+					{fmtArea(totals.unsoldArea).replace(" м²", "")} м²
+				</p>
+			</div>
+			<div className="p-3 overflow-x-auto">
+				<div
+					className="grid gap-2 min-w-full"
+					style={{ gridTemplateColumns: "repeat(6, minmax(124px, 1fr))" }}
+				>
+					{items.map((item) => (
+						<div key={item.label} className="min-w-0 h-[52px]">
+							<KpiCard
+								label={item.label}
+								value={item.value}
+								icon={item.icon}
+								color={item.color}
+								variant="strip"
+							/>
+						</div>
+					))}
 				</div>
 			</div>
 		</div>
@@ -495,11 +602,15 @@ function ProjectProgressCard({
 	config,
 	labelFor,
 	onCustomValue,
+	formatCell,
+	fmtMoney,
 }: {
 	row: ProgressSummaryRow;
 	config: ProgressColumnConfig;
 	labelFor: (id: string, defaultLabel: string) => string;
 	onCustomValue: (columnId: string, projectId: number, raw: string) => void;
+	formatCell: ProgressFormatters["formatCell"];
+	fmtMoney: ProgressFormatters["fmtMoney"];
 }) {
 	const soldPct =
 		row.totalSaleableArea > 0
@@ -546,13 +657,13 @@ function ProjectProgressCard({
 												: "text-am-text-strong",
 									)}
 								>
-									{fmtMoney(row.grossProfit)}
+									{fmtMoney(row.grossProfit, row.projectId)}
 								</p>
 							</div>
 							<div className="text-right hidden md:block">
 								<p className="text-[10px] uppercase tracking-wide text-am-text-muted">Собрано</p>
 								<p className="text-sm font-bold tabular-nums text-am-text-strong">
-									{fmtMoney(row.collected)}
+									{fmtMoney(row.collected, row.projectId)}
 								</p>
 							</div>
 							<ChevronDown className="w-4 h-4 text-am-text-muted transition-transform group-data-[state=open]:rotate-180" />
@@ -562,123 +673,139 @@ function ProjectProgressCard({
 
 				<CollapsibleContent>
 					<div className="px-4 pb-4 space-y-4 border-t border-am-border/60">
-						{show("projectData") && (
-							<ProjectMetricSection title="Данные по проекту">
-								<div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2">
-									{colsForGroup("projectData").map((col) => {
-										const val = col.accessor(row) as number;
-										return (
-											<MetricTile
-												key={col.id}
-												label={labelFor(col.id, col.defaultLabel)}
-												value={formatCell(col.kind, val)}
-											/>
-										);
-									})}
-								</div>
-							</ProjectMetricSection>
-						)}
-
-						{show("collections") && (
-							<ProjectMetricSection title="Сборы">
-								<div className="flex flex-wrap gap-2">
-									{colsForGroup("collections").map((col) => {
-										const val = col.accessor(row) as number;
-										return (
-											<div key={col.id} className="flex-1 min-w-[140px] max-w-[220px]">
-												<KpiCard
+						{show("projectData") && (() => {
+							const cols = colsForGroup("projectData");
+							return (
+								<ProjectMetricSection title="Данные по проекту">
+									<MetricStrip itemCount={cols.length}>
+										{cols.map((col) => {
+											const val = col.accessor(row) as number;
+											return (
+												<MetricTile
+													key={col.id}
 													label={labelFor(col.id, col.defaultLabel)}
-													value={formatCell(col.kind, val)}
-													icon={Banknote}
-													color={moneyTone(val)}
-													variant="strip"
+													value={formatCell(col.kind, val, row.projectId)}
 												/>
-											</div>
-										);
-									})}
-								</div>
-							</ProjectMetricSection>
-						)}
+											);
+										})}
+									</MetricStrip>
+								</ProjectMetricSection>
+							);
+						})()}
 
-						{show("profitability") && (
-							<ProjectMetricSection title="Прибыльность">
-								<div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-									{colsForGroup("profitability").map((col) => {
-										const val = col.accessor(row) as number;
-										const tone =
-											col.kind === "percent"
-												? val > 0
-													? "warning"
-													: "neutral"
-												: val > 0
-													? "positive"
-													: val < 0
-														? "negative"
-														: "neutral";
-										return (
-											<MetricTile
-												key={col.id}
-												label={labelFor(col.id, col.defaultLabel)}
-												value={formatCell(col.kind, val)}
-												tone={tone}
-											/>
-										);
-									})}
-								</div>
-							</ProjectMetricSection>
-						)}
+						{show("collections") && (() => {
+							const cols = colsForGroup("collections");
+							return (
+								<ProjectMetricSection title="Сборы">
+									<MetricStrip itemCount={cols.length}>
+										{cols.map((col) => {
+											const val = col.accessor(row) as number;
+											const tone =
+												val > 0 ? "positive" : val < 0 ? "negative" : "neutral";
+											return (
+												<MetricTile
+													key={col.id}
+													label={labelFor(col.id, col.defaultLabel)}
+													value={formatCell(col.kind, val, row.projectId)}
+													tone={tone}
+												/>
+											);
+										})}
+									</MetricStrip>
+								</ProjectMetricSection>
+							);
+						})()}
 
-						{show("cost") && (
-							<ProjectMetricSection title="Себестоимость" collapsible defaultOpen={false}>
-								<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-									{colsForGroup("cost").map((col) => {
-										const val = col.accessor(row) as number;
-										return (
-											<MetricTile
-												key={col.id}
-												label={labelFor(col.id, col.defaultLabel)}
-												value={formatCell(col.kind, val)}
-											/>
-										);
-									})}
-								</div>
-							</ProjectMetricSection>
-						)}
+						{show("profitability") && (() => {
+							const cols = colsForGroup("profitability");
+							return (
+								<ProjectMetricSection title="Прибыльность">
+									<MetricStrip itemCount={cols.length}>
+										{cols.map((col) => {
+											const val = col.accessor(row) as number;
+											const tone =
+												col.kind === "percent"
+													? val > 0
+														? "warning"
+														: "neutral"
+													: val > 0
+														? "positive"
+														: val < 0
+															? "negative"
+															: "neutral";
+											return (
+												<MetricTile
+													key={col.id}
+													label={labelFor(col.id, col.defaultLabel)}
+													value={formatCell(col.kind, val, row.projectId)}
+													tone={tone}
+												/>
+											);
+										})}
+									</MetricStrip>
+								</ProjectMetricSection>
+							);
+						})()}
 
-						{show("expenses") && (
-							<ProjectMetricSection title="Затраты" collapsible defaultOpen={false}>
-								<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-									{colsForGroup("expenses").map((col) => {
-										const val = col.accessor(row) as number;
-										return (
-											<MetricTile
-												key={col.id}
-												label={labelFor(col.id, col.defaultLabel)}
-												value={formatCell(col.kind, val)}
-												tone={val > 0 ? "neutral" : "neutral"}
-											/>
-										);
-									})}
-								</div>
-							</ProjectMetricSection>
-						)}
+						{show("cost") && (() => {
+							const cols = colsForGroup("cost");
+							return (
+								<ProjectMetricSection title="Себестоимость" collapsible defaultOpen={false}>
+									<MetricStrip itemCount={cols.length}>
+										{cols.map((col) => {
+											const val = col.accessor(row) as number;
+											return (
+												<MetricTile
+													key={col.id}
+													label={labelFor(col.id, col.defaultLabel)}
+													value={formatCell(col.kind, val, row.projectId)}
+												/>
+											);
+										})}
+									</MetricStrip>
+								</ProjectMetricSection>
+							);
+						})()}
+
+						{show("expenses") && (() => {
+							const cols = colsForGroup("expenses");
+							return (
+								<ProjectMetricSection title="Затраты" collapsible defaultOpen={false}>
+									<MetricStrip itemCount={cols.length}>
+										{cols.map((col) => {
+											const val = col.accessor(row) as number;
+											return (
+												<MetricTile
+													key={col.id}
+													label={labelFor(col.id, col.defaultLabel)}
+													value={formatCell(col.kind, val, row.projectId)}
+												/>
+											);
+										})}
+									</MetricStrip>
+								</ProjectMetricSection>
+							);
+						})()}
 
 						{show("custom") && customForGroup("custom").length > 0 && (
 							<ProjectMetricSection title="Дополнительно">
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+								<MetricStrip itemCount={customForGroup("custom").length}>
 									{customForGroup("custom").map((col) => {
 										const vals = config.customValues[col.id];
 										const num = vals?.[String(row.projectId)] ?? 0;
 										return (
 											<div
 												key={col.id}
-												className="rounded-lg border border-dashed border-am-border bg-slate-50/80 px-3 py-2.5"
+												className="rounded-lg border border-dashed border-am-border bg-slate-50/80 px-3 py-2.5 h-[76px] flex flex-col justify-between min-w-0"
 											>
-												<Label className="text-[10px] font-semibold uppercase tracking-wide text-am-text-muted">
+												<Label
+													className="text-[10px] font-semibold uppercase tracking-wide text-am-text-muted truncate"
+													title={col.label}
+												>
 													{col.label}
 												</Label>
 												<Input
-													className="mt-1.5 h-8 font-mono tabular-nums text-right bg-white"
+													className="h-8 font-mono tabular-nums text-right bg-white"
 													defaultValue={num !== 0 ? String(num) : ""}
 													placeholder="—"
 													onBlur={(e) =>
@@ -692,7 +819,7 @@ function ProjectProgressCard({
 											</div>
 										);
 									})}
-								</div>
+								</MetricStrip>
 							</ProjectMetricSection>
 						)}
 					</div>
@@ -898,6 +1025,7 @@ function exportProgressCsv(
 	totals: ProgressSummaryRow,
 	labelFor: (id: string, defaultLabel: string) => string,
 	config: ProgressColumnConfig,
+	formatCell: ProgressFormatters["formatCell"],
 ) {
 	const exportCols = BUILTIN_COLUMNS.filter((c) => c.id !== "projectName");
 	const header = [
@@ -907,9 +1035,12 @@ function exportProgressCsv(
 	].join(";");
 	const allRows = [totals, ...rows];
 	const lines = allRows.map((row) => {
+		const projectId = row.isTotal ? undefined : row.projectId;
 		const cells = [
 			row.projectName,
-			...exportCols.map((c) => formatCell(c.kind, c.accessor(row) as number | string)),
+			...exportCols.map((c) =>
+				formatCell(c.kind, c.accessor(row) as number | string, projectId),
+			),
 			...config.customColumns.map((col) => {
 				if (row.isTotal) return "";
 				const vals = config.customValues[col.id];
@@ -932,6 +1063,11 @@ export function ProjectsProgressTab() {
 	const [columnConfig, setColumnConfig] = useState(loadProgressColumnConfig);
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [search, setSearch] = useState("");
+	const [displayCurrency, setDisplayCurrency] = useState<DisplayCurrency>(loadProgressCurrency);
+
+	useEffect(() => {
+		saveProgressCurrency(displayCurrency);
+	}, [displayCurrency]);
 
 	const { data, isLoading, isError } = useQuery({
 		queryKey: ["construction-projects-progress"],
@@ -939,6 +1075,18 @@ export function ProjectsProgressTab() {
 			api
 				.get<ProgressSummaryRow[]>("/construction/projects/progress-summary")
 				.then((r) => r.data),
+	});
+
+	const { data: projects = [] } = useQuery<ProjectMeta[]>({
+		queryKey: ["construction-projects"],
+		queryFn: () => api.get("/construction/projects/all").then((r) => r.data),
+		staleTime: 5 * 60 * 1000,
+	});
+
+	const { data: nbkr } = useQuery<NbkrResponse>({
+		queryKey: ["nbkr-rates"],
+		queryFn: () => api.get("/nbkr/rates").then((r) => r.data),
+		staleTime: 60 * 60 * 1000,
 	});
 
 	const projectRows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
@@ -955,6 +1103,33 @@ export function ProjectsProgressTab() {
 			columnConfig.labelOverrides[columnId]?.trim() || defaultLabel,
 		[columnConfig.labelOverrides],
 	);
+
+	const projectMetaById = useMemo(
+		() =>
+			Object.fromEntries(
+				projects.map((p) => [
+					Number(p.id),
+					{
+						id: Number(p.id),
+						currency: p.currency,
+						exchangeRate: p.exchangeRate,
+					},
+				]),
+			),
+		[projects],
+	);
+
+	const { fmtMoney, formatCell } = useMemo(
+		() =>
+			createProgressFormatters(
+				displayCurrency,
+				nbkr?.rates || {},
+				projectMetaById,
+			),
+		[displayCurrency, nbkr?.rates, projectMetaById],
+	);
+
+	const rateLabel = nbkr?.rates ? nbkrUsdRateLabel(nbkr.rates) : null;
 
 	const setCustomValue = useCallback(
 		(columnId: string, projectId: number, raw: string) => {
@@ -1005,45 +1180,59 @@ export function ProjectsProgressTab() {
 
 	return (
 		<div className="space-y-4">
-			<div className="flex flex-wrap items-center justify-between gap-3">
-				<div>
-					<p className="text-sm text-muted-foreground">
-						{projectRows.length} проектов · площади из шахматки, сборы из договоров,
-						затраты из расходов
-					</p>
-				</div>
-				<div className="flex flex-wrap items-center gap-2">
-					<div className="relative w-full sm:w-56">
-						<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-am-text-muted" />
-						<Input
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							placeholder="Поиск проекта…"
-							className="pl-8 h-9"
-						/>
+			<div className="sticky top-0 z-20 -mx-1 px-1 pt-1 pb-3 space-y-3 bg-gradient-to-b from-white via-white to-white/90 backdrop-blur-sm">
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<div>
+						<p className="text-sm text-muted-foreground">
+							{projectRows.length} проектов · площади из шахматки, сборы из договоров,
+							затраты из расходов
+						</p>
 					</div>
-					<Button
-						variant="outline"
-						size="sm"
-						className="gap-2"
-						onClick={() =>
-							exportProgressCsv(projectRows, totalsRow, labelFor, columnConfig)
-						}
-					>
-						<Download className="w-4 h-4" /> CSV
-					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						className="gap-2"
-						onClick={() => setSettingsOpen(true)}
-					>
-						<Settings2 className="w-4 h-4" /> Настройки
-					</Button>
+					<div className="flex flex-wrap items-center gap-2">
+						<div className="relative w-full sm:w-56">
+							<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-am-text-muted" />
+							<Input
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								placeholder="Поиск проекта…"
+								className="pl-8 h-9"
+							/>
+						</div>
+						<CurrencyToggle
+							value={displayCurrency}
+							onChange={setDisplayCurrency}
+							rateLabel={rateLabel}
+							nbkrDate={nbkr?.date}
+						/>
+						<Button
+							variant="outline"
+							size="sm"
+							className="gap-2"
+							onClick={() =>
+								exportProgressCsv(
+									projectRows,
+									totalsRow,
+									labelFor,
+									columnConfig,
+									formatCell,
+								)
+							}
+						>
+							<Download className="w-4 h-4" /> CSV
+						</Button>
+						<Button
+							variant="outline"
+							size="sm"
+							className="gap-2"
+							onClick={() => setSettingsOpen(true)}
+						>
+							<Settings2 className="w-4 h-4" /> Настройки
+						</Button>
+					</div>
 				</div>
-			</div>
 
-			<ProgressSummaryBar totals={totalsRow} />
+				<ProgressSummaryBar totals={totalsRow} fmtMoney={fmtMoney} />
+			</div>
 
 			{filteredRows.length === 0 ? (
 				<div className="rounded-xl border border-dashed border-am-border bg-slate-50 px-6 py-10 text-center text-sm text-am-text-muted">
@@ -1059,6 +1248,8 @@ export function ProjectsProgressTab() {
 							config={columnConfig}
 							labelFor={labelFor}
 							onCustomValue={setCustomValue}
+							formatCell={formatCell}
+							fmtMoney={fmtMoney}
 						/>
 					))}
 				</div>

@@ -1,0 +1,1003 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Pencil, Plus, Star, Trash2, Truck, UserPlus, Eye, CheckCircle2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/components/data-table";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { ContractFileUpload } from "@/components/contract-file-upload";
+import { PortalPreviewDialog } from "@/components/portal-preview-dialog";
+import {
+	AdminReconciliationAct,
+	reconciliationFmtMoney,
+} from "@/components/admin-reconciliation-act";
+import { api } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/api-error";
+
+interface Supplier {
+	id: number;
+	name: string;
+	contactPerson?: string;
+	phone?: string;
+	email?: string;
+	inn?: string;
+	address?: string;
+	contractNumber?: string;
+	contractAmount?: string;
+	paidAmount?: string;
+	currency?: string;
+	rating?: number;
+	status: "active" | "inactive";
+	note?: string;
+	contractDocument?: { fileName: string; mimeType: string; uploadedAt: string } | null;
+}
+interface SupplierCreditLimit {
+	id: number;
+	supplierId: number;
+	limitAmount: string;
+	usedAmount: string;
+	termDays: number;
+	markupPercent: string;
+	status: string;
+}
+
+const statusLabels: Record<string, string> = {
+	active: "Активен",
+	inactive: "Неактивен",
+};
+
+const statusColors: Record<string, string> = {
+	active: "bg-emerald-100 text-emerald-800",
+	inactive: "bg-gray-100 text-gray-800",
+};
+
+interface SupplierDialogProps {
+	open: boolean;
+	onClose: () => void;
+	supplier?: Supplier | null;
+}
+
+function SupplierDialog({ open, onClose, supplier }: SupplierDialogProps) {
+	const queryClient = useQueryClient();
+	const { toast } = useToast();
+	const [loading, setLoading] = useState(false);
+	const [portalForm, setPortalForm] = useState({
+		phone: supplier?.phone || "",
+		email: supplier?.email || "",
+		firstName: "",
+		lastName: "",
+	});
+	const [portalLoading, setPortalLoading] = useState(false);
+	const [previewOpen, setPreviewOpen] = useState(false);
+	const [creditForm, setCreditForm] = useState({
+		limitAmount: "0",
+		usedAmount: "0",
+		termDays: "0",
+		markupPercent: "0",
+		status: "active",
+	});
+
+	const { data: portalStatus } = useQuery<{
+		exists: boolean;
+		phone?: string | null;
+		firstName?: string | null;
+		lastName?: string | null;
+	}>({
+		queryKey: ["portal-account-status", "supplier", supplier?.id],
+		queryFn: () =>
+			api.get(`/portal/account-status/supplier/${supplier!.id}`).then((r) => r.data),
+		enabled: !!supplier?.id && open,
+	});
+
+	const [formData, setFormData] = useState({
+		name: supplier?.name || "",
+		contactPerson: supplier?.contactPerson || "",
+		phone: supplier?.phone || "",
+		email: supplier?.email || "",
+		inn: supplier?.inn || "",
+		address: supplier?.address || "",
+		contractNumber: supplier?.contractNumber || "",
+		contractAmount: supplier?.contractAmount || "",
+		paidAmount: supplier?.paidAmount || "0",
+		currency: supplier?.currency || "KGS",
+		rating: supplier?.rating?.toString() || "5",
+		status: supplier?.status || "active",
+		note: supplier?.note || "",
+	});
+
+	const contractAmount = parseFloat(formData.contractAmount || "0");
+	const paidAmount = parseFloat(formData.paidAmount || "0");
+	const outstanding = contractAmount - paidAmount;
+
+	const { data: reconciliationData } = useQuery({
+		queryKey: ["supplier-reconciliation", supplier?.id],
+		queryFn: () =>
+			api
+				.get(`/warehouse/suppliers/${supplier!.id}/reconciliation`)
+				.then((r) => r.data),
+		enabled: !!supplier?.id && open,
+	});
+	const { data: creditLimits = [] } = useQuery<SupplierCreditLimit[]>({
+		queryKey: ["supplier-credit-limits", supplier?.id],
+		queryFn: () => api.get("/supply/credit-limits").then((r) => r.data),
+		enabled: !!supplier?.id && open,
+	});
+
+	useEffect(() => {
+		if (!open) return;
+		setFormData({
+			name: supplier?.name || "",
+			contactPerson: supplier?.contactPerson || "",
+			phone: supplier?.phone || "",
+			email: supplier?.email || "",
+			inn: supplier?.inn || "",
+			address: supplier?.address || "",
+			contractNumber: supplier?.contractNumber || "",
+			contractAmount: supplier?.contractAmount || "",
+			paidAmount: supplier?.paidAmount || "0",
+			currency: supplier?.currency || "KGS",
+			rating: supplier?.rating?.toString() || "5",
+			status: supplier?.status || "active",
+			note: supplier?.note || "",
+		});
+		const parts = (supplier?.name || "").trim().split(/\s+/);
+		setPortalForm({
+			phone: supplier?.phone || "",
+			email: supplier?.email || "",
+			firstName: parts[0] || "",
+			lastName: parts.slice(1).join(" ") || "",
+		});
+	}, [open, supplier]);
+	useEffect(() => {
+		if (!supplier?.id || !open) return;
+		const current = creditLimits.find((x) => Number(x.supplierId) === Number(supplier.id));
+		setCreditForm({
+			limitAmount: current?.limitAmount ?? "0",
+			usedAmount: current?.usedAmount ?? "0",
+			termDays: String(current?.termDays ?? 0),
+			markupPercent: current?.markupPercent ?? "0",
+			status: current?.status ?? "active",
+		});
+	}, [creditLimits, supplier?.id, open]);
+
+	const reconciliation = reconciliationData?.reconciliation;
+
+	const createPortalAccount = async () => {
+		if (!supplier?.id) return;
+		if (!formData.phone || !portalForm.firstName || !portalForm.lastName) {
+			toast({
+				title: "Укажите телефон (в контактах), имя и фамилию",
+				variant: "destructive",
+			});
+			return;
+		}
+		setPortalLoading(true);
+		try {
+			await api.post("/portal/create-supplier-account", {
+				supplierId: supplier.id,
+				phone: formData.phone,
+				email: portalForm.email || undefined,
+				firstName: portalForm.firstName,
+				lastName: portalForm.lastName,
+			});
+			toast({ title: "Доступ создан. Вход — по телефону и SMS-коду." });
+			void queryClient.invalidateQueries({
+				queryKey: ["portal-account-status", "supplier", supplier.id],
+			});
+		} catch (e: unknown) {
+			toast({
+				title: getApiErrorMessage(e, "Ошибка создания аккаунта"),
+				variant: "destructive",
+			});
+		} finally {
+			setPortalLoading(false);
+		}
+	};
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setLoading(true);
+		try {
+			const payload = {
+				name: formData.name,
+				contactPerson: formData.contactPerson || null,
+				phone: formData.phone || null,
+				email: formData.email || null,
+				inn: formData.inn || null,
+				address: formData.address || null,
+				contractNumber: formData.contractNumber || null,
+				contractAmount: formData.contractAmount || null,
+				paidAmount: formData.paidAmount || "0",
+				currency: formData.currency || "KGS",
+				rating: parseInt(formData.rating, 10),
+				status: formData.status,
+				note: formData.note || null,
+			};
+
+			if (supplier) {
+				await api.patch(`/warehouse/suppliers/${supplier.id}`, payload);
+				toast({ title: "Поставщик обновлён" });
+			} else {
+				await api.post("/warehouse/suppliers", payload);
+				toast({ title: "Поставщик добавлен" });
+			}
+			queryClient.invalidateQueries({ queryKey: ["warehouse-suppliers"] });
+			if (supplier?.id) {
+				queryClient.invalidateQueries({
+					queryKey: ["supplier-reconciliation", supplier.id],
+				});
+			}
+			onClose();
+		} catch (error: any) {
+			toast({
+				title: "Ошибка",
+				description: error.message || "Не удалось сохранить поставщика",
+				variant: "destructive",
+			});
+		} finally {
+			setLoading(false);
+		}
+	};
+	const saveCreditLimit = async () => {
+		if (!supplier?.id) return;
+		try {
+			await api.put(`/supply/credit-limits/${supplier.id}`, {
+				limitAmount: creditForm.limitAmount,
+				usedAmount: creditForm.usedAmount,
+				termDays: Number(creditForm.termDays || 0),
+				markupPercent: creditForm.markupPercent,
+				status: creditForm.status,
+			});
+			toast({ title: "Лимиты и отсрочка сохранены" });
+			void queryClient.invalidateQueries({ queryKey: ["supplier-credit-limits", supplier.id] });
+		} catch (e: unknown) {
+			toast({
+				title: getApiErrorMessage(e, "Ошибка сохранения лимита"),
+				variant: "destructive",
+			});
+		}
+	};
+
+	return (
+		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+			<DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+				<DialogHeader>
+					<DialogTitle>
+						{supplier ? "Редактировать поставщика" : "Новый поставщик"}
+					</DialogTitle>
+				</DialogHeader>
+				<form onSubmit={handleSubmit} className="space-y-4">
+					<div>
+						<Label>Название компании *</Label>
+						<Input
+							value={formData.name}
+							onChange={(e) =>
+								setFormData({ ...formData, name: e.target.value })
+							}
+							placeholder="ООО 'СтройТорг'"
+							required
+						/>
+					</div>
+
+					<div className="grid gap-4 sm:grid-cols-2">
+						<div className="flex flex-col">
+							<Label className="leading-tight mb-1.5">Контактное лицо</Label>
+							<Input
+								className="mt-auto"
+								value={formData.contactPerson}
+								onChange={(e) =>
+									setFormData({ ...formData, contactPerson: e.target.value })
+								}
+								placeholder="Иванов Иван Иванович"
+							/>
+						</div>
+						<div className="flex flex-col">
+							<Label className="leading-tight mb-1.5">Телефон</Label>
+							<Input
+								className="mt-auto"
+								value={formData.phone}
+								onChange={(e) =>
+									setFormData({ ...formData, phone: e.target.value })
+								}
+								placeholder="+996 555 123456"
+							/>
+						</div>
+					</div>
+					{supplier?.id && (
+						<Card className="p-4 border-dashed">
+							<p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+								Лимиты и отсрочка
+							</p>
+							<div className="grid gap-3 sm:grid-cols-2">
+								<div>
+									<Label>Кредитный лимит</Label>
+									<Input
+										type="number"
+										value={creditForm.limitAmount}
+										onChange={(e) =>
+											setCreditForm((prev) => ({ ...prev, limitAmount: e.target.value }))
+										}
+									/>
+								</div>
+								<div>
+									<Label>Использовано</Label>
+									<Input
+										type="number"
+										value={creditForm.usedAmount}
+										onChange={(e) =>
+											setCreditForm((prev) => ({ ...prev, usedAmount: e.target.value }))
+										}
+									/>
+								</div>
+								<div>
+									<Label>Срок отсрочки (дни)</Label>
+									<Input
+										type="number"
+										value={creditForm.termDays}
+										onChange={(e) =>
+											setCreditForm((prev) => ({ ...prev, termDays: e.target.value }))
+										}
+									/>
+								</div>
+								<div>
+									<Label>Наценка (%)</Label>
+									<Input
+										type="number"
+										value={creditForm.markupPercent}
+										onChange={(e) =>
+											setCreditForm((prev) => ({ ...prev, markupPercent: e.target.value }))
+										}
+									/>
+								</div>
+								<div className="col-span-2">
+									<Label>Статус лимита</Label>
+									<Select
+										value={creditForm.status}
+										onValueChange={(v) =>
+											setCreditForm((prev) => ({ ...prev, status: v }))
+										}
+									>
+										<SelectTrigger>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="active">Активен</SelectItem>
+											<SelectItem value="suspended">Приостановлен</SelectItem>
+											<SelectItem value="expired">Истек</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+							</div>
+							<div className="mt-3 flex justify-end">
+								<Button type="button" variant="outline" onClick={() => void saveCreditLimit()}>
+									Сохранить лимиты
+								</Button>
+							</div>
+						</Card>
+					)}
+
+					<div className="grid gap-4 sm:grid-cols-2">
+						<div className="flex flex-col">
+							<Label className="leading-tight mb-1.5">Email</Label>
+							<Input
+								type="email"
+								className="mt-auto"
+								value={formData.email}
+								onChange={(e) =>
+									setFormData({ ...formData, email: e.target.value })
+								}
+								placeholder="info@stroytorg.kg"
+							/>
+						</div>
+						<div className="flex flex-col">
+							<Label className="leading-tight mb-1.5">ИНН</Label>
+							<Input
+								className="mt-auto"
+								value={formData.inn}
+								onChange={(e) =>
+									setFormData({ ...formData, inn: e.target.value })
+								}
+								placeholder="01234567890123"
+							/>
+						</div>
+					</div>
+
+					<div>
+						<Label>Адрес</Label>
+						<Input
+							value={formData.address}
+							onChange={(e) =>
+								setFormData({ ...formData, address: e.target.value })
+							}
+							placeholder="г. Бишкек, ул. Примерная 123"
+						/>
+					</div>
+
+					<div className="grid gap-4 sm:grid-cols-2">
+						<div className="flex flex-col">
+							<Label className="leading-tight mb-1.5">Рейтинг (1-5 звёзд)</Label>
+							<Select
+								value={formData.rating}
+								onValueChange={(v) => setFormData({ ...formData, rating: v })}
+							>
+								<SelectTrigger className="mt-auto">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{[1, 2, 3, 4, 5].map((r) => (
+										<SelectItem key={r} value={String(r)}>
+											{"⭐".repeat(r)} ({r})
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<div className="flex flex-col">
+							<Label className="leading-tight mb-1.5">Статус</Label>
+							<Select
+								value={formData.status}
+								onValueChange={(v) =>
+									setFormData({ ...formData, status: v as "active" | "inactive" })
+								}
+							>
+								<SelectTrigger className="mt-auto">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="active">Активен</SelectItem>
+									<SelectItem value="inactive">Неактивен</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+					</div>
+
+					<div>
+						<Label>№ договора</Label>
+						<Input
+							value={formData.contractNumber}
+							onChange={(e) =>
+								setFormData({ ...formData, contractNumber: e.target.value })
+							}
+							placeholder="Д-2026/01"
+						/>
+					</div>
+
+					<div className="grid gap-4 sm:grid-cols-2">
+						<div className="flex flex-col">
+							<Label className="leading-tight mb-1.5">Сумма договора</Label>
+							<Input
+								type="number"
+								className="mt-auto"
+								value={formData.contractAmount}
+								onChange={(e) =>
+									setFormData({ ...formData, contractAmount: e.target.value })
+								}
+							/>
+						</div>
+						<div className="flex flex-col">
+							<Label className="leading-tight mb-1.5">Оплачено</Label>
+							<Input
+								type="number"
+								className="mt-auto"
+								value={formData.paidAmount}
+								onChange={(e) =>
+									setFormData({ ...formData, paidAmount: e.target.value })
+								}
+							/>
+						</div>
+						<div className="flex flex-col">
+							<Label className="leading-tight mb-1.5">Валюта</Label>
+							<Select
+								value={formData.currency}
+								onValueChange={(v) => setFormData({ ...formData, currency: v })}
+							>
+								<SelectTrigger className="mt-auto">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="KGS">KGS</SelectItem>
+									<SelectItem value="USD">USD</SelectItem>
+									<SelectItem value="EUR">EUR</SelectItem>
+									<SelectItem value="RUB">RUB</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+						<div className="flex flex-col">
+							<Label className="leading-tight mb-1.5">Остаток к оплате</Label>
+							<div
+								className={`mt-auto h-10 px-3 flex items-center rounded-md border text-sm font-medium ${
+									outstanding < 0
+										? "text-rose-700 bg-rose-50 border-rose-200"
+										: outstanding === 0
+											? "text-emerald-700 bg-emerald-50 border-emerald-200"
+											: "text-amber-700 bg-amber-50 border-amber-200"
+								}`}
+							>
+								{outstanding.toLocaleString("ru-KG")} {formData.currency}
+							</div>
+						</div>
+					</div>
+
+					{supplier?.id && (
+						<ContractFileUpload
+							entityType="supplier"
+							entityId={supplier.id}
+							contractDocument={supplier.contractDocument}
+							onUploaded={() => {
+								queryClient.invalidateQueries({ queryKey: ["warehouse-suppliers"] });
+								queryClient.invalidateQueries({
+									queryKey: ["supplier-reconciliation", supplier.id],
+								});
+							}}
+							portalPrompt={{
+								entityType: "supplier",
+								entityId: supplier.id,
+								entityName: supplier.name,
+								defaultEmail: supplier.email,
+							}}
+						/>
+					)}
+
+					{supplier?.id && reconciliation && (
+						<AdminReconciliationAct
+							mode="supplier"
+							subjectLabel="Поставщик"
+							subjectName={supplier.name}
+							contractLabel={`Договор №${formData.contractNumber || "—"}`}
+							currency={reconciliation.currency ?? formData.currency}
+							summary={[
+								{
+									label: "Договор",
+									value: reconciliationFmtMoney(
+										reconciliation.contractAmount,
+										reconciliation.currency,
+									),
+								},
+								{
+									label: "Оплачено",
+									value: reconciliationFmtMoney(
+										reconciliation.paidAmount,
+										reconciliation.currency,
+									),
+									tone: "emerald",
+								},
+								{
+									label: "Остаток",
+									value: reconciliationFmtMoney(
+										reconciliation.outstanding,
+										reconciliation.currency,
+									),
+									tone: "amber",
+								},
+								{
+									label: "Поставлено",
+									value: reconciliationFmtMoney(
+										reconciliation.totalSupplied,
+										reconciliation.currency,
+									),
+									tone: "violet",
+								},
+							]}
+							lines={reconciliation.lines ?? []}
+						/>
+					)}
+
+					{supplier?.id && (
+						<div className="border-t pt-4 space-y-3">
+							<div className="flex items-center justify-between gap-2 flex-wrap">
+								<p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+									Доступ в портал поставщика
+								</p>
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									className="gap-1.5"
+									onClick={() => setPreviewOpen(true)}
+								>
+									<Eye className="w-4 h-4" /> Предпросмотр портала
+								</Button>
+							</div>
+
+							{portalStatus?.exists ? (
+								<div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5">
+									<CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+									<div className="text-sm">
+										<p className="font-medium text-emerald-800">Доступ создан</p>
+										<p className="text-xs text-emerald-700">
+											Вход по телефону {portalStatus.phone || formData.phone || "—"} и SMS-коду
+										</p>
+									</div>
+								</div>
+							) : (
+								<>
+									<p className="text-[11px] text-gray-600">
+										Войдёт по телефону из контактов выше ({formData.phone || "укажите телефон"}) и SMS-коду
+									</p>
+									<div className="grid gap-3 sm:grid-cols-2">
+										<div className="flex flex-col">
+											<Label className="leading-tight mb-1.5">Имя *</Label>
+											<Input
+												className="mt-auto"
+												value={portalForm.firstName}
+												onChange={(e) =>
+													setPortalForm((p) => ({ ...p, firstName: e.target.value }))
+												}
+											/>
+										</div>
+										<div className="flex flex-col">
+											<Label className="leading-tight mb-1.5">Фамилия *</Label>
+											<Input
+												className="mt-auto"
+												value={portalForm.lastName}
+												onChange={(e) =>
+													setPortalForm((p) => ({ ...p, lastName: e.target.value }))
+												}
+											/>
+										</div>
+										<div className="col-span-2 flex flex-col">
+											<Label className="leading-tight mb-1.5">Email (необязательно)</Label>
+											<Input
+												type="email"
+												className="mt-auto"
+												value={portalForm.email}
+												onChange={(e) =>
+													setPortalForm((p) => ({ ...p, email: e.target.value }))
+												}
+											/>
+										</div>
+									</div>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										className="gap-1.5"
+										onClick={() => void createPortalAccount()}
+										disabled={portalLoading}
+									>
+										<UserPlus className="w-4 h-4" />
+										{portalLoading ? "..." : "Создать доступ в портал"}
+									</Button>
+								</>
+							)}
+
+							<PortalPreviewDialog
+								type="supplier"
+								id={supplier.id}
+								open={previewOpen}
+								onClose={() => setPreviewOpen(false)}
+							/>
+						</div>
+					)}
+
+					<div>
+						<Label>Примечание</Label>
+						<Textarea
+							value={formData.note}
+							onChange={(e) =>
+								setFormData({ ...formData, note: e.target.value })
+							}
+							placeholder="Дополнительная информация о поставщике"
+							rows={3}
+						/>
+					</div>
+
+					<div className="flex justify-end gap-2 pt-2">
+						<Button type="button" variant="outline" onClick={onClose}>
+							Отмена
+						</Button>
+						<Button type="submit" disabled={loading}>
+							{loading ? "Сохранение..." : "Сохранить"}
+						</Button>
+					</div>
+				</form>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+function RatingStars({ rating }: { rating: number }) {
+	return (
+		<div className="flex items-center gap-1">
+			{[1, 2, 3, 4, 5].map((star) => (
+				<Star
+					key={star}
+					className={`h-4 w-4 ${star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+				/>
+			))}
+		</div>
+	);
+}
+
+export default function Suppliers() {
+	const { data: suppliers, isLoading } = useQuery<Supplier[]>({
+		queryKey: ["warehouse-suppliers"],
+		queryFn: () =>
+			api.get("/warehouse/suppliers").then((r) => {
+				const list = Array.isArray(r.data) ? r.data : [];
+				return list.map((s: Record<string, unknown>) => ({
+					...s,
+					status: s.isActive === false ? "inactive" : "active",
+					note: s.notes,
+				})) as Supplier[];
+			}),
+	});
+
+	const suppliersArray = Array.isArray(suppliers) ? suppliers : [];
+	const queryClient = useQueryClient();
+	const { toast } = useToast();
+
+	const [dialogOpen, setDialogOpen] = useState(false);
+	const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
+	const [deleteDialog, setDeleteDialog] = useState<{
+		open: boolean;
+		supplier: Supplier | null;
+	}>({
+		open: false,
+		supplier: null,
+	});
+
+	const [statusFilter, setStatusFilter] = useState("all");
+
+	const deleteMutation = useMutation({
+		mutationFn: (id: number) => api.delete(`/warehouse/suppliers/${id}`),
+		onSuccess: () => {
+			toast({ title: "Поставщик удалён" });
+			queryClient.invalidateQueries({ queryKey: ["warehouse-suppliers"] });
+			setDeleteDialog({ open: false, supplier: null });
+		},
+		onError: (error: any) => {
+			toast({
+				title: "Ошибка",
+				description: error.message || "Не удалось удалить поставщика",
+				variant: "destructive",
+			});
+		},
+	});
+
+	const filteredSuppliers = suppliersArray.filter((supplier) => {
+		const matchesStatus =
+			statusFilter === "all" || supplier.status === statusFilter;
+		return matchesStatus;
+	});
+
+	const columns = useMemo<ColumnDef<Supplier, unknown>[]>(
+		() => [
+			{
+				accessorKey: "name",
+				header: "Название",
+				size: 180,
+				meta: { exportLabel: "Название" },
+				cell: ({ row }) => (
+					<span className="font-medium">{row.original.name}</span>
+				),
+			},
+			{
+				accessorKey: "contactPerson",
+				header: "Контактное лицо",
+				size: 150,
+				meta: { exportLabel: "Контактное лицо" },
+				cell: ({ row }) => row.original.contactPerson || "—",
+			},
+			{
+				accessorKey: "phone",
+				header: "Телефон",
+				size: 130,
+				meta: { exportLabel: "Телефон" },
+				cell: ({ row }) => row.original.phone || "—",
+			},
+			{
+				accessorKey: "email",
+				header: "Почта",
+				size: 160,
+				meta: { exportLabel: "Email" },
+				cell: ({ row }) => (
+					<span className="text-sm">{row.original.email || "—"}</span>
+				),
+			},
+			{
+				accessorKey: "inn",
+				header: "ИНН",
+				size: 120,
+				meta: { exportLabel: "ИНН" },
+				cell: ({ row }) => (
+					<span className="text-sm">{row.original.inn || "—"}</span>
+				),
+			},
+			{
+				id: "rating",
+				header: "Рейтинг",
+				size: 120,
+				accessorFn: (row) => row.rating ?? 0,
+				meta: { exportLabel: "Рейтинг" },
+				cell: ({ row }) => (
+					<RatingStars rating={row.original.rating || 0} />
+				),
+			},
+			{
+				accessorKey: "status",
+				header: "Статус",
+				size: 110,
+				meta: { exportLabel: "Статус" },
+				cell: ({ row }) => (
+					<Badge
+						className={statusColors[row.original.status]}
+						variant="secondary"
+					>
+						{statusLabels[row.original.status]}
+					</Badge>
+				),
+			},
+			{
+				id: "__actions",
+				header: "",
+				size: 90,
+				enableSorting: false,
+				meta: { align: "right" },
+				cell: ({ row }) => {
+					const supplier = row.original;
+					return (
+						<div
+							className="flex justify-end gap-2"
+							onClick={(e) => e.stopPropagation()}
+						>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => {
+									setEditSupplier(supplier);
+									setDialogOpen(true);
+								}}
+							>
+								<Pencil className="h-4 w-4" />
+							</Button>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() =>
+									setDeleteDialog({ open: true, supplier })
+								}
+							>
+								<Trash2 className="h-4 w-4 text-rose-600" />
+							</Button>
+						</div>
+					);
+				},
+			},
+		],
+		[],
+	);
+
+	return (
+		<div className="p-6 space-y-4">
+			<div className="flex justify-between items-center">
+				<div>
+					<h1 className="text-2xl font-bold">Поставщики</h1>
+					<p className="text-muted-foreground text-sm">
+						Управление базой поставщиков
+					</p>
+				</div>
+				<Button
+					onClick={() => {
+						setEditSupplier(null);
+						setDialogOpen(true);
+					}}
+				>
+					<Plus className="w-4 h-4 mr-2" />
+					Добавить
+				</Button>
+			</div>
+
+
+			{/* Stats */}
+			{suppliersArray.length > 0 && (
+				<div className="flex gap-4">
+					<Badge variant="secondary" className="px-4 py-2">
+						Всего: {suppliersArray.length}
+					</Badge>
+					<Badge variant="secondary" className="px-4 py-2">
+						Активных:{" "}
+						{suppliersArray.filter((s) => s.status === "active").length}
+					</Badge>
+				</div>
+			)}
+
+			<DataTable
+				tableId="warehouse-suppliers"
+				columns={columns}
+				data={filteredSuppliers}
+				isLoading={isLoading}
+				enableSearch
+				searchPlaceholder="Поиск по названию, контактам, ИНН..."
+				toolbar={
+					<Select value={statusFilter} onValueChange={setStatusFilter}>
+						<SelectTrigger className="w-[180px]">
+							<SelectValue placeholder="Статус" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="all">Все статусы</SelectItem>
+							<SelectItem value="active">Активные</SelectItem>
+							<SelectItem value="inactive">Неактивные</SelectItem>
+						</SelectContent>
+					</Select>
+				}
+				emptyState={
+					<div className="flex flex-col items-center gap-2 text-muted-foreground">
+						<Truck className="h-8 w-8 opacity-30" />
+						<span>
+							{statusFilter !== "all"
+								? "Ничего не найдено"
+								: "Нет поставщиков"}
+						</span>
+					</div>
+				}
+			/>
+
+			<SupplierDialog
+				open={dialogOpen}
+				onClose={() => {
+					setDialogOpen(false);
+					setEditSupplier(null);
+				}}
+				supplier={editSupplier}
+			/>
+
+			<AlertDialog
+				open={deleteDialog.open}
+				onOpenChange={(v) =>
+					!v && setDeleteDialog({ open: false, supplier: null })
+				}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Удалить поставщика?</AlertDialogTitle>
+						<AlertDialogDescription>
+							Вы уверены, что хотите удалить "{deleteDialog.supplier?.name}"?
+							Это действие нельзя отменить.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Отмена</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={() =>
+								deleteDialog.supplier &&
+								deleteMutation.mutate(deleteDialog.supplier.id)
+							}
+							className="bg-rose-600 hover:bg-rose-700"
+						>
+							Удалить
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</div>
+	);
+}

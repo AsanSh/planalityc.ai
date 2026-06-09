@@ -1,0 +1,271 @@
+import { AlertCircle, FileSpreadsheet, Upload } from "lucide-react";
+import { useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
+import {
+	downloadUnitsTemplate,
+	parseUnitsFile,
+	type UnitImportRow,
+} from "@/lib/chess-units-xlsx";
+
+export function ChessUnitsImportDialog({
+	open,
+	projectId,
+	projectName,
+	areaOnly,
+	onClose,
+	onImported,
+}: {
+	open: boolean;
+	projectId: number;
+	projectName: string;
+	/** Только обновление площади (и цены/м²) существующих квартир — для коммерческого директора */
+	areaOnly?: boolean;
+	onClose: () => void;
+	onImported: () => void;
+}) {
+	const { toast } = useToast();
+	const inputRef = useRef<HTMLInputElement>(null);
+	const [rows, setRows] = useState<UnitImportRow[]>([]);
+	const [loading, setLoading] = useState(false);
+	const [result, setResult] = useState<{
+		created?: number;
+		updated: number;
+		skipped?: number;
+		errors: { row: number; message: string; unitNumber?: string }[];
+	} | null>(null);
+
+	const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+	const ALLOWED_TYPES = [".xlsx", ".xls", ".csv"];
+
+	const handleFile = async (file: File) => {
+		// Проверка размера
+		if (file.size > MAX_FILE_SIZE) {
+			toast({
+				title: "Файл слишком большой",
+				description: `Максимум ${MAX_FILE_SIZE / 1024 / 1024}MB. У вас: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
+				variant: "destructive",
+			});
+			return;
+		}
+
+		// Проверка типа
+		const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+		if (!ALLOWED_TYPES.includes(ext)) {
+			toast({
+				title: "Неверный формат файла",
+				description: "Поддерживаются .xlsx, .xls и .csv",
+				variant: "destructive",
+			});
+			return;
+		}
+
+		try {
+			const parsed = await parseUnitsFile(file);
+			setRows(parsed);
+			setResult(null);
+			if (parsed.length === 0) {
+				toast({
+					title: "Файл пуст",
+					description: "Добавьте строки с колонкой «Номер»",
+					variant: "destructive",
+				});
+			}
+		} catch {
+			toast({ title: "Ошибка чтения Excel", variant: "destructive" });
+		}
+	};
+
+	const handleImport = async () => {
+		if (rows.length === 0) return;
+		setLoading(true);
+		try {
+			const endpoint = areaOnly
+				? `/construction/projects/${projectId}/units/bulk-update`
+				: "/construction/units/import";
+			const payload = areaOnly
+				? { updates: rows, mode: "area_only" }
+				: { projectId, rows };
+			const { data } = await api.post<{
+				created?: number;
+				updated: number;
+				skipped?: number;
+				errors: { row: number; message: string; unitNumber?: string }[];
+			}>(endpoint, payload);
+			setResult(data);
+			if ((data.created ?? 0) > 0 || data.updated > 0) {
+				const parts = [
+					data.created ? `создано: ${data.created}` : null,
+					`обновлено: ${data.updated}`,
+					data.skipped ? `пропущено: ${data.skipped}` : null,
+					data.errors.length > 0 ? `ошибок: ${data.errors.length}` : null,
+				].filter(Boolean);
+				toast({
+					title: "Импорт завершён",
+					description: parts.join(", "),
+				});
+				onImported();
+			} else if (data.errors.length > 0) {
+				toast({
+					title: "Импорт завершён с ошибками",
+					description: `${data.errors.length} строк не удалось обработать`,
+					variant: "destructive",
+				});
+			}
+		} catch (e: unknown) {
+			const msg = e instanceof Error ? e.message : "Неизвестная ошибка";
+			toast({
+				title: "Ошибка импорта",
+				description: msg,
+				variant: "destructive",
+			});
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const reset = () => {
+		setRows([]);
+		setResult(null);
+		if (inputRef.current) inputRef.current.value = "";
+	};
+
+	return (
+		<Dialog
+			open={open}
+			onOpenChange={(v) => {
+				if (!v) {
+					reset();
+					onClose();
+				}
+			}}
+		>
+			<DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+				<DialogHeader>
+					<DialogTitle>
+						{areaOnly ? "Импорт площадей из Excel" : "Импорт квартир из Excel"}
+					</DialogTitle>
+					<DialogDescription>
+						Проект: {projectName}.{" "}
+						{areaOnly
+							? "Загрузите файл с колонками «Номер», «Этаж» (при дублях), «Площадь м²». Обновляются только существующие квартиры."
+							: "Скачайте шаблон, заполните и загрузите файл. Существующие квартиры с тем же номером будут обновлены."}
+					</DialogDescription>
+				</DialogHeader>
+
+				<div className="flex flex-wrap gap-2">
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						className="gap-2"
+						onClick={() => downloadUnitsTemplate(projectName)}
+					>
+						<FileSpreadsheet className="w-4 h-4" />
+						Скачать шаблон
+					</Button>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						className="gap-2"
+						onClick={() => inputRef.current?.click()}
+					>
+						<Upload className="w-4 h-4" />
+						Выбрать файл
+					</Button>
+					<input
+						ref={inputRef}
+						type="file"
+						accept=".xlsx,.xls,.csv"
+						className="hidden"
+						onChange={(e) => {
+							const f = e.target.files?.[0];
+							if (f) handleFile(f);
+						}}
+					/>
+				</div>
+
+				{rows.length > 0 && !result && (
+					<div className="border rounded-lg overflow-auto max-h-48">
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Номер</TableHead>
+									<TableHead>Этаж</TableHead>
+									<TableHead>Площадь</TableHead>
+									<TableHead>Статус</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{rows.slice(0, 8).map((r, i) => (
+									<TableRow key={i}>
+										<TableCell>{String(r["Номер"] ?? r.unitNumber)}</TableCell>
+										<TableCell>{String(r["Этаж"] ?? r.floor ?? "")}</TableCell>
+										<TableCell>
+											{String(r["Площадь м²"] ?? r.area ?? "")}
+										</TableCell>
+										<TableCell>{String(r["Статус"] ?? r.status ?? "")}</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+						{rows.length > 8 && (
+							<p className="text-xs text-muted-foreground p-2">
+								…и ещё {rows.length - 8} строк
+							</p>
+						)}
+					</div>
+				)}
+
+				{result && result.errors.length > 0 && (
+					<div className="bg-rose-50 border border-rose-200 rounded-lg p-3 text-sm">
+						<p className="font-medium text-rose-800 flex items-center gap-1">
+							<AlertCircle className="w-4 h-4" />
+							Ошибки ({result.errors.length})
+						</p>
+						<ul className="mt-1 text-rose-700 text-xs space-y-0.5">
+							{result.errors.slice(0, 5).map((e, i) => (
+								<li key={i}>
+									Строка {e.row}: {e.message}
+								</li>
+							))}
+						</ul>
+					</div>
+				)}
+
+				<DialogFooter>
+					<Button type="button" variant="outline" onClick={onClose}>
+						{result ? "Закрыть" : "Отмена"}
+					</Button>
+					{!result && (
+						<Button
+							onClick={handleImport}
+							disabled={loading || rows.length === 0}
+							className="bg-amber-500 hover:bg-orange-600"
+						>
+							{loading ? "Импорт..." : `Импортировать ${rows.length} строк`}
+						</Button>
+					)}
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}

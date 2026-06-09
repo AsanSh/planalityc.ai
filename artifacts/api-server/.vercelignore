@@ -3,6 +3,3 @@ node_modules
 *.log
 .env*
 .vercel
-src
-build.mjs
-tsconfig.json

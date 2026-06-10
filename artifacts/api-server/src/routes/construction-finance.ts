@@ -4,6 +4,9 @@ import {
   bankAccountsTable, constructionOperationsTable,
   constructionSalesContractsTable, constructionAccrualsTable,
   constructionUnitsTable,
+  constructionProjectsTable,
+  constructionExpensesTable,
+  constructionBudgetItemsTable,
   counterpartiesTable,
 } from "../lib/db";
 import { eq, and, desc, sql, ilike, getTableColumns } from "drizzle-orm";
@@ -61,6 +64,26 @@ function mapSalesContractResponse(row: typeof constructionSalesContractsTable.$i
 
 const CONSTRUCTION_ACCOUNTS = BANK_ACCOUNT_MODULE.construction;
 
+function moneyNumber(value: unknown): number {
+  const parsed = parseFloat(String(value ?? "0"));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function amountToKgs(row: { amount?: unknown; amountKgs?: unknown; currency?: unknown; exchangeRate?: unknown }): number {
+  const kgs = moneyNumber(row.amountKgs);
+  if (kgs > 0) return kgs;
+  const amount = moneyNumber(row.amount);
+  const currency = String(row.currency || "KGS");
+  const rate = moneyNumber(row.exchangeRate) || 1;
+  return currency === "KGS" ? amount : amount * rate;
+}
+
+function addToMap(map: Map<number, number>, projectId: unknown, amount: number) {
+  const id = Number(projectId);
+  if (!id || !Number.isFinite(id)) return;
+  map.set(id, (map.get(id) ?? 0) + amount);
+}
+
 // ── Bank Accounts (только модуль «Строительство») ───────────────────────
 router.get("/accounts", async (req: AuthenticatedRequest, res): Promise<void> => {
   const companyId = req.scopedCompanyId!;
@@ -68,6 +91,212 @@ router.get("/accounts", async (req: AuthenticatedRequest, res): Promise<void> =>
     .where(companyModuleAccountWhere(companyId, CONSTRUCTION_ACCOUNTS))
     .orderBy(bankAccountsTable.name);
   res.json(rows);
+});
+
+router.get("/projects/progress-summary", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const companyId = req.scopedCompanyId!;
+
+  const [
+    projects,
+    units,
+    contracts,
+    operations,
+    expenses,
+    budgets,
+    accruals,
+  ] = await Promise.all([
+    db.select().from(constructionProjectsTable)
+      .where(eq(constructionProjectsTable.companyId, companyId))
+      .orderBy(desc(constructionProjectsTable.createdAt)),
+    db.select().from(constructionUnitsTable)
+      .where(eq(constructionUnitsTable.companyId, companyId)),
+    db.select().from(constructionSalesContractsTable)
+      .where(eq(constructionSalesContractsTable.companyId, companyId)),
+    db.select().from(constructionOperationsTable)
+      .where(eq(constructionOperationsTable.companyId, companyId)),
+    db.select().from(constructionExpensesTable)
+      .where(eq(constructionExpensesTable.companyId, companyId)),
+    db.select().from(constructionBudgetItemsTable)
+      .where(eq(constructionBudgetItemsTable.companyId, companyId)),
+    db.select().from(constructionAccrualsTable)
+      .where(eq(constructionAccrualsTable.companyId, companyId)),
+  ]);
+
+  const contractProject = new Map<number, number>();
+  for (const contract of contracts) {
+    contractProject.set(contract.id, contract.projectId);
+  }
+
+  const unitStats = new Map<number, {
+    totalSaleableArea: number;
+    nonSaleableArea: number;
+    soldArea: number;
+    unsoldArea: number;
+    soldRevenueFromUnits: number;
+  }>();
+  const ensureUnitStats = (projectId: number) => {
+    if (!unitStats.has(projectId)) {
+      unitStats.set(projectId, {
+        totalSaleableArea: 0,
+        nonSaleableArea: 0,
+        soldArea: 0,
+        unsoldArea: 0,
+        soldRevenueFromUnits: 0,
+      });
+    }
+    return unitStats.get(projectId)!;
+  };
+
+  for (const unit of units) {
+    const projectId = Number(unit.projectId);
+    if (!projectId) continue;
+    const stats = ensureUnitStats(projectId);
+    const area = moneyNumber(unit.area);
+    const status = String(unit.status || "");
+    const isNonSaleable = ["construction", "closed", "draft", "unavailable"].includes(status);
+    const isSold = ["sold", "registered", "occupied"].includes(status);
+    if (isNonSaleable) {
+      stats.nonSaleableArea += area;
+    } else {
+      stats.totalSaleableArea += area;
+      if (isSold) {
+        stats.soldArea += area;
+        stats.soldRevenueFromUnits += moneyNumber(unit.salePrice) || moneyNumber(unit.totalPrice);
+      } else {
+        stats.unsoldArea += area;
+      }
+    }
+  }
+
+  const contractedMap = new Map<number, number>();
+  const paidByContractFallback = new Map<number, number>();
+  for (const contract of contracts) {
+    if (contract.status === "cancelled") continue;
+    const amount = amountToKgs({
+      amount: contract.totalAmount,
+      currency: contract.currency,
+      exchangeRate: contract.exchangeRate,
+    });
+    const paid = amountToKgs({
+      amount: contract.paidAmount,
+      currency: contract.currency,
+      exchangeRate: contract.exchangeRate,
+    });
+    addToMap(contractedMap, contract.projectId, amount);
+    addToMap(paidByContractFallback, contract.projectId, paid);
+  }
+
+  const incomeMap = new Map<number, number>();
+  const operationExpenseMap = new Map<number, number>();
+  for (const operation of operations) {
+    if (operation.status === "cancelled") continue;
+    const inferredProjectId = operation.projectId || (operation.contractId ? contractProject.get(operation.contractId) : null);
+    const amount = amountToKgs(operation);
+    if (operation.type === "income") addToMap(incomeMap, inferredProjectId, amount);
+    if (operation.type === "expense") addToMap(operationExpenseMap, inferredProjectId, amount);
+  }
+
+  const expenseMap = new Map<number, number>();
+  const constructionCostsMap = new Map<number, number>();
+  const landCostsMap = new Map<number, number>();
+  const documentationCostsMap = new Map<number, number>();
+  const otherCostsMap = new Map<number, number>();
+  for (const expense of expenses) {
+    if (expense.status === "cancelled") continue;
+    const amount = amountToKgs(expense);
+    addToMap(expenseMap, expense.projectId, amount);
+    const category = String(expense.category || "").toLowerCase();
+    if (category.includes("зем") || category.includes("land")) {
+      addToMap(landCostsMap, expense.projectId, amount);
+    } else if (category.includes("док") || category.includes("проект") || category.includes("design")) {
+      addToMap(documentationCostsMap, expense.projectId, amount);
+    } else if (category.includes("стро") || category.includes("материал") || category.includes("работ")) {
+      addToMap(constructionCostsMap, expense.projectId, amount);
+    } else {
+      addToMap(otherCostsMap, expense.projectId, amount);
+    }
+  }
+
+  const budgetMap = new Map<number, number>();
+  for (const budget of budgets) {
+    addToMap(budgetMap, budget.projectId, moneyNumber(budget.plannedAmount));
+  }
+
+  const overdueMap = new Map<number, number>();
+  const today = new Date().toISOString().slice(0, 10);
+  for (const accrual of accruals) {
+    if (accrual.status === "paid") continue;
+    if (String(accrual.dueDate || "") >= today) continue;
+    const amount = amountToKgs({
+      amount: accrual.remainingAmount || accrual.amount,
+      currency: accrual.currency,
+    });
+    addToMap(overdueMap, accrual.projectId || (accrual.contractId ? contractProject.get(accrual.contractId) : null), amount);
+  }
+
+  const result = projects.map((project) => {
+    const unit = unitStats.get(project.id);
+    const manualSaleableArea = moneyNumber(project.totalSaleableArea);
+    const manualConstructionArea = moneyNumber(project.totalConstructionArea || project.totalArea);
+    const totalSaleableArea = unit?.totalSaleableArea || manualSaleableArea;
+    const nonSaleableArea = unit?.nonSaleableArea || Math.max(0, manualConstructionArea - totalSaleableArea);
+    const totalConstructionArea = totalSaleableArea + nonSaleableArea || manualConstructionArea;
+    const soldArea = unit?.soldArea || 0;
+    const unsoldArea = unit?.unsoldArea || Math.max(0, totalSaleableArea - soldArea);
+    const contracted = contractedMap.get(project.id) ?? unit?.soldRevenueFromUnits ?? 0;
+    const collected = incomeMap.get(project.id) || paidByContractFallback.get(project.id) || 0;
+    const legacyExpenses = expenseMap.get(project.id) ?? 0;
+    const operationExpenses = operationExpenseMap.get(project.id) ?? 0;
+    const totalSpent = operationExpenses + legacyExpenses;
+    const projectBudget = budgetMap.get(project.id) || moneyNumber(project.totalBudget || project.estimatedCostKgs);
+    const futureSales = unsoldArea > 0 && totalSaleableArea > 0
+      ? (contracted / Math.max(soldArea, 1)) * unsoldArea
+      : 0;
+    const totalRevenue = contracted + futureSales;
+    const grossProfit = totalRevenue - totalSpent;
+    const overdueDebt = overdueMap.get(project.id) ?? 0;
+
+    return {
+      projectId: project.id,
+      projectName: project.name,
+      totalSaleableArea,
+      nonSaleableArea,
+      soldArea,
+      unsoldArea,
+      avgSalePricePerSqm: soldArea > 0 ? contracted / soldArea : 0,
+      contracted,
+      collected,
+      collectionsRemainder: Math.max(0, contracted - collected),
+      futureSales,
+      totalRevenue,
+      grossProfit,
+      marginPerSqm: totalSaleableArea > 0 ? grossProfit / totalSaleableArea : 0,
+      overdueDebt,
+      pdPercent: contracted > 0 ? (overdueDebt / contracted) * 100 : 0,
+      approvedCostPerSqm: moneyNumber(project.costPerSqm),
+      actualCostPerSqm: totalConstructionArea > 0 ? totalSpent / totalConstructionArea : 0,
+      currentCostPerSqm: totalConstructionArea > 0 ? (projectBudget || totalSpent) / totalConstructionArea : 0,
+      constructionCosts: constructionCostsMap.get(project.id) ?? 0,
+      landCosts: landCostsMap.get(project.id) ?? 0,
+      documentationCosts: documentationCostsMap.get(project.id) ?? 0,
+      otherCosts: otherCostsMap.get(project.id) ?? 0,
+      requiredAmount: Math.max(0, projectBudget - totalSpent),
+      projectBudget,
+      totalSpent,
+      operationIncome: incomeMap.get(project.id) ?? 0,
+      operationExpenses,
+      legacyExpenses,
+      dataSources: {
+        projects: 1,
+        units: units.filter((u) => u.projectId === project.id).length,
+        contracts: contracts.filter((c) => c.projectId === project.id && c.status !== "cancelled").length,
+        operations: operations.filter((o) => (o.projectId || (o.contractId ? contractProject.get(o.contractId) : null)) === project.id).length,
+        expenses: expenses.filter((e) => e.projectId === project.id && e.status !== "cancelled").length,
+      },
+    };
+  });
+
+  res.json(result);
 });
 
 router.post("/accounts", async (req: AuthenticatedRequest, res): Promise<void> => {
@@ -1213,4 +1442,3 @@ router.get("/analytics/project-summaries", async (req: AuthenticatedRequest, res
 });
 
 export default router;
-

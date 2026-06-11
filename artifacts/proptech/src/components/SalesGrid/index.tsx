@@ -163,7 +163,7 @@ export default function SalesGrid() {
 
 	const filteredUnits = useMemo(() => {
 		let list = rawUnits ?? [];
-		if (useLegacy && kpiFilter !== "all") {
+		if (kpiFilter !== "all") {
 			list = list.filter((u) => kpiBucket(u.status) === kpiFilter);
 		}
 		if (useLegacy && search.trim()) {

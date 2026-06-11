@@ -11,7 +11,7 @@ import {
 import { gridCfgFor, type StatusGridCfg } from "@/lib/unit-statuses";
 import { cn } from "@/lib/utils";
 import type { CellViewMode, SalesGridUnit } from "./types";
-import { STATUS_HEX } from "./types";
+import { STATUS_BORDER_HEX, STATUS_HEX, STATUS_SURFACE_HEX } from "./types";
 import { UnitTooltip } from "./UnitTooltip";
 
 function unitCoef(u: SalesGridUnit) {
@@ -68,13 +68,23 @@ export function UnitCell({
 		showBulkCheckbox ? onBulkToggle : undefined,
 	);
 	const cfg = gridCfgFor(statusGridMap, unit.status);
-	const hex = STATUS_HEX[unit.status] || "#94a3b8";
+	const accent = STATUS_HEX[unit.status] || "#64748b";
+	const surface = STATUS_SURFACE_HEX[unit.status] || "#f8fafc";
+	const border = STATUS_BORDER_HEX[unit.status] || "#cbd5e1";
 	const published = isUnitPublishedForSale(unit);
 	const hasPrice = hasUnitSalePrice(unit);
 	const locked = isSalesOnly && !published;
 	const pps = resolvedPricePerSqm(unit);
 	const total = resolvedTotalPrice(unit);
 	const modified = !!unit.areaModified;
+	const priceLabel = formatPricePerSqmCompact(pps);
+	const priceToneClass = isSalesOnly
+		? published
+			? "bg-white/75 text-slate-700 ring-emerald-100"
+			: "bg-slate-100/80 text-slate-500 ring-slate-200"
+		: hasPrice
+			? "bg-white/75 text-slate-700 ring-emerald-100"
+			: "bg-amber-50/90 text-amber-700 ring-amber-200";
 
 	const lines: string[] = [unit.unitNumber];
 	if (unit.area) lines.push(`${unit.area} м²`);
@@ -127,24 +137,37 @@ export function UnitCell({
 					onOpen();
 				}}
 				className={cn(
-					"relative flex h-20 w-20 flex-col items-center justify-center rounded-xl border-2 text-center shadow-sm transition-all",
-					locked ? "cursor-not-allowed opacity-60 bg-gray-100 border-gray-200" : "cursor-pointer hover:-translate-y-0.5 hover:shadow-md",
-					selected && "ring-2 ring-slate-900 ring-offset-2",
-					bulkChecked && "ring-2 ring-emerald-600 ring-offset-1",
-					!locked && !modified && cellViewMode !== "pto" && "bg-white",
+					"sales-unit-card group relative flex h-20 w-20 flex-col items-center justify-center overflow-hidden rounded-[18px] border text-center shadow-[0_10px_24px_-18px_rgba(15,23,42,0.55)] transition-all duration-200 ease-out",
+					locked
+						? "cursor-not-allowed border-slate-200 bg-slate-100 opacity-60"
+						: "cursor-pointer hover:-translate-y-1 hover:shadow-[0_18px_34px_-22px_rgba(15,23,42,0.65)] active:translate-y-0 active:scale-[0.98]",
+					selected && "ring-2 ring-slate-950 ring-offset-2",
+					bulkChecked && "ring-2 ring-emerald-500 ring-offset-2",
 				)}
 				style={
 					locked
 						? undefined
 						: {
-								borderColor: modified && cellViewMode === "pto" ? "#f59e0b" : hex,
-								backgroundColor:
+								borderColor: modified && cellViewMode === "pto" ? "#f59e0b" : border,
+								background:
 									modified && cellViewMode === "pto"
-										? "#fef3c7"
-										: `${hex}18`,
+										? "linear-gradient(145deg, #fffbeb 0%, #fef3c7 100%)"
+										: `linear-gradient(145deg, #ffffff 0%, ${surface} 100%)`,
 							}
 				}
 			>
+				<span
+					className="pointer-events-none absolute left-2 top-2 h-2 w-2 rounded-full shadow-[0_0_0_4px_rgba(255,255,255,0.72)] transition-transform duration-200 group-hover:scale-125"
+					style={{ backgroundColor: locked ? "#94a3b8" : accent }}
+				/>
+				<span
+					className="pointer-events-none absolute inset-x-3 bottom-0 h-px opacity-70"
+					style={{
+						background: locked
+							? "#cbd5e1"
+							: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
+					}}
+				/>
 				{locked && (
 					<Lock className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 rounded-full bg-white p-0.5 text-gray-500 shadow" />
 				)}
@@ -153,7 +176,10 @@ export function UnitCell({
 						Δ
 					</span>
 				)}
-				<span className="text-sm font-black" style={{ color: locked ? "#6b7280" : hex }}>
+				<span
+					className="text-[15px] font-black leading-none tracking-normal"
+					style={{ color: locked ? "#64748b" : accent }}
+				>
 					{unit.unitNumber}
 				</span>
 				{cellViewMode === "pto" ? (
@@ -162,35 +188,23 @@ export function UnitCell({
 					</span>
 				) : (
 					<>
-						{unit.area && (
-							<span className="text-[8px] opacity-70" style={{ color: locked ? "#6b7280" : hex }}>
-								{unit.area}м²
-							</span>
-						)}
-						{unit.roomCount != null && (
-							<span className="text-[8px] opacity-70" style={{ color: locked ? "#6b7280" : hex }}>
-								{unit.roomCount}к
-							</span>
-						)}
+						<div className="mt-1 flex min-h-[12px] items-center gap-1 text-[8px] font-semibold text-slate-500">
+							{unit.area && <span>{unit.area}м²</span>}
+							{unit.roomCount != null && <span>{unit.roomCount}к</span>}
+						</div>
 						{(cellViewMode === "crm" || cellViewMode === "prices") && (
 							<span
 								className={cn(
-									"text-[7px] font-medium mt-0.5",
-									isSalesOnly
-										? published
-											? "text-emerald-700"
-											: "text-gray-500"
-										: hasPrice
-											? "text-emerald-700"
-											: "text-amber-700",
+									"mt-1 max-w-[66px] truncate rounded-full px-1.5 py-0.5 text-[7px] font-bold leading-none ring-1",
+									priceToneClass,
 								)}
 							>
 								{isSalesOnly
 									? published
-										? formatPricePerSqmCompact(pps)
+										? priceLabel
 										: "закрыта"
 									: hasPrice
-										? formatPricePerSqmCompact(pps)
+										? priceLabel
 										: "нет цены"}
 							</span>
 						)}

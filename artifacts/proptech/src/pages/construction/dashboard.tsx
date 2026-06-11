@@ -308,6 +308,59 @@ export default function ConstructionDashboard() {
 			icon: ListChecks,
 		},
 	];
+	const financeKpis = [
+		{
+			href: "/construction/operations",
+			label: "Доходы",
+			value: fmt(totalIncome),
+			helper: "KGS за период",
+			icon: TrendingUp,
+			accent: "#059669",
+			surface: "from-white via-emerald-50/80 to-teal-50/70",
+			ring: "border-emerald-100/90 hover:border-emerald-200",
+			inverted: false,
+			bars: monthlyData.map((d) => d.inc),
+		},
+		{
+			href: "/construction/operations",
+			label: "Расходы",
+			value: fmt(totalExpense),
+			helper: "KGS за период",
+			icon: TrendingDown,
+			accent: "#e11d48",
+			surface: "from-white via-rose-50/70 to-orange-50/60",
+			ring: "border-rose-100/90 hover:border-rose-200",
+			inverted: false,
+			bars: monthlyData.map((d) => d.exp),
+		},
+		{
+			href: "/construction/operations",
+			label: "Чистая прибыль",
+			value: `${netProfit >= 0 ? "+" : ""}${fmt(netProfit)}`,
+			helper: `KGS · рентабельность ${margin.toFixed(1)}%`,
+			icon: BarChart2,
+			accent: netProfit >= 0 ? "#047857" : "#e11d48",
+			surface:
+				netProfit >= 0
+					? "from-emerald-950 via-emerald-900 to-teal-900"
+					: "from-rose-950 via-rose-900 to-orange-900",
+			ring: netProfit >= 0 ? "border-emerald-800/80" : "border-rose-800/80",
+			inverted: true,
+			bars: monthlyData.map((d) => Math.abs(d.inc - d.exp)),
+		},
+		{
+			href: "/construction/accounts",
+			label: "Деньги бизнеса",
+			value: fmt(totalAccountsKgs),
+			helper: `KGS · ${accountsArray.length} счетов`,
+			icon: Wallet,
+			accent: "#2563eb",
+			surface: "from-white via-sky-50/80 to-cyan-50/70",
+			ring: "border-sky-100/90 hover:border-sky-200",
+			inverted: false,
+			bars: accountsArray.slice(0, 6).map((a: any) => Math.abs(parseFloat(a.currentBalance || "0"))),
+		},
+	];
 
 	return (
 		<div className="am-page space-y-4 -mt-1">
@@ -348,147 +401,90 @@ export default function ConstructionDashboard() {
 				<CashSummary accounts={accountsArray} />
 			</div>
 
-			{/* KPI Cards - like Adesk */}
 			<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-				{/* Доходы */}
-				<Link href="/construction/operations" className="block no-underline">
-				<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 hover:shadow-md hover:border-gray-200 transition-all cursor-pointer">
-					<div className="flex items-center justify-between mb-1">
-						<span className="text-xs text-gray-600 font-medium">ДОХОДЫ</span>
-						<TrendingUp className="w-4 h-4 text-emerald-400" />
-					</div>
-					<div className="text-2xl font-bold text-gray-900 mt-1">
-						{fmt(totalIncome)}
-					</div>
-					<div className="text-xs text-gray-600 mt-0.5">KGS</div>
-					{/* Mini sparkline */}
-					<div className="flex items-end gap-0.5 h-6 mt-2">
-						{monthlyData.map(({ m, inc }) => (
+				{financeKpis.map((card, index) => {
+					const Icon = card.icon;
+					const maxBar = Math.max(...card.bars, 1);
+					return (
+						<Link key={card.label} href={card.href} className="block no-underline">
 							<div
-								key={m}
-								className="flex-1 bg-emerald-100 rounded-sm"
-								style={{
-									height: `${maxMonthly > 0 ? Math.max(4, (inc / maxMonthly) * 24) : 4}px`,
-								}}
-							/>
-						))}
-					</div>
-					</div>
-				</Link>
-
-				{/* Расходы */}
-				<Link href="/construction/operations" className="block no-underline">
-				<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 hover:shadow-md hover:border-gray-200 transition-all cursor-pointer">
-					<div className="flex items-center justify-between mb-1">
-						<span className="text-xs text-gray-600 font-medium">РАСХОДЫ</span>
-						<TrendingDown className="w-4 h-4 text-rose-600" />
-					</div>
-					<div className="text-2xl font-bold text-gray-900 mt-1">
-						{fmt(totalExpense)}
-					</div>
-					<div className="text-xs text-gray-600 mt-0.5">KGS</div>
-					<div className="flex items-end gap-0.5 h-6 mt-2">
-						{monthlyData.map(({ m, exp }) => (
-							<div
-								key={m}
-								className="flex-1 bg-rose-100 rounded-sm"
-								style={{
-									height: `${maxMonthly > 0 ? Math.max(4, (exp / maxMonthly) * 24) : 4}px`,
-								}}
-							/>
-						))}
-					</div>
-				</div>
-				</Link>
-
-				{/* Чистая прибыль */}
-				<Link href="/construction/operations" className="block no-underline">
-				<div
-					className={`rounded-2xl border shadow-sm p-4 cursor-pointer hover:shadow-md transition-all ${netProfit >= 0 ? "bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200" : "bg-gradient-to-br from-rose-50 to-rose-100 border-rose-200"}`}
-				>
-					<div className="flex items-center justify-between mb-1">
-						<span
-							className={`text-xs font-medium ${netProfit >= 0 ? "text-emerald-700" : "text-rose-700"}`}
-						>
-							ЧИСТАЯ ПРИБЫЛЬ
-						</span>
-						<BarChart2
-							className={`w-4 h-4 ${netProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}
-						/>
-					</div>
-					<div
-						className={`text-2xl font-bold mt-1 ${netProfit >= 0 ? "text-emerald-700" : "text-rose-700"}`}
-					>
-						{netProfit >= 0 ? "+" : ""}
-						{fmt(netProfit)}
-					</div>
-					<div
-						className={`text-xs mt-0.5 ${netProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}
-					>
-						KGS · рентабельность {margin.toFixed(1)}%
-					</div>
-					<div className="flex items-end gap-0.5 h-6 mt-2">
-						{monthlyData.map(({ m, inc, exp }) => {
-							const net = inc - exp;
-							return (
+								className={`finance-card-in group relative min-h-[138px] overflow-hidden rounded-[22px] border bg-gradient-to-br ${card.surface} ${card.ring} p-4 shadow-[0_16px_36px_-30px_rgba(15,23,42,0.75)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_22px_44px_-32px_rgba(15,23,42,0.8)]`}
+								style={{ animationDelay: `${index * 55}ms` }}
+							>
 								<div
-									key={m}
-									className={`flex-1 rounded-sm ${netProfit >= 0 ? "bg-emerald-600/30" : "bg-rose-600/30"}`}
+									className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full opacity-20 blur-2xl transition-opacity duration-300 group-hover:opacity-35"
+									style={{ backgroundColor: card.accent }}
+								/>
+								<div
+									className="pointer-events-none absolute inset-x-4 bottom-0 h-0.5 opacity-70"
 									style={{
-										height: `${maxMonthly > 0 ? Math.max(4, (Math.abs(net) / maxMonthly) * 24) : 4}px`,
+										background: `linear-gradient(90deg, transparent, ${card.accent}, transparent)`,
 									}}
 								/>
-							);
-						})}
-					</div>
-				</div>
-				</Link>
-
-				{/* Деньги бизнеса */}
-				<Link href="/construction/accounts" className="block no-underline">
-				<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 hover:shadow-md hover:border-gray-200 transition-all cursor-pointer">
-					<div className="flex items-center justify-between mb-1">
-						<span className="text-xs text-gray-600 font-medium">
-							ДЕНЬГИ БИЗНЕСА
-						</span>
-						<Wallet className="w-4 h-4 text-blue-400" />
-					</div>
-					<div className="text-2xl font-bold text-gray-900 mt-1">
-						{fmt(totalAccountsKgs)}
-					</div>
-					<div className="text-xs text-gray-600 mt-0.5">
-						KGS · {accountsArray.length} счетов
-					</div>
-					<div className="mt-2 space-y-0.5">
-						{accountsArray.slice(0, 3).map((a: any) => (
-							<div
-								key={a.id}
-								className="flex justify-between text-[10px] text-gray-600"
-							>
-								<span className="truncate max-w-[80px]">{a.name}</span>
-								<span className="font-mono">{fmtShort(a.currentBalance)}</span>
+								<div className="relative flex items-start justify-between gap-3">
+									<div>
+										<p
+											className={`text-[11px] font-black uppercase tracking-wider ${card.inverted ? "text-white/60" : "text-slate-500"}`}
+										>
+											{card.label}
+										</p>
+										<p
+											className={`mt-2 text-[28px] font-black leading-none tabular-nums tracking-normal ${card.inverted ? "text-white" : "text-slate-950"}`}
+										>
+											{card.value}
+										</p>
+										<p
+											className={`mt-2 text-xs font-semibold ${card.inverted ? "text-white/68" : "text-slate-500"}`}
+										>
+											{card.helper}
+										</p>
+									</div>
+									<div
+										className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl ring-1 ${card.inverted ? "bg-white/12 text-white ring-white/18" : "bg-white/80 ring-white/80"}`}
+										style={{ color: card.inverted ? undefined : card.accent }}
+									>
+										<Icon className="h-5 w-5" />
+									</div>
+								</div>
+								<div className="relative mt-4 flex h-7 items-end gap-1">
+									{card.bars.length > 0 ? (
+										card.bars.map((value, barIndex) => (
+											<span
+												key={`${card.label}-${barIndex}`}
+												className={`flex-1 rounded-full transition-all duration-300 group-hover:opacity-100 ${card.inverted ? "bg-white/35" : "bg-white/75"}`}
+												style={{
+													height: `${Math.max(4, (value / maxBar) * 28)}px`,
+													opacity: 0.6 + barIndex * 0.05,
+												}}
+											/>
+										))
+									) : (
+										<span
+											className={`h-1 w-full rounded-full ${card.inverted ? "bg-white/25" : "bg-slate-200"}`}
+										/>
+									)}
+								</div>
 							</div>
-						))}
-					</div>
-				</div>
-				</Link>
+						</Link>
+					);
+				})}
 			</div>
 
 			{/* Second row */}
 			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				{/* Cashflow chart */}
-				<div className="sm:col-span-2 bg-white rounded-lg border border-gray-100 shadow-sm p-5">
+				<div className="finance-card-in sm:col-span-2 rounded-[24px] border border-slate-200/70 bg-gradient-to-br from-white via-slate-50/80 to-cyan-50/40 p-5 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.72)]">
 					<div className="flex items-center justify-between mb-4">
-						<div className="text-sm font-semibold text-gray-700">
+						<div className="text-sm font-black text-slate-800">
 							Деньги на счетах (за 6 мес.)
 						</div>
-						<div className="flex items-center gap-3 text-xs text-gray-600">
+						<div className="flex items-center gap-3 rounded-full border border-white/80 bg-white/70 px-3 py-1.5 text-xs font-semibold text-slate-500 shadow-sm">
 							<span className="flex items-center gap-1">
-								<span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
+								<span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
 								Приходы
 							</span>
 							<span className="flex items-center gap-1">
-								<span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
+								<span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />
 								Расходы
 							</span>
 						</div>
@@ -506,12 +502,12 @@ export default function ConstructionDashboard() {
 								>
 									<div className="flex items-end gap-0.5 h-28 w-full">
 										<div
-											className={`flex-1 rounded-t-sm transition-all ${isCurrentMonth ? "bg-emerald-400" : "bg-emerald-200"}`}
+											className={`flex-1 rounded-full transition-all ${isCurrentMonth ? "bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]" : "bg-emerald-200/90"}`}
 											style={{ height: Math.max(2, incH) }}
 											title={`Приход: ${fmt(inc)}`}
 										/>
 										<div
-											className={`flex-1 rounded-t-sm transition-all ${isCurrentMonth ? "bg-red-400" : "bg-red-200"}`}
+											className={`flex-1 rounded-full transition-all ${isCurrentMonth ? "bg-rose-500 shadow-[0_0_0_4px_rgba(244,63,94,0.12)]" : "bg-rose-200/90"}`}
 											style={{ height: Math.max(2, expH) }}
 											title={`Расход: ${fmt(exp)}`}
 										/>
@@ -529,36 +525,38 @@ export default function ConstructionDashboard() {
 
 				{/* Рентабельность + Задолженность */}
 				<div className="flex flex-col gap-4">
-					<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 flex-1">
+					<div className="finance-card-in relative flex-1 overflow-hidden rounded-[24px] border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/80 to-teal-50/70 p-4 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.72)]">
+						<div className="pointer-events-none absolute -right-8 -top-10 h-24 w-24 rounded-full bg-emerald-400/20 blur-2xl" />
 						<div className="flex items-center justify-between mb-1">
-							<span className="text-xs text-gray-600 font-medium">
+							<span className="text-xs text-slate-500 font-black uppercase tracking-wider">
 								РЕНТАБЕЛЬНОСТЬ
 							</span>
-							<span className="text-xs text-gray-300">→ 100%</span>
+							<span className="text-xs font-semibold text-emerald-600/70">цель 100%</span>
 						</div>
 						<div
-							className={`text-3xl font-bold mt-1 ${margin >= 0 ? "text-gray-900" : "text-rose-600"}`}
+							className={`text-3xl font-black mt-1 tracking-normal ${margin >= 0 ? "text-slate-950" : "text-rose-600"}`}
 						>
 							{margin.toFixed(1)}%
 						</div>
-						<div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+						<div className="mt-4 h-2 bg-white/80 rounded-full overflow-hidden ring-1 ring-emerald-100">
 							<div
-								className="h-full bg-emerald-400 rounded-full"
+								className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500"
 								style={{ width: `${Math.min(100, Math.max(0, margin))}%` }}
 							/>
 						</div>
 					</div>
-					<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 flex-1">
+					<div className="finance-card-in relative flex-1 overflow-hidden rounded-[24px] border border-rose-100 bg-gradient-to-br from-white via-rose-50/70 to-orange-50/60 p-4 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.72)]">
+						<div className="pointer-events-none absolute -right-8 -top-10 h-24 w-24 rounded-full bg-rose-400/20 blur-2xl" />
 						<div className="flex items-center gap-1 mb-1">
 							<AlertCircle className="w-3 h-3 text-rose-600" />
-							<span className="text-xs text-gray-600 font-medium">
+							<span className="text-xs text-slate-500 font-black uppercase tracking-wider">
 								ДЕБИТОРСКАЯ ЗАДОЛЖЕННОСТЬ
 							</span>
 						</div>
-						<div className="text-2xl font-bold text-rose-600 mt-1">
+						<div className="text-2xl font-black text-rose-600 mt-1 tabular-nums">
 							{fmt(overdueDebt)}
 						</div>
-						<div className="text-xs text-gray-600 mt-0.5">KGS просрочено</div>
+						<div className="text-xs font-semibold text-slate-500 mt-1">KGS просрочено</div>
 					</div>
 				</div>
 			</div>
@@ -566,8 +564,8 @@ export default function ConstructionDashboard() {
 			{/* Third row: expense dynamics + structure */}
 			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				{/* Динамика расходов по статьям */}
-				<div className="sm:col-span-2 bg-white rounded-lg border border-gray-100 shadow-sm p-5">
-					<div className="text-sm font-semibold text-gray-700 mb-4">
+				<div className="finance-card-in sm:col-span-2 rounded-[24px] border border-slate-200/70 bg-white/90 p-5 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.72)]">
+					<div className="text-sm font-black text-slate-800 mb-4">
 						Динамика расходов
 					</div>
 					{expCatSorted.length === 0 ? (
@@ -581,12 +579,12 @@ export default function ConstructionDashboard() {
 								const color = CAT_COLORS[i % CAT_COLORS.length];
 								return (
 									<div key={cat} className="flex items-center gap-3">
-										<div className="w-24 text-xs text-gray-500 truncate text-right flex-shrink-0">
+										<div className="w-24 text-xs font-semibold text-slate-500 truncate text-right flex-shrink-0">
 											{cat}
 										</div>
-										<div className="flex-1 h-6 bg-gray-50 rounded overflow-hidden">
+										<div className="flex-1 h-7 bg-slate-100/80 rounded-full overflow-hidden ring-1 ring-slate-100">
 											<div
-												className="h-full rounded flex items-center px-2"
+												className="h-full rounded-full flex items-center px-2 shadow-sm transition-all duration-300"
 												style={{
 													width: `${pct}%`,
 													backgroundColor: `${color}cc`,
@@ -609,8 +607,8 @@ export default function ConstructionDashboard() {
 				</div>
 
 				{/* Структура расходов (donut-style) */}
-				<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5">
-					<div className="text-sm font-semibold text-gray-700 mb-4">
+				<div className="finance-card-in rounded-[24px] border border-slate-200/70 bg-white/90 p-5 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.72)]">
+					<div className="text-sm font-black text-slate-800 mb-4">
 						Структура расходов
 					</div>
 					{expCatSorted.length === 0 ? (
@@ -645,10 +643,10 @@ export default function ConstructionDashboard() {
 
 			{/* Bottom: Top clients + top expense */}
 			<div className="grid gap-4 sm:grid-cols-2">
-				<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5">
+				<div className="finance-card-in rounded-[24px] border border-slate-200/70 bg-white/90 p-5 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.72)]">
 					<div className="flex items-center gap-2 mb-4">
 						<Users className="w-4 h-4 text-emerald-700" />
-						<div className="text-sm font-semibold text-gray-700">
+						<div className="text-sm font-black text-slate-800">
 							Самые доходные клиенты
 						</div>
 					</div>
@@ -676,13 +674,13 @@ export default function ConstructionDashboard() {
 											<span className="text-gray-600">•</span>
 											<span className="text-red-500">{fmt(remaining)} осталось</span>
 										</div>
-										<div className="h-1.5 bg-gray-100 rounded-full overflow-hidden flex">
+										<div className="h-2 bg-slate-100 rounded-full overflow-hidden flex ring-1 ring-slate-100">
 											<div
-												className="h-full bg-emerald-400"
+												className="h-full bg-emerald-500"
 												style={{ width: `${paidPct.toFixed(1)}%` }}
 											/>
 											<div
-												className="h-full bg-red-400"
+												className="h-full bg-rose-400"
 												style={{ width: `${(100 - paidPct).toFixed(1)}%` }}
 											/>
 										</div>
@@ -693,10 +691,10 @@ export default function ConstructionDashboard() {
 					)}
 				</div>
 
-				<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5">
+				<div className="finance-card-in rounded-[24px] border border-slate-200/70 bg-white/90 p-5 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.72)]">
 					<div className="flex items-center gap-2 mb-4">
 						<Building2 className="w-4 h-4 text-rose-600" />
-						<div className="text-sm font-semibold text-gray-700">
+						<div className="text-sm font-black text-slate-800">
 							Контрагенты с наибольшими расходами
 						</div>
 					</div>
@@ -716,9 +714,9 @@ export default function ConstructionDashboard() {
 											{fmt(amount)}
 										</span>
 									</div>
-									<div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+									<div className="h-2 bg-slate-100 rounded-full overflow-hidden ring-1 ring-slate-100">
 										<div
-											className="h-full bg-red-400 rounded-full"
+											className="h-full bg-rose-500 rounded-full transition-all duration-300"
 											style={{
 												width: `${Math.round((amount / maxContAmt) * 100)}%`,
 											}}
@@ -732,9 +730,9 @@ export default function ConstructionDashboard() {
 			</div>
 
 			{/* Recent ops */}
-			<div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
+			<div className="finance-card-in overflow-hidden rounded-[24px] border border-slate-200/70 bg-white/90 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.72)]">
 				<div className="px-5 py-3 border-b border-gray-50 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-					<div className="text-sm font-semibold text-gray-700">
+					<div className="text-sm font-black text-slate-800">
 						Последние операции
 					</div>
 					<Link href="/construction/operations">

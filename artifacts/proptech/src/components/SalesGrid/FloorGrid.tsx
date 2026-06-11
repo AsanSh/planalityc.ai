@@ -39,8 +39,8 @@ export function FloorGrid({
 	const dragUnitId = useRef<number | null>(null);
 
 	return (
-		<MatrixTableFrame className="overflow-x-auto">
-			<table className="border-collapse">
+		<MatrixTableFrame className="overflow-x-auto bg-[linear-gradient(180deg,#f8fbfc_0%,#f1f7f8_100%)] p-3">
+			<table className="border-separate border-spacing-[4px]">
 				<tbody>
 					{floors.map((floor, idx) => {
 						const rowUnits = units
@@ -51,16 +51,16 @@ export function FloorGrid({
 						const floorIds = rowUnits.map((u) => u.id);
 						const isDropTarget = dragOverFloor === floor;
 
+						const tdBase = [
+							isDropTarget ? "bg-cyan-50/80" : "",
+							"rounded-[18px] transition-colors duration-150",
+						]
+							.filter(Boolean)
+							.join(" ");
+
 						return (
 							<tr
 								key={floor}
-								className={[
-									idx !== 0 ? "border-t-2 border-slate-300" : "",
-									isDropTarget ? "bg-blue-50/60" : "",
-									"transition-colors duration-100",
-								]
-									.filter(Boolean)
-									.join(" ")}
 								onDragOver={(e) => {
 									e.preventDefault();
 									setDragOverFloor(floor);
@@ -75,15 +75,15 @@ export function FloorGrid({
 									dragUnitId.current = null;
 								}}
 							>
-								<td className="sticky left-0 z-10 bg-white pr-2 align-middle">
+								<td className={`sticky left-0 z-10 pr-2 align-middle ${tdBase}`}>
 									<button
 										type="button"
 										onClick={() => onBulkFloor(floor, floorIds)}
 										className={[
-											"flex h-20 w-12 flex-col items-center justify-center rounded-lg text-xs font-bold",
+											"flex h-20 w-12 flex-col items-center justify-center rounded-[16px] border text-xs font-bold shadow-[0_10px_24px_-22px_rgba(15,23,42,0.65)] transition-all duration-200",
 											isDropTarget
-												? "bg-blue-200 text-blue-700"
-												: "bg-slate-100 text-slate-600 hover:bg-slate-200",
+												? "border-cyan-300 bg-cyan-100 text-cyan-800"
+												: "border-slate-200 bg-white/90 text-slate-600 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50",
 										].join(" ")}
 										title={showBulkCheckbox ? "Выбрать этаж (клик)" : undefined}
 									>
@@ -94,12 +94,12 @@ export function FloorGrid({
 								{Array.from({ length: maxCols }).map((_, col) => {
 									const unit = rowUnits[col];
 									if (!unit) {
-										return <td key={col} className="p-1" />;
+										return <td key={col} className={`p-1 ${tdBase}`} />;
 									}
 									return (
 										<td
 											key={unit.id}
-											className="p-1"
+											className={`p-1 ${tdBase}`}
 											draggable
 											onDragStart={() => {
 												dragUnitId.current = unit.id;

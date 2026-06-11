@@ -558,6 +558,71 @@
   transform: scale(0.985);
 }
 
+@keyframes sales-kpi-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes finance-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sales-kpi-card,
+.finance-card-in {
+  opacity: 0;
+  animation: sales-kpi-enter 420ms var(--am-ease-out) forwards;
+}
+
+.finance-card-in {
+  animation-name: finance-card-enter;
+}
+
+.sales-unit-card::before {
+  content: "";
+  position: absolute;
+  inset: -40% auto -40% -72%;
+  width: 72%;
+  pointer-events: none;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.72), transparent);
+  opacity: 0;
+  transform: translateX(0) rotate(8deg);
+  transition:
+    opacity 240ms var(--am-ease-out),
+    transform 420ms var(--am-ease-out);
+}
+
+.sales-unit-card:hover::before {
+  opacity: 0.62;
+  transform: translateX(190%) rotate(8deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sales-kpi-card,
+  .finance-card-in {
+    opacity: 1;
+    animation: none;
+  }
+
+  .sales-unit-card,
+  .sales-unit-card::before {
+    transition: none;
+  }
+}
+
 .am-page {
   width: 100%;
   max-width: 1680px;

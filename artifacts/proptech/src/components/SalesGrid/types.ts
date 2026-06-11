@@ -22,15 +22,39 @@ export const KPI_LABELS: Record<Exclude<KpiFilter, "all">, string> = {
 
 /** Цвета статусов по спецификации (hex) */
 export const STATUS_HEX: Record<string, string> = {
-	available: "#22c55e",
-	reserved: "#f59e0b",
-	sold: "#3b82f6",
-	registered: "#3b82f6",
-	occupied: "#8b5cf6",
-	construction: "#64748b",
-	closed: "#94a3b8",
-	draft: "#94a3b8",
-	unavailable: "#94a3b8",
+	available: "#16a34a",
+	reserved: "#d97706",
+	sold: "#2563eb",
+	registered: "#2563eb",
+	occupied: "#7c3aed",
+	construction: "#475569",
+	closed: "#64748b",
+	draft: "#64748b",
+	unavailable: "#64748b",
+};
+
+export const STATUS_SURFACE_HEX: Record<string, string> = {
+	available: "#ecfdf3",
+	reserved: "#fff7ed",
+	sold: "#eff6ff",
+	registered: "#eff6ff",
+	occupied: "#f5f3ff",
+	construction: "#f1f5f9",
+	closed: "#f8fafc",
+	draft: "#f8fafc",
+	unavailable: "#f8fafc",
+};
+
+export const STATUS_BORDER_HEX: Record<string, string> = {
+	available: "#86efac",
+	reserved: "#fed7aa",
+	sold: "#bfdbfe",
+	registered: "#bfdbfe",
+	occupied: "#ddd6fe",
+	construction: "#cbd5e1",
+	closed: "#cbd5e1",
+	draft: "#cbd5e1",
+	unavailable: "#cbd5e1",
 };
 
 export function kpiBucket(status: string): Exclude<KpiFilter, "all"> {

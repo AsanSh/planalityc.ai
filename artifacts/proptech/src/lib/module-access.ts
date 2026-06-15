@@ -14,7 +14,8 @@ export type ModuleId =
 	| "rental"
 	| "proptech"
 	| "warehouse"
-	| "consolidated";
+	| "consolidated"
+	| "ai";
 
 export const ALL_MODULE_IDS: ModuleId[] = MODULE_REGISTRY.map((m) => m.id);
 
@@ -29,8 +30,8 @@ const SYSTEM_ROLE_MODULES: Record<string, ModuleId[] | "all"> = {
 	sales_manager: ["proptech"],
 	finance: ["finance"],
 	staff: ["consolidated"],
-	pto: ["construction"],
-	engineer: ["construction"],
+	pto: ["construction", "ai"],
+	engineer: ["construction", "ai"],
 };
 
 const PERMISSION_PREFIX_TO_MODULE: Record<string, ModuleId> = {

@@ -17,7 +17,8 @@ export type ModuleIntegrationId =
 	| "crm.construction"
 	| "rent.finance"
 	| "procurement.finance"
-	| "investors.rent";
+	| "investors.rent"
+	| "ai.construction";
 
 export interface ModuleIntegration {
 	id: ModuleIntegrationId;
@@ -43,7 +44,7 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 	{
 		id: "consolidated",
 		canonicalId: "core",
-		label: "Центр управления",
+		label: "Сводное",
 		shortLabel: "Сводное",
 		description: "Общее ядро компании: пользователи, контрагенты, настройки, импорт и сводная аналитика.",
 		settingsKeys: ["core", "analytics", "properties", "users", "counterparties", "settings", "admin"],
@@ -56,8 +57,8 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 	{
 		id: "construction",
 		canonicalId: "construction",
-		label: "Строительство",
-		shortLabel: "Стройка",
+		label: "Строительство / ПТО",
+		shortLabel: "ПТО",
 		description: "Проекты, этапы, задачи, шахматка, продажи объектов и строительный контроль.",
 		settingsKeys: ["construction", "sales"],
 		routePrefixes: ["/construction"],
@@ -115,7 +116,7 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 		id: "warehouse",
 		canonicalId: "procurement",
 		label: "Снабжение",
-		shortLabel: "Закуп",
+		shortLabel: "Снабжение",
 		description: "Заявки, поставщики, заказы, склад, поступления, списания и маркетплейс материалов.",
 		settingsKeys: ["warehouse", "procurement", "supply"],
 		routePrefixes: ["/warehouse"],
@@ -170,6 +171,25 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 				id: "investors.rent",
 				requires: ["investors", "rent"],
 				description: "Инвесторские выплаты строятся на доходах и расходах арендных объектов.",
+			},
+		],
+	},
+	{
+		id: "ai",
+		canonicalId: "construction",
+		label: "AI-инструменты",
+		shortLabel: "AI",
+		description: "Смета, проверка СНиП, генерация договоров, анализ фото и Telegram-бот.",
+		settingsKeys: ["ai"],
+		routePrefixes: ["/construction/ai"],
+		dashboardTabs: [],
+		defaultPath: "/construction/ai/chat",
+		ownedEntities: [],
+		integrations: [
+			{
+				id: "ai.construction",
+				requires: ["construction", "ai"],
+				description: "AI-инструменты работают в контексте строительных проектов.",
 			},
 		],
 	},

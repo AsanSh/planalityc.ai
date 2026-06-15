@@ -100,16 +100,17 @@ interface Module {
 const moduleMeta = (id: ModuleId) => getModuleDefinition(id)!;
 
 const MODULES: Module[] = [
+	// ── 1. Строительство / ПТО ──────────────────────────────────────────
 	{
 		id: "construction",
 		label: moduleMeta("construction").label,
 		shortLabel: moduleMeta("construction").shortLabel,
-		icon: Grid3X3,
+		icon: HardHat,
 		color: "#0ea5e9",
 		urlPrefix: moduleMeta("construction").routePrefixes,
 		sections: [
 			{
-				title: "Главный поток",
+				title: "Проект",
 				items: [
 					{
 						href: "/dashboard?tab=construction",
@@ -118,52 +119,31 @@ const MODULES: Module[] = [
 					},
 					{
 						href: "/construction/projects",
-						label: "Проект / ЖК",
+						label: "Проекты / ЖК",
 						icon: Building2,
 					},
 					{ href: "/construction/chess", label: "Шахматка", icon: Grid3X3 },
 					{
-						href: "/construction/contracts-sales",
-						label: "Договоры продаж",
-						icon: FileText,
-					},
-					{
-						href: "/construction/accruals",
-						label: "Начисления",
-						icon: ListOrdered,
-					},
-					{
-						href: "/construction/cashier",
-						label: "Приём платежей",
-						icon: DollarSign,
-					},
-					{
-						href: "/construction/reconciliation",
-						label: "Акт сверки",
-						icon: Scale,
+						href: "/construction/photo-gallery",
+						label: "Фото-отчёты",
+						icon: Map,
 					},
 				],
 			},
 			{
-				title: "Себестоимость",
+				title: "Планирование",
 				items: [
-					{ href: "/construction/budget", label: "Бюджет и план/факт", icon: Wallet },
 					{ href: "/construction/stages", label: "Этапы WBS", icon: Flag },
 					{ href: "/construction/tasks", label: "Задачи", icon: ClipboardList },
 					{
-						href: "/construction/operations",
-						label: "Операции",
-						icon: ArrowRightLeft,
+						href: "/construction/planning/forecast",
+						label: "Прогноз",
+						icon: Calendar,
 					},
 					{
-						href: "/construction/materials",
-						label: "Материалы",
-						icon: Package,
-					},
-					{
-						href: "/construction/contractors",
-						label: "Подрядчики",
-						icon: Briefcase,
+						href: "/construction/planning/overdue",
+						label: "Просрочки",
+						icon: AlertTriangle,
 					},
 				],
 			},
@@ -172,6 +152,21 @@ const MODULES: Module[] = [
 				items: [
 					{ href: "/construction/workers", label: "Бригады", icon: Hammer },
 					{
+						href: "/construction/contractors",
+						label: "Подрядчики",
+						icon: Briefcase,
+					},
+					{
+						href: "/construction/materials",
+						label: "Материалы",
+						icon: Package,
+					},
+					{
+						href: "/construction/reconciliation",
+						label: "Акт сверки",
+						icon: Scale,
+					},
+					{
 						href: "/construction/planning/broadcast",
 						label: "Рассылка",
 						icon: Send,
@@ -179,38 +174,13 @@ const MODULES: Module[] = [
 				],
 			},
 			{
-				title: "AI и документы",
+				title: "Себестоимость",
 				items: [
+					{ href: "/construction/budget", label: "Бюджет / план-факт", icon: Wallet },
 					{
-						href: "/construction/ai/chat",
-						label: "Чат по ТЗ",
-						icon: MessageCircle,
-					},
-					{
-						href: "/construction/ai/snip-check",
-						label: "Проверка СНиП",
-						icon: ShieldCheck,
-					},
-					{
-						href: "/construction/ai/tools",
-						label: "Генерация документов",
-						icon: Zap,
-					},
-					{
-						href: "/construction/ai/photo-report",
-						label: "Анализ фото",
-						icon: Search,
-					},
-					{
-						href: "/construction/ai/contractor-analytics",
-						label: "Анализ подрядчиков",
-						icon: BarChart3,
-					},
-					{ href: "/construction/ai/telegram", label: "Telegram", icon: Send },
-					{
-						href: "/construction/ai/estimates",
-						label: "AI Смета",
-						icon: BarChart3,
+						href: "/construction/operations",
+						label: "Операции",
+						icon: ArrowRightLeft,
 					},
 				],
 			},
@@ -241,6 +211,53 @@ const MODULES: Module[] = [
 			},
 		],
 	},
+
+	// ── 2. CRM / Продажи ─────────────────────────────────────────────────
+	{
+		id: "proptech",
+		label: moduleMeta("proptech").label,
+		shortLabel: moduleMeta("proptech").shortLabel,
+		icon: Target,
+		color: "#2563eb",
+		urlPrefix: moduleMeta("proptech").routePrefixes,
+		sections: [
+			{
+				title: "Продажи",
+				items: [
+					{ href: "/dashboard?tab=sales", label: "Обзор", icon: LayoutDashboard },
+					{ href: "/crm/leads", label: "Лиды", icon: Target },
+					{ href: "/crm/deals", label: "Сделки", icon: TrendingUp },
+					{ href: "/crm/chess", label: "Шахматка", icon: Grid3X3 },
+					{ href: "/crm/sales-properties", label: "Свободные объекты", icon: Building2 },
+				],
+			},
+			{
+				title: "Договоры",
+				items: [
+					{ href: "/crm/contracts-sales", label: "Создать договор", icon: FileText },
+					{ href: "/crm/sales-contracts", label: "Реестр договоров", icon: ScrollText },
+				],
+			},
+			{
+				title: "Клиенты",
+				items: [
+					{ href: "/crm/clients", label: "Клиенты", icon: Users },
+					{ href: "/crm/leads/intake", label: "Приём лидов", icon: Rss },
+					{ href: "/crm/client-relations", label: "Клиентский сервис", icon: MessageCircle },
+				],
+			},
+			{
+				title: "Настройки CRM",
+				items: [
+					{ href: "/crm/employees", label: "Сотрудники", icon: UserCircle },
+					{ href: "/crm/counterparties", label: "Контрагенты", icon: Briefcase },
+					{ href: "/crm/help", label: "Помощь", icon: CircleHelp },
+				],
+			},
+		],
+	},
+
+	// ── 3. Финансы ───────────────────────────────────────────────────────
 	{
 		id: "finance",
 		label: moduleMeta("finance").label,
@@ -250,7 +267,7 @@ const MODULES: Module[] = [
 		urlPrefix: moduleMeta("finance").routePrefixes,
 		sections: [
 			{
-				title: "Обзор и операции",
+				title: "Операции",
 				items: [
 					{ href: "/dashboard?tab=finance", label: "Обзор", icon: LayoutDashboard },
 					{ href: "/construction/accounts", label: "Счета", icon: Landmark },
@@ -259,7 +276,7 @@ const MODULES: Module[] = [
 						label: "Операции",
 						icon: ArrowRightLeft,
 					},
-					{ href: "/construction/budget", label: "Бюджет и план/факт", icon: Wallet },
+					{ href: "/construction/budget", label: "Бюджет / план-факт", icon: Wallet },
 					{
 						href: "/construction/payroll",
 						label: "Зарплатная ведомость",
@@ -303,7 +320,7 @@ const MODULES: Module[] = [
 				],
 			},
 			{
-				title: "Финансовая аналитика",
+				title: "Аналитика",
 				items: [
 					{
 						href: "/construction/analytics/cashflow",
@@ -339,6 +356,8 @@ const MODULES: Module[] = [
 			},
 		],
 	},
+
+	// ── 4. Аренда ────────────────────────────────────────────────────────
 	{
 		id: "rental",
 		label: moduleMeta("rental").label,
@@ -354,7 +373,8 @@ const MODULES: Module[] = [
 					{ href: "/rental/properties", label: "Объекты", icon: Building2 },
 					{ href: "/rental/tenants", label: "Арендаторы", icon: UserCircle },
 					{ href: "/rental/counterparties", label: "Контрагенты", icon: Users },
-					{ href: "/rental/contracts", label: "Договоры", icon: FileText },
+					{ href: "/rental/contracts", label: "Договоры аренды", icon: FileText },
+					{ href: "/rental/deposits", label: "Депозиты", icon: PiggyBank },
 				],
 			},
 			{
@@ -362,7 +382,11 @@ const MODULES: Module[] = [
 				items: [
 					{ href: "/rental/accruals", label: "Начисление", icon: ListOrdered },
 					{ href: "/rental/payments", label: "Платежи", icon: CreditCard },
-					{ href: "/rental/deposits", label: "Депозиты", icon: PiggyBank },
+					{
+						href: "/rental/analytics/debt",
+						label: "Долги арендаторов",
+						icon: AlertTriangle,
+					},
 					{ href: "/rental/expenses", label: "Расходы", icon: Receipt },
 					{
 						href: "/rental/statements",
@@ -377,16 +401,22 @@ const MODULES: Module[] = [
 				],
 			},
 			{
+				title: "Владельцы",
+				items: [
+					{ href: "/rental/investors", label: "Владельцы / Инвесторы", icon: Users },
+					{
+						href: "/rental/distributions",
+						label: "Распределение дохода",
+						icon: Coins,
+					},
+				],
+			},
+			{
 				title: "Аналитика",
 				items: [
 					{ href: "/rental/analytics/odds", label: "ОДДС", icon: BarChart3 },
 					{ href: "/rental/analytics/plan-fact", label: "План-факт", icon: TrendingUp },
 					{ href: "/rental/analytics/opu", label: "ОПУ", icon: LineChart },
-					{
-						href: "/rental/analytics/debt",
-						label: "Задолженность",
-						icon: AlertTriangle,
-					},
 					{
 						href: "/rental/analytics/history",
 						label: "История платежей",
@@ -401,17 +431,6 @@ const MODULES: Module[] = [
 						href: "/rental/analytics/summary",
 						label: "Сводный отчёт",
 						icon: PieChart,
-					},
-				],
-			},
-			{
-				title: "Владельцы",
-				items: [
-					{ href: "/rental/investors", label: "Владельцы", icon: Users },
-					{
-						href: "/rental/distributions",
-						label: "Распределение",
-						icon: Coins,
 					},
 				],
 			},
@@ -442,42 +461,8 @@ const MODULES: Module[] = [
 			},
 		],
 	},
-	{
-		id: "proptech",
-		label: moduleMeta("proptech").label,
-		shortLabel: moduleMeta("proptech").shortLabel,
-		icon: Target,
-		color: "#2563eb",
-		urlPrefix: moduleMeta("proptech").routePrefixes,
-		sections: [
-			{
-				title: "Продажи",
-				items: [
-					{ href: "/dashboard?tab=sales", label: "Обзор", icon: LayoutDashboard },
-					{ href: "/crm/leads", label: "Лиды", icon: Target },
-					{ href: "/crm/deals", label: "Сделки", icon: TrendingUp },
-					{ href: "/crm/contracts-sales", label: "Договоры", icon: FileText },
-					{ href: "/crm/chess", label: "Шахматка", icon: Grid3X3 },
-				],
-			},
-			{
-				title: "Клиенты",
-				items: [
-					{ href: "/crm/clients", label: "Клиенты", icon: Users },
-					{ href: "/crm/leads/intake", label: "Приём лидов", icon: Rss },
-					{ href: "/crm/client-relations", label: "Клиентский сервис", icon: MessageCircle },
-				],
-			},
-			{
-				title: "Настройки CRM",
-				items: [
-					{ href: "/crm/employees", label: "Сотрудники", icon: UserCircle },
-					{ href: "/crm/counterparties", label: "Контрагенты", icon: Briefcase },
-					{ href: "/crm/help", label: "Помощь", icon: CircleHelp },
-				],
-			},
-		],
-	},
+
+	// ── 5. Снабжение ─────────────────────────────────────────────────────
 	{
 		id: "warehouse",
 		label: moduleMeta("warehouse").label,
@@ -487,22 +472,13 @@ const MODULES: Module[] = [
 		urlPrefix: moduleMeta("warehouse").routePrefixes,
 		sections: [
 			{
-				title: "Управление",
+				title: "Заявки",
 				items: [
 					{
 						href: "/dashboard?tab=supply",
 						label: "Обзор",
 						icon: LayoutDashboard,
 					},
-					{ href: "/warehouse/suppliers", label: "Поставщики", icon: Factory },
-					{ href: "/warehouse/items", label: "Товары", icon: ShoppingBag },
-					{
-						href: "/warehouse/marketplace",
-						label: "Маркетплейс",
-						icon: Package,
-					},
-					{ href: "/warehouse/orders", label: "Заказы", icon: ClipboardList },
-					{ href: "/warehouse/companies", label: "Компании", icon: Building },
 					{
 						href: "/warehouse/requests",
 						label: "Заявки прорабов",
@@ -513,16 +489,16 @@ const MODULES: Module[] = [
 						label: "Согласования",
 						icon: ShieldCheck,
 					},
-					{ href: "/warehouse/help", label: "Помощь", icon: CircleHelp },
+					{ href: "/warehouse/orders", label: "Заказы", icon: ClipboardList },
 				],
 			},
 			{
 				title: "Склад",
 				items: [
-					{ href: "/warehouse/incoming", label: "Поступления", icon: Truck },
+					{ href: "/warehouse/incoming", label: "Приход", icon: Truck },
 					{
 						href: "/warehouse/outgoing",
-						label: "Списания / выдача",
+						label: "Расход / выдача",
 						icon: Layers,
 					},
 					{
@@ -533,7 +509,20 @@ const MODULES: Module[] = [
 				],
 			},
 			{
-				title: "Финансы и отчёты",
+				title: "Маркетплейс",
+				items: [
+					{
+						href: "/warehouse/marketplace",
+						label: "Маркетплейс",
+						icon: Package,
+					},
+					{ href: "/warehouse/suppliers", label: "Поставщики", icon: Factory },
+					{ href: "/warehouse/items", label: "Товары", icon: ShoppingBag },
+					{ href: "/warehouse/companies", label: "Компании", icon: Building },
+				],
+			},
+			{
+				title: "Отчёты",
 				items: [
 					{
 						href: "/warehouse/costs",
@@ -552,10 +541,71 @@ const MODULES: Module[] = [
 						icon: Users,
 					},
 					{ href: "/warehouse/settings", label: "Настройки", icon: Settings },
+					{ href: "/warehouse/help", label: "Помощь", icon: CircleHelp },
 				],
 			},
 		],
 	},
+
+	// ── 6. AI-инструменты ────────────────────────────────────────────────
+	{
+		id: "ai",
+		label: moduleMeta("ai").label,
+		shortLabel: moduleMeta("ai").shortLabel,
+		icon: Zap,
+		color: "#7c3aed",
+		urlPrefix: moduleMeta("ai").routePrefixes,
+		sections: [
+			{
+				title: "Документы и сметы",
+				items: [
+					{
+						href: "/construction/ai/estimates",
+						label: "AI Смета",
+						icon: BarChart3,
+					},
+					{
+						href: "/construction/ai/snip-check",
+						label: "Проверка СНиП",
+						icon: ShieldCheck,
+					},
+					{
+						href: "/construction/ai/tools",
+						label: "Генерация документов",
+						icon: Zap,
+					},
+				],
+			},
+			{
+				title: "Аналитика",
+				items: [
+					{
+						href: "/construction/ai/contractor-analytics",
+						label: "Анализ подрядчиков",
+						icon: BarChart3,
+					},
+					{
+						href: "/construction/ai/photo-report",
+						label: "Анализ фото стройки",
+						icon: Search,
+					},
+				],
+			},
+			{
+				title: "Ассистент",
+				items: [
+					{
+						href: "/construction/ai/chat",
+						label: "Чат по проекту",
+						icon: MessageCircle,
+					},
+					{ href: "/construction/ai/telegram", label: "Telegram-бот", icon: Send },
+				],
+			},
+		],
+	},
+
+	// ── 7. Сводное ───────────────────────────────────────────────────────
 	{
 		id: "consolidated",
 		label: moduleMeta("consolidated").label,
@@ -565,28 +615,26 @@ const MODULES: Module[] = [
 		urlPrefix: moduleMeta("consolidated").routePrefixes,
 		sections: [
 			{
-				title: "Главная",
+				title: "Обзор",
 				items: [
-					{ href: "/dashboard?tab=control", label: "Обзор", icon: LayoutDashboard },
-					{ href: "/properties", label: "Объекты", icon: Building2 },
+					{ href: "/dashboard?tab=control", label: "Мультипроект", icon: LayoutDashboard },
+					{ href: "/properties", label: "Все объекты", icon: Building2 },
 					{
 						href: "/properties/chess",
 						label: "Шахматка объектов",
 						icon: Grid3X3,
 					},
-					{ href: "/counterparties", label: "Все контрагенты", icon: Users },
-					{ href: "/companies", label: "Компании", icon: Building },
-					{ href: "/users", label: "Пользователи", icon: UserCircle },
-					{
-						href: "/design-system",
-						label: "Дизайн-система",
-						icon: Layers,
-					},
+					{ href: "/companies", label: "Компании холдинга", icon: Building },
 				],
 			},
 			{
-				title: "Отчёты",
+				title: "Финансы",
 				items: [
+					{
+						href: "/reports/cashflow",
+						label: "Сводный ДДС",
+						icon: BarChart3,
+					},
 					{
 						href: "/reports/directions",
 						label: "Расчёты с контрагентами",
@@ -597,16 +645,29 @@ const MODULES: Module[] = [
 						label: "Задолженность",
 						icon: AlertTriangle,
 					},
-					{
-						href: "/reports/cashflow",
-						label: "Денежный поток",
-						icon: BarChart3,
-					},
 					{ href: "/reports/rental", label: "Сводка аренды", icon: BarChart2 },
 					{
 						href: "/reports/payments",
 						label: "История платежей",
 						icon: Activity,
+					},
+				],
+			},
+			{
+				title: "Контрагенты",
+				items: [
+					{ href: "/counterparties", label: "Все контрагенты", icon: Users },
+				],
+			},
+			{
+				title: "Администрирование",
+				items: [
+					{ href: "/users", label: "Пользователи", icon: UserCircle },
+					{ href: "/settings", label: "Настройки", icon: Settings },
+					{
+						href: "/design-system",
+						label: "Дизайн-система",
+						icon: Layers,
 					},
 				],
 			},
@@ -842,28 +903,12 @@ export function Layout({ children }: { children: ReactNode }) {
 		const isPtoRole = userRole === "pto" || userRole === "engineer";
 		let sections = activeModule.sections;
 		if (isPtoRole && activeModule.id === "construction") {
+			// ПТО видит только строительные разделы, без "Себестоимость"
 			sections = sections.filter((s) =>
-				["Главный поток", "Себестоимость", "Производство"].includes(s.title),
+				["Проект", "Планирование", "Производство"].includes(s.title),
 			);
-			// ПТО не видит коммерческие пункты — только обзор, ЖК и шахматка
-			sections = sections.map((s) => {
-				if (s.title !== "Главный поток") return s;
-				return {
-					...s,
-					items: s.items.filter((item) =>
-						[
-							"/dashboard?tab=construction",
-							"/construction/projects",
-							"/construction/chess",
-						].includes(item.href),
-					),
-				};
-			});
 		}
 		if (!isAdminUser) {
-			sections = sections.filter(
-				(s) => !["AI-Инструменты", "AI и документы"].includes(s.title),
-			);
 			// Дизайн-система — только для администраторов
 			sections = sections.map((s) => ({
 				...s,

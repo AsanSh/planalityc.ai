@@ -107,6 +107,7 @@ import ImportCenter from "@/pages/import-center";
 import Login from "@/pages/login";
 import ModuleHelp from "@/pages/module-help";
 import PortalLogin from "@/pages/portal-login";
+import PortalsPage from "@/pages/portals";
 import ResetPassword from "@/pages/reset-password";
 import ForgotPassword from "@/pages/forgot-password";
 import InvestorPortal from "@/pages/portal/investor";
@@ -337,6 +338,39 @@ function Router() {
 			</Route>
 			<Route path="/legal">
 				<ProtectedRoute component={LegalPage} />
+			</Route>
+			<Route path="/legal/registry">
+				<ProtectedRoute component={LegalPage} />
+			</Route>
+			<Route path="/legal/templates">
+				<ProtectedRoute component={LegalPage} />
+			</Route>
+			<Route path="/legal/claims">
+				<ProtectedRoute component={LegalPage} />
+			</Route>
+			<Route path="/legal/court">
+				<ProtectedRoute component={LegalPage} />
+			</Route>
+			<Route path="/portals">
+				<ProtectedRoute component={PortalsPage} />
+			</Route>
+			<Route path="/portals/buyer">
+				<ProtectedRoute component={PortalsPage} />
+			</Route>
+			<Route path="/portals/contractor">
+				<ProtectedRoute component={PortalsPage} />
+			</Route>
+			<Route path="/portals/investor">
+				<ProtectedRoute component={PortalsPage} />
+			</Route>
+			<Route path="/portals/tenant">
+				<ProtectedRoute component={PortalsPage} />
+			</Route>
+			<Route path="/portals/invites">
+				<ProtectedRoute component={PortalsPage} />
+			</Route>
+			<Route path="/portals/access">
+				<ProtectedRoute component={PortalsPage} />
 			</Route>
 			<Route path="/dashboard">
 				<ProtectedRoute component={Dashboard} />

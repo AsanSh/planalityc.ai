@@ -6,6 +6,7 @@ import {
 	BarChart3,
 	Banknote,
 	Bell,
+	Briefcase,
 	Building,
 	Building2,
 	Calendar,
@@ -124,7 +125,7 @@ const MODULES: Module[] = [
 				items: [
 					{ href: "/reports/cashflow", label: "Сводный ДДС", icon: BarChart3 },
 					{ href: "/reports/payments", label: "Динамика продаж", icon: Activity },
-					{ href: "/reports", label: "Все отчёты", icon: PieChart },
+					{ href: "/reports/directions", label: "Все отчёты", icon: PieChart },
 				],
 			},
 		],
@@ -272,22 +273,24 @@ const MODULES: Module[] = [
 				title: "Очередь",
 				items: [
 					{ href: "/legal", label: "На согласовании", icon: CheckSquare },
-					{ href: "/legal", label: "Утверждённые", icon: CheckSquare },
-					{ href: "/legal", label: "Возвращённые", icon: ArrowRightLeft },
+					{ href: "/legal/registry", label: "Утверждённые", icon: CheckSquare },
+					{ href: "/legal/registry", label: "Возвращённые", icon: ArrowRightLeft },
 				],
 			},
 			{
 				title: "Реестр",
 				items: [
-					{ href: "/crm/sales-contracts", label: "Все договоры", icon: ScrollText },
-					{ href: "/crm/sales-contracts", label: "Поиск", icon: Search },
+					{ href: "/legal/registry", label: "Все договоры", icon: ScrollText },
+					{ href: "/legal/registry", label: "Поиск", icon: Search },
+					{ href: "/legal/claims", label: "Претензии", icon: AlertTriangle },
+					{ href: "/legal/court", label: "Судебные дела", icon: Briefcase },
 				],
 			},
 			{
 				title: "Шаблоны",
 				items: [
-					{ href: "/legal", label: "Шаблоны договоров", icon: FileText },
-					{ href: "/legal", label: "Доп. соглашения", icon: FileText },
+					{ href: "/legal/templates", label: "Шаблоны договоров", icon: FileText },
+					{ href: "/legal/templates", label: "Доп. соглашения", icon: FileText },
 				],
 			},
 		],
@@ -522,17 +525,18 @@ const MODULES: Module[] = [
 			{
 				title: "Типы порталов",
 				items: [
-					{ href: "/buyer-portal", label: "Покупатель", icon: Home },
-					{ href: "/contractor-portal", label: "Подрядчик", icon: Building },
-					{ href: "/investor-portal", label: "Инвестор", icon: Coins },
-					{ href: "/tenant-portal", label: "Арендатор", icon: Home },
+					{ href: "/portals", label: "Обзор", icon: LayoutDashboard },
+					{ href: "/portals/buyer", label: "Покупатель", icon: Home },
+					{ href: "/portals/contractor", label: "Подрядчик", icon: Building },
+					{ href: "/portals/investor", label: "Инвестор", icon: Coins },
+					{ href: "/portals/tenant", label: "Арендатор", icon: Home },
 				],
 			},
 			{
 				title: "Управление",
 				items: [
-					{ href: "/crm/client-relations", label: "Пригласить", icon: Send },
-					{ href: "/crm/clients", label: "Просмотр доступа", icon: Search },
+					{ href: "/portals/invites", label: "Пригласить", icon: Send },
+					{ href: "/portals/access", label: "Просмотр доступа", icon: Search },
 				],
 			},
 		],

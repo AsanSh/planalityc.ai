@@ -138,7 +138,7 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 		shortLabel: "CRM",
 		description: "Лиды, клиенты, сделки, клиентский сервис, объявления и портал контрагентов.",
 		settingsKeys: ["crm", "notifications"],
-		routePrefixes: ["/crm", "/proptech"],
+		routePrefixes: ["/crm", "/proptech", "/portals"],
 		dashboardTabs: ["sales"],
 		defaultPath: "/dashboard?tab=sales",
 		ownedEntities: ["lead", "client", "deal", "clientAnnouncement", "clientPortal"],

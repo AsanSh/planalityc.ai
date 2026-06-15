@@ -397,7 +397,7 @@ const MODULES: Module[] = [
 		id: "warehouse",
 		accessId: "warehouse",
 		label: "Снабжение",
-		shortLabel: "Снабжение",
+		shortLabel: "Снабж.",
 		icon: ShoppingBag,
 		color: "#0f766e",
 		urlPrefix: ["/warehouse"],
@@ -689,10 +689,10 @@ function SectionGroup({
 		<div
 			title={collapsed ? section.title : undefined}
 			className={cn(
-				"rounded-2xl border transition-all duration-200",
+				"rounded-[22px] border transition-all duration-200",
 				collapsed && "border-transparent",
 				open
-					? "border-cyan-400/18 bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+					? "border-white/10 bg-white/[0.035] shadow-[inset_0_1px_0_rgba(255,255,255,0.055)]"
 					: "border-transparent",
 			)}
 		>
@@ -702,7 +702,7 @@ function SectionGroup({
 					"w-full flex items-center justify-between gap-2 rounded-2xl px-3 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors",
 					collapsed && "justify-center px-2",
 					open || isActiveSection
-						? "text-cyan-100"
+						? "text-white/82"
 						: "text-white/35 hover:text-white/65",
 				)}
 			>
@@ -712,7 +712,7 @@ function SectionGroup({
 					<span className="truncate">{section.title}</span>
 				)}
 				{!collapsed && (open ? (
-					<ChevronDown className="w-3.5 h-3.5 text-cyan-300" />
+					<ChevronDown className="w-3.5 h-3.5 text-cyan-200/80" />
 				) : (
 					<ChevronRight className="w-3.5 h-3.5 text-white/30" />
 				))}
@@ -721,25 +721,32 @@ function SectionGroup({
 				<div className={cn("space-y-1 px-2 pb-2", collapsed && "px-0")}>
 					{items.map((item) => {
 						// Only mark as active if this is the most specific match
-						const active = bestMatch?.href === item.href;
+						const active = bestMatch === item;
 						const Icon = item.icon;
 						return (
-							<Link key={`${item.href}-${item.label}`} href={item.href}>
+							<Link
+								key={`${item.href}-${item.label}`}
+								href={item.href}
+								className="outline-none focus:outline-none"
+							>
 								<div
 									className={cn(
-										"flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] cursor-pointer transition-all duration-150 group",
+										"relative flex items-center gap-2.5 rounded-2xl border px-2.5 py-2 text-[13px] cursor-pointer transition-all duration-150 group",
 										collapsed && "justify-center px-2",
 										active
-											? "bg-cyan-500 text-white shadow-lg shadow-cyan-950/20"
-											: "text-white/58 hover:text-white hover:bg-white/[0.075]",
+											? "border-cyan-200/20 bg-white/[0.105] text-white shadow-[0_12px_30px_-24px_rgba(34,211,238,0.8)]"
+											: "border-transparent text-white/58 hover:border-white/8 hover:bg-white/[0.07] hover:text-white",
 									)}
 									title={collapsed ? item.label : undefined}
 								>
+									{active && !collapsed && (
+										<span className="absolute left-1 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-cyan-300/90" />
+									)}
 									<Icon
 										className={cn(
 											"w-3.5 h-3.5 flex-shrink-0",
 											active
-												? "text-white"
+												? "text-cyan-100"
 												: "text-white/35 group-hover:text-cyan-200",
 										)}
 									/>
@@ -946,8 +953,8 @@ export function Layout({ children }: { children: ReactNode }) {
 				className={cn(
 					"flex-shrink-0 flex flex-row overflow-hidden z-50",
 					"fixed md:relative inset-y-0 left-0 transition-all duration-200",
-					sidebarCollapsed ? "md:w-[72px]" : "md:w-[260px]",
-					"w-[260px]",
+					sidebarCollapsed ? "md:w-[86px]" : "md:w-[292px]",
+					"w-[292px] max-w-[88vw]",
 					mobileNavOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
 				)}
 				style={{
@@ -956,7 +963,7 @@ export function Layout({ children }: { children: ReactNode }) {
 				}}
 			>
 				{/* ── LEFT STRIP: module icons ── */}
-				<div className="flex flex-col w-[72px] flex-shrink-0 border-r border-white/8">
+				<div className="flex flex-col w-[86px] flex-shrink-0 border-r border-white/8">
 					{/* Logo */}
 					<div className="flex items-center justify-center py-4 border-b border-white/8">
 						<PlanalitycLogo variant="mark" className="h-9 w-9" />
@@ -968,14 +975,18 @@ export function Layout({ children }: { children: ReactNode }) {
 							const Icon = m.icon;
 							const isActive = m.id === activeModule.id;
 							return (
-								<Link key={m.id} href={getModuleEntryHref(m)}>
+								<Link
+									key={m.id}
+									href={getModuleEntryHref(m)}
+									className="outline-none focus:outline-none"
+								>
 									<div
 										title={m.label}
 										className={cn(
-											"flex flex-col items-center gap-1 w-14 py-2 px-1 rounded-xl cursor-pointer transition-all duration-150",
+											"relative flex flex-col items-center gap-1 w-[74px] py-2.5 px-1.5 rounded-[18px] cursor-pointer transition-all duration-150",
 											isActive
-												? "bg-cyan-500/20 text-cyan-300"
-												: "text-white/40 hover:text-white/80 hover:bg-white/8",
+												? "bg-white/[0.105] text-cyan-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+												: "text-white/42 hover:text-white/80 hover:bg-white/7",
 										)}
 									>
 										<Icon
@@ -986,7 +997,7 @@ export function Layout({ children }: { children: ReactNode }) {
 											style={{ color: isActive ? "#67e8f9" : m.color }}
 										/>
 										<span
-											className="text-[9px] font-semibold leading-none text-center truncate w-full"
+											className="text-[10px] font-semibold leading-tight text-center w-full"
 											style={{ color: isActive ? "#a5f3fc" : undefined }}
 										>
 											{m.shortLabel}

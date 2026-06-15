@@ -121,3 +121,9 @@ artifacts/api-server/drizzle/.drizzle/
 
 # SSH keys
 .ssh/
+
+# buildflow-mobile: keep icon + build script (overrides *.png and scripts/ above)
+!artifacts/buildflow-mobile/assets/
+!artifacts/buildflow-mobile/assets/**
+!artifacts/buildflow-mobile/scripts/
+!artifacts/buildflow-mobile/scripts/**

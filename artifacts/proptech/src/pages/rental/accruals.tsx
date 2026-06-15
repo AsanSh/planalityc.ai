@@ -316,7 +316,7 @@ export default function Accruals() {
 	};
 
 	return (
-		<div className="space-y-3">
+		<div className="p-6 space-y-4">
 			<KpiRow>
 				<KpiCard variant="strip" label="Начислений" value={filtered.length} sub="за период" icon={Receipt} color="blue" loading={isLoading} />
 				<KpiCard variant="strip" label="Ожидают" value={filteredPending} sub={filteredOverdue > 0 ? `${filteredOverdue} просрочено` : "подтверждения"} icon={Clock} color="yellow" loading={isLoading} />

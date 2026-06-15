@@ -379,7 +379,7 @@ export default function RentalAccounts() {
 	}
 
 	return (
-		<div className="space-y-3">
+		<div className="p-6 space-y-4">
 			<KpiRow cols={3}>
 				<KpiCard variant="strip" label="Всего счетов" value={accounts.length} sub="в модуле аренды" icon={Wallet} color="blue" loading={isLoading} />
 				<KpiCard variant="strip" label="Суммарный баланс" value={fmt(totalBalance, "KGS")} sub="в сомах" icon={CreditCard} color="green" loading={isLoading} />

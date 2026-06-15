@@ -301,7 +301,7 @@ export default function OwnerStatements() {
 	);
 
 	return (
-		<div className="space-y-3">
+		<div className="p-6 space-y-4">
 			<KpiRow>
 				<KpiCard variant="strip" label="Начислено" value={fmtKGS(totalCharged)} sub="за период" icon={TrendingUp} color="blue" loading={isLoading} />
 				<KpiCard variant="strip" label="Собрано" value={fmtKGS(totalReceived)} sub="за период" icon={Wallet} color="green" loading={isLoading} />

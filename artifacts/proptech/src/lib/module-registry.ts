@@ -8,7 +8,8 @@ export type CanonicalModuleId =
 	| "procurement"
 	| "crm"
 	| "rent"
-	| "investors";
+	| "investors"
+	| "ai";
 
 export type ModuleIntegrationId =
 	| "construction.finance"

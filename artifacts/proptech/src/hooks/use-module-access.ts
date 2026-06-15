@@ -51,7 +51,7 @@ export function useModuleAccess() {
 	const allowedModules = useMemo(() => {
 		const byRole = resolveAllowedModules(role, permissions);
 		// Admins see all modules regardless of company DB settings
-		if (role === "company_admin" || role === "admin") return byRole;
+		if (role === "company_admin" || role === "super_admin") return byRole;
 		const byCompany = settingsKeysToModuleIds(enabledKeys);
 		if (!byCompany) return byRole;
 		if (byRole.includes("consolidated") && !byCompany.includes("consolidated")) {

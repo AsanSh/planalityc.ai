@@ -139,7 +139,7 @@ const MODULES: Module[] = [
 		shortLabel: "Проекты",
 		icon: Building2,
 		color: "#0ea5e9",
-		urlPrefix: ["/construction/projects", "/construction/chess", "/construction/photo-gallery"],
+		urlPrefix: ["/construction/projects", "/construction/chess", "/construction/photo-gallery", "/construction/reconciliation"],
 		sections: [
 			{
 				title: "Объект",
@@ -152,9 +152,9 @@ const MODULES: Module[] = [
 			{
 				title: "Цены",
 				items: [
-					{ href: "/construction/chess", label: "Прайс-лист", icon: Target },
-					{ href: "/construction/chess", label: "Скидки", icon: Receipt },
-					{ href: "/construction/chess", label: "Открыть продажи", icon: CheckSquare },
+					{ href: "/construction/chess?mode=prices", label: "Прайс-лист", icon: Target },
+					{ href: "/construction/chess?mode=prices", label: "Управление ценами", icon: Receipt },
+					{ href: "/construction/chess?mode=publish", label: "Открыть продажи", icon: CheckSquare },
 				],
 			},
 			{
@@ -223,7 +223,7 @@ const MODULES: Module[] = [
 			"/construction/contractors", "/construction/materials",
 			"/construction/planning", "/construction/employees",
 			"/construction/counterparties", "/construction/settings",
-			"/construction/help", "/construction/reconciliation",
+			"/construction/help", "/construction/reports",
 		],
 		sections: [
 			{
@@ -231,7 +231,7 @@ const MODULES: Module[] = [
 				items: [
 					{ href: "/construction/stages", label: "Этапы WBS", icon: Flag },
 					{ href: "/construction/tasks", label: "Задачи", icon: ClipboardList },
-					{ href: "/construction/planning/forecast", label: "Gantt", icon: BarChart3 },
+					{ href: "/construction/stages?view=gantt", label: "Gantt", icon: BarChart3 },
 				],
 			},
 			{
@@ -274,15 +274,13 @@ const MODULES: Module[] = [
 				items: [
 					{ href: "/legal", label: "На согласовании", icon: CheckSquare },
 					{ href: "/legal/registry", label: "Утверждённые", icon: CheckSquare },
-					{ href: "/legal/registry", label: "Возвращённые", icon: ArrowRightLeft },
+					{ href: "/legal/claims", label: "Претензии / возврат", icon: ArrowRightLeft },
 				],
 			},
 			{
 				title: "Реестр",
 				items: [
 					{ href: "/legal/registry", label: "Все договоры", icon: ScrollText },
-					{ href: "/legal/registry", label: "Поиск", icon: Search },
-					{ href: "/legal/claims", label: "Претензии", icon: AlertTriangle },
 					{ href: "/legal/court", label: "Судебные дела", icon: Briefcase },
 				],
 			},
@@ -290,7 +288,6 @@ const MODULES: Module[] = [
 				title: "Шаблоны",
 				items: [
 					{ href: "/legal/templates", label: "Шаблоны договоров", icon: FileText },
-					{ href: "/legal/templates", label: "Доп. соглашения", icon: FileText },
 				],
 			},
 		],

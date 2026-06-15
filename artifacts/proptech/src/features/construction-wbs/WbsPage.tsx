@@ -7,7 +7,8 @@ import {
 	Plus,
 	Table2,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { CurrencyToggle } from "@/components/currency-toggle";
 import {
@@ -68,15 +69,27 @@ const VIEW_OPTS: { id: WbsViewMode; label: string; icon: typeof Layers }[] = [
 export function WbsPage() {
 	const qc = useQueryClient();
 	const { toast } = useToast();
+	const search = useSearch();
 	const [dialog, setDialog] = useState<DialogState>(null);
 	const [selectedNode, setSelectedNode] = useState<FlatWbsNode | null>(null);
 	const [projectFilter, setProjectFilter] = useState<string>("all");
 	const [displayCurrency, setDisplayCurrency] = useState<DisplayCurrency>("KGS");
 	const [viewMode, setViewMode] = useState<WbsViewMode>(() => {
+		// URL param ?view=gantt overrides localStorage
+		const urlView = new URLSearchParams(search).get("view") as WbsViewMode | null;
+		if (urlView && VIEW_OPTS.some((v) => v.id === urlView)) return urlView;
 		if (typeof window === "undefined") return "wbs";
 		const saved = localStorage.getItem(VIEW_STORAGE_KEY) as WbsViewMode | null;
 		return saved && VIEW_OPTS.some((v) => v.id === saved) ? saved : "wbs";
 	});
+
+	// Keep view in sync if URL param changes (e.g. back-navigation)
+	useEffect(() => {
+		const urlView = new URLSearchParams(search).get("view") as WbsViewMode | null;
+		if (urlView && VIEW_OPTS.some((v) => v.id === urlView)) {
+			setViewMode(urlView);
+		}
+	}, [search]);
 
 	const { data: projects = [] } = useQuery<ProjectOption[]>({
 		queryKey: ["construction-projects"],

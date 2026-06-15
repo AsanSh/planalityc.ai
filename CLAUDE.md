@@ -20,5 +20,13 @@ Do not duplicate those guidelines here.
 
 ## Deploy
 
-- Frontend: `artifacts/proptech` → Vercel (`proptech-sigma-eight.vercel.app`)
-- API: `artifacts/api-server` → Vercel
+| Приложение | Vercel project | Production URL |
+|------------|----------------|----------------|
+| Frontend | `planalityc.ai` | https://planalitycai.vercel.app |
+| API | `planalityc-api` | https://planalityc-api.vercel.app |
+
+`VITE_API_URL` для frontend: `https://planalityc-api.vercel.app`.
+
+**Не путать** с отдельным Proptech (`proptech-sigma-eight` / `proptech-api`) — другой репозиторий/деплой.
+
+Подробности: [.cursor/rules/vercel-deploy-production.mdc](.cursor/rules/vercel-deploy-production.mdc).

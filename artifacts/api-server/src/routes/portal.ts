@@ -15,6 +15,7 @@ import { requireTenantCompany } from "../middleware/tenant";
 import { hashPassword, validatePassword } from "../lib/security";
 import { sendPortalAccessEmail } from "../lib/email";
 import { createPortalUser, findUserByLinkedEntity } from "../lib/portal-account";
+import { getFrontendBaseUrl } from "../lib/app-urls";
 import { parseContractDocumentMeta, summarizeContractDocument } from "../lib/contract-document";
 import { buildBuyerReconciliation, buildSupplierReconciliation } from "../lib/portal-reconciliation";
 
@@ -535,7 +536,7 @@ router.post("/portal/create-buyer-account", requireRole("admin", "company_admin"
       linkedEntityId: buyerId,
     });
     const { passwordHash: _ph, ...safeUser } = result.user;
-    const origin = (req.headers.origin as string) || "https://proptech-sigma-eight.vercel.app";
+    const origin = (req.headers.origin as string) || getFrontendBaseUrl();
     res.status(result.created ? 201 : 200).json({
       user: safeUser,
       loginUrl: `${origin}/portal-login`,

@@ -18,6 +18,7 @@ import {
   parseMarketplacePriceImport,
 } from "../lib/marketplace-import-core";
 import { createPortalUser } from "../lib/portal-account";
+import { getFrontendBaseUrl } from "../lib/app-urls";
 import { hashPassword, validatePassword } from "../lib/security";
 
 const router: ReturnType<typeof Router> = Router();
@@ -236,9 +237,9 @@ router.post(
         user: fresh,
         created: result.created,
         loginUrl: phone
-          ? "https://proptech-sigma-eight.vercel.app/portal-login"
-          : "https://proptech-sigma-eight.vercel.app/login",
-        portalUrl: "https://proptech-sigma-eight.vercel.app/marketplace-supplier-portal",
+          ? `${getFrontendBaseUrl()}/portal-login`
+          : `${getFrontendBaseUrl()}/login`,
+        portalUrl: `${getFrontendBaseUrl()}/marketplace-supplier-portal`,
       });
     } catch (e) {
       res.status(409).json({

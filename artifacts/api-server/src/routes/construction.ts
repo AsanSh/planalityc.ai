@@ -25,6 +25,7 @@ import {
   supplyRequestItemsTable,
 } from "../lib/db";
 import { sendTaskAssignedEmail } from "../lib/email";
+import { getFrontendBaseUrl } from "../lib/app-urls";
 import { logTaskActivity, taskFieldChanges } from "../lib/construction-task-work";
 import { constructionSalesContractsTable } from "../lib/db";
 import { ensureCounterpartyWithRole } from "../lib/counterparty-sync";
@@ -1360,7 +1361,7 @@ async function notifyTaskAssigned(params: {
     const [recipient] = await db.select().from(usersTable).where(eq(usersTable.id, assignedToId));
     const [assigner] = await db.select().from(usersTable).where(eq(usersTable.id, assignerId));
     if (recipient?.email) {
-      const baseOrigin = origin || "https://proptech-sigma-eight.vercel.app";
+      const baseOrigin = origin || getFrontendBaseUrl();
       const taskUrl = `${baseOrigin}/construction/tasks/${taskId}`;
       const assignerName = assigner ? `${assigner.firstName} ${assigner.lastName}`.trim() : "Коллега";
       // Fire-and-forget: не блокируем создание задачи на отправке email.

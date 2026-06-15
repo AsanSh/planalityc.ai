@@ -103,7 +103,7 @@ const MODULES: Module[] = [
 		shortLabel: "Дашборд",
 		icon: LayoutDashboard,
 		color: "#64748b",
-		urlPrefix: ["/dashboard"],
+		urlPrefix: ["/dashboard", "/activity"],
 		sections: [
 			{
 				title: "Сводка",
@@ -307,8 +307,6 @@ const MODULES: Module[] = [
 		urlPrefix: [
 			"/construction/accounts", "/construction/accruals", "/construction/cashier",
 			"/construction/payroll", "/construction/analytics",
-			"/construction/planning/forecast", "/construction/planning/overdue",
-			"/construction/planning/approvals",
 			"/reports/cashflow", "/reports/payments", "/reports/debt", "/reports/directions",
 		],
 		sections: [
@@ -484,7 +482,7 @@ const MODULES: Module[] = [
 		shortLabel: "Сводное",
 		icon: Globe,
 		color: "#6b7280",
-		urlPrefix: ["/properties", "/reports", "/counterparties", "/companies", "/consolidated", "/import", "/activity"],
+		urlPrefix: ["/properties", "/reports", "/counterparties", "/companies", "/consolidated", "/import"],
 		sections: [
 			{
 				title: "Обзор",

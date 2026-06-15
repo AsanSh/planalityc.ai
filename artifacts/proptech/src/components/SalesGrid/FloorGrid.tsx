@@ -59,6 +59,17 @@ export function FloorGrid({
 							.join(" ");
 
 						return (
+							<>
+								{idx > 0 && (
+									<tr key={`sep-${floor}`} aria-hidden>
+										<td
+											colSpan={maxCols + 1}
+											className="py-0"
+										>
+											<div className="mx-1 border-t border-dashed border-slate-200" />
+										</td>
+									</tr>
+								)}
 							<tr
 								key={floor}
 								onDragOver={(e) => {
@@ -124,6 +135,7 @@ export function FloorGrid({
 									);
 								})}
 							</tr>
+						</>
 						);
 					})}
 				</tbody>

@@ -1,0 +1,27 @@
+name: Deploy Frontend → Vercel
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'artifacts/proptech/**'
+      - '.github/workflows/deploy-frontend.yml'
+
+jobs:
+  deploy:
+    name: Deploy planalityc.ai
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Deploy to Production
+        run: |
+          vercel deploy --prod \
+            --token=${{ secrets.VERCEL_TOKEN }} \
+            --yes
+        env:
+          VERCEL_ORG_ID: team_qAoTAQ23XcOvbSRXVfeWOmWa
+          VERCEL_PROJECT_ID: prj_q2XDXlkAWPsMRmEVhOG5tXHSwGHU

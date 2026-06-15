@@ -155,6 +155,7 @@ import Settings from "@/pages/settings";
 import DesignSystemShowcase from "@/pages/design-system";
 import SettingsCategories from "@/pages/settings/categories";
 import SettingsLegal from "@/pages/settings/legal-entities";
+import LegalPage from "@/pages/legal";
 import SettingsPeriods from "@/pages/settings/periods";
 import SettingsRoles from "@/pages/settings/roles";
 import SettingsSystemAccounts from "@/pages/settings/system-accounts";
@@ -333,6 +334,9 @@ function Router() {
 			{/* ── Сводное (consolidated) — legacy redirect ── */}
 			<Route path="/consolidated">
 				<Redirect to="/dashboard?tab=control" />
+			</Route>
+			<Route path="/legal">
+				<ProtectedRoute component={LegalPage} />
 			</Route>
 			<Route path="/dashboard">
 				<ProtectedRoute component={Dashboard} />

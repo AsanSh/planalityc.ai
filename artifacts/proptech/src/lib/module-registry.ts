@@ -48,7 +48,7 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 		shortLabel: "Сводное",
 		description: "Общее ядро компании: пользователи, контрагенты, настройки, импорт и сводная аналитика.",
 		settingsKeys: ["core", "analytics", "properties", "users", "counterparties", "settings", "admin"],
-		routePrefixes: ["/dashboard", "/consolidated", "/counterparties", "/properties", "/users", "/settings", "/design-system", "/import", "/activity", "/companies", "/reports"],
+		routePrefixes: ["/dashboard", "/consolidated", "/counterparties", "/properties", "/users", "/settings", "/design-system", "/import", "/activity", "/companies", "/reports", "/legal"],
 		dashboardTabs: ["control", "analytics"],
 		defaultPath: "/dashboard?tab=control",
 		ownedEntities: ["company", "user", "role", "counterparty", "notification"],

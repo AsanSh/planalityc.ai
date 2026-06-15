@@ -114,6 +114,9 @@ replit.md
 # Claude internal
 .claude/
 
+# Graphify analysis output
+graphify-out/
+
 # Drizzle generated (keep migrations, skip studio cache)
 artifacts/api-server/drizzle/.drizzle/
 .vercel

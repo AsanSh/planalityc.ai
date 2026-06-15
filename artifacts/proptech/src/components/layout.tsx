@@ -660,6 +660,12 @@ const MODULES: Module[] = [
 				],
 			},
 			{
+				title: "Юрист",
+				items: [
+					{ href: "/legal", label: "Договоры на согласовании", icon: Scale },
+				],
+			},
+			{
 				title: "Администрирование",
 				items: [
 					{ href: "/users", label: "Пользователи", icon: UserCircle },

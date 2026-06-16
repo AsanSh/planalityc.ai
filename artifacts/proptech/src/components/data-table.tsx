@@ -49,8 +49,8 @@ export type TableDensity = "compact" | "normal" | "comfortable";
 type Persisted = TableViewLayout;
 
 const DENSITY_PADDING: Record<TableDensity, string> = {
-	compact: "py-2",
-	normal: "py-3",
+	compact: "py-1.5",
+	normal: "py-2.5",
 	comfortable: "py-4",
 };
 
@@ -300,10 +300,10 @@ export function DataTable<T>({
 			title={title}
 			onClick={() => setDensity(d)}
 			className={cn(
-				"p-1.5 rounded-full transition-all duration-150",
+				"p-1.5 rounded-full transition-colors",
 				density === d
 					? "bg-slate-950 text-white shadow-sm"
-					: "text-slate-500 hover:bg-white hover:text-slate-900",
+					: "text-slate-500 hover:bg-white/80",
 			)}
 		>
 			<Icon className="w-4 h-4" />
@@ -311,18 +311,18 @@ export function DataTable<T>({
 	);
 
 	return (
-		<div className="space-y-3 min-w-0">
+		<div className="space-y-3">
 			{!hideToolbar && (
-				<div className="am-shell-filter p-2 flex items-center gap-2 flex-wrap rounded-[22px]">
+				<div className="am-shell-filter p-2 flex items-center gap-2 flex-wrap rounded-[24px]">
 				{toolbar}
 				{enableSearch && (
-					<div className="relative min-w-[220px] flex-1">
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+					<div className="relative min-w-[220px] flex-1 sm:flex-none">
+						<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600" />
 						<Input
 							value={globalFilter}
 							onChange={(e) => setGlobalFilter(e.target.value)}
 							placeholder={searchPlaceholder}
-							className="h-10 w-full rounded-[16px] border-slate-200/90 bg-white/86 pl-9 shadow-sm shadow-slate-950/4 focus-visible:ring-cyan-600/16 sm:w-72"
+							className="pl-8 h-10 w-full sm:w-64"
 						/>
 					</div>
 				)}
@@ -336,7 +336,7 @@ export function DataTable<T>({
 				<Button
 					variant="outline"
 					size="sm"
-					className="h-10 gap-1.5 rounded-[16px] text-sm shadow-sm shadow-slate-950/4"
+					className="h-10 gap-1.5 text-sm"
 					onClick={exportCsv}
 				>
 					<Download className="w-4 h-4" /> CSV
@@ -346,7 +346,7 @@ export function DataTable<T>({
 						<Button
 							variant="outline"
 							size="sm"
-							className="h-10 gap-1.5 rounded-[16px] text-sm shadow-sm shadow-slate-950/4"
+							className="h-10 gap-1.5 text-sm"
 						>
 							<SlidersHorizontal className="w-4 h-4" /> Столбцы
 						</Button>
@@ -402,8 +402,8 @@ export function DataTable<T>({
 				className={cn(
 					"overflow-auto",
 					isExcel
-						? "rounded-[22px] border border-slate-200/90 bg-white/90 shadow-xl shadow-slate-950/8 backdrop-blur-xl"
-						: "am-card rounded-[22px] border border-white/70 bg-white/84 shadow-xl shadow-slate-950/8 backdrop-blur-xl",
+						? "rounded-[24px] border border-slate-200/90 bg-white/86 shadow-xl shadow-slate-950/8 backdrop-blur-xl"
+						: "am-card rounded-[24px] border border-white/70 bg-white/80 shadow-xl shadow-slate-950/8 backdrop-blur-xl",
 				)}
 				style={maxHeight ? { maxHeight } : undefined}
 			>
@@ -423,7 +423,7 @@ export function DataTable<T>({
 								className={
 									isExcel
 										? "border-b border-slate-800/40 bg-slate-950 text-white"
-										: "border-b border-slate-200/70 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950 text-white"
+										: "border-b border-slate-200/70 bg-slate-900 text-white"
 								}
 							>
 								{showRowIndex && (
@@ -453,7 +453,7 @@ export function DataTable<T>({
 												"relative select-none group/col",
 												isExcel
 													? "border border-slate-800/70 bg-slate-950 py-2 px-2 font-bold text-white/72 whitespace-nowrap text-[10px] uppercase tracking-[0.12em] sticky top-0 z-20"
-													: "px-3 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-white/80 whitespace-nowrap sticky top-0 z-20",
+													: "px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/78 whitespace-nowrap sticky top-0 z-20",
 												align === "right"
 													? "text-right"
 													: align === "center"
@@ -468,7 +468,7 @@ export function DataTable<T>({
 													onClick={header.column.getToggleSortingHandler()}
 													className={cn(
 														"inline-flex items-center gap-1 uppercase tracking-wide",
-														canSort && "cursor-pointer transition-colors hover:text-cyan-100",
+														canSort && "cursor-pointer hover:text-gray-600",
 														align === "right" && "flex-row-reverse",
 													)}
 												>
@@ -563,8 +563,8 @@ export function DataTable<T>({
 											? rowIndex % 2 === 0
 												? "bg-white/80"
 												: "bg-slate-50/80"
-											: "border-b border-slate-100/80 bg-white/76 transition-colors odd:bg-white/58 hover:bg-slate-50/90",
-										onRowClick && "cursor-pointer hover:bg-cyan-50/72",
+											: "border-b border-slate-100/80 bg-white/70 transition-colors odd:bg-white/55",
+										onRowClick && "cursor-pointer hover:bg-cyan-50/70",
 										rowClassName?.(row.original),
 									)}
 								>
@@ -596,7 +596,7 @@ export function DataTable<T>({
 												className={cn(
 													isExcel
 														? "border border-slate-100 px-2 py-2 text-slate-800 overflow-hidden"
-														: ["px-3 text-[13px] leading-5 text-slate-700", padding, "overflow-hidden"],
+														: ["px-3 text-slate-700", padding, "overflow-hidden"],
 													align === "right"
 														? "text-right"
 														: align === "center"

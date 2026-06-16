@@ -95,18 +95,18 @@ interface Module {
 }
 
 const MODULES: Module[] = [
-	// ── 1. Главная (Дашборд + Сводное объединены) ──────────────────────
+	// ── 1. Дашборд ──────────────────────────────────────────────────────
 	{
 		id: "dashboard",
 		accessId: "consolidated",
-		label: "Главная",
-		shortLabel: "Главная",
+		label: "Дашборд",
+		shortLabel: "Дашборд",
 		icon: LayoutDashboard,
 		color: "#64748b",
-		urlPrefix: ["/dashboard", "/activity", "/properties", "/reports", "/counterparties", "/companies", "/consolidated", "/import"],
+		urlPrefix: ["/dashboard"],
 		sections: [
 			{
-				title: "Обзор",
+				title: "Сводка",
 				items: [
 					{ href: "/dashboard?tab=control", label: "Все проекты", icon: Home },
 					{ href: "/dashboard?tab=analytics", label: "Ключевые KPI", icon: TrendingUp },
@@ -114,27 +114,18 @@ const MODULES: Module[] = [
 				],
 			},
 			{
-				title: "Реестры",
+				title: "Согласования",
 				items: [
-					{ href: "/properties", label: "Все объекты", icon: Building2 },
-					{ href: "/companies", label: "Все компании", icon: Users },
-					{ href: "/counterparties", label: "Контрагенты", icon: Users },
+					{ href: "/construction/planning/approvals", label: "Очередь утверждений", icon: CheckSquare },
+					{ href: "/construction/tasks", label: "Мои задачи", icon: ClipboardList },
 				],
 			},
 			{
 				title: "Отчёты",
 				items: [
 					{ href: "/reports/cashflow", label: "Сводный ДДС", icon: BarChart3 },
-					{ href: "/construction/analytics/pnl", label: "Сводный ОПУ", icon: FileText },
 					{ href: "/reports/payments", label: "Динамика продаж", icon: Activity },
 					{ href: "/reports/directions", label: "Все отчёты", icon: PieChart },
-				],
-			},
-			{
-				title: "Задачи",
-				items: [
-					{ href: "/construction/planning/approvals", label: "Очередь утверждений", icon: CheckSquare },
-					{ href: "/construction/tasks", label: "Мои задачи", icon: ClipboardList },
 				],
 			},
 		],
@@ -148,7 +139,7 @@ const MODULES: Module[] = [
 		shortLabel: "Проекты",
 		icon: Building2,
 		color: "#0ea5e9",
-		urlPrefix: ["/construction/projects", "/construction/chess", "/construction/photo-gallery", "/construction/reconciliation"],
+		urlPrefix: ["/construction/projects", "/construction/chess", "/construction/photo-gallery"],
 		sections: [
 			{
 				title: "Объект",
@@ -161,9 +152,9 @@ const MODULES: Module[] = [
 			{
 				title: "Цены",
 				items: [
-					{ href: "/construction/chess?mode=prices", label: "Прайс-лист", icon: Target },
-					{ href: "/construction/chess?mode=prices", label: "Управление ценами", icon: Receipt },
-					{ href: "/construction/chess?mode=publish", label: "Открыть продажи", icon: CheckSquare },
+					{ href: "/construction/chess", label: "Прайс-лист", icon: Target },
+					{ href: "/construction/chess", label: "Скидки", icon: Receipt },
+					{ href: "/construction/chess", label: "Открыть продажи", icon: CheckSquare },
 				],
 			},
 			{
@@ -232,7 +223,7 @@ const MODULES: Module[] = [
 			"/construction/contractors", "/construction/materials",
 			"/construction/planning", "/construction/employees",
 			"/construction/counterparties", "/construction/settings",
-			"/construction/help", "/construction/reports",
+			"/construction/help", "/construction/reconciliation",
 		],
 		sections: [
 			{
@@ -240,7 +231,7 @@ const MODULES: Module[] = [
 				items: [
 					{ href: "/construction/stages", label: "Этапы WBS", icon: Flag },
 					{ href: "/construction/tasks", label: "Задачи", icon: ClipboardList },
-					{ href: "/construction/stages?view=gantt", label: "Gantt", icon: BarChart3 },
+					{ href: "/construction/planning/forecast", label: "Gantt", icon: BarChart3 },
 				],
 			},
 			{
@@ -283,13 +274,15 @@ const MODULES: Module[] = [
 				items: [
 					{ href: "/legal", label: "На согласовании", icon: CheckSquare },
 					{ href: "/legal/registry", label: "Утверждённые", icon: CheckSquare },
-					{ href: "/legal/claims", label: "Претензии / возврат", icon: ArrowRightLeft },
+					{ href: "/legal/registry", label: "Возвращённые", icon: ArrowRightLeft },
 				],
 			},
 			{
 				title: "Реестр",
 				items: [
 					{ href: "/legal/registry", label: "Все договоры", icon: ScrollText },
+					{ href: "/legal/registry", label: "Поиск", icon: Search },
+					{ href: "/legal/claims", label: "Претензии", icon: AlertTriangle },
 					{ href: "/legal/court", label: "Судебные дела", icon: Briefcase },
 				],
 			},
@@ -297,6 +290,7 @@ const MODULES: Module[] = [
 				title: "Шаблоны",
 				items: [
 					{ href: "/legal/templates", label: "Шаблоны договоров", icon: FileText },
+					{ href: "/legal/templates", label: "Доп. соглашения", icon: FileText },
 				],
 			},
 		],
@@ -313,6 +307,8 @@ const MODULES: Module[] = [
 		urlPrefix: [
 			"/construction/accounts", "/construction/accruals", "/construction/cashier",
 			"/construction/payroll", "/construction/analytics",
+			"/construction/planning/forecast", "/construction/planning/overdue",
+			"/construction/planning/approvals",
 			"/reports/cashflow", "/reports/payments", "/reports/debt", "/reports/directions",
 		],
 		sections: [
@@ -480,7 +476,43 @@ const MODULES: Module[] = [
 		],
 	},
 
-	// ── 10. Порталы ─────────────────────────────────────────────────────
+	// ── 10. Сводное ─────────────────────────────────────────────────────
+	{
+		id: "consolidated",
+		accessId: "consolidated",
+		label: "Сводное",
+		shortLabel: "Сводное",
+		icon: Globe,
+		color: "#6b7280",
+		urlPrefix: ["/properties", "/reports", "/counterparties", "/companies", "/consolidated", "/import", "/activity"],
+		sections: [
+			{
+				title: "Обзор",
+				items: [
+					{ href: "/dashboard?tab=control", label: "Мультипроект", icon: LayoutDashboard },
+					{ href: "/properties", label: "Все объекты", icon: Building2 },
+					{ href: "/companies", label: "Все компании", icon: Users },
+				],
+			},
+			{
+				title: "Финансы",
+				items: [
+					{ href: "/reports/cashflow", label: "Сводный ДДС", icon: BarChart3 },
+					{ href: "/construction/analytics/pnl", label: "Сводный ОПУ", icon: FileText },
+					{ href: "/reports/directions", label: "Инвест. портфель", icon: PieChart },
+				],
+			},
+			{
+				title: "Контрагенты",
+				items: [
+					{ href: "/counterparties", label: "Единый реестр", icon: Users },
+					{ href: "/crm/sales-contracts", label: "Все договоры", icon: FileText },
+				],
+			},
+		],
+	},
+
+	// ── 11. Порталы ─────────────────────────────────────────────────────
 	{
 		id: "portals",
 		accessId: "proptech",
@@ -771,11 +803,11 @@ export function Layout({ children }: { children: ReactNode }) {
 		allowedModules.includes(m.accessId),
 	);
 	const businessModules = allowedVisibleModules.filter(
-		(m) => !["dashboard", "legal", "admin"].includes(m.id),
+		(m) => !["dashboard", "consolidated", "legal", "admin"].includes(m.id),
 	);
 	const activeModuleId = detectVisualModuleId(pathWithSearch, allowedVisibleModules);
 	const visibleModules =
-		businessModules.length <= 1 && activeModuleId !== "dashboard"
+		businessModules.length <= 1 && activeModuleId !== "consolidated"
 			? businessModules
 			: allowedVisibleModules;
 

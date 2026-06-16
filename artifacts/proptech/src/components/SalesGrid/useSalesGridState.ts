@@ -8,11 +8,7 @@ export function useSalesGridState(userRole: string) {
 	const isSalesOnly = userRole === "sales_manager";
 	const forcedPto = userRole === "pto" || userRole === "engineer";
 
-	const [adminMode, setAdminMode] = useState<CellViewMode>(() => {
-		const urlMode = new URLSearchParams(window.location.search).get("mode") as CellViewMode | null;
-		const validModes: CellViewMode[] = ["crm", "pto", "prices"];
-		return urlMode && validModes.includes(urlMode) ? urlMode : "crm";
-	});
+	const [adminMode, setAdminMode] = useState<CellViewMode>("crm");
 	const cellViewMode: CellViewMode = forcedPto
 		? "pto"
 		: isCommercialDirector

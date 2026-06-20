@@ -925,8 +925,8 @@ export function TerminateLeaseDialog({
 
 // ── Table component ───────────────────────────────────────────────────────────
 
-const TH = "relative border border-gray-200 px-2 py-1.5 text-left font-semibold text-gray-600 whitespace-nowrap bg-gray-100 sticky top-0 z-20 select-none shadow-[0_1px_0_0_#e5e7eb]";
-const TD = "border border-gray-200 px-2 py-1 text-gray-700";
+const TH = "relative border border-slate-800 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-white/78 whitespace-nowrap bg-slate-950 sticky top-0 z-20 select-none";
+const TD = "border border-slate-100 px-2 py-1.5 text-gray-700";
 
 function LeaseSortTh({ label, col, sortKey, sortDir, onToggle, widths, startResize }: {
 	label: string; col: string; sortKey: string; sortDir: "asc" | "desc";
@@ -935,12 +935,12 @@ function LeaseSortTh({ label, col, sortKey, sortDir, onToggle, widths, startResi
 }) {
 	const active = sortKey === col;
 	return (
-		<th className={TH + " cursor-pointer hover:bg-gray-200"} style={{ width: widths[col], minWidth: widths[col] }} onClick={() => onToggle(col)}>
+		<th className={TH + " cursor-pointer hover:bg-slate-800"} style={{ width: widths[col], minWidth: widths[col] }} onClick={() => onToggle(col)}>
 			<span className="inline-flex items-center gap-1">
 				{label}
-				{active ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3 text-blue-600" /> : <ChevronDown className="w-3 h-3 text-blue-600" />) : <ChevronsUpDown className="w-3 h-3 text-gray-300" />}
+				{active ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3 text-cyan-300" /> : <ChevronDown className="w-3 h-3 text-cyan-300" />) : <ChevronsUpDown className="w-3 h-3 text-white/35" />}
 			</span>
-			<div className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-blue-400 z-20" onMouseDown={startResize(col)} onClick={(e) => e.stopPropagation()} />
+			<div className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-cyan-400 z-20" onMouseDown={startResize(col)} onClick={(e) => e.stopPropagation()} />
 		</th>
 	);
 }
@@ -953,7 +953,7 @@ export function LeaseTable({ isLoading, leasesArray, sortedLeases, sortKey, sort
 }) {
 	const { widths, startResize } = useColResize({ contractNumber: 130, propertyUnitNumber: 140, tenantName: 180, signDate: 110, startDate: 120, endDate: 110, rentAmount: 120, status: 110, actions: 56 });
 	return (
-		<div className="overflow-auto border border-gray-200 rounded-lg" style={{ maxHeight: "calc(100vh - 300px)" }}>
+		<div className="am-table-wrap rounded-[18px] overflow-auto" style={{ maxHeight: "calc(100vh - 300px)" }}>
 			<table className="w-full text-xs border-separate border-spacing-0">
 				<thead>
 					<tr>
@@ -977,7 +977,7 @@ export function LeaseTable({ isLoading, leasesArray, sortedLeases, sortKey, sort
 						<tr><td colSpan={9} className="text-center text-gray-600 py-8 text-sm">Договоры аренды не найдены</td></tr>
 					) : (
 						sortedLeases.map((lease, idx) => (
-							<tr key={lease.id} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+							<tr key={lease.id} className={`${idx % 2 === 0 ? "bg-white" : "bg-slate-50/80"} transition-colors hover:bg-cyan-50/70`}>
 								<td className={TD + " font-medium text-gray-900"}>{lease.contractNumber}</td>
 								<td className={TD}>{(lease as any).propertyUnitNumber || `#${lease.propertyId}`}</td>
 								<td className={TD}>{(lease as any).tenantName || `#${lease.tenantId}`}</td>
@@ -1023,7 +1023,7 @@ export function LeaseTable({ isLoading, leasesArray, sortedLeases, sortKey, sort
 				</tbody>
 				{!isLoading && leasesArray.length > 0 && (
 					<tfoot>
-						<tr className="bg-gray-100 font-semibold border-t-2 border-gray-300">
+						<tr className="bg-slate-50 font-semibold border-t-2 border-slate-200">
 							<td className={TD + " text-gray-700"} colSpan={6}>Итого: {leasesArray.length} договоров, активных: {activeCount}</td>
 							<td className={TD + " tabular-nums text-right text-gray-700"}>{new Intl.NumberFormat("ru-RU").format(totalRent)}</td>
 							<td className={TD} colSpan={2} />

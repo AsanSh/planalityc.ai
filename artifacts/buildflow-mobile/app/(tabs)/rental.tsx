@@ -13,11 +13,24 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { apiFetch, formatCurrency, formatDate } from "@/lib/api";
-import { mapAccrual, mapTenant, type AccrualRow, type TenantRow } from "@/lib/api-adapters";
 import { useColors } from "@/hooks/useColors";
 
-interface Tenant extends TenantRow {}
-interface Accrual extends AccrualRow {}
+interface Tenant {
+  id: number;
+  name: string;
+  phone?: string;
+  status: string;
+  email?: string;
+}
+interface Accrual {
+  id: number;
+  month: string;
+  amount: string;
+  balance: string;
+  status: string;
+  dueDate?: string;
+  leaseContractId: number;
+}
 interface Payment {
   id: number;
   amount: string;
@@ -47,18 +60,12 @@ export default function RentalScreen() {
 
   const { data: tenants, isLoading: lt, refetch: rt } = useQuery({
     queryKey: ["tenants"],
-    queryFn: async () => {
-      const rows = await apiFetch<Record<string, unknown>[]>("/rental/tenants");
-      return rows.map(mapTenant);
-    },
+    queryFn: () => apiFetch<Tenant[]>("/rental/tenants"),
     enabled: true,
   });
   const { data: accruals, isLoading: la, refetch: ra } = useQuery({
     queryKey: ["accruals"],
-    queryFn: async () => {
-      const rows = await apiFetch<Record<string, unknown>[]>("/rental/accruals");
-      return rows.map(mapAccrual);
-    },
+    queryFn: () => apiFetch<Accrual[]>("/rental/accruals"),
     enabled: true,
   });
   const { data: payments, isLoading: lp, refetch: rp } = useQuery({

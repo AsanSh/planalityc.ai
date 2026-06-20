@@ -1,4 +1,10 @@
-import { ArrowLeftRight, TrendingDown, TrendingUp, Zap } from "lucide-react";
+import {
+	ArrowLeftRight,
+	Loader2,
+	TrendingDown,
+	TrendingUp,
+	Zap,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -195,17 +201,17 @@ export function OperationQuickWizard({
 					<div className="space-y-4">
 						<div>
 							<Label className="text-xs text-gray-500">Сумма *</Label>
-							<div className="flex gap-2 mt-1">
+							<div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-2 mt-1">
 								<Input
 									type="number"
 									value={amount}
 									onChange={(e) => setAmount(e.target.value)}
-									className="font-mono"
+									className="min-w-0 font-mono"
 									placeholder="0"
 									autoFocus
 								/>
 								<Select value={currency} onValueChange={setCurrency}>
-									<SelectTrigger className="w-24">
+									<SelectTrigger>
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -369,14 +375,15 @@ export function OperationQuickWizard({
 							Далее
 						</Button>
 					) : (
-						<Button
-							type="button"
-							className="bg-amber-500 hover:bg-amber-600"
-							disabled={!description.trim() || isPending}
-							onClick={handleFinish}
-						>
-							{isPending ? "Сохранение…" : "Сохранить"}
-						</Button>
+							<Button
+								type="button"
+								className="bg-amber-500 hover:bg-amber-600"
+								disabled={!description.trim() || isPending}
+								onClick={handleFinish}
+							>
+								{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+								{isPending ? "Сохранение…" : "Сохранить"}
+							</Button>
 					)}
 				</div>
 			</DialogContent>

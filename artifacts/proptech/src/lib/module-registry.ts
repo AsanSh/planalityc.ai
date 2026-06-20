@@ -8,6 +8,7 @@ export type CanonicalModuleId =
 	| "procurement"
 	| "crm"
 	| "rent"
+	| "reports"
 	| "investors";
 
 export type ModuleIntegrationId =
@@ -17,8 +18,7 @@ export type ModuleIntegrationId =
 	| "crm.construction"
 	| "rent.finance"
 	| "procurement.finance"
-	| "investors.rent"
-	| "ai.construction";
+	| "investors.rent";
 
 export interface ModuleIntegration {
 	id: ModuleIntegrationId;
@@ -44,11 +44,11 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 	{
 		id: "consolidated",
 		canonicalId: "core",
-		label: "Сводное",
+		label: "Центр управления",
 		shortLabel: "Сводное",
 		description: "Общее ядро компании: пользователи, контрагенты, настройки, импорт и сводная аналитика.",
 		settingsKeys: ["core", "analytics", "properties", "users", "counterparties", "settings", "admin"],
-		routePrefixes: ["/dashboard", "/consolidated", "/counterparties", "/properties", "/users", "/settings", "/design-system", "/import", "/activity", "/companies", "/reports", "/legal"],
+		routePrefixes: ["/dashboard", "/consolidated", "/counterparties", "/properties", "/users", "/settings", "/design-system", "/import", "/activity", "/companies"],
 		dashboardTabs: ["control", "analytics"],
 		defaultPath: "/dashboard?tab=control",
 		ownedEntities: ["company", "user", "role", "counterparty", "notification"],
@@ -57,8 +57,8 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 	{
 		id: "construction",
 		canonicalId: "construction",
-		label: "Строительство / ПТО",
-		shortLabel: "ПТО",
+		label: "Строительство",
+		shortLabel: "Стройка",
 		description: "Проекты, этапы, задачи, шахматка, продажи объектов и строительный контроль.",
 		settingsKeys: ["construction", "sales"],
 		routePrefixes: ["/construction"],
@@ -89,24 +89,8 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 		label: "Финансы",
 		shortLabel: "Финансы",
 		description: "Счета, операции, зарплата, ОДДС, ОПУ, бюджет, задолженности и платежный календарь.",
-		settingsKeys: ["finance", "reports"],
-		routePrefixes: [
-			"/construction/accounts",
-			"/construction/operations",
-			"/construction/accruals",
-			"/construction/cashier",
-			"/construction/reconciliation",
-			"/construction/payroll",
-			"/construction/budget",
-			"/construction/analytics",
-			"/construction/planning/forecast",
-			"/construction/planning/overdue",
-			"/construction/planning/approvals",
-			"/reports/cashflow",
-			"/reports/payments",
-			"/reports/debt",
-			"/reports/directions",
-		],
+		settingsKeys: ["finance"],
+		routePrefixes: ["/finance"],
 		dashboardTabs: ["finance"],
 		defaultPath: "/dashboard?tab=finance",
 		ownedEntities: ["account", "operation", "budget", "accrual", "payment", "payrollEmployee", "approvalRequest"],
@@ -117,7 +101,7 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 		canonicalId: "procurement",
 		label: "Снабжение",
 		shortLabel: "Снабжение",
-		description: "Заявки, поставщики, заказы, склад, поступления, списания и маркетплейс материалов.",
+		description: "Заявки, поставщики, заказы, поступления, списания и маркетплейс материалов.",
 		settingsKeys: ["warehouse", "procurement", "supply"],
 		routePrefixes: ["/warehouse"],
 		dashboardTabs: ["supply"],
@@ -151,6 +135,19 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 		],
 	},
 	{
+		id: "reports",
+		canonicalId: "reports",
+		label: "Отчёты",
+		shortLabel: "Отчёты",
+		description: "Сквозная аналитика компании: задолженность, денежный поток, платежи и расчёты с контрагентами.",
+		settingsKeys: ["reports", "analytics"],
+		routePrefixes: ["/reports"],
+		dashboardTabs: [],
+		defaultPath: "/reports/debt",
+		ownedEntities: ["report"],
+		integrations: [],
+	},
+	{
 		id: "rental",
 		canonicalId: "rent",
 		label: "Аренда",
@@ -171,25 +168,6 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 				id: "investors.rent",
 				requires: ["investors", "rent"],
 				description: "Инвесторские выплаты строятся на доходах и расходах арендных объектов.",
-			},
-		],
-	},
-	{
-		id: "ai",
-		canonicalId: "construction",
-		label: "AI-инструменты",
-		shortLabel: "AI",
-		description: "Смета, проверка СНиП, генерация договоров, анализ фото и Telegram-бот.",
-		settingsKeys: ["ai"],
-		routePrefixes: ["/construction/ai"],
-		dashboardTabs: [],
-		defaultPath: "/construction/ai/chat",
-		ownedEntities: [],
-		integrations: [
-			{
-				id: "ai.construction",
-				requires: ["construction", "ai"],
-				description: "AI-инструменты работают в контексте строительных проектов.",
 			},
 		],
 	},

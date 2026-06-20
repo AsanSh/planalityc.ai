@@ -77,7 +77,7 @@ export const STATUS_REGISTRY: Record<string, StatusDef> = {
 	notice:       { label: "Уведомление",   variant: "warning", icon: AlertCircle },
 	expired:      { label: "Истёк",         variant: "danger",  icon: XCircle },
 
-	// Закуп / снабжение / склад
+	// Снабжение
 	requested:    { label: "Запрошено",     variant: "neutral", icon: Package },
 	ordered:      { label: "Заказано",      variant: "info",    icon: Package },
 	awaiting_delivery: { label: "Ждёт поставку", variant: "warning", icon: Truck },

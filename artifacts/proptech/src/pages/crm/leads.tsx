@@ -690,8 +690,6 @@ export default function Leads() {
 				</div>
 			</div>
 
-			<PeriodPicker value={period} onChange={setPeriod} />
-
 			<DataTable
 				tableId="crm-leads"
 				columns={columns}
@@ -701,7 +699,8 @@ export default function Leads() {
 				searchPlaceholder="Поиск по имени, телефону, email…"
 				initialSorting={[{ id: "leadDate", desc: true }]}
 				toolbar={
-					<div className="flex gap-2 flex-wrap">
+					<div className="flex items-center gap-2">
+						<PeriodPicker value={period} onChange={setPeriod} />
 						<Select value={statusFilter} onValueChange={setStatusFilter}>
 							<SelectTrigger className="w-44 h-8">
 								<SelectValue placeholder="Все статусы" />

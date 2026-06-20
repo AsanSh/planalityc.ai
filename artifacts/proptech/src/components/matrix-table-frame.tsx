@@ -5,11 +5,11 @@ import { cn } from "@/lib/utils";
 
 /** Единый стиль шапки (как DataTable). */
 export const MATRIX_TH =
-	"px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-am-text-muted whitespace-nowrap bg-gray-50/80 border-b border-am-border";
+	"px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-white/78 whitespace-nowrap bg-slate-950 border-b border-slate-800";
 
 export const MATRIX_TH_STICKY_LEFT = cn(
 	MATRIX_TH,
-	"sticky left-0 z-30 bg-gray-50/95 backdrop-blur-sm",
+	"sticky left-0 z-30 bg-slate-950 backdrop-blur-sm",
 );
 
 export const MATRIX_TH_RIGHT = cn(MATRIX_TH, "text-right");
@@ -35,9 +35,9 @@ export function MatrixTableFrame({
 	className,
 }: MatrixTableFrameProps) {
 	return (
-		<div className="bg-am-bg border border-am-border rounded-lg shadow-sm overflow-hidden">
+		<div className="am-table-wrap rounded-[18px] overflow-hidden">
 			{(title || toolbar || onExportCsv) && (
-				<div className="px-4 py-2 border-b border-am-border flex items-center justify-between gap-2 flex-wrap bg-am-surface">
+				<div className="px-4 py-2.5 border-b border-am-border/80 flex items-center justify-between gap-2 flex-wrap bg-white/82">
 					{title ? (
 						<h3 className="text-sm font-semibold text-am-text-strong">{title}</h3>
 					) : (

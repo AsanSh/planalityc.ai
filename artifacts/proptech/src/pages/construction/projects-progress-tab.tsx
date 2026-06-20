@@ -4,6 +4,7 @@ import {
 	Building2,
 	ChevronDown,
 	Download,
+	FileSpreadsheet,
 	Landmark,
 	Layers,
 	Plus,
@@ -16,7 +17,6 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { CurrencyToggle } from "@/components/currency-toggle";
-import { KpiCard } from "@/components/kpi-card";
 import { Button } from "@/components/ui/button";
 import {
 	Collapsible,
@@ -68,6 +68,14 @@ type ProjectMeta = {
 	exchangeRate?: string | null;
 };
 
+type ProgressDataSources = {
+	projects?: number;
+	units?: number;
+	contracts?: number;
+	operations?: number;
+	expenses?: number;
+};
+
 function loadProgressCurrency(): DisplayCurrency {
 	try {
 		const v = localStorage.getItem(PROGRESS_CURRENCY_KEY);
@@ -109,7 +117,11 @@ export type ProgressSummaryRow = {
 	requiredAmount: number;
 	projectBudget: number;
 	totalSpent: number;
-	[key: string]: string | number | boolean | undefined;
+	operationIncome?: number;
+	operationExpenses?: number;
+	legacyExpenses?: number;
+	dataSources?: ProgressDataSources;
+	[key: string]: string | number | boolean | undefined | ProgressDataSources;
 };
 
 const COLUMN_GROUPS: { id: ProgressGroupId; label: string }[] = [
@@ -435,7 +447,7 @@ function buildTotalsRow(rows: ProgressSummaryRow[]): ProgressSummaryRow {
 
 function SectionTitle({ children }: { children: ReactNode }) {
 	return (
-		<p className="text-[10px] font-bold uppercase tracking-wider text-am-text-muted">
+		<p className="text-[10px] font-semibold uppercase text-am-text-muted">
 			{children}
 		</p>
 	);
@@ -450,13 +462,13 @@ function MetricStrip({
 	children: ReactNode;
 	className?: string;
 }) {
-	const cellMin = itemCount >= 6 ? 124 : 136;
+	const cellMin = itemCount >= 6 ? 128 : 148;
 	return (
-		<div className={cn("overflow-x-auto -mx-0.5 px-0.5 pb-0.5", className)}>
+		<div className={cn("min-w-0", className)}>
 			<div
-				className="grid gap-2 w-full"
+				className="grid w-full gap-2"
 				style={{
-					gridTemplateColumns: `repeat(${itemCount}, minmax(${cellMin}px, 1fr))`,
+					gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${cellMin}px), 1fr))`,
 				}}
 			>
 				{children}
@@ -475,16 +487,16 @@ function MetricTile({
 	tone?: "positive" | "negative" | "neutral" | "warning";
 }) {
 	return (
-		<div className="rounded-lg border border-am-border bg-am-bg px-3 py-2.5 h-[76px] shadow-sm flex flex-col justify-between min-w-0">
+		<div className="group/tile flex h-[72px] min-w-0 flex-col justify-between rounded-md border border-am-border bg-white px-3 py-2.5 shadow-xs transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-am-border-strong hover:shadow-md">
 			<p
-				className="text-[10px] font-semibold uppercase tracking-wide text-am-text-muted leading-snug truncate"
+				className="truncate text-[10px] font-medium uppercase leading-snug text-am-text-muted"
 				title={label}
 			>
 				{label}
 			</p>
 			<p
 				className={cn(
-					"text-sm sm:text-base font-bold tabular-nums leading-tight truncate",
+					"truncate text-sm font-semibold leading-tight tabular-nums transition-colors sm:text-base",
 					tone === "positive" && "text-emerald-700",
 					tone === "negative" && "text-rose-700",
 					tone === "warning" && "text-amber-700",
@@ -525,32 +537,55 @@ function ProgressSummaryBar({
 	];
 
 	return (
-		<div className="rounded-xl border border-slate-200 bg-slate-950 text-white shadow-md overflow-hidden">
-			<div className="px-4 py-2 border-b border-slate-800 flex items-center justify-between gap-2 min-w-0">
-				<p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0">
-					Сводка по всем проектам
-				</p>
-				<p className="text-xs text-slate-400 truncate text-right">
+		<div className="overflow-hidden rounded-lg border border-slate-800 bg-slate-950 text-white shadow-xl shadow-slate-950/12 transition-shadow duration-200 hover:shadow-slate-950/18">
+			<div className="flex min-w-0 items-center justify-between gap-2 border-b border-white/10 bg-white/[0.03] px-4 py-3">
+				<div className="min-w-0">
+					<p className="shrink-0 text-[10px] font-semibold uppercase text-cyan-200/80">
+						Финансовый контур проектов
+					</p>
+					<p className="mt-0.5 truncate text-xs text-slate-400">
+						Проекты + шахматка + договоры + приходы + расходы
+					</p>
+				</div>
+				<p className="hidden truncate text-right text-xs text-slate-400 sm:block">
 					Продано {fmtArea(totals.soldArea).replace(" м²", "")} м² · остаток{" "}
 					{fmtArea(totals.unsoldArea).replace(" м²", "")} м²
 				</p>
 			</div>
-			<div className="p-3 overflow-x-auto">
+			<div className="p-3">
 				<div
-					className="grid gap-2 min-w-full"
-					style={{ gridTemplateColumns: "repeat(6, minmax(124px, 1fr))" }}
+					className="grid min-w-0 gap-2"
+					style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 158px), 1fr))" }}
 				>
-					{items.map((item) => (
-						<div key={item.label} className="min-w-0 h-[52px]">
-							<KpiCard
-								label={item.label}
-								value={item.value}
-								icon={item.icon}
-								color={item.color}
-								variant="strip"
-							/>
-						</div>
-					))}
+					{items.map((item) => {
+						const Icon = item.icon;
+						return (
+							<div
+								key={item.label}
+								className="group/kpi flex min-w-0 items-center gap-2 rounded-md border border-white/10 bg-white/[0.055] px-3 py-2 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-white/[0.09]"
+							>
+								<div
+									className={cn(
+										"flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-transform duration-200 group-hover/kpi:scale-105",
+										item.color === "green" && "bg-emerald-50 text-emerald-700",
+										item.color === "red" && "bg-rose-50 text-rose-700",
+										item.color === "yellow" && "bg-amber-50 text-amber-700",
+										item.color === "blue" && "bg-am-brand-surface text-am-brand",
+									)}
+								>
+									<Icon className="h-4 w-4" />
+								</div>
+								<div className="min-w-0">
+									<p className="truncate text-[11px] font-medium text-slate-400">
+										{item.label}
+									</p>
+									<p className="truncate text-sm font-semibold tabular-nums text-white">
+										{item.value}
+									</p>
+								</div>
+							</div>
+						);
+					})}
 				</div>
 			</div>
 		</div>
@@ -592,7 +627,9 @@ function ProjectMetricSection({
 					</Button>
 				</CollapsibleTrigger>
 			</div>
-			<CollapsibleContent className="pt-2">{children}</CollapsibleContent>
+			<CollapsibleContent className="overflow-hidden pt-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-1 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
+				{children}
+			</CollapsibleContent>
 		</Collapsible>
 	);
 }
@@ -604,6 +641,7 @@ function ProjectProgressCard({
 	onCustomValue,
 	formatCell,
 	fmtMoney,
+	index = 0,
 }: {
 	row: ProgressSummaryRow;
 	config: ProgressColumnConfig;
@@ -611,6 +649,7 @@ function ProjectProgressCard({
 	onCustomValue: (columnId: string, projectId: number, raw: string) => void;
 	formatCell: ProgressFormatters["formatCell"];
 	fmtMoney: ProgressFormatters["fmtMoney"];
+	index?: number;
 }) {
 	const soldPct =
 		row.totalSaleableArea > 0
@@ -624,32 +663,60 @@ function ProjectProgressCard({
 		config.customColumns.filter((c) => c.groupId === groupId);
 
 	const show = (groupId: ProgressGroupId) => config.visibleGroups[groupId] !== false;
+	const sources = row.dataSources;
+	const sourceItems = [
+		{ label: "Шахматка", value: sources?.units ?? 0 },
+		{ label: "Договоры", value: sources?.contracts ?? 0 },
+		{ label: "Операции", value: sources?.operations ?? 0 },
+		{ label: "Расходы", value: sources?.expenses ?? 0 },
+	];
 
 	return (
 		<Collapsible defaultOpen>
-			<article className="rounded-xl border border-am-border bg-white shadow-sm overflow-hidden">
+			<article
+				className="overflow-hidden rounded-lg border border-am-border bg-white shadow-sm transition-all duration-200 ease-out animate-in fade-in-0 slide-in-from-bottom-2 hover:-translate-y-0.5 hover:border-cyan-300/70 hover:shadow-lg hover:shadow-cyan-950/8"
+				style={{ animationDelay: `${Math.min(index, 8) * 35}ms` }}
+			>
 				<CollapsibleTrigger asChild>
 					<button
 						type="button"
-						className="group w-full text-left px-4 py-3 flex flex-wrap items-center justify-between gap-3 hover:bg-slate-50/80 transition-colors"
+						className="group flex w-full flex-wrap items-center justify-between gap-3 px-4 py-3 text-left transition-colors duration-200 hover:bg-slate-50"
 					>
-						<div className="flex items-center gap-3 min-w-0">
-							<div className="w-9 h-9 rounded-lg bg-am-brand-surface flex items-center justify-center shrink-0">
-								<Building2 className="w-4 h-4 text-am-brand" />
+						<div className="flex min-w-0 items-center gap-3">
+							<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-am-brand-surface transition-transform duration-200 group-hover:scale-105">
+								<Building2 className="h-4 w-4 text-am-brand transition-transform duration-200 group-hover:-rotate-3" />
 							</div>
 							<div className="min-w-0">
-								<p className="font-semibold text-am-text-strong truncate">{row.projectName}</p>
-								<p className="text-xs text-am-text-muted mt-0.5">
-									Продано {soldPct}% · {fmtArea(row.soldArea)}
-								</p>
+								<p className="truncate font-semibold text-am-text-strong">{row.projectName}</p>
+								<div className="mt-1 flex min-w-0 items-center gap-2">
+									<div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-200">
+										<div
+											className="h-full rounded-full bg-am-brand transition-[width] duration-500 ease-out"
+											style={{ width: `${Math.max(0, Math.min(soldPct, 100))}%` }}
+										/>
+									</div>
+									<p className="truncate text-xs text-am-text-muted">
+										Продано {soldPct}% · {fmtArea(row.soldArea)}
+									</p>
+								</div>
 							</div>
 						</div>
-						<div className="flex items-center gap-4 shrink-0">
-							<div className="text-right hidden sm:block">
-								<p className="text-[10px] uppercase tracking-wide text-am-text-muted">Прибыль</p>
+						<div className="flex min-w-0 shrink-0 items-center gap-4">
+							<div className="hidden max-w-[360px] flex-wrap justify-end gap-1.5 lg:flex">
+								{sourceItems.map((item) => (
+									<span
+										key={item.label}
+										className="rounded-full border border-cyan-100 bg-cyan-50 px-2 py-1 text-[10px] font-medium text-cyan-800"
+									>
+										{item.label}: {item.value}
+									</span>
+								))}
+							</div>
+							<div className="hidden text-right sm:block">
+								<p className="text-[10px] uppercase text-am-text-muted">Прибыль</p>
 								<p
 									className={cn(
-										"text-sm font-bold tabular-nums",
+										"text-sm font-semibold tabular-nums",
 										row.grossProfit > 0
 											? "text-emerald-700"
 											: row.grossProfit < 0
@@ -660,19 +727,30 @@ function ProjectProgressCard({
 									{fmtMoney(row.grossProfit, row.projectId)}
 								</p>
 							</div>
-							<div className="text-right hidden md:block">
-								<p className="text-[10px] uppercase tracking-wide text-am-text-muted">Собрано</p>
-								<p className="text-sm font-bold tabular-nums text-am-text-strong">
+							<div className="hidden text-right md:block">
+								<p className="text-[10px] uppercase text-am-text-muted">Собрано</p>
+								<p className="text-sm font-semibold tabular-nums text-am-text-strong">
 									{fmtMoney(row.collected, row.projectId)}
 								</p>
 							</div>
-							<ChevronDown className="w-4 h-4 text-am-text-muted transition-transform group-data-[state=open]:rotate-180" />
+							<ChevronDown className="h-4 w-4 text-am-text-muted transition-transform group-data-[state=open]:rotate-180" />
 						</div>
 					</button>
 				</CollapsibleTrigger>
 
-				<CollapsibleContent>
-					<div className="px-4 pb-4 space-y-4 border-t border-am-border/60">
+				<CollapsibleContent className="overflow-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-1 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
+					<div className="space-y-4 border-t border-am-border/60 bg-slate-50/40 px-4 pb-4 pt-4">
+						<div className="grid gap-2 sm:grid-cols-4 lg:hidden">
+							{sourceItems.map((item) => (
+								<div
+									key={item.label}
+									className="rounded-md border border-cyan-100 bg-white px-3 py-2"
+								>
+									<p className="text-[10px] font-medium uppercase text-am-text-muted">{item.label}</p>
+									<p className="mt-0.5 text-base font-semibold tabular-nums text-am-text-strong">{item.value}</p>
+								</div>
+							))}
+						</div>
 						{show("projectData") && (() => {
 							const cols = colsForGroup("projectData");
 							return (
@@ -796,10 +874,10 @@ function ProjectProgressCard({
 										return (
 											<div
 												key={col.id}
-												className="rounded-lg border border-dashed border-am-border bg-slate-50/80 px-3 py-2.5 h-[76px] flex flex-col justify-between min-w-0"
+												className="flex h-[72px] min-w-0 flex-col justify-between rounded-md border border-dashed border-am-border bg-white px-3 py-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-am-border-strong hover:shadow-sm"
 											>
 												<Label
-													className="text-[10px] font-semibold uppercase tracking-wide text-am-text-muted truncate"
+													className="truncate text-[10px] font-medium uppercase text-am-text-muted"
 													title={col.label}
 												>
 													{col.label}
@@ -1059,10 +1137,58 @@ function exportProgressCsv(
 	a.click();
 }
 
+async function exportProgressXlsx(
+	rows: ProgressSummaryRow[],
+	totals: ProgressSummaryRow,
+	labelFor: (id: string, defaultLabel: string) => string,
+	config: ProgressColumnConfig,
+	formatCell: ProgressFormatters["formatCell"],
+) {
+	const XLSX = await import("xlsx");
+	const exportCols = BUILTIN_COLUMNS.filter((c) => c.id !== "projectName");
+	const headers = [
+		"Проект",
+		...exportCols.map((c) => labelFor(c.id, c.defaultLabel)),
+		"Источник: юниты",
+		"Источник: договоры",
+		"Источник: операции",
+		"Источник: расходы",
+		...config.customColumns.map((c) => c.label),
+	];
+	const allRows = [totals, ...rows];
+	const body = allRows.map((row) => {
+		const projectId = row.isTotal ? undefined : row.projectId;
+		return [
+			row.projectName,
+			...exportCols.map((c) =>
+				formatCell(c.kind, c.accessor(row) as number | string, projectId),
+			),
+			row.isTotal ? "" : (row.dataSources?.units ?? 0),
+			row.isTotal ? "" : (row.dataSources?.contracts ?? 0),
+			row.isTotal ? "" : (row.dataSources?.operations ?? 0),
+			row.isTotal ? "" : (row.dataSources?.expenses ?? 0),
+			...config.customColumns.map((col) => {
+				if (row.isTotal) return "";
+				const vals = config.customValues[col.id];
+				const num = vals?.[String(row.projectId)] ?? 0;
+				return num !== 0 ? num : "";
+			}),
+		];
+	});
+	const worksheet = XLSX.utils.aoa_to_sheet([headers, ...body]);
+	worksheet["!cols"] = headers.map((header) => ({
+		wch: Math.max(14, Math.min(34, String(header).length + 4)),
+	}));
+	const workbook = XLSX.utils.book_new();
+	XLSX.utils.book_append_sheet(workbook, worksheet, "Прогресс проектов");
+	XLSX.writeFile(workbook, `progress-projects-${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
 export function ProjectsProgressTab() {
 	const [columnConfig, setColumnConfig] = useState(loadProgressColumnConfig);
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [search, setSearch] = useState("");
+	const [projectFilter, setProjectFilter] = useState("all");
 	const [displayCurrency, setDisplayCurrency] = useState<DisplayCurrency>(loadProgressCurrency);
 
 	useEffect(() => {
@@ -1090,13 +1216,18 @@ export function ProjectsProgressTab() {
 	});
 
 	const projectRows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
-	const totalsRow = useMemo(() => buildTotalsRow(projectRows), [projectRows]);
 
 	const filteredRows = useMemo(() => {
 		const q = search.trim().toLowerCase();
-		if (!q) return projectRows;
-		return projectRows.filter((r) => r.projectName.toLowerCase().includes(q));
-	}, [projectRows, search]);
+		return projectRows.filter((r) => {
+			const matchesProject =
+				projectFilter === "all" || String(r.projectId) === projectFilter;
+			const matchesSearch = !q || r.projectName.toLowerCase().includes(q);
+			return matchesProject && matchesSearch;
+		});
+	}, [projectRows, projectFilter, search]);
+
+	const totalsRow = useMemo(() => buildTotalsRow(filteredRows), [filteredRows]);
 
 	const labelFor = useCallback(
 		(columnId: string, defaultLabel: string) =>
@@ -1180,54 +1311,85 @@ export function ProjectsProgressTab() {
 
 	return (
 		<div className="space-y-4">
-			<div className="sticky top-0 z-20 -mx-1 px-1 pt-1 pb-3 space-y-3 bg-gradient-to-b from-white via-white to-white/90 backdrop-blur-sm">
-				<div className="flex flex-wrap items-center justify-between gap-3">
-					<div>
-						<p className="text-sm text-muted-foreground">
-							{projectRows.length} проектов · площади из шахматки, сборы из договоров,
-							затраты из расходов
-						</p>
-					</div>
-					<div className="flex flex-wrap items-center gap-2">
-						<div className="relative w-full sm:w-56">
-							<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-am-text-muted" />
+			<div className="sticky top-0 z-20 space-y-3 border-b border-am-border bg-background/95 pb-4 pt-2 backdrop-blur">
+				<div className="grid gap-3 2xl:grid-cols-[minmax(280px,1fr)_auto] 2xl:items-center">
+					<p className="max-w-2xl text-sm leading-snug text-muted-foreground">
+						{filteredRows.length} из {projectRows.length} проектов · площади из шахматки,
+						сборы из договоров, затраты из расходов
+					</p>
+					<div className="flex min-w-0 flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-start lg:justify-end">
+						<div className="relative min-w-0 lg:w-[260px]">
+							<Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-am-text-muted" />
 							<Input
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
 								placeholder="Поиск проекта…"
-								className="pl-8 h-9"
+								className="h-9 rounded-md bg-white pl-8"
 							/>
 						</div>
-						<CurrencyToggle
-							value={displayCurrency}
-							onChange={setDisplayCurrency}
-							rateLabel={rateLabel}
-							nbkrDate={nbkr?.date}
-						/>
-						<Button
-							variant="outline"
-							size="sm"
-							className="gap-2"
-							onClick={() =>
-								exportProgressCsv(
-									projectRows,
-									totalsRow,
-									labelFor,
-									columnConfig,
-									formatCell,
-								)
-							}
-						>
-							<Download className="w-4 h-4" /> CSV
-						</Button>
-						<Button
-							variant="outline"
-							size="sm"
-							className="gap-2"
-							onClick={() => setSettingsOpen(true)}
-						>
-							<Settings2 className="w-4 h-4" /> Настройки
-						</Button>
+						<Select value={projectFilter} onValueChange={setProjectFilter}>
+							<SelectTrigger className="h-9 min-w-0 rounded-md bg-white lg:w-[240px]">
+								<SelectValue placeholder="Все проекты" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">Все проекты</SelectItem>
+								{projectRows.map((project) => (
+									<SelectItem key={project.projectId} value={String(project.projectId)}>
+										{project.projectName}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<div className="flex min-w-0 flex-wrap items-start gap-2 lg:flex-nowrap lg:justify-end">
+							<CurrencyToggle
+								value={displayCurrency}
+								onChange={setDisplayCurrency}
+								rateLabel={rateLabel}
+								nbkrDate={nbkr?.date}
+								compact
+								showRate={false}
+							/>
+							<Button
+								variant="outline"
+								size="sm"
+								className="h-9 gap-2 rounded-md"
+								onClick={() =>
+									exportProgressXlsx(
+										filteredRows,
+										totalsRow,
+										labelFor,
+										columnConfig,
+										formatCell,
+									)
+								}
+							>
+								<FileSpreadsheet className="w-4 h-4" /> Excel
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								className="h-9 gap-2 rounded-md"
+								onClick={() =>
+									exportProgressCsv(
+										filteredRows,
+										totalsRow,
+										labelFor,
+										columnConfig,
+										formatCell,
+									)
+								}
+							>
+								<Download className="w-4 h-4" /> CSV
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								className="h-9 gap-2 rounded-md"
+								onClick={() => setSettingsOpen(true)}
+							>
+								<Settings2 className="w-4 h-4" /> Настройки
+							</Button>
+						</div>
 					</div>
 				</div>
 
@@ -1235,16 +1397,19 @@ export function ProjectsProgressTab() {
 			</div>
 
 			{filteredRows.length === 0 ? (
-				<div className="rounded-xl border border-dashed border-am-border bg-slate-50 px-6 py-10 text-center text-sm text-am-text-muted">
-					<Layers className="w-8 h-8 mx-auto mb-2 opacity-40" />
-					{search.trim() ? "Нет проектов по запросу" : "Нет данных по проектам"}
+				<div className="rounded-md border border-dashed border-am-border bg-slate-50 px-6 py-10 text-center text-sm text-am-text-muted">
+					<Layers className="mx-auto mb-2 h-8 w-8 opacity-40" />
+					{search.trim() || projectFilter !== "all"
+						? "Нет проектов по выбранным фильтрам"
+						: "Нет данных по проектам"}
 				</div>
 			) : (
-				<div className="grid gap-3 xl:grid-cols-2">
-					{filteredRows.map((row) => (
+				<div className="grid gap-3 2xl:grid-cols-2">
+					{filteredRows.map((row, index) => (
 						<ProjectProgressCard
 							key={row.projectId}
 							row={row}
+							index={index}
 							config={columnConfig}
 							labelFor={labelFor}
 							onCustomValue={setCustomValue}

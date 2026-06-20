@@ -25,7 +25,6 @@ import {
   supplyRequestItemsTable,
 } from "../lib/db";
 import { sendTaskAssignedEmail } from "../lib/email";
-import { getFrontendBaseUrl } from "../lib/app-urls";
 import { logTaskActivity, taskFieldChanges } from "../lib/construction-task-work";
 import { constructionSalesContractsTable } from "../lib/db";
 import { ensureCounterpartyWithRole } from "../lib/counterparty-sync";
@@ -38,6 +37,7 @@ import { getPaginationParams, createPaginatedResponse, getPaginationQuery } from
 import { validateQuery, commonSchemas } from "../middleware/validation";
 import { cache, cacheKeys } from "../lib/cache";
 import { seedProjectUnits } from "../lib/seed-project-units";
+import { resolveCompanyLegalEntityId } from "../lib/settings-catalog-sync";
 import {
   buildContractDocumentMeta,
   parseContractDocumentMeta,
@@ -219,9 +219,17 @@ router.post("/projects", async (req: AuthenticatedRequest, res): Promise<void> =
   const costPerSqm = parseFloat(body.costPerSqm || "0");
   const exchangeRate = parseFloat(body.exchangeRate || "1");
   const estimatedCostKgs = totalArea * costPerSqm * (body.currency === "KGS" ? 1 : exchangeRate);
+  let legalEntityId: number | null;
+  try {
+    legalEntityId = await resolveCompanyLegalEntityId(req.scopedCompanyId!, body.legalEntityId);
+  } catch {
+    res.status(400).json({ error: "Выберите ОсОО из вашей компании" });
+    return;
+  }
 
   const [row] = await db.insert(constructionProjectsTable).values({
     companyId: req.scopedCompanyId!,
+    legalEntityId,
     name: body.name,
     address: body.address,
     region: body.region,
@@ -444,9 +452,21 @@ router.patch("/projects/:id", async (req: AuthenticatedRequest, res): Promise<vo
   const costPerSqm = parseFloat(body.costPerSqm || "0");
   const exchangeRate = parseFloat(body.exchangeRate || "1");
   const estimatedCostKgs = totalArea * costPerSqm * (body.currency === "KGS" ? 1 : exchangeRate);
+  let legalEntityPatch: { legalEntityId?: number | null } = {};
+  if (body.legalEntityId !== undefined) {
+    try {
+      legalEntityPatch = {
+        legalEntityId: await resolveCompanyLegalEntityId(req.scopedCompanyId!, body.legalEntityId),
+      };
+    } catch {
+      res.status(400).json({ error: "Выберите ОсОО из вашей компании" });
+      return;
+    }
+  }
 
   const [row] = await db.update(constructionProjectsTable)
     .set({
+      ...legalEntityPatch,
       name: body.name, address: body.address, region: body.region, status: body.status,
       buildingType: body.buildingType, constructionType: body.constructionType,
       totalFloors: body.totalFloors ? parseInt(body.totalFloors) : null,
@@ -1361,7 +1381,7 @@ async function notifyTaskAssigned(params: {
     const [recipient] = await db.select().from(usersTable).where(eq(usersTable.id, assignedToId));
     const [assigner] = await db.select().from(usersTable).where(eq(usersTable.id, assignerId));
     if (recipient?.email) {
-      const baseOrigin = origin || getFrontendBaseUrl();
+      const baseOrigin = origin || "https://proptech-sigma-eight.vercel.app";
       const taskUrl = `${baseOrigin}/construction/tasks/${taskId}`;
       const assignerName = assigner ? `${assigner.firstName} ${assigner.lastName}`.trim() : "Коллега";
       // Fire-and-forget: не блокируем создание задачи на отправке email.

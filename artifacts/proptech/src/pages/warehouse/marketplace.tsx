@@ -274,8 +274,8 @@ export default function WarehouseMarketplace() {
 			</div>
 
 			<section className="space-y-4">
-				<div className="flex flex-wrap items-end gap-3">
-					<div className="flex-1 min-w-[240px] max-w-xl relative">
+				<div className="grid gap-3 md:grid-cols-[minmax(280px,1fr)_220px_200px] md:items-center">
+					<div className="relative min-w-0">
 						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
 						<Input
 							value={searchInput}
@@ -285,23 +285,21 @@ export default function WarehouseMarketplace() {
 							autoComplete="off"
 						/>
 					</div>
-					{suppliers.length > 0 && (
-						<Select value={supplierFilter} onValueChange={setSupplierFilter}>
-							<SelectTrigger className="w-52 h-11">
-								<SelectValue placeholder="Все поставщики" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">Все поставщики</SelectItem>
-								{suppliers.map((s) => (
-									<SelectItem key={s.id} value={String(s.id)}>
-										{s.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					)}
+					<Select value={supplierFilter} onValueChange={setSupplierFilter}>
+						<SelectTrigger className="h-11 w-full">
+							<SelectValue placeholder="Все поставщики" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="all">Все поставщики</SelectItem>
+							{suppliers.map((s) => (
+								<SelectItem key={s.id} value={String(s.id)}>
+									{s.name}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 					<Select value={projectId} onValueChange={setProjectId}>
-						<SelectTrigger className="w-52 h-11">
+						<SelectTrigger className="h-11 w-full">
 							<SelectValue placeholder="Проект (опц.)" />
 						</SelectTrigger>
 						<SelectContent>

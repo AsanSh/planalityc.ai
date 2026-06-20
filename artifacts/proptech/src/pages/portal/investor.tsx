@@ -11,6 +11,7 @@ import {
 	Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ClientPortalExperience } from "@/components/client-portal-experience";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
@@ -59,12 +60,25 @@ function KPI({
 	);
 }
 
-export default function InvestorPortal() {
+export default function InvestorPortal({ previewInvestorId }: { previewInvestorId?: number } = {}) {
 	const { user, logout } = useAuth();
+	const isPreview = !!previewInvestorId;
 
 	const { data, isLoading } = useQuery<any>({
-		queryKey: ["portal-investor-me"],
-		queryFn: () => api.get("/portal/investor/me").then((r) => r.data),
+		queryKey: isPreview
+			? ["portal-investor-preview", previewInvestorId]
+			: ["portal-investor-me"],
+		queryFn: () =>
+			api
+				.get(
+					isPreview
+						? `/portal/investor/preview/${previewInvestorId}`
+						: "/portal/investor/me",
+				)
+				.then((r) => r.data),
+		staleTime: 60_000,
+		refetchOnWindowFocus: false,
+		retry: 1,
 	});
 
 	if (isLoading) {
@@ -89,8 +103,9 @@ export default function InvestorPortal() {
 	);
 	const roi = totalInvested > 0 ? (totalReceived / totalInvested) * 100 : 0;
 
-	const userName =
-		[user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Владелец";
+	const userName = isPreview
+		? investor?.fullName || "Владелец"
+		: [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Владелец";
 
 	return (
 		<div className="min-h-screen bg-gray-50">
@@ -109,17 +124,24 @@ export default function InvestorPortal() {
 						</div>
 					</div>
 					<div className="flex items-center gap-3">
+						{isPreview && (
+							<span className="text-[10px] uppercase tracking-wide bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-semibold">
+								Предпросмотр
+							</span>
+						)}
 						<span className="text-sm text-gray-600 font-medium">
 							{userName}
 						</span>
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={logout}
-							className="text-gray-500 gap-1.5"
-						>
-							<LogOut className="w-4 h-4" /> Выйти
-						</Button>
+						{!isPreview && (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={logout}
+								className="text-gray-500 gap-1.5"
+							>
+								<LogOut className="w-4 h-4" /> Выйти
+							</Button>
+						)}
 					</div>
 				</div>
 			</header>
@@ -135,6 +157,14 @@ export default function InvestorPortal() {
 						Личный инвестиционный портал
 					</p>
 				</div>
+
+				<ClientPortalExperience
+					audience="investors"
+					userName={investor?.fullName || userName}
+					projectName={investments[0]?.propertyName || "Инвестиционный портфель"}
+					unitLabel={investments[0]?.propertyUnit ? `Объект ${investments[0].propertyUnit}` : "Мой портфель"}
+					managerName="Инвестиционный менеджер"
+				/>
 
 				{/* KPIs */}
 				<div className="grid gap-4 sm:grid-cols-2">

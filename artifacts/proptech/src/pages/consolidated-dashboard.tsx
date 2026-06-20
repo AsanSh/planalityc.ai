@@ -147,7 +147,7 @@ const ROLE_FOCUS = [
 
 const SECOND_LAYER_MODULES = [
 	{ label: "Себестоимость", href: "/construction/budget", note: "этапы, задачи, материалы, подрядчики, план/факт" },
-	{ label: "Снабжение", href: "/warehouse/requests", note: "заявка → согласование → заказ → склад → списание" },
+	{ label: "Снабжение", href: "/warehouse/requests", note: "заявка → согласование → заказ → поступление → списание" },
 	{ label: "Аренда", href: "/rental/contracts", note: "тот же core: объект, договор, начисление, оплата" },
 	{ label: "Marketplace", href: "/warehouse/marketplace", note: "внешний источник поставщиков и товаров для supply" },
 ];

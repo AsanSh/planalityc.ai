@@ -518,7 +518,7 @@ export default function ConstructionPnL() {
 						Отчёт о прибылях и убытках
 					</p>
 				</div>
-				<div className="flex flex-wrap items-center gap-2">
+				<div className="am-toolbar">
 					<DateRangePicker value={period} onChange={setPeriod} />
 				</div>
 			</div>
@@ -534,7 +534,7 @@ export default function ConstructionPnL() {
 						<div className={cn("text-xs font-semibold uppercase tracking-wide", card.bg.includes("slate-950") ? "text-white/55" : "text-slate-400")}>
 							{card.label}
 						</div>
-						<div className={cn("mt-2 font-mono text-xl font-black", card.tone)}>
+						<div className={cn("mt-2 font-mono text-xl font-semibold", card.tone)}>
 							{card.value}
 						</div>
 					</div>

@@ -15,7 +15,6 @@ import { requireTenantCompany } from "../middleware/tenant";
 import { hashPassword, validatePassword } from "../lib/security";
 import { sendPortalAccessEmail } from "../lib/email";
 import { createPortalUser, findUserByLinkedEntity } from "../lib/portal-account";
-import { getFrontendBaseUrl } from "../lib/app-urls";
 import { parseContractDocumentMeta, summarizeContractDocument } from "../lib/contract-document";
 import { buildBuyerReconciliation, buildSupplierReconciliation } from "../lib/portal-reconciliation";
 
@@ -32,6 +31,40 @@ const LINKED_KEY_BY_TYPE: Record<string, "linkedTenantId" | "linkedBuyerId" | "l
 };
 
 // ── Загрузчики данных порталов (используются и для /me, и для /preview) ──────────
+
+async function loadInvestorPortal(companyId: number, investorId: number) {
+  const [investor] = await db.select().from(investorsTable)
+    .where(and(
+      eq(investorsTable.id, investorId),
+      eq(investorsTable.companyId, companyId),
+    ));
+  if (!investor) return null;
+
+  const investments = await db.select({
+    id: investmentsTable.id,
+    propertyId: investmentsTable.propertyId,
+    sharePercent: investmentsTable.sharePercent,
+    capitalInvested: investmentsTable.capitalInvested,
+    currency: investmentsTable.currency,
+    investedAt: investmentsTable.investedAt,
+    createdAt: investmentsTable.createdAt,
+    propertyName: propertiesTable.projectName,
+    propertyUnit: propertiesTable.unitNumber,
+  })
+    .from(investmentsTable)
+    .leftJoin(propertiesTable, eq(investmentsTable.propertyId, propertiesTable.id))
+    .where(eq(investmentsTable.investorId, investorId));
+
+  const investedPropertyIds = investments
+    .map(inv => inv.propertyId)
+    .filter((id): id is number => id !== null);
+  const distributions = investedPropertyIds.length > 0
+    ? await db.select().from(distributionsTable)
+        .where(inArray(distributionsTable.propertyId, investedPropertyIds))
+    : [];
+
+  return { investor, investments, distributions };
+}
 
 async function loadContractorPortal(companyId: number, contractorId: number) {
   const [contractor] = await db.select().from(constructionContractorsTable)
@@ -303,30 +336,20 @@ router.get("/portal/investor/me", async (req: AuthenticatedRequest, res): Promis
     res.status(403).json({ error: "Нет доступа" }); return;
   }
 
-  const [investor] = await db.select().from(investorsTable).where(eq(investorsTable.id, me.linkedInvestorId));
+  const data = await loadInvestorPortal(req.scopedCompanyId!, me.linkedInvestorId);
+  if (!data) {
+    res.status(404).json({ error: "Инвестор не найден" }); return;
+  }
 
-  const investments = await db.select({
-    id: investmentsTable.id,
-    propertyId: investmentsTable.propertyId,
-    sharePercent: investmentsTable.sharePercent,
-    capitalInvested: investmentsTable.capitalInvested,
-    currency: investmentsTable.currency,
-    investedAt: investmentsTable.investedAt,
-    createdAt: investmentsTable.createdAt,
-    propertyName: propertiesTable.projectName,
-    propertyUnit: propertiesTable.unitNumber,
-  })
-    .from(investmentsTable)
-    .leftJoin(propertiesTable, eq(investmentsTable.propertyId, propertiesTable.id))
-    .where(eq(investmentsTable.investorId, me.linkedInvestorId!));
+  res.json(data);
+});
 
-  const investedPropertyIds = investments.map(inv => inv.propertyId).filter((id): id is number => id !== null);
-  const distributions = investedPropertyIds.length > 0
-    ? await db.select().from(distributionsTable)
-        .where(inArray(distributionsTable.propertyId, investedPropertyIds))
-    : [];
-
-  res.json({ investor, investments, distributions });
+// GET /portal/investor/preview/:investorId — предпросмотр для админа
+router.get("/portal/investor/preview/:investorId", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+  const investorId = Number(req.params.investorId);
+  const data = await loadInvestorPortal(req.scopedCompanyId!, investorId);
+  if (!data) { res.status(404).json({ error: "Инвестор не найден" }); return; }
+  res.json({ ...data, preview: true });
 });
 
 // GET /portal/tenant/me — данные для портала арендатора (только свои)
@@ -536,7 +559,7 @@ router.post("/portal/create-buyer-account", requireRole("admin", "company_admin"
       linkedEntityId: buyerId,
     });
     const { passwordHash: _ph, ...safeUser } = result.user;
-    const origin = (req.headers.origin as string) || getFrontendBaseUrl();
+    const origin = (req.headers.origin as string) || "https://proptech-sigma-eight.vercel.app";
     res.status(result.created ? 201 : 200).json({
       user: safeUser,
       loginUrl: `${origin}/portal-login`,

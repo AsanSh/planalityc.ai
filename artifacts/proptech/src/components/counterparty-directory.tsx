@@ -3,6 +3,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Briefcase, Edit2, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DataTable } from "@/components/data-table";
+import { PortalAccessCell } from "@/components/portal-access-cell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -215,6 +216,22 @@ export function CounterpartyDirectory({
 					<span className="truncate block" title={row.original.email || ""}>
 						{row.original.email || "—"}
 					</span>
+				),
+			},
+			{
+				id: "portal",
+				header: "Портал",
+				size: 230,
+				enableSorting: false,
+				meta: { exportLabel: "Портал" },
+				cell: ({ row }) => (
+					<PortalAccessCell
+						counterpartyId={row.original.id}
+						counterpartyName={row.original.fullName}
+						roles={row.original.categories || [row.original.category].filter(Boolean)}
+						phone={row.original.phone}
+						email={row.original.email}
+					/>
 				),
 			},
 		];

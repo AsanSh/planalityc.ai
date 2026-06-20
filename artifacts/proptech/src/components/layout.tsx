@@ -6,7 +6,6 @@ import {
 	BarChart2,
 	BarChart3,
 	Banknote,
-	Bell,
 	Briefcase,
 	Building,
 	Building2,
@@ -34,13 +33,12 @@ import {
 	ListOrdered,
 	LogOut,
 	Map,
+	Megaphone,
 	Menu,
 	MessageCircle,
 	Package,
 	PieChart,
 	PiggyBank,
-	Pin,
-	PinOff,
 	Plus,
 	Receipt,
 	Rss,
@@ -74,6 +72,7 @@ import UserProfileDropdown from "@/components/user-profile-dropdown";
 import { useModuleAccess } from "@/hooks/use-module-access";
 import { useAuth } from "@/lib/auth";
 import { detectModuleFromPath, type ModuleId } from "@/lib/module-access";
+import { getModuleDefinition } from "@/lib/module-registry";
 import { resolveQuickActions } from "@/lib/quick-create-access";
 import { resolveNavItemHref } from "@/lib/nav-hrefs";
 import { cn } from "@/lib/utils";
@@ -88,8 +87,7 @@ interface NavSection {
 	items: NavItem[];
 }
 interface Module {
-	id: string;         // unique visual nav id
-	accessId: ModuleId; // maps to access-control system
+	id: ModuleId;
 	label: string;
 	shortLabel: string;
 	icon: React.ElementType;
@@ -98,317 +96,377 @@ interface Module {
 	sections: NavSection[];
 }
 
+const moduleMeta = (id: ModuleId) => getModuleDefinition(id)!;
+
 const MODULES: Module[] = [
-	// ── 1. Дашборд ──────────────────────────────────────────────────────
 	{
-		id: "dashboard",
-		accessId: "consolidated",
-		label: "Дашборд",
-		shortLabel: "Дашборд",
-		icon: LayoutDashboard,
-		color: "#64748b",
-		urlPrefix: ["/dashboard"],
-		sections: [
-			{
-				title: "Руководство",
-				items: [
-					{ href: "/dashboard?tab=control", label: "Дашборд руководителя", icon: LayoutDashboard },
-				],
-			},
-			{
-				title: "Сводка",
-				items: [
-					{ href: "/construction/projects", label: "Все проекты", icon: Building2 },
-					{ href: "/dashboard?tab=analytics", label: "Ключевые KPI", icon: TrendingUp },
-					{ href: "/activity", label: "Уведомления", icon: Bell },
-				],
-			},
-			{
-				title: "Согласования",
-				items: [
-					{ href: "/construction/planning/approvals", label: "Очередь утверждений", icon: CheckSquare },
-					{ href: "/construction/tasks", label: "Мои задачи", icon: ClipboardList },
-				],
-			},
-			{
-				title: "Отчёты",
-				items: [
-					{ href: "/reports/cashflow", label: "Сводный ДДС", icon: BarChart3 },
-					{ href: "/reports/payments", label: "Динамика продаж", icon: Activity },
-					{ href: "/reports", label: "Все отчёты", icon: PieChart },
-				],
-			},
-		],
-	},
-
-	// ── 2. Проекты ──────────────────────────────────────────────────────
-	{
-		id: "projects",
-		accessId: "construction",
-		label: "Проекты",
-		shortLabel: "Проекты",
-		icon: Building2,
+		id: "construction",
+		label: moduleMeta("construction").label,
+		shortLabel: moduleMeta("construction").shortLabel,
+		icon: Grid3X3,
 		color: "#0ea5e9",
-		urlPrefix: ["/construction/projects", "/construction/chess", "/construction/photo-gallery"],
+		urlPrefix: moduleMeta("construction").routePrefixes,
 		sections: [
 			{
-				title: "Проект",
+				title: "Главный поток",
 				items: [
-					{ href: "/dashboard?tab=construction", label: "Обзор", icon: LayoutDashboard },
-					{ href: "/construction/projects", label: "Проекты / ЖК", icon: Building2 },
+					{
+						href: "/dashboard?tab=construction",
+						label: "Обзор",
+						icon: LayoutDashboard,
+					},
+					{
+						href: "/construction/projects",
+						label: "Проект / ЖК",
+						icon: Building2,
+					},
 					{ href: "/construction/chess", label: "Шахматка", icon: Grid3X3 },
-					{ href: "/construction/photo-gallery", label: "Фото-отчёты", icon: Map },
+					{
+						href: "/construction/contracts-sales",
+						label: "Договоры продаж",
+						icon: FileText,
+					},
 				],
 			},
 			{
-				title: "Продажи CRM",
+				title: "Финансы",
 				items: [
-					{ href: "/dashboard?tab=sales", label: "Обзор продаж", icon: TrendingUp },
-					{ href: "/crm/leads", label: "Лиды", icon: Target },
-					{ href: "/crm/deals", label: "Сделки", icon: Receipt },
-					{ href: "/crm/chess", label: "Шахматка CRM", icon: Grid3X3 },
-					{ href: "/crm/sales-properties", label: "Свободные объекты", icon: Building2 },
+					{ href: "/construction/accounts", label: "Счета", icon: Landmark },
+					{
+						href: "/construction/operations",
+						label: "Операции",
+						icon: ArrowRightLeft,
+					},
+					{
+						href: "/construction/accruals",
+						label: "Начисления",
+						icon: ListOrdered,
+					},
+					{
+						href: "/construction/cashier",
+						label: "Приём платежей",
+						icon: DollarSign,
+					},
+					{
+						href: "/construction/reconciliation",
+						label: "Акт сверки",
+						icon: Scale,
+					},
+					{ href: "/construction/budget", label: "Бюджет и план/факт", icon: Wallet },
+					{
+						href: "/construction/payroll",
+						label: "Зарплатная ведомость",
+						icon: Banknote,
+					},
+					{
+						href: "/construction/planning/forecast",
+						label: "Будущие поступления",
+						icon: Calendar,
+					},
+					{
+						href: "/construction/planning/overdue",
+						label: "Просрочки",
+						icon: AlertTriangle,
+					},
+					{
+						href: "/construction/planning/approvals",
+						label: "Согласование",
+						icon: CheckSquare,
+					},
 				],
 			},
-		],
-	},
-
-	// ── 3. CRM / Продажи ────────────────────────────────────────────────
-	{
-		id: "crm",
-		accessId: "proptech",
-		label: "CRM",
-		shortLabel: "CRM",
-		icon: Target,
-		color: "#2563eb",
-		urlPrefix: ["/crm", "/proptech"],
-		sections: [
 			{
-				title: "Продажи",
+				title: "Себестоимость",
 				items: [
-					{ href: "/dashboard?tab=sales", label: "Обзор", icon: LayoutDashboard },
-					{ href: "/crm/leads", label: "Лиды", icon: Target },
-					{ href: "/crm/deals", label: "Сделки", icon: TrendingUp },
-					{ href: "/crm/chess", label: "Шахматка", icon: Grid3X3 },
-					{ href: "/crm/sales-properties", label: "Свободные объекты", icon: Building2 },
-				],
-			},
-			{
-				title: "Договоры",
-				items: [
-					{ href: "/crm/contracts-sales", label: "Создать договор", icon: FileText },
-					{ href: "/crm/sales-contracts", label: "Реестр договоров", icon: ScrollText },
-				],
-			},
-			{
-				title: "Клиенты",
-				items: [
-					{ href: "/crm/clients", label: "Клиенты", icon: Users },
-					{ href: "/crm/leads/intake", label: "Приём лидов", icon: Rss },
-					{ href: "/crm/client-relations", label: "Клиентский сервис", icon: MessageCircle },
-				],
-			},
-			{
-				title: "Настройки CRM",
-				items: [
-					{ href: "/crm/employees", label: "Сотрудники", icon: UserCircle },
-					{ href: "/crm/counterparties", label: "Контрагенты", icon: Briefcase },
-					{ href: "/crm/help", label: "Помощь", icon: CircleHelp },
-				],
-			},
-		],
-	},
-
-	// ── 4. ПТО / Строительство ──────────────────────────────────────────
-	{
-		id: "pto",
-		accessId: "construction",
-		label: "ПТО",
-		shortLabel: "ПТО",
-		icon: HardHat,
-		color: "#0284c7",
-		urlPrefix: [
-			"/construction/stages", "/construction/tasks", "/construction/workers",
-			"/construction/contractors", "/construction/materials",
-			"/construction/planning", "/construction/employees",
-			"/construction/counterparties", "/construction/settings",
-			"/construction/help", "/construction/reconciliation",
-		],
-		sections: [
-			{
-				title: "Планирование",
-				items: [
-					{ href: "/dashboard?tab=construction", label: "Обзор", icon: LayoutDashboard },
 					{ href: "/construction/stages", label: "Этапы WBS", icon: Flag },
 					{ href: "/construction/tasks", label: "Задачи", icon: ClipboardList },
-					{ href: "/construction/planning/forecast", label: "Прогноз", icon: Calendar },
-					{ href: "/construction/planning/overdue", label: "Просрочки", icon: AlertTriangle },
-					{ href: "/construction/planning/broadcast", label: "Рассылка", icon: Send },
+					{
+						href: "/construction/materials",
+						label: "Материалы",
+						icon: Package,
+					},
+					{
+						href: "/construction/contractors",
+						label: "Подрядчики",
+						icon: Briefcase,
+					},
 				],
 			},
 			{
 				title: "Производство",
 				items: [
 					{ href: "/construction/workers", label: "Бригады", icon: Hammer },
-					{ href: "/construction/contractors", label: "Подрядчики", icon: Briefcase },
-					{ href: "/construction/materials", label: "Материалы", icon: Package },
-					{ href: "/construction/reconciliation", label: "Акт сверки", icon: Scale },
+					{
+						href: "/construction/planning/broadcast",
+						label: "Рассылка",
+						icon: Send,
+					},
 				],
 			},
 			{
-				title: "Себестоимость",
+				title: "Финансовые отчёты",
 				items: [
-					{ href: "/construction/budget", label: "Бюджет / план-факт", icon: Wallet },
-					{ href: "/construction/operations", label: "Операции", icon: ArrowRightLeft },
+					{
+						href: "/construction/analytics/cashflow",
+						label: "ОДДС",
+						icon: BarChart3,
+					},
+					{
+						href: "/construction/analytics/pnl",
+						label: "ОПУ",
+						icon: LineChart,
+					},
+					{
+						href: "/construction/analytics/expenses",
+						label: "Анализ расходов",
+						icon: PieChart,
+					},
+					{
+						href: "/construction/analytics/debt",
+						label: "Задолженности",
+						icon: AlertTriangle,
+					},
+				],
+			},
+			{
+				title: "В разработке",
+				items: [
+					{
+						href: "/construction/ai/chat",
+						label: "AI · Чат по ТЗ",
+						icon: MessageCircle,
+					},
+					{
+						href: "/construction/ai/snip-check",
+						label: "AI · Проверка СНиП",
+						icon: ShieldCheck,
+					},
+					{
+						href: "/construction/ai/tools",
+						label: "AI · Документы",
+						icon: Zap,
+					},
+					{
+						href: "/construction/ai/photo-report",
+						label: "AI · Анализ фото",
+						icon: Search,
+					},
+					{
+						href: "/construction/ai/contractor-analytics",
+						label: "AI · Подрядчики",
+						icon: BarChart3,
+					},
+					{ href: "/construction/ai/telegram", label: "Telegram", icon: Send },
+					{
+						href: "/construction/ai/estimates",
+						label: "AI Смета",
+						icon: BarChart3,
+					},
 				],
 			},
 			{
 				title: "Настройки",
 				items: [
-					{ href: "/construction/counterparties", label: "Контрагенты", icon: Users },
-					{ href: "/construction/employees", label: "Сотрудники", icon: UserCircle },
-					{ href: "/construction/settings", label: "Настройки", icon: Settings },
-					{ href: "/construction/help", label: "Помощь", icon: CircleHelp },
+					{
+						href: "/construction/counterparties",
+						label: "Контрагенты",
+						icon: Users,
+					},
+					{
+						href: "/construction/employees",
+						label: "Сотрудники",
+						icon: UserCircle,
+					},
+					{
+						href: "/construction/settings",
+						label: "Настройки",
+						icon: Settings,
+					},
+					{
+						href: "/construction/help",
+						label: "Помощь",
+						icon: CircleHelp,
+					},
 				],
 			},
 		],
 	},
-
-	// ── 5. Юрист ────────────────────────────────────────────────────────
-	{
-		id: "legal",
-		accessId: "consolidated",
-		label: "Юрист",
-		shortLabel: "Юрист",
-		icon: Scale,
-		color: "#7c3aed",
-		urlPrefix: ["/legal"],
-		sections: [
-			{
-				title: "Договоры",
-				items: [
-					{ href: "/legal", label: "На согласовании", icon: CheckSquare },
-					{ href: "/legal/registry", label: "Реестр договоров", icon: ScrollText },
-					{ href: "/legal/templates", label: "Шаблоны", icon: FileText },
-					{ href: "/legal/claims", label: "Претензии", icon: AlertTriangle },
-				],
-			},
-			{
-				title: "Судебные дела",
-				items: [
-					{ href: "/legal/court", label: "Дела", icon: Briefcase },
-					{ href: "/legal/deadlines", label: "Сроки", icon: Calendar },
-				],
-			},
-		],
-	},
-
-	// ── 6. Финансы ──────────────────────────────────────────────────────
 	{
 		id: "finance",
-		accessId: "finance",
-		label: "Финансы",
-		shortLabel: "Финансы",
+		label: moduleMeta("finance").label,
+		shortLabel: moduleMeta("finance").shortLabel,
 		icon: Wallet,
 		color: "#0891b2",
-		urlPrefix: [
-			"/construction/accounts", "/construction/accruals", "/construction/cashier",
-			"/construction/payroll", "/construction/analytics",
-			"/construction/planning/forecast", "/construction/planning/overdue",
-			"/construction/planning/approvals",
-			"/reports/cashflow", "/reports/payments", "/reports/debt", "/reports/directions",
-		],
+		urlPrefix: moduleMeta("finance").routePrefixes,
 		sections: [
 			{
-				title: "Операции",
+				title: "Обзор и операции",
 				items: [
 					{ href: "/dashboard?tab=finance", label: "Обзор", icon: LayoutDashboard },
 					{ href: "/construction/accounts", label: "Счета", icon: Landmark },
-					{ href: "/construction/operations", label: "Операции", icon: ArrowRightLeft },
-					{ href: "/construction/budget", label: "Бюджет / план-факт", icon: Wallet },
-					{ href: "/construction/payroll", label: "Зарплатная ведомость", icon: Banknote },
+					{
+						href: "/construction/operations",
+						label: "Операции",
+						icon: ArrowRightLeft,
+					},
+					{ href: "/construction/budget", label: "Бюджет и план/факт", icon: Wallet },
+					{
+						href: "/construction/payroll",
+						label: "Зарплатная ведомость",
+						icon: Banknote,
+					},
 				],
 			},
 			{
 				title: "Договоры и платежи",
 				items: [
-					{ href: "/construction/accruals", label: "Начисления", icon: ListOrdered },
-					{ href: "/construction/cashier", label: "Приём платежей", icon: DollarSign },
-					{ href: "/construction/reconciliation", label: "Акт сверки", icon: Scale },
-					{ href: "/construction/planning/forecast", label: "Будущие поступления", icon: Calendar },
-					{ href: "/construction/planning/overdue", label: "Просрочки", icon: AlertTriangle },
-					{ href: "/construction/planning/approvals", label: "Согласование", icon: CheckSquare },
+					{
+						href: "/construction/accruals",
+						label: "Начисления",
+						icon: ListOrdered,
+					},
+					{
+						href: "/construction/cashier",
+						label: "Приём платежей",
+						icon: DollarSign,
+					},
+					{
+						href: "/construction/reconciliation",
+						label: "Акт сверки",
+						icon: Scale,
+					},
+					{
+						href: "/construction/planning/forecast",
+						label: "Будущие поступления",
+						icon: Calendar,
+					},
+					{
+						href: "/construction/planning/overdue",
+						label: "Просрочки",
+						icon: AlertTriangle,
+					},
+					{
+						href: "/construction/planning/approvals",
+						label: "Согласование",
+						icon: CheckSquare,
+					},
 				],
 			},
 			{
-				title: "Аналитика",
+				title: "Финансовая аналитика",
 				items: [
-					{ href: "/construction/analytics/cashflow", label: "ОДДС", icon: BarChart3 },
-					{ href: "/construction/analytics/pnl", label: "ОПУ", icon: LineChart },
-					{ href: "/construction/analytics/expenses", label: "Анализ расходов", icon: PieChart },
-					{ href: "/construction/analytics/debt", label: "Задолженности", icon: AlertTriangle },
-					{ href: "/reports/cashflow", label: "Сводный ДДС", icon: BarChart3 },
-					{ href: "/reports/payments", label: "История платежей", icon: Activity },
+					{
+						href: "/finance/reports/cashflow",
+						label: "ОДДС",
+						icon: BarChart3,
+					},
+					{
+						href: "/finance/reports/pnl",
+						label: "ОПУ",
+						icon: LineChart,
+					},
+					{
+						href: "/finance/reports/expenses",
+						label: "Анализ расходов",
+						icon: PieChart,
+					},
+					{
+						href: "/finance/reports/debt",
+						label: "Задолженности",
+						icon: AlertTriangle,
+					},
 				],
 			},
 		],
 	},
-
-	// ── 7. Аренда ───────────────────────────────────────────────────────
 	{
 		id: "rental",
-		accessId: "rental",
-		label: "Аренда",
-		shortLabel: "Аренда",
+		label: moduleMeta("rental").label,
+		shortLabel: moduleMeta("rental").shortLabel,
 		icon: Home,
 		color: "#14b8a6",
-		urlPrefix: ["/rental"],
+		urlPrefix: moduleMeta("rental").routePrefixes,
 		sections: [
 			{
-				title: "Управление",
+				title: "Аренда",
 				items: [
-					{ href: "/dashboard?tab=rental", label: "Обзор", icon: BarChart3 },
+					{ href: "/dashboard?tab=rental", label: "Дашборд", icon: BarChart3 },
 					{ href: "/rental/properties", label: "Объекты", icon: Building2 },
 					{ href: "/rental/tenants", label: "Арендаторы", icon: UserCircle },
-					{ href: "/rental/counterparties", label: "Контрагенты", icon: Users },
-					{ href: "/rental/contracts", label: "Договоры аренды", icon: FileText },
-					{ href: "/rental/deposits", label: "Депозиты", icon: PiggyBank },
+					{ href: "/rental/contracts", label: "Договоры", icon: FileText },
 				],
 			},
 			{
 				title: "Финансы",
 				items: [
-					{ href: "/rental/accruals", label: "Начисление", icon: ListOrdered },
-					{ href: "/rental/payments", label: "Платежи", icon: CreditCard },
-					{ href: "/rental/analytics/debt", label: "Долги арендаторов", icon: AlertTriangle },
+					{ href: "/rental/accruals", label: "Начисления", icon: ListOrdered },
+					{ href: "/rental/payments", label: "Приём платежей", icon: CreditCard },
+					{ href: "/rental/deposits", label: "Депозиты", icon: PiggyBank },
 					{ href: "/rental/expenses", label: "Расходы", icon: Receipt },
-					{ href: "/rental/statements", label: "Акты собственников", icon: ScrollText },
-					{ href: "/rental/accounts", label: "Расчётные счета", icon: Landmark },
-				],
-			},
-			{
-				title: "Владельцы",
-				items: [
-					{ href: "/rental/investors", label: "Владельцы / Инвесторы", icon: Users },
-					{ href: "/rental/distributions", label: "Распределение дохода", icon: Coins },
+					{
+						href: "/rental/statements",
+						label: "Акты собственников",
+						icon: ScrollText,
+					},
+					{
+						href: "/rental/accounts",
+						label: "Расчётные счета",
+						icon: Landmark,
+					},
 				],
 			},
 			{
 				title: "Аналитика",
 				items: [
-					{ href: "/rental/analytics/odds", label: "ОДДС", icon: BarChart3 },
-					{ href: "/rental/analytics/plan-fact", label: "План-факт", icon: TrendingUp },
-					{ href: "/rental/analytics/opu", label: "ОПУ", icon: LineChart },
-					{ href: "/rental/analytics/history", label: "История платежей", icon: Activity },
-					{ href: "/rental/analytics/owners", label: "Отчёты владельцев", icon: ScrollText },
-					{ href: "/rental/analytics/summary", label: "Сводный отчёт", icon: PieChart },
+					{ href: "/rental/reports/odds", label: "ОДДС", icon: BarChart3 },
+					{ href: "/rental/reports/opu", label: "ОПУ", icon: LineChart },
+					{
+						href: "/rental/reports/debt",
+						label: "Задолженность",
+						icon: AlertTriangle,
+					},
+					{
+						href: "/rental/reports/history",
+						label: "История платежей",
+						icon: Activity,
+					},
+					{
+						href: "/rental/reports/owners",
+						label: "Отчёты владельцев",
+						icon: ScrollText,
+					},
+					{
+						href: "/rental/reports/summary",
+						label: "Сводный отчёт",
+						icon: PieChart,
+					},
+					{ href: "/rental/reports/plan-fact", label: "План-факт", icon: TrendingUp },
+				],
+			},
+			{
+				title: "Владельцы",
+				items: [
+					{ href: "/rental/investors", label: "Владельцы", icon: Users },
+					{
+						href: "/rental/distributions",
+						label: "Распределение",
+						icon: Coins,
+					},
 				],
 			},
 			{
 				title: "Планирование",
 				items: [
-					{ href: "/rental/planning/forecast", label: "Будущие поступления", icon: Calendar },
-					{ href: "/rental/planning/overdue", label: "Просрочки", icon: AlertTriangle },
+					{
+						href: "/rental/planning/forecast",
+						label: "Будущие поступления",
+						icon: Calendar,
+					},
+					{
+						href: "/rental/planning/overdue",
+						label: "Просрочки",
+						icon: AlertTriangle,
+					},
 					{ href: "/rental/planning/broadcast", label: "Рассылка", icon: Send },
 				],
 			},
@@ -423,184 +481,217 @@ const MODULES: Module[] = [
 			},
 		],
 	},
-
-	// ── 8. Снабжение ────────────────────────────────────────────────────
 	{
-		id: "warehouse",
-		accessId: "warehouse",
-		label: "Снабжение",
-		shortLabel: "Снабжение",
-		icon: ShoppingBag,
-		color: "#0f766e",
-		urlPrefix: ["/warehouse"],
+		id: "proptech",
+		label: moduleMeta("proptech").label,
+		shortLabel: moduleMeta("proptech").shortLabel,
+		icon: Target,
+		color: "#2563eb",
+		urlPrefix: moduleMeta("proptech").routePrefixes,
 		sections: [
 			{
-				title: "Заявки",
+				title: "Продажи",
 				items: [
-					{ href: "/dashboard?tab=supply", label: "Обзор", icon: LayoutDashboard },
-					{ href: "/warehouse/requests", label: "Заявки прорабов", icon: Target },
-					{ href: "/warehouse/approvals", label: "Согласования", icon: ShieldCheck },
-					{ href: "/warehouse/orders", label: "Заказы", icon: ClipboardList },
+					{ href: "/dashboard?tab=sales", label: "Обзор", icon: LayoutDashboard },
+					{ href: "/crm/leads", label: "Лиды", icon: Target },
+					{ href: "/crm/deals", label: "Сделки", icon: TrendingUp },
+					{ href: "/crm/contracts-sales", label: "Договоры", icon: FileText },
+					{ href: "/crm/chess", label: "Шахматка", icon: Grid3X3 },
 				],
 			},
 			{
-				title: "Склад",
+				title: "Клиенты",
 				items: [
-					{ href: "/warehouse/incoming", label: "Приход", icon: Truck },
-					{ href: "/warehouse/outgoing", label: "Расход / выдача", icon: Layers },
-					{ href: "/warehouse/inventory", label: "Инвентаризация", icon: Scale },
+					{ href: "/crm/clients", label: "Клиенты", icon: Users },
+					{ href: "/crm/leads/intake", label: "Приём лидов", icon: Rss },
+					{ href: "/crm/client-relations", label: "Клиентский сервис", icon: MessageCircle },
+					{ href: "/crm/media-center", label: "Медиацентр", icon: Megaphone },
 				],
 			},
 			{
-				title: "Маркетплейс",
+				title: "Настройки CRM",
 				items: [
-					{ href: "/warehouse/marketplace", label: "Маркетплейс", icon: Package },
+					{ href: "/crm/employees", label: "Сотрудники", icon: UserCircle },
+					{ href: "/crm/counterparties", label: "Контрагенты", icon: Briefcase },
+					{ href: "/crm/help", label: "Помощь", icon: CircleHelp },
+				],
+			},
+		],
+	},
+	{
+		id: "warehouse",
+		label: moduleMeta("warehouse").label,
+		shortLabel: moduleMeta("warehouse").shortLabel,
+		icon: ShoppingBag,
+		color: "#0f766e",
+		urlPrefix: moduleMeta("warehouse").routePrefixes,
+		sections: [
+			{
+				title: "Управление",
+				items: [
+					{
+						href: "/dashboard?tab=supply",
+						label: "Обзор",
+						icon: LayoutDashboard,
+					},
 					{ href: "/warehouse/suppliers", label: "Поставщики", icon: Factory },
 					{ href: "/warehouse/items", label: "Товары", icon: ShoppingBag },
+					{ href: "/warehouse/orders", label: "Заказы", icon: ClipboardList },
 					{ href: "/warehouse/companies", label: "Компании", icon: Building },
+					{
+						href: "/warehouse/requests",
+						label: "Заявки прорабов",
+						icon: Target,
+					},
+					{
+						href: "/warehouse/approvals",
+						label: "Согласования",
+						icon: ShieldCheck,
+					},
+					{ href: "/warehouse/help", label: "Помощь", icon: CircleHelp },
 				],
 			},
 			{
-				title: "Отчёты",
+				title: "Снабжение",
 				items: [
-					{ href: "/warehouse/costs", label: "Стоимость запасов", icon: Wallet },
+					{ href: "/warehouse/incoming", label: "Поступления", icon: Truck },
+					{
+						href: "/warehouse/outgoing",
+						label: "Списания / выдача",
+						icon: Layers,
+					},
+					{
+						href: "/warehouse/inventory",
+						label: "Инвентаризация",
+						icon: Scale,
+					},
+				],
+			},
+			{
+				title: "Финансы и отчёты",
+				items: [
+					{
+						href: "/warehouse/costs",
+						label: "Стоимость запасов",
+						icon: Wallet,
+					},
 					{ href: "/warehouse/reports", label: "Отчёты", icon: BarChart },
 				],
 			},
 			{
 				title: "Справочники",
 				items: [
-					{ href: "/warehouse/counterparties", label: "Контрагенты", icon: Users },
+					{
+						href: "/warehouse/counterparties",
+						label: "Контрагенты",
+						icon: Users,
+					},
 					{ href: "/warehouse/settings", label: "Настройки", icon: Settings },
-					{ href: "/warehouse/help", label: "Помощь", icon: CircleHelp },
+				],
+			},
+			{
+				title: "В разработке",
+				items: [
+					{
+						href: "/warehouse/marketplace",
+						label: "Маркетплейс",
+						icon: Package,
+					},
 				],
 			},
 		],
 	},
-
-	// ── 9. AI-инструменты ───────────────────────────────────────────────
 	{
-		id: "ai",
-		accessId: "ai",
-		label: "AI",
-		shortLabel: "AI",
-		icon: Zap,
-		color: "#7c3aed",
-		urlPrefix: ["/construction/ai"],
+		id: "reports",
+		label: moduleMeta("reports").label,
+		shortLabel: moduleMeta("reports").shortLabel,
+		icon: BarChart3,
+		color: "#4f46e5",
+		urlPrefix: moduleMeta("reports").routePrefixes,
 		sections: [
 			{
-				title: "Документы и сметы",
+				title: "Общий свод",
 				items: [
-					{ href: "/construction/ai/estimates", label: "AI Смета", icon: BarChart3 },
-					{ href: "/construction/ai/snip-check", label: "Проверка СНиП", icon: ShieldCheck },
-					{ href: "/construction/ai/tools", label: "Генерация документов", icon: Zap },
-				],
-			},
-			{
-				title: "Аналитика",
-				items: [
-					{ href: "/construction/ai/contractor-analytics", label: "Анализ подрядчиков", icon: BarChart3 },
-					{ href: "/construction/ai/photo-report", label: "Анализ фото стройки", icon: Search },
-				],
-			},
-			{
-				title: "Ассистент",
-				items: [
-					{ href: "/construction/ai/chat", label: "Чат по проекту", icon: MessageCircle },
-					{ href: "/construction/ai/telegram", label: "Telegram-бот", icon: Send },
+					{
+						href: "/reports/directions",
+						label: "Расчёты с контрагентами",
+						icon: BarChart3,
+					},
+					{
+						href: "/reports/debt",
+						label: "Задолженность",
+						icon: AlertTriangle,
+					},
+					{
+						href: "/reports/cashflow",
+						label: "Денежный поток",
+						icon: BarChart3,
+					},
+					{
+						href: "/reports/payments",
+						label: "История платежей",
+						icon: Activity,
+					},
 				],
 			},
 		],
 	},
-
-	// ── 10. Сводное ─────────────────────────────────────────────────────
 	{
 		id: "consolidated",
-		accessId: "consolidated",
-		label: "Сводное",
-		shortLabel: "Сводное",
+		label: moduleMeta("consolidated").label,
+		shortLabel: moduleMeta("consolidated").shortLabel,
 		icon: Globe,
 		color: "#6b7280",
-		urlPrefix: ["/properties", "/reports", "/counterparties", "/companies", "/consolidated", "/import", "/activity"],
+		urlPrefix: moduleMeta("consolidated").routePrefixes,
 		sections: [
 			{
-				title: "Обзор",
+				title: "Главная",
 				items: [
-					{ href: "/dashboard?tab=control", label: "Мультипроект", icon: LayoutDashboard },
-					{ href: "/properties", label: "Все объекты", icon: Building2 },
-					{ href: "/properties/chess", label: "Шахматка объектов", icon: Grid3X3 },
-					{ href: "/companies", label: "Компании холдинга", icon: Building },
-				],
-			},
-			{
-				title: "Финансы",
-				items: [
-					{ href: "/reports/cashflow", label: "Сводный ДДС", icon: BarChart3 },
-					{ href: "/reports/directions", label: "Расчёты с контрагентами", icon: BarChart3 },
-					{ href: "/reports/debt", label: "Задолженность", icon: AlertTriangle },
-					{ href: "/reports/rental", label: "Сводка аренды", icon: BarChart2 },
-					{ href: "/reports/payments", label: "История платежей", icon: Activity },
-				],
-			},
-			{
-				title: "Контрагенты",
-				items: [
+					{ href: "/dashboard?tab=control", label: "Обзор", icon: LayoutDashboard },
+					{ href: "/properties", label: "Объекты", icon: Building2 },
+					{
+						href: "/properties/chess",
+						label: "Шахматка объектов",
+						icon: Grid3X3,
+					},
 					{ href: "/counterparties", label: "Все контрагенты", icon: Users },
-				],
-			},
-		],
-	},
-
-	// ── 11. Порталы ─────────────────────────────────────────────────────
-	{
-		id: "portals",
-		accessId: "proptech",
-		label: "Порталы",
-		shortLabel: "Порталы",
-		icon: Globe,
-		color: "#0891b2",
-		urlPrefix: ["/portals"],
-		sections: [
-			{
-				title: "Клиентский портал",
-				items: [
-					{ href: "/crm/clients", label: "Покупатели", icon: Users },
-					{ href: "/crm/client-relations", label: "Клиентский сервис", icon: MessageCircle },
-					{ href: "/crm/announcements", label: "Объявления", icon: Rss },
-				],
-			},
-			{
-				title: "Арендный портал",
-				items: [
-					{ href: "/rental/tenants", label: "Арендаторы", icon: UserCircle },
-				],
-			},
-		],
-	},
-
-	// ── 12. Админ ───────────────────────────────────────────────────────
-	{
-		id: "admin",
-		accessId: "consolidated",
-		label: "Админ",
-		shortLabel: "Админ",
-		icon: Settings,
-		color: "#475569",
-		urlPrefix: ["/users", "/settings", "/design-system"],
-		sections: [
-			{
-				title: "Пользователи и доступ",
-				items: [
-					{ href: "/users", label: "Пользователи", icon: UserCircle },
 					{ href: "/companies", label: "Компании", icon: Building },
+					{ href: "/users", label: "Пользователи", icon: UserCircle },
+				],
+			},
+			{
+				title: "Общий свод",
+				items: [
+					{
+						href: "/reports/directions",
+						label: "Расчёты с контрагентами",
+						icon: BarChart3,
+					},
+					{
+						href: "/reports/debt",
+						label: "Задолженность",
+						icon: AlertTriangle,
+					},
+					{
+						href: "/reports/cashflow",
+						label: "Денежный поток",
+						icon: BarChart3,
+					},
+					{
+						href: "/reports/payments",
+						label: "История платежей",
+						icon: Activity,
+					},
 				],
 			},
 			{
 				title: "Настройки",
 				items: [
-					{ href: "/settings", label: "Настройки системы", icon: Settings },
-					{ href: "/import", label: "Импорт данных", icon: Layers },
-					{ href: "/design-system", label: "Дизайн-система", icon: Layers },
+					{
+						href: "/design-system",
+						label: "Дизайн-система",
+						icon: Layers,
+					},
 				],
 			},
 		],
@@ -611,32 +702,15 @@ function getModuleEntryHref(mod: Module): string {
 	return mod.sections[0]?.items[0]?.href || "/dashboard";
 }
 
-function detectModule(path: string): ModuleId {
-	return detectModuleFromPath(path);
+function isPinnedOpenSection(moduleId: ModuleId, sectionTitle: string): boolean {
+	return moduleId === "rental" && ["Аренда", "Финансы", "Аналитика"].includes(sectionTitle);
 }
 
-/** Returns the visual module id (string) that best matches the current path. */
-function detectVisualModuleId(path: string, modules: Module[]): string {
-	// Strip query string for prefix matching
-	const cleanPath = path.split("?")[0];
-	let bestId = modules[0]?.id ?? "dashboard";
-	let bestLen = 0;
-	for (const m of modules) {
-		for (const prefix of m.urlPrefix) {
-			if (
-				(cleanPath === prefix || cleanPath.startsWith(prefix + "/") || cleanPath.startsWith(prefix + "?")) &&
-				prefix.length > bestLen
-			) {
-				bestLen = prefix.length;
-				bestId = m.id;
-			}
-		}
-	}
-	// Special case: /dashboard routes go to "dashboard" module
-	if (cleanPath === "/dashboard" && modules.some((m) => m.id === "dashboard")) {
-		return "dashboard";
-	}
-	return bestId;
+function detectModule(path: string): ModuleId {
+	const detected = detectModuleFromPath(path);
+	if (detected === "finance" && path.startsWith("/construction")) return "construction";
+	if (detected === "reports" && !path.startsWith("/rental")) return "consolidated";
+	return detected;
 }
 
 function getDashboardTabLabel(path: string): string | null {
@@ -648,7 +722,7 @@ function getDashboardTabLabel(path: string): string | null {
 		control: "Сводное",
 		construction: "Стройка",
 		finance: "Финансы",
-		supply: "Закуп",
+		supply: "Снабжение",
 		sales: "Продажи",
 		rental: "Аренда",
 		investors: "Инвесторы",
@@ -709,24 +783,30 @@ function SectionGroup({
 		(a, b) => b.href.length - a.href.length,
 	)[0];
 	const isActiveSection = !!bestMatch;
+	const isDevelopmentSection = section.title === "В разработке";
 
 	return (
 		<div
 			title={collapsed ? section.title : undefined}
 			className={cn(
-				"rounded-2xl border transition-all duration-200",
+				"rounded-[18px] border transition-all duration-200",
 				collapsed && "border-transparent",
+				isDevelopmentSection && "border-orange-400/25 bg-orange-500/[0.07]",
 				open
-					? "border-cyan-400/18 bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
-					: "border-transparent",
+					? isDevelopmentSection
+						? "border-orange-400/30 bg-orange-500/[0.07] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+						: "border-cyan-400/18 bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+					: !isDevelopmentSection && "border-transparent",
 			)}
 		>
 			<button
 				onClick={onToggle}
 				className={cn(
-					"w-full flex items-center justify-between gap-2 rounded-2xl px-3 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors",
+					"flex min-h-9 w-full items-center justify-between gap-2 rounded-[18px] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide transition-colors",
 					collapsed && "justify-center px-2",
-					open || isActiveSection
+					isDevelopmentSection
+						? "text-orange-200 hover:text-orange-100"
+						: open || isActiveSection
 						? "text-cyan-100"
 						: "text-white/35 hover:text-white/65",
 				)}
@@ -737,13 +817,13 @@ function SectionGroup({
 					<span className="truncate">{section.title}</span>
 				)}
 				{!collapsed && (open ? (
-					<ChevronDown className="w-3.5 h-3.5 text-cyan-300" />
+					<ChevronDown className={cn("w-3.5 h-3.5", isDevelopmentSection ? "text-orange-300" : "text-cyan-300")} />
 				) : (
-					<ChevronRight className="w-3.5 h-3.5 text-white/30" />
+					<ChevronRight className={cn("w-3.5 h-3.5", isDevelopmentSection ? "text-orange-300/75" : "text-white/30")} />
 				))}
 			</button>
 			{open && (
-				<div className={cn("space-y-1 px-2 pb-2", collapsed && "px-0")}>
+				<div className={cn("space-y-0.5 px-1.5 pb-1.5", collapsed && "px-0")}>
 					{items.map((item) => {
 						// Only mark as active if this is the most specific match
 						const active = bestMatch?.href === item.href;
@@ -752,11 +832,15 @@ function SectionGroup({
 							<Link key={item.href} href={item.href}>
 								<div
 									className={cn(
-										"flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] cursor-pointer transition-all duration-150 group",
+										"flex min-h-9 cursor-pointer items-center gap-2.5 rounded-[14px] px-2.5 py-1.5 text-[13px] transition-all duration-150 group",
 										collapsed && "justify-center px-2",
 										active
-											? "bg-cyan-500 text-white shadow-lg shadow-cyan-950/20"
-											: "text-white/58 hover:text-white hover:bg-white/[0.075]",
+											? isDevelopmentSection
+												? "bg-orange-500 text-slate-950 shadow-lg shadow-orange-950/20"
+												: "bg-cyan-500 text-white shadow-lg shadow-cyan-950/20"
+											: isDevelopmentSection
+												? "text-orange-100/76 hover:text-orange-50 hover:bg-orange-400/14"
+												: "text-white/58 hover:text-white hover:bg-white/[0.075]",
 									)}
 									title={collapsed ? item.label : undefined}
 								>
@@ -764,8 +848,12 @@ function SectionGroup({
 										className={cn(
 											"w-3.5 h-3.5 flex-shrink-0",
 											active
-												? "text-white"
-												: "text-white/35 group-hover:text-cyan-200",
+												? isDevelopmentSection
+													? "text-slate-950"
+													: "text-white"
+												: isDevelopmentSection
+													? "text-amber-200/70 group-hover:text-amber-100"
+													: "text-white/35 group-hover:text-cyan-200",
 										)}
 									/>
 									{!collapsed && <span className="truncate">{item.label}</span>}
@@ -790,18 +878,10 @@ export function Layout({ children }: { children: ReactNode }) {
 		useModuleAccess();
 	const [createOpen, setCreateOpen] = useState(false);
 	const [mobileNavOpen, setMobileNavOpen] = useState(false);
-	const [sidebarPinned, setSidebarPinned] = useState(
-		() => localStorage.getItem("planalityc_sidebar_pinned") === "1",
-	);
-	const [sidebarHovered, setSidebarHovered] = useState(false);
 	const [openSectionTitle, setOpenSectionTitle] = useState<string | null>(null);
 	const { open: commandOpen, setOpen: setCommandOpen } = useCommandPalette();
 	useFinanceHotkeys(!!user);
 	const createRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		localStorage.setItem("planalityc_sidebar_pinned", sidebarPinned ? "1" : "0");
-	}, [sidebarPinned]);
 
 	useEffect(() => {
 		function handleClickOutside(e: MouseEvent) {
@@ -813,17 +893,30 @@ export function Layout({ children }: { children: ReactNode }) {
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, []);
 
+	const topLevelHiddenModules = new Set<ModuleId>(["finance", "reports"]);
 	const allowedVisibleModules = MODULES.filter((m) =>
-		allowedModules.includes(m.accessId),
+		allowedModules.includes(m.id) && !topLevelHiddenModules.has(m.id),
 	);
-	const businessModules = allowedVisibleModules.filter(
-		(m) => !["dashboard", "consolidated", "legal", "admin"].includes(m.id),
-	);
-	const activeModuleId = detectVisualModuleId(pathWithSearch, allowedVisibleModules);
+	const businessModules = allowedVisibleModules.filter((m) => m.id !== "consolidated");
+	const activeModuleId = detectModule(pathWithSearch);
 	const visibleModules =
 		businessModules.length <= 1 && activeModuleId !== "consolidated"
 			? businessModules
 			: allowedVisibleModules;
+	const moduleSwitcherModules = useMemo(() => {
+		const rentalModule = MODULES.find((m) => m.id === "rental");
+		if (
+			!rentalModule ||
+			!allowedModules.includes("rental") ||
+			visibleModules.some((m) => m.id === "rental")
+		) {
+			return visibleModules;
+		}
+		const next = [...visibleModules];
+		const constructionIndex = visibleModules.findIndex((m) => m.id === "construction");
+		next.splice(constructionIndex === -1 ? next.length : constructionIndex + 1, 0, rentalModule);
+		return next;
+	}, [visibleModules, allowedModules]);
 
 	useEffect(() => {
 		if (accessLoading || !user) return;
@@ -840,18 +933,20 @@ export function Layout({ children }: { children: ReactNode }) {
 	const ModuleIcon = activeModule.icon;
 	const activeModuleShortLabel =
 		getDashboardTabLabel(pathWithSearch) || activeModule.shortLabel;
+	const activeModuleSettingsHref = "/settings";
 	const quickActions = useMemo(
 		() =>
 			resolveQuickActions(
-				activeModule.accessId,
+				activeModule.id,
 				role,
 				permissions,
 				allowedModules,
 			),
-		[activeModule.accessId, role, permissions, allowedModules],
+		[activeModule.id, role, permissions, allowedModules],
 	);
 	const showQuickCreate = quickActions.length > 0;
-	const sidebarCollapsed = !sidebarPinned && !sidebarHovered;
+	const sidebarCollapsed = false;
+	const showModuleSwitcher = moduleSwitcherModules.length > 1;
 	const adminRoles = new Set(["company_admin", "admin", "super_admin"]);
 	const isAdminUser = adminRoles.has(String((user as { role?: string })?.role ?? role));
 
@@ -859,20 +954,42 @@ export function Layout({ children }: { children: ReactNode }) {
 		const userRole = (user as { role?: string })?.role;
 		const isPtoRole = userRole === "pto" || userRole === "engineer";
 		let sections = activeModule.sections;
-		if (isPtoRole && activeModule.id === "pto") {
-			// ПТО видит только строительные разделы, без "Себестоимость"
+		if (isPtoRole && activeModule.id === "construction") {
 			sections = sections.filter((s) =>
-				["Проект", "Планирование", "Производство"].includes(s.title),
+				["Главный поток", "Себестоимость", "Производство"].includes(s.title),
 			);
+			// ПТО не видит коммерческие пункты — только обзор, ЖК и шахматка
+			sections = sections.map((s) => {
+				if (s.title !== "Главный поток") return s;
+				return {
+					...s,
+					items: s.items.filter((item) =>
+						[
+							"/dashboard?tab=construction",
+							"/construction/projects",
+							"/construction/chess",
+						].includes(item.href),
+					),
+				};
+			});
 		}
 		if (!isAdminUser) {
+			sections = sections.filter(
+				(s) =>
+					!s.items.some((item) => item.href.startsWith("/construction/ai")),
+			);
 			// Дизайн-система — только для администраторов
 			sections = sections.map((s) => ({
 				...s,
 				items: s.items.filter((item) => item.href !== "/design-system"),
 			}));
 		}
-		return sections;
+		return sections
+			.map((section) => ({
+				...section,
+				items: section.items.filter((item) => item.label !== "Настройки"),
+			}))
+			.filter((section) => section.items.length > 0);
 	}, [activeModule, user, isAdminUser]);
 
 	useEffect(() => {
@@ -880,7 +997,7 @@ export function Layout({ children }: { children: ReactNode }) {
 			section.items.some((item) => {
 				const href = resolveNavItemHref(
 					item,
-					activeModule.accessId,
+					activeModule.id,
 					role,
 					permissions,
 					allowedModules,
@@ -915,7 +1032,7 @@ export function Layout({ children }: { children: ReactNode }) {
 				for (const item of section.items) {
 					const href = resolveNavItemHref(
 						item,
-						mod.accessId,
+						mod.id,
 						role,
 						permissions,
 						allowedModules,
@@ -965,179 +1082,127 @@ export function Layout({ children }: { children: ReactNode }) {
 				items={commandItems}
 			/>
 
-			{/* ───── SIDEBAR ───── */}
+			{/* ───── MOBILE NAV ───── */}
 			<aside
-				onMouseEnter={() => setSidebarHovered(true)}
-				onMouseLeave={() => setSidebarHovered(false)}
 				className={cn(
-					"flex-shrink-0 flex flex-row overflow-hidden z-50",
-					"fixed md:relative inset-y-0 left-0 transition-all duration-200",
-					sidebarCollapsed ? "md:w-[72px]" : "md:w-[260px]",
-					"w-[260px]",
-					mobileNavOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+					"flex-shrink-0 flex flex-col overflow-hidden z-50",
+					"fixed inset-y-0 left-0 transition-transform duration-200 md:hidden",
+					"w-[244px]",
+					mobileNavOpen ? "translate-x-0" : "-translate-x-full",
 				)}
 				style={{
 					background:
 						"radial-gradient(circle at 20% 0%, rgba(34,211,238,0.28), transparent 28%), radial-gradient(circle at 105% 18%, rgba(16,185,129,0.18), transparent 30%), linear-gradient(145deg, #020617 0%, #062032 46%, #07111f 100%)",
 				}}
-			>
-				{/* ── LEFT STRIP: module icons ── */}
-				<div className="flex flex-col w-[72px] flex-shrink-0 border-r border-white/8">
+				>
 					{/* Logo */}
-					<div className="flex items-center justify-center py-4 border-b border-white/8">
-						<PlanalitycLogo variant="mark" className="h-9 w-9" />
-					</div>
-
-					{/* Module list */}
-					<div className="flex-1 overflow-y-auto py-2 flex flex-col items-center gap-1 scrollbar-none">
-						{allowedVisibleModules.map((m) => {
-							const Icon = m.icon;
-							const isActive = m.id === activeModule.id;
-							return (
-								<Link key={m.id} href={getModuleEntryHref(m)}>
-									<div
-										title={m.label}
-										className={cn(
-											"flex flex-col items-center gap-1 w-14 py-2 px-1 rounded-xl cursor-pointer transition-all duration-150",
-											isActive
-												? "bg-cyan-500/20 text-cyan-300"
-												: "text-white/40 hover:text-white/80 hover:bg-white/8",
-										)}
-									>
-										<Icon
-											className={cn(
-												"w-5 h-5 flex-shrink-0",
-												isActive && "drop-shadow-[0_0_8px_rgba(103,232,249,0.7)]",
-											)}
-											style={{ color: isActive ? "#67e8f9" : m.color }}
-										/>
-										<span
-											className="text-[9px] font-semibold leading-none text-center truncate w-full"
-											style={{ color: isActive ? "#a5f3fc" : undefined }}
-										>
-											{m.shortLabel}
-										</span>
-										{isActive && (
-											<span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-cyan-400 rounded-r" />
-										)}
-									</div>
-								</Link>
-							);
-						})}
-					</div>
-
-					{/* User avatar */}
-					<div className="py-3 flex flex-col items-center gap-2 border-t border-white/8">
-						<button
-							type="button"
-							onClick={() => setSidebarPinned((p) => !p)}
-							title={sidebarPinned ? "Свернуть меню" : "Закрепить меню"}
-							className="hidden md:flex h-7 w-7 items-center justify-center rounded-xl text-white/35 transition hover:bg-white/10 hover:text-white"
-						>
-							{sidebarPinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
-						</button>
-						<button
-							onClick={logout}
-							title="Выйти"
-							className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-[11px] hover:opacity-80 transition"
-							style={{ background: "linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%)" }}
-						>
-							{initials}
-						</button>
+				<div className="border-b border-white/8 px-4 py-4">
+					<div className="flex items-center justify-between gap-2">
+						<PlanalitycLogo
+							variant="sidebar"
+						/>
 					</div>
 				</div>
 
-				{/* ── RIGHT PANEL: submenu ── */}
-				{!sidebarCollapsed && (
-					<div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-						{/* Module header */}
-						<div className="flex items-center gap-2 px-3 py-4 border-b border-white/8">
-							<ModuleIcon className="w-4 h-4 flex-shrink-0" style={{ color: activeModule.color }} />
-							<span className="text-[11px] font-bold uppercase tracking-widest text-white/60 truncate">
-								{activeModule.label}
-							</span>
-						</div>
+				{/* Nav */}
+				<nav
+					className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2 scrollbar-thin"
+					style={{ scrollbarColor: "#ffffff12 transparent" }}
+				>
+					{navSections.map((section) => (
+						<SectionGroup
+							key={section.title}
+							section={section}
+							location={pathWithSearch}
+							moduleId={activeModule.id}
+							role={role}
+							permissions={permissions}
+							allowedModules={allowedModules}
+							open={isPinnedOpenSection(activeModule.id, section.title) || openSectionTitle === section.title}
+							collapsed={sidebarCollapsed}
+							onToggle={() =>
+								setOpenSectionTitle((current) =>
+									current === section.title ? null : section.title,
+								)
+							}
+						/>
+					))}
+				</nav>
 
-						{/* Nav sections */}
-						<nav
-							className="flex-1 overflow-y-auto py-3 px-2 space-y-2 scrollbar-thin"
-							style={{ scrollbarColor: "#ffffff12 transparent" }}
+				{/* Quick create — отдельная панель, чтобы не путать с разделами меню */}
+				{showQuickCreate && (
+					<div className="px-3 pb-3 pt-2 border-t border-white/8">
+						{sidebarCollapsed ? (
+							<div className="flex flex-col items-center gap-1">
+								{quickActions.slice(0, 4).map((qa) => (
+									<Link key={qa.href} href={qa.href}>
+										<div
+											title={qa.label}
+											className="flex h-10 w-10 items-center justify-center rounded-2xl text-cyan-300 hover:bg-cyan-500/14 hover:text-white"
+										>
+											<Plus className="h-4 w-4" />
+										</div>
+									</Link>
+								))}
+							</div>
+						) : (
+						<div
+							className="rounded-lg px-2.5 py-3 border border-cyan-400/18 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+							style={{
+								background:
+									"linear-gradient(165deg, rgba(8, 47, 73, 0.78) 0%, rgba(12, 28, 42, 0.94) 100%)",
+							}}
 						>
-							{navSections.map((section) => (
-								<SectionGroup
-									key={section.title}
-									section={section}
-									location={pathWithSearch}
-									moduleId={activeModule.accessId}
-									role={role}
-									permissions={permissions}
-									allowedModules={allowedModules}
-									open={openSectionTitle === section.title}
-									collapsed={false}
-									onToggle={() =>
-										setOpenSectionTitle((current) =>
-											current === section.title ? null : section.title,
-										)
-									}
-								/>
+							<div className="flex items-center gap-1.5 px-1 mb-1.5">
+								<Zap className="w-3 h-3 text-cyan-300/90" />
+								<span className="text-[10px] font-semibold text-cyan-100/70 uppercase tracking-wider">
+									Быстрое создание
+								</span>
+							</div>
+							{quickActions.map((qa) => (
+								<Link key={qa.href} href={qa.href}>
+									<div className="flex items-center gap-2 px-2 py-2 rounded-xl text-white/58 hover:text-white hover:bg-cyan-500/14 text-[12px] cursor-pointer transition-all">
+										<Plus className="w-3 h-3 text-cyan-300 flex-shrink-0" />
+										{qa.label}
+									</div>
+								</Link>
 							))}
-						</nav>
-
-						{/* Quick create */}
-						{showQuickCreate && (
-							<div className="px-2 pb-3 pt-2 border-t border-white/8">
-								<div
-									className="rounded-lg px-2.5 py-3 border border-cyan-400/18 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
-									style={{
-										background:
-											"linear-gradient(165deg, rgba(8, 47, 73, 0.78) 0%, rgba(12, 28, 42, 0.94) 100%)",
-									}}
-								>
-									<div className="flex items-center gap-1.5 px-1 mb-1.5">
-										<Zap className="w-3 h-3 text-cyan-300/90" />
-										<span className="text-[10px] font-semibold text-cyan-100/70 uppercase tracking-wider">
-											Быстрое создание
-										</span>
-									</div>
-									{quickActions.map((qa) => (
-										<Link key={qa.href} href={qa.href}>
-											<div className="flex items-center gap-2 px-2 py-2 rounded-xl text-white/58 hover:text-white hover:bg-cyan-500/14 text-[12px] cursor-pointer transition-all">
-												<Plus className="w-3 h-3 text-cyan-300 flex-shrink-0" />
-												{qa.label}
-											</div>
-										</Link>
-									))}
-								</div>
-							</div>
-						)}
-
-						{/* User info */}
-						<div className="px-2 py-3 border-t border-white/8">
-							<div className="flex items-center gap-2 px-2 py-2 rounded-2xl hover:bg-white/8 transition-all cursor-pointer group">
-								<div
-									className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-[11px] flex-shrink-0"
-									style={{ background: "linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%)" }}
-								>
-									{initials}
-								</div>
-								<div className="flex-1 min-w-0">
-									<div className="text-white text-[12px] font-medium truncate leading-none">
-										{displayName}
-									</div>
-									<div className="text-white/40 text-[10px] truncate mt-0.5">
-										{displayEmail}
-									</div>
-								</div>
-								<button
-									onClick={logout}
-									className="opacity-0 group-hover:opacity-100 transition-opacity"
-								>
-									<LogOut className="w-3.5 h-3.5 text-white/40 hover:text-white/70" />
-								</button>
-							</div>
 						</div>
+						)}
 					</div>
 				)}
+
+				{/* User */}
+				<div className="px-3 py-3 border-t border-white/8">
+					<Link href={activeModuleSettingsHref}>
+						<div className="mb-2 flex items-center gap-2.5 rounded-2xl px-2 py-2 text-sm font-semibold text-white/70 hover:bg-white/8 hover:text-white">
+							<Settings className="h-4 w-4 text-cyan-200" />
+							<span>Настройки</span>
+						</div>
+					</Link>
+					<div className="flex items-center gap-2.5 px-2 py-2 rounded-2xl hover:bg-white/8 transition-all cursor-pointer group">
+						<div
+							className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-[11px] flex-shrink-0"
+							style={{ background: "linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%)" }}
+						>
+							{initials}
+						</div>
+						<div className={cn("flex-1 min-w-0", sidebarCollapsed && "hidden")}>
+							<div className="text-white text-[12px] font-medium truncate leading-none">
+								{displayName}
+							</div>
+							<div className="text-white/40 text-[10px] truncate mt-0.5">
+								{displayEmail}
+							</div>
+						</div>
+						<button
+							onClick={logout}
+							className={cn("opacity-0 group-hover:opacity-100 transition-opacity", sidebarCollapsed && "hidden")}
+						>
+							<LogOut className="w-3.5 h-3.5 text-white/40 hover:text-white/70" />
+						</button>
+					</div>
+				</div>
 			</aside>
 
 			{/* ───── MAIN AREA ───── */}
@@ -1153,18 +1218,72 @@ export function Layout({ children }: { children: ReactNode }) {
 						<Menu className="w-5 h-5" />
 					</button>
 
-					{/* Current module breadcrumb */}
-					<div className="flex items-center gap-2 flex-shrink-0">
+					{/* Module switcher */}
+					{showModuleSwitcher ? (
 						<div
-							className="flex h-8 w-8 items-center justify-center rounded-xl"
-							style={{ background: `${activeModule.color}18` }}
+							className="relative flex-shrink-0"
 						>
-							<ModuleIcon className="w-4 h-4" style={{ color: activeModule.color }} />
+							<button
+								type="button"
+								className="flex lg:hidden items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 text-sm font-medium text-gray-700 bg-white transition-all whitespace-nowrap"
+								title={activeModule.label}
+							>
+								<ModuleIcon
+									className="w-4 h-4 flex-shrink-0"
+									style={{ color: activeModule.color }}
+								/>
+								<span>{activeModuleShortLabel}</span>
+								<ChevronDown className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
+							</button>
+							<div className="relative hidden lg:flex items-center gap-1 rounded-[26px] border border-white/80 bg-white/76 p-1.5 shadow-[0_22px_60px_-34px_rgba(8,47,73,0.65)] backdrop-blur-2xl before:pointer-events-none before:absolute before:inset-x-5 before:-top-px before:h-px before:bg-gradient-to-r before:from-transparent before:via-cyan-300/80 before:to-transparent">
+								{moduleSwitcherModules.map((m) => {
+									const Icon = m.icon;
+									const active = m.id === activeModule.id;
+									return (
+										<Link key={m.id} href={getModuleEntryHref(m)}>
+											<div
+												className={cn(
+													"group relative flex h-11 items-center justify-center rounded-2xl text-sm font-semibold transition-all duration-200",
+														active
+															? "min-w-[142px] gap-2 bg-[radial-gradient(circle_at_18%_18%,rgba(34,211,238,0.24),transparent_34%),linear-gradient(135deg,#020617_0%,#082f49_58%,#0f766e_100%)] px-4 text-white shadow-[0_18px_34px_-22px_rgba(8,145,178,0.95)] ring-1 ring-cyan-200/20"
+															: "w-11 text-slate-500 hover:-translate-y-0.5 hover:bg-white/90 hover:text-slate-950 hover:shadow-sm",
+												)}
+												title={m.label}
+											>
+												{active && (
+													<span className="pointer-events-none absolute inset-x-4 -bottom-1 h-1 rounded-full bg-cyan-300/80 blur-[1px]" />
+												)}
+												<Icon
+													className={cn("h-[18px] w-[18px] flex-shrink-0", active && "drop-shadow-[0_0_10px_rgba(103,232,249,0.65)]")}
+													style={{ color: active ? "#67e8f9" : m.color }}
+												/>
+												{active && (
+													<span className="truncate">
+														{m.id === activeModule.id
+															? activeModuleShortLabel
+															: m.shortLabel}
+													</span>
+												)}
+												{!active && (
+													<span className="pointer-events-none absolute left-1/2 top-full z-[9999] mt-2 -translate-x-1/2 whitespace-nowrap rounded-xl border border-slate-200/80 bg-white/96 px-2.5 py-1.5 text-xs font-semibold text-slate-700 opacity-0 shadow-xl shadow-slate-950/12 backdrop-blur transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100">
+														{m.shortLabel}
+													</span>
+												)}
+											</div>
+										</Link>
+									);
+								})}
+							</div>
 						</div>
-						<span className="text-sm font-semibold text-slate-700 whitespace-nowrap">
-							{activeModuleShortLabel}
-						</span>
-					</div>
+					) : (
+						<div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 whitespace-nowrap">
+							<ModuleIcon
+								className="w-4 h-4 flex-shrink-0"
+								style={{ color: activeModule.color }}
+							/>
+							<span>{activeModuleShortLabel}</span>
+						</div>
+					)}
 
 					{/* Search / command palette */}
 					<button
@@ -1227,17 +1346,122 @@ export function Layout({ children }: { children: ReactNode }) {
 					{/* Messages */}
 					<ChatPanel />
 
-					{/* Divider */}
-					<div className="w-px h-6 bg-gray-100" />
-
-					{/* User profile */}
-					<UserProfileDropdown />
 				</header>
 
-				{/* ── CONTENT ── */}
-				<main id="main-content" className="flex-1 overflow-y-auto">
-					<div className="p-3 sm:p-4 xl:p-6">{children}</div>
-				</main>
+				<div className="flex min-h-0 flex-1">
+					{/* ── VERTICAL MODULE MENU ── */}
+					<aside className="hidden w-[280px] flex-shrink-0 flex-col border-r border-white/70 bg-white/72 px-3 py-3 shadow-[18px_0_42px_-34px_rgba(15,23,42,0.55)] backdrop-blur-2xl md:flex">
+						<div className="mb-3 rounded-[20px] border border-white/80 bg-white/76 p-3 shadow-lg shadow-slate-950/5">
+							<div className="flex items-center gap-3">
+								<div
+									className="flex h-9 w-9 items-center justify-center rounded-[16px] text-white shadow-lg shadow-cyan-950/15"
+									style={{ background: `linear-gradient(135deg, ${activeModule.color}, #0f766e)` }}
+								>
+									<ModuleIcon className="h-4 w-4" />
+								</div>
+								<div className="min-w-0">
+									<p className="truncate text-sm font-bold text-slate-950">{activeModule.label}</p>
+									<p className="text-xs font-medium text-slate-500">Меню модуля</p>
+								</div>
+							</div>
+						</div>
+
+						<nav className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+							{navSections.map((section) => {
+								const items = section.items.map((item) => ({
+									...item,
+									href: resolveNavItemHref(
+										item,
+										activeModule.id,
+										role,
+										permissions,
+										allowedModules,
+									),
+								}));
+								const matchingItems = items.filter((item) =>
+									navItemMatches(pathWithSearch, item.href),
+								);
+								const bestMatch = matchingItems.sort(
+									(a, b) => b.href.length - a.href.length,
+								)[0];
+								const pinnedOpen = isPinnedOpenSection(activeModule.id, section.title);
+								const open = pinnedOpen || openSectionTitle === section.title;
+
+								return (
+									<div
+										key={section.title}
+										className={cn(
+											"am-nav-section transition-all",
+											open
+												? "am-nav-section-active"
+												: "border-slate-200/70",
+										)}
+									>
+										<button
+											type="button"
+											onClick={() => {
+												if (!pinnedOpen) setOpenSectionTitle(section.title);
+											}}
+											className={cn(
+												"am-nav-section-button flex w-full items-center justify-between gap-3 text-left uppercase transition-colors",
+												open || bestMatch
+													? "text-slate-950"
+													: "text-slate-500 hover:text-slate-900",
+											)}
+										>
+											<span className="truncate">{section.title}</span>
+											{open ? (
+												<ChevronDown className="h-4 w-4 text-cyan-700" />
+											) : (
+												<ChevronRight className="h-4 w-4 text-slate-400" />
+											)}
+										</button>
+										{open && (
+											<div className="space-y-0.5 px-1.5 pb-1.5">
+												{items.map((item) => {
+													const active = bestMatch?.href === item.href;
+													const Icon = item.icon;
+													return (
+														<Link key={item.href} href={item.href}>
+															<div
+																className={cn(
+																	"am-nav-item flex items-center gap-2.5 transition-all",
+																	active
+																		? "bg-cyan-50 text-cyan-800 ring-1 ring-cyan-200"
+																		: "text-slate-600 hover:bg-white hover:text-slate-950",
+																)}
+															>
+																<Icon className={cn("h-3.5 w-3.5 flex-shrink-0", active ? "text-cyan-700" : "text-slate-400")} />
+																<span className="truncate">{item.label}</span>
+															</div>
+														</Link>
+													);
+												})}
+											</div>
+										)}
+									</div>
+								);
+							})}
+						</nav>
+
+						<div className="mt-3 space-y-2 border-t border-slate-200/80 pt-3">
+							<Link href={activeModuleSettingsHref}>
+								<div className="flex h-9 items-center gap-2.5 rounded-[14px] border border-slate-200/80 bg-white/76 px-3 text-sm font-semibold text-slate-700 transition-all hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-800">
+									<Settings className="h-4 w-4 text-slate-500" />
+									<span>Настройки</span>
+								</div>
+							</Link>
+							<div className="rounded-[16px] border border-slate-200/80 bg-white/76 p-1 shadow-sm shadow-slate-950/5">
+								<UserProfileDropdown />
+							</div>
+						</div>
+					</aside>
+
+					{/* ── CONTENT ── */}
+					<main id="main-content" className="flex-1 overflow-y-auto">
+						<div className="p-3 sm:p-4 xl:p-6">{children}</div>
+					</main>
+				</div>
 			</div>
 		</div>
 	);

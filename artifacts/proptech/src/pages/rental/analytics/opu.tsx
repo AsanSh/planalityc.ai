@@ -679,7 +679,7 @@ export default function RentalOPU() {
 							Отчёт о прибылях и убытках
 						</p>
 					</div>
-					<div className="flex flex-wrap items-center gap-2">
+					<div className="am-toolbar">
 						<Button
 							variant="outline"
 							size="sm"
@@ -698,7 +698,7 @@ export default function RentalOPU() {
 				</div>
 			</div>
 
-			<div className="overflow-auto rounded-[24px] border border-slate-200 bg-white shadow-sm">
+			<div className="am-table-wrap rounded-[18px] overflow-auto">
 				<table
 					className="border-collapse text-sm"
 					style={{ minWidth: `${360 + visibleMonths.length * 112 + 128}px` }}
@@ -735,7 +735,7 @@ export default function RentalOPU() {
 							return (
 								<tr
 									key={row.id}
-									className={`${rowClass(row)} hover:brightness-95 transition-all`}
+									className={`${rowClass(row)} transition-colors hover:bg-cyan-50/70`}
 								>
 									{/* Label cell */}
 									<td

@@ -196,7 +196,7 @@ export default function InvestorDetail() {
 			<div className="flex items-center gap-4">
 				<button
 					onClick={() => navigate("/rental/investors")}
-					className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
+					className="w-8 h-8 flex items-center justify-center hover:bg-cyan-50/70 rounded-lg transition-colors"
 				>
 					<ArrowLeft className="w-4 h-4 text-gray-600" />
 				</button>
@@ -505,7 +505,7 @@ export default function InvestorDetail() {
 								{myInvestments.map((inv: any) => (
 									<tr
 										key={inv.id}
-										className="border-b last:border-0 hover:bg-gray-50"
+										className="border-b last:border-0 hover:bg-cyan-50/70"
 									>
 										<td className="px-5 py-3">
 											<div className="flex items-center gap-2">
@@ -591,7 +591,7 @@ export default function InvestorDetail() {
 								{myDistributions.map((d: any, _i: number) => (
 									<tr
 										key={d.id}
-										className="border-b last:border-0 hover:bg-gray-50"
+										className="border-b last:border-0 hover:bg-cyan-50/70"
 									>
 										<td className="px-5 py-3 text-gray-500">
 											{fmtDate(d.distributionDate || d.createdAt)}

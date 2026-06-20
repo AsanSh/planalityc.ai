@@ -11,6 +11,7 @@ import {
 	Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ClientPortalExperience } from "@/components/client-portal-experience";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -78,6 +79,9 @@ export default function TenantPortal({ previewTenantId }: { previewTenantId?: nu
 						: "/portal/tenant/me",
 				)
 				.then((r) => r.data),
+		staleTime: 60_000,
+		refetchOnWindowFocus: false,
+		retry: 1,
 	});
 
 	if (isLoading) {
@@ -190,6 +194,14 @@ export default function TenantPortal({ previewTenantId }: { previewTenantId?: nu
 					</h1>
 					<p className="text-sm opacity-70 mt-1">Личный портал арендатора</p>
 				</div>
+
+				<ClientPortalExperience
+					audience="tenants"
+					userName={tenant?.fullName || tenant?.name || userName}
+					projectName={contracts[0]?.propertyName || "Ваш объект"}
+					unitLabel={contracts[0]?.unitNumber ? `Помещение №${contracts[0].unitNumber}` : "Мой объект"}
+					managerName="Менеджер объекта"
+				/>
 
 				{/* KPIs */}
 				<div className="grid gap-4 sm:grid-cols-2">

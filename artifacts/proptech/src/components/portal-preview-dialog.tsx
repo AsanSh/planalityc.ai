@@ -1,5 +1,6 @@
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import ContractorPortal from "@/pages/portal/contractor";
+import InvestorPortal from "@/pages/portal/investor";
 import SupplierPortal from "@/pages/portal/supplier";
 import TenantPortal from "@/pages/portal/tenant";
 import BuyerPortal from "@/pages/portal/buyer";
@@ -9,6 +10,7 @@ export type PortalPreviewType =
 	| "contractor"
 	| "supplier"
 	| "tenant"
+	| "investor"
 	| "buyer"
 	| "marketplace_supplier";
 
@@ -25,7 +27,7 @@ export function PortalPreviewDialog({
 }) {
 	return (
 		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-			<DialogContent className="max-w-3xl w-[95vw] max-h-[92vh] overflow-y-auto p-0 gap-0">
+			<DialogContent className="w-[96vw] max-w-[1280px] max-h-[92vh] overflow-y-auto p-0 gap-0">
 				<DialogTitle className="sr-only">Предпросмотр портала</DialogTitle>
 				{open && type === "contractor" && (
 					<ContractorPortal previewContractorId={id} />
@@ -33,6 +35,7 @@ export function PortalPreviewDialog({
 				{open && type === "supplier" && (
 					<SupplierPortal previewSupplierId={id} />
 				)}
+				{open && type === "investor" && <InvestorPortal previewInvestorId={id} />}
 				{open && type === "tenant" && <TenantPortal previewTenantId={id} />}
 				{open && type === "buyer" && <BuyerPortal previewBuyerId={id} />}
 				{open && type === "marketplace_supplier" && (

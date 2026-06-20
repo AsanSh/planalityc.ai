@@ -88,6 +88,56 @@ export async function ensureLegalEntitiesFromCompany(
   });
 }
 
+export async function resolveCompanyLegalEntityId(
+  companyId: number,
+  rawLegalEntityId?: unknown,
+): Promise<number | null> {
+  await ensureLegalEntitiesFromCompany(companyId);
+
+  const hasExplicitValue =
+    rawLegalEntityId !== undefined &&
+    rawLegalEntityId !== null &&
+    rawLegalEntityId !== "" &&
+    rawLegalEntityId !== "none";
+
+  if (hasExplicitValue) {
+    const legalEntityId = Number(rawLegalEntityId);
+    if (!Number.isInteger(legalEntityId)) {
+      throw new Error("INVALID_LEGAL_ENTITY");
+    }
+
+    const [entity] = await db
+      .select({ id: legalEntitiesTable.id })
+      .from(legalEntitiesTable)
+      .where(
+        and(
+          eq(legalEntitiesTable.id, legalEntityId),
+          eq(legalEntitiesTable.companyId, companyId),
+          eq(legalEntitiesTable.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    if (!entity) {
+      throw new Error("LEGAL_ENTITY_NOT_FOUND");
+    }
+    return entity.id;
+  }
+
+  const [first] = await db
+    .select({ id: legalEntitiesTable.id })
+    .from(legalEntitiesTable)
+    .where(
+      and(
+        eq(legalEntitiesTable.companyId, companyId),
+        eq(legalEntitiesTable.isActive, true),
+      ),
+    )
+    .limit(1);
+
+  return first?.id ?? null;
+}
+
 /** Если ролей нет — создаём базовый набор (как в UI настроек). */
 export async function ensureDefaultCompanyRoles(companyId: number): Promise<void> {
   const [existing] = await db

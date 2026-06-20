@@ -79,7 +79,7 @@ export default function CRMDashboard() {
 		return (
 			<div className="space-y-5">
 				<h1 className="text-2xl font-bold">CRM Дашборд</h1>
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+				<div className="am-kpi-surface grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 					{Array.from({ length: 4 }).map((_, i) => (
 						<Card key={i}>
 							<CardHeader>
@@ -246,7 +246,7 @@ export default function CRMDashboard() {
 			/>
 
 			{/* KPI Cards */}
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+			<div className="am-kpi-surface grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">Активные лиды</CardTitle>

@@ -426,7 +426,7 @@ export default function IncomingOperations() {
 				<div>
 					<h1 className="text-2xl font-bold">Приход товаров</h1>
 					<p className="text-muted-foreground text-sm">
-						История поступлений на склад
+						История поступлений
 					</p>
 				</div>
 				<Button onClick={() => setDialogOpen(true)}>
@@ -434,8 +434,6 @@ export default function IncomingOperations() {
 					Оформить приход
 				</Button>
 			</div>
-
-			<PeriodPicker value={period} onChange={setPeriod} />
 
 			{/* Summary */}
 			{filteredOperations.length > 0 && (
@@ -457,6 +455,7 @@ export default function IncomingOperations() {
 				enableSearch
 				searchPlaceholder="Поиск по товару, документу, поставщику..."
 				initialSorting={[{ id: "date", desc: true }]}
+				toolbar={<PeriodPicker value={period} onChange={setPeriod} />}
 				emptyState={
 					<div className="flex flex-col items-center gap-2 text-muted-foreground">
 						<ArrowDownCircle className="h-8 w-8 opacity-30" />

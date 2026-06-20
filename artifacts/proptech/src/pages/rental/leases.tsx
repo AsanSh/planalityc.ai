@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useSortable } from "@/lib/use-sortable";
 import { CalendarClock, CheckCircle2, FileText, Plus, Wallet } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
 	getListAccrualsQueryKey,
 	getListLeaseContractsQueryKey,
@@ -19,16 +19,9 @@ import {
 import { RentalQueryState } from "@/components/rental/rental-query-state";
 import { KpiCard, KpiRow } from "@/components/kpi-card";
 import { Button } from "@/components/ui/button";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { api } from "@/lib/api";
-import { fmtMoney } from "@/lib/rental-format";
+import { formatCurrency } from "@/lib/format-currency";
 import { useToast } from "@/hooks/use-toast";
 
 export default function RentalContracts() {
@@ -53,12 +46,6 @@ export default function RentalContracts() {
 		const days = (end.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
 		return days >= 0 && days <= 60;
 	}).length;
-	const [statusFilter, setStatusFilter] = useState("all");
-	const filteredLeases = useMemo(
-		() => statusFilter === "all" ? sortedLeases : sortedLeases.filter((l) => l.status === statusFilter),
-		[sortedLeases, statusFilter],
-	);
-
 	const [createOpen, setCreateOpen] = useState(false);
 	const [editLease, setEditLease] = useState<LeaseContract | null>(null);
 	const [recalcLease, setRecalcLease] = useState<LeaseContract | null>(null);
@@ -94,46 +81,33 @@ export default function RentalContracts() {
 	};
 
 	return (
-		<div className="p-6 space-y-4">
+		<div className="p-6 space-y-3">
 			<KpiRow>
 				<KpiCard variant="strip" label="Всего договоров" value={leasesArray.length} sub={`${draftCount} черновиков`} icon={FileText} color="blue" loading={isLoading} />
 				<KpiCard variant="strip" label="Активных" value={activeCount} sub="действующих договоров" icon={CheckCircle2} color="green" loading={isLoading} />
-				<KpiCard variant="strip" label="Аренда / мес." value={fmtMoney(activeRent)} sub={`всего ${fmtMoney(totalRent)}`} icon={Wallet} color="purple" loading={isLoading} />
+				<KpiCard variant="strip" label="Аренда / мес." value={formatCurrency(activeRent)} sub={`всего ${formatCurrency(totalRent)}`} icon={Wallet} color="purple" loading={isLoading} />
 				<KpiCard variant="strip" label="Истекают" value={expiringSoon} sub="в ближайшие 60 дней" icon={CalendarClock} color={expiringSoon > 0 ? "yellow" : "green"} loading={isLoading} />
 			</KpiRow>
 
-			<div className="flex flex-wrap items-center justify-between gap-3">
+			<div className="flex justify-between items-center">
 				<div>
 					<h1 className="text-2xl font-bold">Договоры аренды</h1>
 					<p className="text-muted-foreground text-sm">
-						Управление договорами · пропорциональный расчёт первого и последнего месяца
+						Управление договорами · пропорциональный расчёт первого и последнего
+						месяца
 					</p>
 				</div>
-				<div className="flex items-center gap-2">
-					<Select value={statusFilter} onValueChange={setStatusFilter}>
-						<SelectTrigger className="h-9 w-40">
-							<SelectValue placeholder="Все статусы" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">Все статусы</SelectItem>
-							<SelectItem value="active">Активные</SelectItem>
-							<SelectItem value="draft">Черновики</SelectItem>
-							<SelectItem value="terminated">Расторгнутые</SelectItem>
-							<SelectItem value="expired">Истёкшие</SelectItem>
-						</SelectContent>
-					</Select>
-					<Button onClick={() => setCreateOpen(true)}>
-						<Plus className="w-4 h-4 mr-2" />
-						Новый договор
-					</Button>
-				</div>
+				<Button onClick={() => setCreateOpen(true)}>
+					<Plus className="w-4 h-4 mr-2" />
+					Новый договор
+				</Button>
 			</div>
 
 			<RentalQueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
 			<LeaseTable
 				isLoading={isLoading}
 				leasesArray={leasesArray}
-				sortedLeases={filteredLeases}
+				sortedLeases={sortedLeases}
 				sortKey={sortKey}
 				sortDir={sortDir}
 				toggle={toggle}

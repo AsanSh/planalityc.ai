@@ -1,0 +1,75 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Загрузка" class="crane">
+<title>Realistic construction crane loader</title>
+<style>
+.crane{--crane:#F5A524;--crane-d:#C77C0E;--crane-l:#FFC55C;--steel:#64748B;--steel-d:#3F4C5F;--cable:#8A95A5;--bld:#C3CDDB;--bld-d:#8C99AD;--bld-top:#3B82F6;--ground:#D8DEE7;--dust:#B6BECC;}
+@media (prefers-color-scheme:dark){.crane{--bld:#475569;--bld-d:#64748B;--ground:#2C3849;--dust:#5A677A;}}
+.shadow{fill:#1e293b;opacity:.10;}
+.trolley-grp{animation:trolley 5s infinite;}
+.sway-grp{transform-box:fill-box;transform-origin:50% 0;animation:sway 5s ease-in-out infinite;}
+.cable{transform-box:fill-box;transform-origin:50% 0;animation:cable 5s ease-in-out infinite;}
+.hoist{animation:hoist 5s ease-in-out infinite;}
+.load{animation:loadop 5s linear infinite;}
+.flash{transform-box:fill-box;transform-origin:center;animation:flash 5s ease-out infinite;}
+.dust{transform-box:fill-box;transform-origin:center;animation:dust 5s ease-out infinite;}
+.newfloor{transform-box:fill-box;transform-origin:50% 100%;animation:newfloor 5s ease-out infinite;}
+@keyframes trolley{0%,16%{transform:translateX(72px);animation-timing-function:cubic-bezier(.45,0,.25,1);}44%,56%{transform:translateX(0);animation-timing-function:cubic-bezier(.45,0,.25,1);}86%,100%{transform:translateX(72px);}}
+@keyframes cable{0%{transform:scaleY(.30);}6%,14%{transform:scaleY(1);}17%,47%{transform:scaleY(.30);}50%,53%{transform:scaleY(1);}56%,100%{transform:scaleY(.30);}}
+@keyframes hoist{0%{transform:translateY(-34px);}6%,14%{transform:translateY(0);}17%,47%{transform:translateY(-34px);}50%,53%{transform:translateY(0);}56%,100%{transform:translateY(-34px);}}
+@keyframes loadop{0%,8%{opacity:0;}12%,49%{opacity:1;}52%,100%{opacity:0;}}
+@keyframes sway{0%,16%{transform:rotate(0deg);}22%{transform:rotate(8deg);}30%{transform:rotate(-3deg);}36%{transform:rotate(2deg);}44%,56%{transform:rotate(0deg);}62%{transform:rotate(-7deg);}70%{transform:rotate(3deg);}78%{transform:rotate(-1.5deg);}86%,100%{transform:rotate(0deg);}}
+@keyframes flash{0%,50%{opacity:0;transform:scale(.3);}56%{opacity:.65;transform:scale(.6);}70%{opacity:0;transform:scale(1.7);}100%{opacity:0;}}
+@keyframes dust{0%,51%{opacity:0;transform:scale(.3);}55%{opacity:.7;transform:scale(1);}66%{opacity:0;transform:scale(1.7);}100%{opacity:0;}}
+@keyframes newfloor{0%,50%{opacity:0;transform:translateY(-7px);}55%{opacity:1;transform:translateY(1px);}59%{transform:translateY(0);}60%,94%{opacity:1;transform:translateY(0);}100%{opacity:0;}}
+</style>
+<ellipse class="shadow" cx="46" cy="177" rx="16" ry="2.4"/>
+<ellipse class="shadow" cx="83" cy="178" rx="22" ry="2.6"/>
+<ellipse class="shadow" cx="156" cy="178" rx="15" ry="2.2"/>
+<line x1="12" y1="176" x2="188" y2="176" stroke="var(--ground)" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="66" y="150" width="34" height="26" rx="1.5" fill="var(--bld)" stroke="var(--bld-d)" stroke-width="1"/>
+<rect x="69" y="127" width="28" height="24" rx="1.5" fill="var(--bld)" stroke="var(--bld-d)" stroke-width="1"/>
+<rect x="72" y="106" width="22" height="22" rx="1.5" fill="var(--bld)" stroke="var(--bld-d)" stroke-width="1"/>
+<line x1="83" y1="106" x2="83" y2="150" stroke="var(--bld-d)" stroke-width="0.7" opacity="0.5"/>
+<line x1="66" y1="138" x2="100" y2="138" stroke="var(--bld-d)" stroke-width="0.7" opacity="0.5"/>
+<line x1="69" y1="116" x2="97" y2="116" stroke="var(--bld-d)" stroke-width="0.7" opacity="0.5"/>
+<g class="newfloor"><rect x="73" y="90" width="20" height="16" rx="1.5" fill="var(--bld)" stroke="var(--bld-d)" stroke-width="1"/></g>
+<g stroke="var(--steel-d)" stroke-width="1" opacity="0.7"><line x1="76" y1="106" x2="76" y2="99"/><line x1="83" y1="106" x2="83" y2="97"/><line x1="90" y1="106" x2="90" y2="99"/></g>
+<g class="flash"><circle cx="83" cy="100" r="10" fill="none" stroke="var(--bld-top)" stroke-width="2"/></g>
+<g class="dust"><circle cx="74" cy="101" r="2" fill="var(--dust)"/><circle cx="92" cy="101" r="2.2" fill="var(--dust)"/><circle cx="79" cy="96" r="1.6" fill="var(--dust)"/><circle cx="88" cy="97" r="1.8" fill="var(--dust)"/><circle cx="83" cy="94" r="1.5" fill="var(--dust)"/></g>
+<rect x="146" y="161" width="22" height="6" rx="1" fill="var(--steel)"/>
+<rect x="149" y="167" width="22" height="6" rx="1" fill="var(--steel-d)"/>
+<rect x="151" y="155" width="16" height="6" rx="1" fill="var(--steel)"/>
+<rect x="38" y="55" width="12" height="121" fill="var(--crane)"/>
+<rect x="38" y="55" width="4" height="121" fill="var(--crane-l)"/>
+<rect x="46" y="55" width="4" height="121" fill="var(--crane-d)"/>
+<g stroke="var(--crane-d)" stroke-width="1.3" opacity="0.6">
+<line x1="42" y1="58" x2="46" y2="74"/><line x1="42" y1="90" x2="46" y2="74"/>
+<line x1="42" y1="90" x2="46" y2="106"/><line x1="42" y1="122" x2="46" y2="106"/>
+<line x1="42" y1="122" x2="46" y2="138"/><line x1="42" y1="154" x2="46" y2="138"/>
+<line x1="38" y1="74" x2="50" y2="74"/><line x1="38" y1="106" x2="50" y2="106"/><line x1="38" y1="138" x2="50" y2="138"/>
+</g>
+<polygon points="44,55 44,38 50,55" fill="var(--crane)"/>
+<line x1="46" y1="39" x2="180" y2="51" stroke="var(--cable)" stroke-width="1.3"/>
+<line x1="46" y1="39" x2="20" y2="51" stroke="var(--cable)" stroke-width="1.3"/>
+<line x1="100" y1="45.5" x2="100" y2="52" stroke="var(--cable)" stroke-width="0.9" opacity="0.7"/>
+<line x1="140" y1="48.5" x2="140" y2="52" stroke="var(--cable)" stroke-width="0.9" opacity="0.7"/>
+<rect x="19" y="50" width="162" height="5" rx="1" fill="var(--crane)"/>
+<rect x="19" y="50" width="162" height="1.6" fill="var(--crane-l)"/>
+<rect x="15" y="47" width="15" height="14" rx="1.5" fill="var(--steel-d)"/>
+<rect x="40" y="55" width="11" height="9" rx="1.5" fill="var(--crane-d)"/>
+<rect x="41.5" y="56.5" width="4" height="4" rx="0.5" fill="#cfe0f5" opacity="0.85"/>
+<g class="trolley-grp">
+<rect x="78" y="48.5" width="12" height="5" rx="1" fill="var(--steel-d)"/>
+<g class="sway-grp">
+<rect class="cable" x="83.3" y="53" width="1.4" height="48" fill="var(--cable)"/>
+<g class="hoist">
+<path d="M81 100 q3 5.5 6 0" fill="none" stroke="var(--steel-d)" stroke-width="1.8"/>
+<g class="load">
+<rect x="73" y="101" width="22" height="8" rx="1" fill="var(--steel)" stroke="var(--steel-d)" stroke-width="0.8"/>
+<rect x="73" y="101" width="22" height="2.4" rx="1" fill="#8b98ab"/>
+<line x1="79" y1="101" x2="79" y2="109" stroke="var(--steel-d)" stroke-width="0.6"/>
+<line x1="89" y1="101" x2="89" y2="109" stroke="var(--steel-d)" stroke-width="0.6"/>
+</g>
+</g>
+</g>
+</g>
+</svg>

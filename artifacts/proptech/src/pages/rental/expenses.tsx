@@ -460,11 +460,6 @@ export default function Expenses() {
 				</div>
 			</div>
 
-			<div className="flex items-center justify-between flex-wrap gap-2">
-				<PeriodPicker value={period} onChange={setPeriod} />
-				<p className="text-xs text-gray-500">{enriched.length} записей</p>
-			</div>
-
 			<RentalQueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
 			<DataTable
 					tableId="rental-expenses"
@@ -474,6 +469,10 @@ export default function Expenses() {
 					enableSearch
 					searchPlaceholder="Поиск по объекту, категории, описанию…"
 					initialSorting={[{ id: "expenseDate", desc: true }]}
+					toolbar={<PeriodPicker value={period} onChange={setPeriod} />}
+					toolbarEnd={
+						<p className="px-2 text-xs text-gray-500">{enriched.length} записей</p>
+					}
 					emptyState="Расходы не найдены"
 					footer={
 						!isLoading && filteredExpenses.length > 0 ? (

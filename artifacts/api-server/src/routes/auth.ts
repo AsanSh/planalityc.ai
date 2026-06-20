@@ -1,7 +1,15 @@
 import { Router } from "express";
-import { eq, and, lt } from "drizzle-orm";
+import { eq, and, lt, sql } from "drizzle-orm";
+import { createHash } from "crypto";
 import { z } from "zod";
-import { db, usersTable, companiesTable, sessionsTable, emailVerificationsTable } from "../lib/db";
+import {
+  db,
+  usersTable,
+  companiesTable,
+  sessionsTable,
+  emailVerificationsTable,
+  registrationVerificationsTable,
+} from "../lib/db";
 import {
   hashPassword,
   verifyPassword,
@@ -9,7 +17,7 @@ import {
   validatePassword,
 } from "../lib/security";
 import { validateBody } from "../middleware/validation";
-import { sendVerificationEmail } from "../lib/email";
+import { sendRegistrationVerificationEmail, sendVerificationEmail } from "../lib/email";
 import {
   completePasswordReset,
   findPasswordResetUser,
@@ -17,9 +25,61 @@ import {
   requestPasswordResetByEmail,
 } from "../lib/password-reset";
 import { issueOtp, verifyOtp, normalizePhone } from "../lib/otp";
+import { ensureLegalEntitiesFromCompany } from "../lib/settings-catalog-sync";
 
 function generateCode(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function hashValue(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function getFrontendBaseUrl(): string {
+  return (
+    process.env.FRONTEND_URL ||
+    process.env.APP_URL ||
+    "https://planalitycai.vercel.app"
+  ).replace(/\/+$/, "");
+}
+
+function getApiPublicBaseUrl(): string {
+  return (
+    process.env.API_PUBLIC_URL ||
+    "https://proptech-api.vercel.app/api"
+  ).replace(/\/+$/, "");
+}
+
+function buildRegistrationVerifyLink(token: string): string {
+  return `${getApiPublicBaseUrl()}/auth/register/verify-link?token=${encodeURIComponent(token)}`;
+}
+
+let registrationVerificationTableReady: Promise<void> | null = null;
+
+function ensureRegistrationVerificationTable(): Promise<void> {
+  registrationVerificationTableReady ??= db.execute(sql`
+    CREATE TABLE IF NOT EXISTS "registration_verifications" (
+      "id" SERIAL PRIMARY KEY,
+      "email" TEXT NOT NULL,
+      "code_hash" TEXT NOT NULL,
+      "token_hash" TEXT NOT NULL,
+      "attempts" INTEGER NOT NULL DEFAULT 0,
+      "verified_at" TIMESTAMPTZ,
+      "expires_at" TIMESTAMPTZ NOT NULL,
+      "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS "idx_registration_verifications_email"
+      ON "registration_verifications" ("email");
+    CREATE UNIQUE INDEX IF NOT EXISTS "idx_registration_verifications_token_hash"
+      ON "registration_verifications" ("token_hash");
+    CREATE INDEX IF NOT EXISTS "idx_registration_verifications_expires_at"
+      ON "registration_verifications" ("expires_at");
+  `).then(() => undefined);
+  return registrationVerificationTableReady;
 }
 
 async function createVerificationCode(userId: number): Promise<string> {
@@ -44,6 +104,16 @@ const registerSchema = z.object({
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
   password: z.string().min(12),
+  registrationToken: z.string().min(16),
+});
+
+const registerStartSchema = z.object({
+  email: z.string().email(),
+});
+
+const registerVerifyCodeSchema = z.object({
+  email: z.string().email(),
+  code: z.string().regex(/^\d{6}$/, "Введите 6 цифр"),
 });
 
 const loginSchema = z.object({
@@ -78,6 +148,53 @@ async function createSession(userId: number): Promise<string> {
   return token;
 }
 
+async function createRegistrationVerification(emailInput: string): Promise<{
+  code: string;
+  token: string;
+  expiresAt: Date;
+}> {
+  await ensureRegistrationVerificationTable();
+  const email = normalizeEmail(emailInput);
+  await db
+    .delete(registrationVerificationsTable)
+    .where(eq(registrationVerificationsTable.email, email));
+
+  const code = generateCode();
+  const token = generateSecureToken();
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+  await db.insert(registrationVerificationsTable).values({
+    email,
+    codeHash: hashValue(code),
+    tokenHash: hashValue(token),
+    expiresAt,
+  });
+
+  return { code, token, expiresAt };
+}
+
+async function findVerifiedRegistration(emailInput: string, token: string) {
+  await ensureRegistrationVerificationTable();
+  const email = normalizeEmail(emailInput);
+  const [record] = await db
+    .select()
+    .from(registrationVerificationsTable)
+    .where(and(
+      eq(registrationVerificationsTable.email, email),
+      eq(registrationVerificationsTable.tokenHash, hashValue(token)),
+    ));
+
+  if (!record) return null;
+  if (record.expiresAt < new Date()) {
+    await db
+      .delete(registrationVerificationsTable)
+      .where(eq(registrationVerificationsTable.id, record.id));
+    return null;
+  }
+  if (!record.verifiedAt) return null;
+  return record;
+}
+
 /**
  * Получение userId по токену с проверкой истечения
  */
@@ -98,10 +215,128 @@ export async function getSessionUserId(token: string): Promise<number | null> {
   return session.userId;
 }
 
+// POST /auth/register/start — отправить код подтверждения email до создания компании
+router.post("/auth/register/start", validateBody(registerStartSchema), async (req, res): Promise<void> => {
+  try {
+    const email = normalizeEmail(req.body.email);
+    const [existingUser] = await db.select().from(usersTable).where(eq(usersTable.email, email));
+    if (existingUser) {
+      res.status(409).json({ error: "Пользователь с таким email уже зарегистрирован" });
+      return;
+    }
+
+    const { code, token, expiresAt } = await createRegistrationVerification(email);
+    await sendRegistrationVerificationEmail(email, code, buildRegistrationVerifyLink(token));
+
+    res.json({
+      success: true,
+      expiresAt,
+      message: "Код подтверждения отправлен на email",
+    });
+  } catch (error) {
+    console.error("Start registration error:", error);
+    res.status(500).json({ error: "Не удалось отправить код подтверждения" });
+  }
+});
+
+// POST /auth/register/verify-code — подтвердить email кодом и получить токен продолжения
+router.post("/auth/register/verify-code", validateBody(registerVerifyCodeSchema), async (req, res): Promise<void> => {
+  try {
+    await ensureRegistrationVerificationTable();
+    const email = normalizeEmail(req.body.email);
+    const code = String(req.body.code);
+    const [record] = await db
+      .select()
+      .from(registrationVerificationsTable)
+      .where(eq(registrationVerificationsTable.email, email));
+
+    if (!record) {
+      res.status(400).json({ error: "Сначала запросите код подтверждения" });
+      return;
+    }
+    if (record.expiresAt < new Date()) {
+      await db
+        .delete(registrationVerificationsTable)
+        .where(eq(registrationVerificationsTable.id, record.id));
+      res.status(400).json({ error: "Код истёк. Запросите новый." });
+      return;
+    }
+    if (record.attempts >= 5) {
+      res.status(429).json({ error: "Слишком много попыток. Запросите новый код." });
+      return;
+    }
+    if (record.codeHash !== hashValue(code)) {
+      await db
+        .update(registrationVerificationsTable)
+        .set({ attempts: record.attempts + 1 })
+        .where(eq(registrationVerificationsTable.id, record.id));
+      res.status(400).json({ error: "Неверный код подтверждения" });
+      return;
+    }
+
+    const token = generateSecureToken();
+    await db
+      .update(registrationVerificationsTable)
+      .set({
+        tokenHash: hashValue(token),
+        verifiedAt: new Date(),
+        attempts: 0,
+      })
+      .where(eq(registrationVerificationsTable.id, record.id));
+
+    res.json({ success: true, registrationToken: token });
+  } catch (error) {
+    console.error("Verify registration code error:", error);
+    res.status(500).json({ error: "Ошибка подтверждения email" });
+  }
+});
+
+// GET /auth/register/verify-link — подтвердить email ссылкой из письма
+router.get("/auth/register/verify-link", async (req, res): Promise<void> => {
+  try {
+    await ensureRegistrationVerificationTable();
+    const token = String(req.query.token || "");
+    if (!token) {
+      res.redirect(`${getFrontendBaseUrl()}/register?verification=missing`);
+      return;
+    }
+
+    const [record] = await db
+      .select()
+      .from(registrationVerificationsTable)
+      .where(eq(registrationVerificationsTable.tokenHash, hashValue(token)));
+
+    if (!record || record.expiresAt < new Date()) {
+      if (record) {
+        await db
+          .delete(registrationVerificationsTable)
+          .where(eq(registrationVerificationsTable.id, record.id));
+      }
+      res.redirect(`${getFrontendBaseUrl()}/register?verification=expired`);
+      return;
+    }
+
+    await db
+      .update(registrationVerificationsTable)
+      .set({ verifiedAt: new Date(), attempts: 0 })
+      .where(eq(registrationVerificationsTable.id, record.id));
+
+    const params = new URLSearchParams({
+      email: record.email,
+      verifiedToken: token,
+    });
+    res.redirect(`${getFrontendBaseUrl()}/register?${params.toString()}`);
+  } catch (error) {
+    console.error("Verify registration link error:", error);
+    res.redirect(`${getFrontendBaseUrl()}/register?verification=error`);
+  }
+});
+
 // POST /auth/register — создание организации + admin пользователя
 router.post("/auth/register", validateBody(registerSchema), async (req, res): Promise<void> => {
   try {
-    const { companyName, legalName, bin, phone, email, address, firstName, lastName, password } = req.body;
+    const { companyName, legalName, bin, phone, address, firstName, lastName, password, registrationToken } = req.body;
+    const email = normalizeEmail(req.body.email);
 
     if (!companyName || !email || !password || !firstName || !lastName) {
       res.status(400).json({ error: "Заполните все обязательные поля" });
@@ -118,6 +353,12 @@ router.post("/auth/register", validateBody(registerSchema), async (req, res): Pr
     const [existingUser] = await db.select().from(usersTable).where(eq(usersTable.email, email));
     if (existingUser) {
       res.status(409).json({ error: "Пользователь с таким email уже зарегистрирован" });
+      return;
+    }
+
+    const verifiedRegistration = await findVerifiedRegistration(email, registrationToken);
+    if (!verifiedRegistration) {
+      res.status(403).json({ error: "Подтвердите email перед регистрацией" });
       return;
     }
 
@@ -146,19 +387,16 @@ router.post("/auth/register", validateBody(registerSchema), async (req, res): Pr
       isActive: true,
     }).returning();
 
+    await ensureLegalEntitiesFromCompany(company.id);
+
     const token = await createSession(user.id);
 
-    // Отправляем код подтверждения на email
-    try {
-      const code = await createVerificationCode(user.id);
-      await sendVerificationEmail(email, code, firstName);
-    } catch (emailError) {
-      console.error("Failed to send verification email:", emailError);
-      // Не прерываем регистрацию — пользователь сможет запросить повторно
-    }
+    await db
+      .delete(registrationVerificationsTable)
+      .where(eq(registrationVerificationsTable.email, email));
 
     const { passwordHash: _ph, ...safeUser } = user;
-    res.status(201).json({ token, user: safeUser, company, emailVerificationSent: true });
+    res.status(201).json({ token, user: safeUser, company, emailVerified: true });
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ error: 'Registration failed' });

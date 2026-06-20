@@ -52,7 +52,7 @@ const MODULE_LABELS: Record<string, string> = {
 	rental: "Аренда",
 	construction: "Строительство",
 	proptech: "ПропТех",
-	warehouse: "Склад",
+	warehouse: "Снабжение",
 };
 const MODULE_ICONS: Record<string, React.ReactNode> = {
 	all: <Globe className="w-3.5 h-3.5" />,

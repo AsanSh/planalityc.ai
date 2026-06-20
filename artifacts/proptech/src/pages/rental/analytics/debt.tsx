@@ -50,7 +50,7 @@ export default function RentalDebt() {
 						Aging-отчёт: долг по срокам просрочки
 					</p>
 				</div>
-				<div className="flex flex-wrap items-center gap-2">
+				<div className="am-toolbar">
 					<Input
 						className="w-48 h-8 text-sm"
 						placeholder="Поиск..."

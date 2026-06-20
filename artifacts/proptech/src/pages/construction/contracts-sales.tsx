@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Eye, FileText, Plus, UserPlus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useLocation, useSearch } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -148,20 +148,20 @@ function ContractDetailSummary({
 					<span>{contract.contractDate}</span>
 				</div>
 			</div>
-			<div className="grid gap-2 sm:grid-cols-3 bg-gray-50 rounded-xl p-3 text-center text-sm">
+			<div className="grid gap-2 sm:grid-cols-3 rounded-2xl border border-slate-100 bg-slate-50/80 p-3 text-center text-sm">
 				<div>
-					<div className="text-xs text-gray-500">Сумма</div>
+					<div className="text-xs text-slate-500">Сумма</div>
 					<div className="font-bold">
 						{fmt(contract.totalAmount)} {currency}
 					</div>
 				</div>
 				<div>
-					<div className="text-xs text-gray-500">Оплачено</div>
+					<div className="text-xs text-slate-500">Оплачено</div>
 					<div className="font-bold text-emerald-600">{fmt(contract.paidAmount)}</div>
 				</div>
 				<div>
-					<div className="text-xs text-gray-500">Остаток</div>
-					<div className="font-bold text-amber-600">{fmt(contract.remainingAmount)}</div>
+					<div className="text-xs text-slate-500">Остаток</div>
+					<div className="font-bold text-cyan-700">{fmt(contract.remainingAmount)}</div>
 				</div>
 			</div>
 			<ContractStatusStepper
@@ -171,18 +171,30 @@ function ContractDetailSummary({
 					statusMut.mutate({ id: contract.id, status: nextStatus })
 				}
 			/>
-			<div className="rounded-lg border border-blue-100 bg-blue-50/50 p-3 space-y-2">
-				<p className="text-xs text-blue-900">
-					<strong>График платежей</strong> — отдельное действие после подписания:
-					создаёт начисления в разделе «Начисления».
-				</p>
-				<Button
-					className="w-full bg-blue-600 hover:bg-blue-700"
-					onClick={() => scheduleMut.mutate(contract.id)}
-					disabled={scheduleMut.isPending}
-				>
-					{scheduleMut.isPending ? "Генерация..." : "Сформировать график платежей"}
-				</Button>
+			<div className="rounded-2xl border border-cyan-100 bg-cyan-50/45 p-4">
+				<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+					<div>
+						<p className="text-sm font-semibold text-slate-950">График платежей</p>
+						<p className="mt-1 text-xs text-slate-600">
+							Создаёт начисления по договору, чтобы их можно было контролировать
+							в финансах и кассе.
+						</p>
+					</div>
+					<div className="flex flex-wrap gap-2">
+						<Button
+							className="bg-cyan-700 hover:bg-cyan-800"
+							onClick={() => scheduleMut.mutate(contract.id)}
+							disabled={scheduleMut.isPending}
+						>
+							{scheduleMut.isPending ? "Генерация..." : "Сформировать график"}
+						</Button>
+						<Link href="/construction/accruals">
+							<Button variant="outline" className="border-cyan-200 text-cyan-800 hover:bg-white">
+								Открыть начисления
+							</Button>
+						</Link>
+					</div>
+				</div>
 			</div>
 
 			<ContractFileUpload
@@ -916,7 +928,7 @@ export default function ConstructionContractsSales() {
 					const proj = projects.find((p: any) => p.id === contract.projectId);
 					return (
 						<Dialog open={!!detailId} onOpenChange={() => setDetailId(null)}>
-							<DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
+							<DialogContent className="w-[calc(100vw-24px)] sm:w-[min(calc(100vw-48px),1440px)] lg:w-[min(calc(100vw-64px),1500px)] max-w-none max-h-[92vh] overflow-y-auto">
 								<DialogHeader>
 									<DialogTitle className="flex items-center gap-2">
 										<span className="font-mono text-am-brand">

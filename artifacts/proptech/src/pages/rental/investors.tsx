@@ -408,8 +408,8 @@ export default function Investors() {
 						key={s.label}
 						className="bg-white rounded-xl border border-gray-200 p-4"
 					>
-						<p className="text-xs text-gray-500 mb-1">{s.label}</p>
-						<p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+						<p className="am-kpi-label mb-1">{s.label}</p>
+						<p className={`am-kpi-value text-2xl ${s.color}`}>{s.value}</p>
 					</div>
 				))}
 			</div>

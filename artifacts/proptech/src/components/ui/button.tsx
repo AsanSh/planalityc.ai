@@ -5,29 +5,24 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-	"am-press inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/20 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0" +
-		" hover-elevate active-elevate-2",
+	"am-press inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/20 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
 	{
 		variants: {
 			variant: {
-				default:
-					"border border-cyan-700/20 bg-gradient-to-r from-cyan-700 to-teal-600 text-white shadow-lg shadow-cyan-900/15",
+				default: "am-btn-primary hover:-translate-y-0.5 hover:shadow-lg",
 				destructive:
-					"bg-destructive text-destructive-foreground shadow-sm border-destructive-border",
-				outline:
-					// Inherits the current text color. Uses shadow-xs. no shadow on active
-					// No hover state
-					"border border-slate-200/90 bg-white/75 shadow-sm shadow-slate-950/5 active:shadow-none backdrop-blur hover:border-cyan-300/70",
+					"border border-rose-200 bg-rose-50 text-rose-700 shadow-sm hover:bg-rose-100",
+				outline: "am-btn-outline active:shadow-none",
 				secondary:
-					"border border-slate-200/90 bg-slate-100/70 text-secondary-foreground shadow-sm shadow-slate-950/5",
-				ghost: "border border-transparent",
-				link: "text-primary underline-offset-4 hover:underline",
+					"border border-slate-200/90 bg-slate-100/72 text-slate-800 shadow-sm shadow-slate-950/5 hover:bg-white",
+				ghost: "border border-transparent text-slate-700 hover:bg-slate-100/80",
+				link: "text-cyan-700 underline-offset-4 hover:underline",
 			},
 			size: {
-				default: "min-h-[44px] px-4 py-2",
-				sm: "min-h-[44px] px-3 text-xs",
-				lg: "min-h-[48px] px-8",
-				icon: "h-[44px] w-[44px]",
+				default: "min-h-10 px-4 py-2",
+				sm: "min-h-9 px-3 text-xs",
+				lg: "min-h-11 px-6",
+				icon: "h-10 w-10",
 			},
 		},
 		defaultVariants: {

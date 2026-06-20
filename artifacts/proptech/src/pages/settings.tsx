@@ -11,6 +11,7 @@ import {
 	KeyRound,
 	LayoutGrid,
 	Loader2,
+	Package,
 	Save,
 	Shield,
 	TrendingUp,
@@ -20,6 +21,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +37,9 @@ import { SystemSettingsHub } from "@/components/system-settings-nav";
 import { getApiBase } from "@/lib/api-base";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import ConstructionSettings from "@/pages/construction/settings";
+import RentalSettings from "@/pages/rental/settings";
+import WarehouseSettings from "@/pages/warehouse/settings";
 
 const BASE = getApiBase();
 
@@ -93,16 +98,65 @@ const CATEGORY_LABELS: Record<string, string> = {
 	operations: "Операции",
 };
 
+type SettingsArea = "system" | "construction" | "rental" | "crm" | "warehouse";
+
+const SETTINGS_AREAS: Array<{
+	id: SettingsArea;
+	label: string;
+	description: string;
+	icon: React.ElementType;
+}> = [
+	{
+		id: "system",
+		label: "Свод",
+		description: "Компания, ОсОО, роли, счета, статьи",
+		icon: BarChart3,
+	},
+	{
+		id: "construction",
+		label: "Стройка",
+		description: "Проекты, документы, финансы строительства",
+		icon: Building2,
+	},
+	{
+		id: "rental",
+		label: "Аренда",
+		description: "Договоры, начисления, уведомления аренды",
+		icon: Home,
+	},
+	{
+		id: "crm",
+		label: "CRM",
+		description: "Лиды, интеграции и клиентская работа",
+		icon: Users,
+	},
+	{
+		id: "warehouse",
+		label: "Снабжение",
+		description: "Склад, закупки, заявки и остатки",
+		icon: Package,
+	},
+];
+
 export default function Settings() {
 	const { user } = useAuth();
 	const { toast } = useToast();
 	const queryClient = useQueryClient();
+	const search = useSearch();
+	const initialArea = (() => {
+		const params = new URLSearchParams(search.startsWith("?") ? search : `?${search}`);
+		const area = params.get("area");
+		return SETTINGS_AREAS.some((item) => item.id === area)
+			? (area as SettingsArea)
+			: "system";
+	})();
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [savingProfile, setSavingProfile] = useState(false);
 	const [activeTab, setActiveTab] = useState<"org" | "profile" | "modules">(
 		"org",
 	);
+	const [activeArea, setActiveArea] = useState<SettingsArea>(initialArea);
 	const userRole = user?.role;
 	const isAdmin =
 		userRole === "super_admin" || userRole === "company_admin";
@@ -173,6 +227,10 @@ export default function Settings() {
 			});
 		}
 	}, [user]);
+
+	useEffect(() => {
+		setActiveArea(initialArea);
+	}, [initialArea]);
 
 	const handleSaveProfile = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -340,14 +398,90 @@ export default function Settings() {
 	];
 
 	return (
-		<div className="max-w-3xl mx-auto space-y-6">
+		<div className="mx-auto max-w-5xl space-y-6">
 			<div>
 				<h1 className="text-2xl font-bold text-gray-900">Настройки системы</h1>
 				<p className="text-gray-500 text-sm mt-1">
-					Управление организацией, аккаунтом, модулями и справочниками
+					Одна точка входа для настроек свода и рабочих модулей
 				</p>
 			</div>
 
+			<div className="grid gap-2 md:grid-cols-5">
+				{SETTINGS_AREAS.map((area) => {
+					const Icon = area.icon;
+					const active = activeArea === area.id;
+					return (
+						<button
+							key={area.id}
+							type="button"
+							onClick={() => setActiveArea(area.id)}
+							className={cn(
+								"min-h-[92px] rounded-lg border bg-white p-3 text-left transition-colors",
+								active
+									? "border-cyan-300 bg-cyan-50 shadow-sm"
+									: "border-gray-100 hover:border-gray-200 hover:bg-gray-50",
+							)}
+						>
+							<div className="flex items-center gap-2">
+								<div
+									className={cn(
+										"flex h-8 w-8 items-center justify-center rounded-lg",
+										active ? "bg-cyan-600 text-white" : "bg-gray-100 text-gray-600",
+									)}
+								>
+									<Icon className="h-4 w-4" />
+								</div>
+								<span className="text-sm font-semibold text-gray-900">
+									{area.label}
+								</span>
+							</div>
+							<p className="mt-2 text-xs leading-4 text-gray-500">
+								{area.description}
+							</p>
+						</button>
+					);
+				})}
+			</div>
+
+			{activeArea === "construction" && <ConstructionSettings />}
+			{activeArea === "rental" && <RentalSettings />}
+			{activeArea === "warehouse" && <WarehouseSettings />}
+			{activeArea === "crm" && (
+				<div className="rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
+					<div className="mb-5 flex items-center gap-3">
+						<div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+							<Users className="h-5 w-5" />
+						</div>
+						<div>
+							<h2 className="text-lg font-semibold text-gray-900">Настройки CRM</h2>
+							<p className="text-sm text-gray-500">
+								Интеграции и справочники клиентского контура
+							</p>
+						</div>
+					</div>
+					<div className="grid gap-3 sm:grid-cols-2">
+						<Link href="/crm/lead-intake">
+							<div className="rounded-lg border border-gray-100 p-4 transition-colors hover:border-blue-200 hover:bg-blue-50/40">
+								<p className="text-sm font-semibold text-gray-900">Сбор лидов</p>
+								<p className="mt-1 text-xs text-gray-500">
+									Webhook, токены, Instagram и входящие заявки
+								</p>
+							</div>
+						</Link>
+						<Link href="/crm/counterparties">
+							<div className="rounded-lg border border-gray-100 p-4 transition-colors hover:border-blue-200 hover:bg-blue-50/40">
+								<p className="text-sm font-semibold text-gray-900">Контрагенты CRM</p>
+								<p className="mt-1 text-xs text-gray-500">
+									Клиенты, покупатели и связанные карточки
+								</p>
+							</div>
+						</Link>
+					</div>
+				</div>
+			)}
+
+			{activeArea === "system" && (
+			<>
 			<div className="space-y-3">
 				<h2 className="text-sm font-semibold text-gray-700">Справочники и сервисы</h2>
 				<SystemSettingsHub />
@@ -860,6 +994,8 @@ export default function Settings() {
 							</div>
 						))}
 				</div>
+			)}
+			</>
 			)}
 		</div>
 	);

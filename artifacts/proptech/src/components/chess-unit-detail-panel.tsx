@@ -202,7 +202,7 @@ function PanelBody({
 
 	return (
 		<>
-			<div className="flex flex-col h-full min-h-0">
+			<div className="bg-white rounded-xl">
 				{/* Dark header */}
 				<div className="rounded-t-xl bg-slate-950 px-4 py-4 text-white shrink-0">
 					<div className="flex items-start justify-between gap-2">
@@ -222,7 +222,7 @@ function PanelBody({
 				</div>
 
 				{/* White body */}
-				<div className="flex-1 overflow-y-auto bg-white px-4 py-4 space-y-4 min-h-0">
+				<div className="bg-white px-4 py-4 space-y-4">
 					<div className="grid grid-cols-2 gap-3 text-sm">
 						<div>
 							<p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -332,7 +332,7 @@ function PanelBody({
 				</div>
 
 				{/* Footer actions */}
-				<div className="shrink-0 border-t border-slate-100 bg-white px-4 py-3 flex flex-wrap gap-2 rounded-b-xl">
+				<div className="border-t border-slate-100 bg-white px-4 py-3 flex flex-wrap gap-2 rounded-b-xl">
 					<Button variant="outline" size="sm" onClick={onClose}>
 						Закрыть
 					</Button>
@@ -386,18 +386,18 @@ function PanelBody({
 						<>
 							<Button
 								size="sm"
+								className="bg-amber-500 hover:bg-orange-600"
+								onClick={() => onRequestSale("sold")}
+							>
+								Продать
+							</Button>
+							<Button
+								size="sm"
 								variant="outline"
 								className="border-amber-300 text-amber-800"
 								onClick={() => onRequestSale("reserved")}
 							>
-								Бронь
-							</Button>
-							<Button
-								size="sm"
-								className="bg-amber-500 hover:bg-orange-600"
-								onClick={() => onRequestSale("sold")}
-							>
-								Оформить продажу
+								Забронировать
 							</Button>
 						</>
 					)}

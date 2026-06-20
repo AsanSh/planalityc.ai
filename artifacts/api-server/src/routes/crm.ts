@@ -337,7 +337,7 @@ router.get("/crm/settings/intake", requireRole("admin", "company_admin", "owner"
     );
 
   const token = parseIntakeSettings(existing?.settings).token ?? null;
-  const apiBase = process.env.API_PUBLIC_URL ?? "https://planalityc-api.vercel.app";
+  const apiBase = process.env.API_PUBLIC_URL ?? "https://proptech-api.vercel.app";
   res.json({
     token,
     webhookUrl: `${apiBase}/crm/leads/intake`,
@@ -381,7 +381,7 @@ router.put("/crm/settings/intake", requireRole("admin", "company_admin", "owner"
     });
   }
 
-  const apiBase = process.env.API_PUBLIC_URL ?? "https://planalityc-api.vercel.app";
+  const apiBase = process.env.API_PUBLIC_URL ?? "https://proptech-api.vercel.app";
   res.json({
     token,
     webhookUrl: `${apiBase}/crm/leads/intake`,
@@ -398,7 +398,7 @@ function instagramStatus(settings: ReturnType<typeof parseInstagramSettings>) {
 // GET /crm/settings/instagram
 router.get("/crm/settings/instagram", requireRole("admin", "company_admin", "owner", "sales_manager"), async (req: AuthenticatedRequest, res): Promise<void> => {
   const companyId = req.scopedCompanyId!;
-  const apiBase = process.env.API_PUBLIC_URL ?? "https://planalityc-api.vercel.app";
+  const apiBase = process.env.API_PUBLIC_URL ?? "https://proptech-api.vercel.app";
 
   const [existing] = await db
     .select()
@@ -427,7 +427,7 @@ router.get("/crm/settings/instagram", requireRole("admin", "company_admin", "own
 // PUT /crm/settings/instagram
 router.put("/crm/settings/instagram", requireRole("admin", "company_admin", "owner"), async (req: AuthenticatedRequest, res): Promise<void> => {
   const companyId = req.scopedCompanyId!;
-  const apiBase = process.env.API_PUBLIC_URL ?? "https://planalityc-api.vercel.app";
+  const apiBase = process.env.API_PUBLIC_URL ?? "https://proptech-api.vercel.app";
   const body = req.body ?? {};
 
   const [existing] = await db

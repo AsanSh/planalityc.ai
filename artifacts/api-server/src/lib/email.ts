@@ -5,6 +5,78 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 const FROM = process.env.FROM_EMAIL ?? "onboarding@resend.dev";
 const APP_NAME = "Asset Manager";
 
+export async function sendRegistrationVerificationEmail(
+  email: string,
+  code: string,
+  verifyLink: string,
+): Promise<void> {
+  const html = `
+<!DOCTYPE html>
+<html lang="ru">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 18px 45px rgba(15,23,42,.12)">
+        <tr>
+          <td style="background:#083344;padding:32px;text-align:center">
+            <h1 style="margin:0;color:#fff;font-size:23px;font-weight:800">Planalityc</h1>
+            <p style="margin:8px 0 0;color:#a5f3fc;font-size:13px;letter-spacing:.12em;text-transform:uppercase">регистрация компании</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:36px 40px 26px">
+            <p style="margin:0 0 16px;font-size:16px;color:#0f172a">Подтвердите email для продолжения регистрации.</p>
+            <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.6">
+              Введите код на странице регистрации или нажмите кнопку ниже. Код действует <strong>15 минут</strong>.
+            </p>
+            <div style="text-align:center;margin:0 0 28px">
+              <div style="display:inline-block;background:#ecfeff;border:1px solid #67e8f9;border-radius:14px;padding:18px 42px">
+                <span style="font-size:38px;font-weight:800;letter-spacing:9px;color:#075985;font-family:Menlo,Consolas,monospace">${code}</span>
+              </div>
+            </div>
+            <div style="text-align:center;margin:0 0 28px">
+              <a href="${verifyLink}" style="display:inline-block;background:#0e7490;color:#fff;text-decoration:none;padding:14px 28px;border-radius:999px;font-size:15px;font-weight:700">
+                Подтвердить email
+              </a>
+            </div>
+            <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.5;word-break:break-all">
+              Если кнопка не открывается, скопируйте ссылку:<br>
+              <a href="${verifyLink}" style="color:#0e7490">${verifyLink}</a>
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f8fafc;padding:18px 40px;border-top:1px solid #e2e8f0">
+            <p style="margin:0;font-size:12px;color:#94a3b8;text-align:center">
+              Если вы не начинали регистрацию в Planalityc, просто проигнорируйте это письмо.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  if (!resend) {
+    logger.warn({ email, code, verifyLink }, "RESEND_API_KEY not set — registration code logged only");
+    return;
+  }
+
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: `${code} — код регистрации Planalityc`,
+    html,
+  });
+
+  if (error) {
+    logger.error({ error, email }, "Failed to send registration verification email");
+    throw new Error("Не удалось отправить письмо. Попробуйте позже.");
+  }
+}
+
 export async function sendVerificationEmail(email: string, code: string, firstName: string): Promise<void> {
   const html = `
 <!DOCTYPE html>

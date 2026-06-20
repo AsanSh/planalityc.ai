@@ -750,7 +750,7 @@ export function AccrualRow({
 	const hasDiscount = parseFloat(accrual.discountAmount || "0") > 0;
 
 	return (
-		<TableRow className="hover:bg-gray-50">
+		<TableRow className="transition-colors hover:bg-cyan-50/70">
 			<TableCell className="text-sm text-gray-600">{label}</TableCell>
 			<TableCell className="font-medium text-gray-900">
 				{accrual.period}

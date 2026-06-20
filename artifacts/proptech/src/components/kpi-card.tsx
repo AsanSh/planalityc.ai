@@ -77,8 +77,8 @@ export function KpiCard({
 					<Skeleton className="h-4 w-16 animate-pulse" />
 				) : (
 					<>
-						<p className="text-xs sm:text-[11px] font-medium text-am-text-muted leading-snug">{label}</p>
-						<p className="text-base font-bold text-am-text-strong tabular-nums">{value}</p>
+						<p className="am-kpi-label text-xs sm:text-[11px] leading-snug">{label}</p>
+						<p className="am-kpi-value text-base text-am-text-strong">{value}</p>
 					</>
 				)}
 			</div>
@@ -98,7 +98,7 @@ export function KpiCard({
 			)}
 		>
 			<div className="flex items-center justify-between gap-2 mb-1">
-				<p className="text-xs sm:text-[11px] font-medium text-am-text-muted leading-tight">{label}</p>
+				<p className="am-kpi-label text-xs sm:text-[11px] leading-tight">{label}</p>
 				{loading ? (
 					<div className="w-6 h-6 shrink-0 bg-gray-100 rounded-md flex items-center justify-center animate-pulse">
 						<div className="w-3.5 h-3.5 bg-gray-200 rounded" />
@@ -115,7 +115,7 @@ export function KpiCard({
 				<Skeleton className="h-5 w-20 animate-pulse" />
 			) : (
 				<>
-					<p className="text-lg font-bold text-am-text-strong leading-tight truncate">{value}</p>
+					<p className="am-kpi-value text-lg text-am-text-strong truncate">{value}</p>
 					{sub && <p className="text-xs sm:text-[10px] text-am-text-subtle mt-0.5 leading-tight">{sub}</p>}
 				</>
 			)}

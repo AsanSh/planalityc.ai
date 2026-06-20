@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PageShell } from "@/components/am/PageShell";
 import { useToast } from "@/hooks/use-toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { api } from "@/lib/api";
@@ -104,28 +105,26 @@ export default function WarehouseOrders() {
 	const supplierMap = useMemo(() => Object.fromEntries(suppliers.map((s) => [s.id, s.name])), [suppliers]);
 
 	return (
-		<div className="space-y-6">
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-3xl font-bold text-gray-900">Заказы поставщикам</h1>
-					<p className="text-gray-500 mt-1">Формируются из одобренных заявок снабжения</p>
-				</div>
-				<Button className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white gap-2" onClick={() => setOpen(true)}>
+		<PageShell.List
+			title="Заказы поставщикам"
+			subtitle="Формируются из одобренных заявок снабжения"
+			primaryAction={
+				<Button className="gap-2 bg-am-brand text-am-brand-fg hover:bg-am-brand-hover" onClick={() => setOpen(true)}>
 					<Plus className="w-4 h-4" />
 					Новый заказ
 				</Button>
-			</div>
-
-			<div className="grid gap-4 sm:grid-cols-2 md:grid-cols-5 gap-4">
+			}
+			kpis={
+			<div className="grid gap-3 sm:grid-cols-2 md:grid-cols-5">
 				{ORDER_STATUSES.map((s) => (
-					<Card key={s} className="p-4">
-						<p className="text-xs text-gray-500">{statusConfig[s].label}</p>
-						<p className="text-2xl font-bold mt-1">{orders.filter((o) => o.status === s).length}</p>
+					<Card key={s} className="border-am-border bg-am-surface p-4 shadow-[var(--am-shadow-sm)]">
+						<p className="text-xs text-am-text-muted">{statusConfig[s].label}</p>
+						<p className="mt-1 text-2xl font-bold text-am-text-strong">{orders.filter((o) => o.status === s).length}</p>
 					</Card>
 				))}
 			</div>
-
-			<div className="flex gap-3">
+			}
+			filters={
 				<Select value={statusFilter} onValueChange={setStatusFilter}>
 					<SelectTrigger className="w-full sm:w-56">
 						<SelectValue placeholder="Статус" />
@@ -137,22 +136,23 @@ export default function WarehouseOrders() {
 						))}
 					</SelectContent>
 				</Select>
-			</div>
+			}
+		>
 
 			<div className="space-y-4">
 				{filteredOrders.map((order) => {
 					const status = statusConfig[order.status] ?? statusConfig.draft;
 					const StatusIcon = status.icon;
 					return (
-						<Card key={order.id} className="p-6">
+						<Card key={order.id} className="border-am-border bg-am-surface p-6 shadow-[var(--am-shadow-sm)]">
 							<div className="flex items-start justify-between mb-3">
 								<div className="flex items-center gap-3">
-									<div className="w-12 h-12 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+									<div className="flex h-12 w-12 items-center justify-center rounded-lg bg-am-success-surface text-am-success">
 										<Package className="w-6 h-6" />
 									</div>
 									<div>
-										<h3 className="font-bold text-lg text-gray-900">Заказ #{order.id}</h3>
-										<p className="text-sm text-gray-600">{supplierMap[order.supplierId] || `Поставщик #${order.supplierId}`}</p>
+										<h3 className="text-lg font-bold text-am-text-strong">Заказ #{order.id}</h3>
+										<p className="text-sm text-am-text-muted">{supplierMap[order.supplierId] || `Поставщик #${order.supplierId}`}</p>
 									</div>
 								</div>
 								<Badge className={status.color}>
@@ -163,20 +163,20 @@ export default function WarehouseOrders() {
 
 							<div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
 								<div>
-									<p className="text-xs text-gray-500">Дата</p>
+									<p className="text-xs text-am-text-muted">Дата</p>
 									<p className="text-sm font-medium">{new Date(order.createdAt).toLocaleString("ru-KG")}</p>
 								</div>
 								<div>
-									<p className="text-xs text-gray-500">Заявка</p>
+									<p className="text-xs text-am-text-muted">Заявка</p>
 									<p className="text-sm font-medium">{order.requestId ? `#${order.requestId}` : "—"}</p>
 								</div>
 								<div>
-									<p className="text-xs text-gray-500">Оплата</p>
+									<p className="text-xs text-am-text-muted">Оплата</p>
 									<p className="text-sm font-medium">{order.paymentType}</p>
 								</div>
 								<div>
-									<p className="text-xs text-gray-500">Сумма</p>
-									<p className="text-lg font-bold text-emerald-700">
+									<p className="text-xs text-am-text-muted">Сумма</p>
+									<p className="text-lg font-bold text-am-success">
 										{new Intl.NumberFormat("ru-KG").format(Number(order.totalAmount || 0))} {order.currency === "KGS" ? "сом" : order.currency}
 									</p>
 								</div>
@@ -264,6 +264,6 @@ export default function WarehouseOrders() {
 					</div>
 				</DialogContent>
 			</Dialog>
-		</div>
+		</PageShell.List>
 	);
 }

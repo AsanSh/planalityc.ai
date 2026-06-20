@@ -1,0 +1,289 @@
+import {
+	Bell,
+	BookOpen,
+	Building2,
+	Camera,
+	CreditCard,
+	FileText,
+	Gift,
+	Headphones,
+	MessageCircle,
+	Phone,
+	QrCode,
+	ReceiptText,
+	Settings,
+	Vote,
+	Wrench,
+} from "lucide-react";
+import type { ElementType } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+	getPortalContentItems,
+	isContentVisibleForAudience,
+	type PortalAudience,
+	type PortalContentItem,
+	type PortalPlacement,
+} from "@/lib/client-portal";
+import { cn } from "@/lib/utils";
+
+const quickActions: Array<{ label: string; icon: ElementType; accent?: string }> = [
+	{ label: "Оплата", icon: CreditCard },
+	{ label: "Заявки", icon: Wrench },
+	{ label: "Документы", icon: FileText },
+	{ label: "Счётчики", icon: ReceiptText, accent: "NEW" },
+	{ label: "Опросы", icon: Vote },
+	{ label: "Отчёты", icon: BookOpen },
+	{ label: "Камеры ЖК", icon: Camera },
+	{ label: "Ещё", icon: QrCode },
+];
+
+function byPlacement(items: PortalContentItem[], placement: PortalPlacement) {
+	return items.filter((item) => (item.placement ?? "home") === placement);
+}
+
+function PortalBanner({ item, variant = "blue" }: { item: PortalContentItem; variant?: "blue" | "dark" }) {
+	const bgImage = item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : undefined;
+	return (
+		<article
+			className={cn(
+				"relative min-h-[136px] overflow-hidden rounded-2xl p-4 text-white shadow-sm",
+				variant === "dark" ? "bg-gradient-to-r from-slate-950 to-amber-800" : "bg-gradient-to-r from-sky-700 to-cyan-400",
+			)}
+			style={bgImage}
+		>
+			<div className="absolute inset-0 bg-gradient-to-r from-slate-950/55 to-transparent" />
+			<div className="relative z-10 max-w-[75%]">
+				<p className="text-xs font-semibold uppercase tracking-[0.14em] opacity-80">
+					{item.projectName || "Закрытый клуб"}
+				</p>
+				<h3 className="mt-2 text-xl font-bold leading-tight">{item.title}</h3>
+				<p className="mt-1 line-clamp-2 text-sm opacity-90">{item.body}</p>
+				{item.ctaLabel && (
+					<span className="mt-3 inline-flex rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold backdrop-blur">
+						{item.ctaLabel}
+					</span>
+				)}
+			</div>
+		</article>
+	);
+}
+
+function MiniItem({ item }: { item: PortalContentItem }) {
+	return (
+		<article className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+			<div className="flex items-start justify-between gap-3">
+				<div className="min-w-0">
+					<p className="truncate text-sm font-bold text-gray-900">{item.title}</p>
+					<p className="mt-1 line-clamp-2 text-xs text-gray-500">{item.body}</p>
+				</div>
+				{item.rewardPoints ? (
+					<span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
+						{item.rewardPoints}
+					</span>
+				) : null}
+			</div>
+			{item.priceLabel && (
+				<p className="mt-3 font-mono text-sm font-semibold text-gray-950">{item.priceLabel}</p>
+			)}
+		</article>
+	);
+}
+
+export function ClientPortalExperience({
+	audience,
+	userName,
+	projectName = "ОсОО Смарт Эстейт",
+	unitLabel = "Квартира №264",
+	managerName = "Менеджер объекта",
+}: {
+	audience: PortalAudience;
+	userName?: string;
+	projectName?: string;
+	unitLabel?: string;
+	managerName?: string;
+}) {
+	const [items, setItems] = useState<PortalContentItem[]>(() => getPortalContentItems());
+
+	useEffect(() => {
+		const sync = () => setItems(getPortalContentItems());
+		window.addEventListener("storage", sync);
+		window.addEventListener("planalityc:portal-storage", sync as EventListener);
+		return () => {
+			window.removeEventListener("storage", sync);
+			window.removeEventListener("planalityc:portal-storage", sync as EventListener);
+		};
+	}, []);
+
+	const visibleItems = useMemo(
+		() =>
+			items
+				.filter((item) => isContentVisibleForAudience(item, audience))
+				.sort((a, b) => Number(b.pinned) - Number(a.pinned) || new Date(b.publishAt).getTime() - new Date(a.publishAt).getTime()),
+		[items, audience],
+	);
+
+	const homeItems = byPlacement(visibleItems, "home");
+	const myHomeItems = byPlacement(visibleItems, "my_home");
+	const serviceItems = byPlacement(visibleItems, "services");
+	const clubItems = byPlacement(visibleItems, "club");
+	const catalogItems = byPlacement(visibleItems, "catalog");
+	const mainBanner = myHomeItems.find((item) => item.type === "construction_update") || homeItems[0];
+	const secondaryBanner = homeItems.find((item) => item.id !== mainBanner?.id);
+
+	return (
+		<section className="space-y-4">
+			<div className="overflow-hidden rounded-3xl border border-gray-100 bg-[#f5f7fa] p-4 shadow-sm">
+				<div className="mb-4 flex items-center justify-between gap-3">
+					<div>
+						<p className="text-xs text-gray-500">Портал клиента</p>
+						<h2 className="text-2xl font-bold text-gray-950">Мой дом</h2>
+					</div>
+					<div className="flex items-center gap-2">
+						<span className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-gray-800 shadow-sm">
+							№ 264
+						</span>
+						<span className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-sm">
+							<Bell className="h-4 w-4 text-gray-600" />
+						</span>
+					</div>
+				</div>
+
+				<div className="mb-4 grid grid-cols-[minmax(0,1fr)_58px] gap-3">
+					<div className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm">
+						<div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-100">
+							<Building2 className="h-5 w-5 text-sky-700" />
+						</div>
+						<div className="min-w-0">
+							<p className="truncate text-xs text-gray-500">{projectName}</p>
+							<p className="truncate text-sm font-bold text-gray-950">{unitLabel}</p>
+						</div>
+					</div>
+					<div className="flex items-center justify-center rounded-2xl bg-white shadow-sm">
+						<Settings className="h-6 w-6 text-sky-700" />
+					</div>
+				</div>
+
+				<div className="grid grid-cols-4 overflow-hidden rounded-2xl bg-white shadow-sm">
+					{quickActions.map((action) => {
+						const Icon = action.icon;
+						return (
+							<button
+								key={action.label}
+								type="button"
+								className="relative flex min-h-[82px] flex-col items-center justify-center gap-2 border-b border-r border-gray-100 p-2 text-center last:border-r-0"
+							>
+								<Icon className="h-6 w-6 text-sky-700" />
+								<span className="text-xs font-semibold text-gray-800">{action.label}</span>
+								{action.accent && (
+									<span className="absolute right-1.5 top-1.5 rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] font-bold text-white">
+										{action.accent}
+									</span>
+								)}
+							</button>
+						);
+					})}
+				</div>
+			</div>
+
+			{mainBanner && <PortalBanner item={mainBanner} />}
+			{secondaryBanner && <PortalBanner item={secondaryBanner} variant="dark" />}
+
+			<div className="grid gap-3 md:grid-cols-2">
+				<div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+					<div className="flex items-center gap-3">
+						<div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
+							<Headphones className="h-5 w-5 text-emerald-700" />
+						</div>
+						<div>
+							<p className="text-xs text-gray-500">Ваш менеджер объекта</p>
+							<p className="font-semibold text-gray-950">{managerName}</p>
+						</div>
+					</div>
+					<ButtonCircle icon={Phone} tone="green" />
+				</div>
+				<div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+					<div className="flex items-center gap-3">
+						<div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50">
+							<MessageCircle className="h-5 w-5 text-blue-700" />
+						</div>
+						<div>
+							<p className="text-xs text-gray-500">Коммуникации</p>
+							<p className="font-semibold text-gray-950">Чат дома и объявления</p>
+						</div>
+					</div>
+					<ButtonCircle icon={MessageCircle} tone="blue" />
+				</div>
+			</div>
+
+			{serviceItems.length > 0 && (
+				<div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+					<div className="mb-3 flex items-center justify-between">
+						<h3 className="text-lg font-bold text-gray-950">Услуги</h3>
+						<span className="text-sm font-semibold text-sky-700">Все</span>
+					</div>
+					<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+						{serviceItems.slice(0, 6).map((item) => (
+							<MiniItem key={item.id} item={item} />
+						))}
+					</div>
+				</div>
+			)}
+
+			{clubItems.length > 0 && (
+				<div className="rounded-2xl border border-gray-100 bg-gradient-to-r from-slate-950 to-amber-800 p-4 text-white shadow-sm">
+					<div className="mb-4 flex items-center justify-between">
+						<div>
+							<p className="text-xs uppercase tracking-[0.18em] text-white/60">Club</p>
+							<h3 className="text-xl font-bold">Planalityc Platinum</h3>
+							<p className="text-sm text-white/75">Добро пожаловать, {userName || "клиент"}</p>
+						</div>
+						<div className="rounded-full bg-white/15 px-3 py-1.5 font-mono font-bold">
+							{clubItems.reduce((sum, item) => sum + Number(item.rewardPoints || 0), 0)}
+						</div>
+					</div>
+					<div className="grid gap-3 md:grid-cols-2">
+						{clubItems.slice(0, 4).map((item) => (
+							<div key={item.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white/10 p-3">
+								<div className="flex items-center gap-3">
+									<Gift className="h-5 w-5 text-amber-200" />
+									<div>
+										<p className="text-sm font-semibold">{item.title}</p>
+										<p className="text-xs text-white/60">{item.body}</p>
+									</div>
+								</div>
+								<span className="font-mono font-bold">{item.rewardPoints || 0}</span>
+							</div>
+						))}
+					</div>
+				</div>
+			)}
+
+			{catalogItems.length > 0 && (
+				<div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+					<div className="mb-3 flex items-center justify-between">
+						<h3 className="text-lg font-bold text-gray-950">Каталог ЖК</h3>
+						<span className="text-sm font-semibold text-sky-700">Все</span>
+					</div>
+					<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+						{catalogItems.slice(0, 6).map((item) => (
+							<MiniItem key={item.id} item={item} />
+						))}
+					</div>
+				</div>
+			)}
+		</section>
+	);
+}
+
+function ButtonCircle({ icon: Icon, tone }: { icon: ElementType; tone: "green" | "blue" }) {
+	return (
+		<span
+			className={cn(
+				"flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white",
+				tone === "green" ? "bg-emerald-500" : "bg-blue-600",
+			)}
+		>
+			<Icon className="h-5 w-5" />
+		</span>
+	);
+}

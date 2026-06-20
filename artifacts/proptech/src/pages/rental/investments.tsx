@@ -378,20 +378,20 @@ export default function Investments() {
 			{/* Stats */}
 			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				<div className="bg-white rounded-xl border border-gray-200 p-4">
-					<p className="text-xs text-gray-500 mb-1">Всего инвестиций</p>
-					<p className="text-2xl font-bold text-blue-600">
+					<p className="am-kpi-label mb-1">Всего инвестиций</p>
+					<p className="am-kpi-value text-2xl text-blue-600">
 						{investmentsArray.length}
 					</p>
 				</div>
 				<div className="bg-white rounded-xl border border-gray-200 p-4">
-					<p className="text-xs text-gray-500 mb-1">Уникальных объектов</p>
-					<p className="text-2xl font-bold text-indigo-600">
+					<p className="am-kpi-label mb-1">Уникальных объектов</p>
+					<p className="am-kpi-value text-2xl text-indigo-600">
 						{new Set(investmentsArray.map((i) => i.propertyId)).size}
 					</p>
 				</div>
 				<div className="bg-white rounded-xl border border-gray-200 p-4">
-					<p className="text-xs text-gray-500 mb-1">Общий капитал</p>
-					<p className="text-xl font-bold text-emerald-600">
+					<p className="am-kpi-label mb-1">Общий капитал</p>
+					<p className="am-kpi-value text-xl text-emerald-600">
 						{fmtCurrency(totalCapital)}
 					</p>
 				</div>

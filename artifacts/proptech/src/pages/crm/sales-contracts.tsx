@@ -607,10 +607,6 @@ export default function SalesContracts() {
 				</Button>
 			</div>
 
-			<div className="space-y-3">
-				<PeriodPicker value={period} onChange={setPeriod} />
-			</div>
-
 			<DataTable
 				tableId="crm-sales-contracts"
 				columns={columns}
@@ -620,19 +616,22 @@ export default function SalesContracts() {
 				searchPlaceholder="Поиск по номеру, клиенту, объекту…"
 				initialSorting={[{ id: "signDate", desc: true }]}
 				toolbar={
-					<Select value={statusFilter} onValueChange={setStatusFilter}>
-						<SelectTrigger className="w-44 h-8">
-							<SelectValue placeholder="Все статусы" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">Все статусы</SelectItem>
-							{STATUS_OPTIONS.map((opt) => (
-								<SelectItem key={opt.value} value={opt.value}>
-									{opt.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+					<>
+						<PeriodPicker value={period} onChange={setPeriod} />
+						<Select value={statusFilter} onValueChange={setStatusFilter}>
+							<SelectTrigger className="w-44 h-8">
+								<SelectValue placeholder="Все статусы" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">Все статусы</SelectItem>
+								{STATUS_OPTIONS.map((opt) => (
+									<SelectItem key={opt.value} value={opt.value}>
+										{opt.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</>
 				}
 				emptyState={
 					<div className="flex flex-col items-center gap-2 text-muted-foreground py-8">

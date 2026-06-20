@@ -621,8 +621,6 @@ export default function Deals() {
 				</div>
 			</div>
 
-			<PeriodPicker value={period} onChange={setPeriod} />
-
 			{viewMode === "table" && (
 				<DataTable
 					tableId="crm-deals"
@@ -632,19 +630,22 @@ export default function Deals() {
 					enableSearch
 					searchPlaceholder="Поиск по клиенту, объекту..."
 					toolbar={
-						<Select value={stageFilter} onValueChange={setStageFilter}>
-							<SelectTrigger className="w-44">
-								<SelectValue placeholder="Все этапы" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">Все этапы</SelectItem>
-								{STAGES.map((stage) => (
-									<SelectItem key={stage.value} value={stage.value}>
-										{stage.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						<>
+							<PeriodPicker value={period} onChange={setPeriod} />
+							<Select value={stageFilter} onValueChange={setStageFilter}>
+								<SelectTrigger className="w-44">
+									<SelectValue placeholder="Все этапы" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="all">Все этапы</SelectItem>
+									{STAGES.map((stage) => (
+										<SelectItem key={stage.value} value={stage.value}>
+											{stage.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</>
 					}
 					emptyState={
 						<div className="flex flex-col items-center gap-2">

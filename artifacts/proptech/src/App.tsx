@@ -3,6 +3,7 @@ import React from "react";
 import { Redirect, Route, Switch, Router as WouterRouter, useLocation, useSearch } from "wouter";
 import { Layout } from "@/components/layout";
 import { PlatformAdminLayout } from "@/components/platform-admin-layout";
+import { ConstructionLoader } from "@/components/ui/construction-loader";
 import { Toaster } from "@/components/ui/toaster";
 import { SonnerToaster } from "@/components/ui/sonner-toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -87,7 +88,6 @@ import ConstructionForecast from "@/pages/construction/planning/forecast";
 import ConstructionOverdue from "@/pages/construction/planning/overdue";
 import ConstructionProjects from "@/pages/construction/projects";
 import ConstructionReports from "@/pages/construction/reports";
-import ConstructionSettings from "@/pages/construction/settings";
 import ConstructionStages from "@/pages/construction/stages";
 import ConstructionTasks from "@/pages/construction/tasks";
 import { TaskDetailPage } from "@/features/construction-tasks/TaskDetailPage";
@@ -96,10 +96,12 @@ import Counterparties from "@/pages/counterparties";
 import ClientRelations from "@/pages/crm/client-relations";
 import CrmClients from "@/pages/crm/clients";
 // CRM/PropTech module
+import CRMDashboard from "@/pages/crm/dashboard";
 import CrmDeals from "@/pages/crm/deals";
 import CrmEmployees from "@/pages/crm/employees";
 import CrmLeadIntake from "@/pages/crm/lead-intake";
 import CrmLeads from "@/pages/crm/leads";
+import CrmMediaCenter from "@/pages/crm/media-center";
 import CrmSalesContracts from "@/pages/crm/sales-contracts";
 import CrmSalesProperties from "@/pages/crm/sales-properties";
 import Dashboard from "@/pages/dashboard";
@@ -142,7 +144,6 @@ import RentalPlanningForecast from "@/pages/rental/planning/forecast";
 import RentalPlanningOverdue from "@/pages/rental/planning/overdue";
 import RentalOverview from "@/pages/rental/overview";
 import RentalProperties from "@/pages/rental/rental-properties";
-import RentalSettings from "@/pages/rental/settings";
 import OwnerStatements from "@/pages/rental/statements";
 import TenantDetail from "@/pages/rental/tenant-detail";
 import RentalTenants from "@/pages/rental/tenants";
@@ -155,7 +156,6 @@ import Settings from "@/pages/settings";
 import DesignSystemShowcase from "@/pages/design-system";
 import SettingsCategories from "@/pages/settings/categories";
 import SettingsLegal from "@/pages/settings/legal-entities";
-import LegalPage from "@/pages/legal";
 import SettingsPeriods from "@/pages/settings/periods";
 import SettingsRoles from "@/pages/settings/roles";
 import SettingsSystemAccounts from "@/pages/settings/system-accounts";
@@ -176,7 +176,6 @@ import WarehouseReports from "@/pages/warehouse/reports";
 import WarehouseRequests from "@/pages/warehouse/requests";
 import WarehouseSupplyApprovals from "@/pages/warehouse/approvals";
 import WarehouseMarketplace from "@/pages/warehouse/marketplace";
-import WarehouseSettings from "@/pages/warehouse/settings";
 import WarehouseSuppliers from "@/pages/warehouse/suppliers";
 import PlatformAdminDashboard from "@/pages/platform-admin/dashboard";
 import PlatformAdminCompanies from "@/pages/platform-admin/companies";
@@ -188,10 +187,7 @@ const queryClient = new QueryClient();
 function Spinner() {
 	return (
 		<div className="min-h-screen flex items-center justify-center">
-			<div className="flex flex-col items-center gap-3">
-				<div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-				<span className="text-sm text-gray-500">Загрузка...</span>
-			</div>
+			<ConstructionLoader size="lg" label="Загрузка..." />
 		</div>
 	);
 }
@@ -335,9 +331,6 @@ function Router() {
 			<Route path="/consolidated">
 				<Redirect to="/dashboard?tab=control" />
 			</Route>
-			<Route path="/legal">
-				<ProtectedRoute component={LegalPage} />
-			</Route>
 			<Route path="/dashboard">
 				<ProtectedRoute component={Dashboard} />
 			</Route>
@@ -374,14 +367,83 @@ function Router() {
 			<Route path="/reports/directions">
 				<ProtectedRoute component={DirectionReports} />
 			</Route>
-			<Route path="/reports/rental">
-				<ProtectedRoute component={RentalSummaryReport} />
-			</Route>
 			<Route path="/reports/cashflow">
 				<ProtectedRoute component={CashflowReport} />
 			</Route>
 			<Route path="/reports/payments">
 				<ProtectedRoute component={PaymentsReport} />
+			</Route>
+			<Route path="/reports/construction/overview">
+				<ProtectedRoute component={ConstructionReports} />
+			</Route>
+			<Route path="/reports/construction/debt">
+				<ProtectedRoute component={ConstructionDebt} />
+			</Route>
+			<Route path="/reports/construction/cashflow">
+				<ProtectedRoute component={ConstructionCashflow} />
+			</Route>
+			<Route path="/reports/construction/pnl">
+				<ProtectedRoute component={ConstructionPnL} />
+			</Route>
+			<Route path="/reports/construction/expenses">
+				<ProtectedRoute component={ConstructionExpenseAnalysis} />
+			</Route>
+			<Route path="/reports/rental/debt">
+				<ProtectedRoute component={RentalAnalyticsDebt} />
+			</Route>
+			<Route path="/reports/rental/odds">
+				<ProtectedRoute component={RentalODDS} />
+			</Route>
+			<Route path="/reports/rental/opu">
+				<ProtectedRoute component={RentalOPU} />
+			</Route>
+			<Route path="/reports/rental/owners">
+				<ProtectedRoute component={RentalAnalyticsOwners} />
+			</Route>
+			<Route path="/reports/rental/summary">
+				<ProtectedRoute component={RentalAnalyticsSummary} />
+			</Route>
+			<Route path="/reports/rental">
+				<ProtectedRoute component={RentalSummaryReport} />
+			</Route>
+			<Route path="/reports/finance/debt">
+				<ProtectedRoute component={ConstructionDebt} />
+			</Route>
+			<Route path="/reports/finance/cashflow">
+				<ProtectedRoute component={ConstructionCashflow} />
+			</Route>
+			<Route path="/reports/finance/pnl">
+				<ProtectedRoute component={ConstructionPnL} />
+			</Route>
+			<Route path="/reports/finance/expenses">
+				<ProtectedRoute component={ConstructionExpenseAnalysis} />
+			</Route>
+			<Route path="/reports/finance/budget">
+				<ProtectedRoute component={ConstructionBudget} />
+			</Route>
+			<Route path="/reports/supply/overview">
+				<ProtectedRoute component={WarehouseReports} />
+			</Route>
+			<Route path="/reports/supply/costs">
+				<ProtectedRoute component={WarehouseCosts} />
+			</Route>
+			<Route path="/reports/supply/items">
+				<ProtectedRoute component={WarehouseItems} />
+			</Route>
+			<Route path="/reports/supply/suppliers">
+				<ProtectedRoute component={WarehouseSuppliers} />
+			</Route>
+			<Route path="/reports/crm/overview">
+				<ProtectedRoute component={CRMDashboard} />
+			</Route>
+			<Route path="/reports/crm/leads">
+				<ProtectedRoute component={CrmLeads} />
+			</Route>
+			<Route path="/reports/crm/deals">
+				<ProtectedRoute component={CrmDeals} />
+			</Route>
+			<Route path="/reports/crm/client-relations">
+				<ProtectedRoute component={ClientRelations} />
 			</Route>
 
 			{/* ── Аренда ── */}
@@ -508,13 +570,25 @@ function Router() {
 			<Route path="/construction/analytics/cashflow">
 				<ProtectedRoute component={ConstructionCashflow} />
 			</Route>
+			<Route path="/finance/reports/cashflow">
+				<ProtectedRoute component={ConstructionCashflow} />
+			</Route>
 			<Route path="/construction/analytics/pnl">
+				<ProtectedRoute component={ConstructionPnL} />
+			</Route>
+			<Route path="/finance/reports/pnl">
 				<ProtectedRoute component={ConstructionPnL} />
 			</Route>
 			<Route path="/construction/analytics/expenses">
 				<ProtectedRoute component={ConstructionExpenseAnalysis} />
 			</Route>
+			<Route path="/finance/reports/expenses">
+				<ProtectedRoute component={ConstructionExpenseAnalysis} />
+			</Route>
 			<Route path="/construction/analytics/debt">
+				<ProtectedRoute component={ConstructionDebt} />
+			</Route>
+			<Route path="/finance/reports/debt">
 				<ProtectedRoute component={ConstructionDebt} />
 			</Route>
 			<Route path="/construction/planning/forecast">
@@ -534,7 +608,7 @@ function Router() {
 			</Route>
 
 			<Route path="/construction/settings">
-				<ProtectedRoute component={ConstructionSettings} />
+				<ProtectedRoute component={() => <Redirect to="/settings?area=construction" />} />
 			</Route>
 			<Route path="/construction/help">
 				<ProtectedRoute component={ModuleHelp} />
@@ -585,6 +659,9 @@ function Router() {
 			<Route path="/crm/client-relations">
 				<ProtectedRoute component={ClientRelations} />
 			</Route>
+			<Route path="/crm/media-center">
+				<ProtectedRoute component={CrmMediaCenter} />
+			</Route>
 			<Route path="/crm/help">
 				<ProtectedRoute component={ModuleHelp} />
 			</Route>
@@ -616,25 +693,49 @@ function Router() {
 			<Route path="/rental/analytics/debt">
 				<ProtectedRoute component={RentalAnalyticsDebt} />
 			</Route>
+			<Route path="/rental/reports/debt">
+				<ProtectedRoute component={RentalAnalyticsDebt} />
+			</Route>
 			<Route path="/rental/analytics/summary">
+				<ProtectedRoute component={RentalAnalyticsSummary} />
+			</Route>
+			<Route path="/rental/reports/summary">
 				<ProtectedRoute component={RentalAnalyticsSummary} />
 			</Route>
 			<Route path="/rental/analytics/cashflow">
 				<ProtectedRoute component={RentalAnalyticsCashflow} />
 			</Route>
+			<Route path="/rental/reports/cashflow">
+				<ProtectedRoute component={RentalAnalyticsCashflow} />
+			</Route>
 			<Route path="/rental/analytics/history">
+				<ProtectedRoute component={RentalAnalyticsHistory} />
+			</Route>
+			<Route path="/rental/reports/history">
 				<ProtectedRoute component={RentalAnalyticsHistory} />
 			</Route>
 			<Route path="/rental/analytics/owners">
 				<ProtectedRoute component={RentalAnalyticsOwners} />
 			</Route>
+			<Route path="/rental/reports/owners">
+				<ProtectedRoute component={RentalAnalyticsOwners} />
+			</Route>
 			<Route path="/rental/analytics/opu">
+				<ProtectedRoute component={RentalOPU} />
+			</Route>
+			<Route path="/rental/reports/opu">
 				<ProtectedRoute component={RentalOPU} />
 			</Route>
 			<Route path="/rental/analytics/odds">
 				<ProtectedRoute component={RentalODDS} />
 			</Route>
+			<Route path="/rental/reports/odds">
+				<ProtectedRoute component={RentalODDS} />
+			</Route>
 			<Route path="/rental/analytics/plan-fact">
+				<ProtectedRoute component={RentalPlanFact} />
+			</Route>
+			<Route path="/rental/reports/plan-fact">
 				<ProtectedRoute component={RentalPlanFact} />
 			</Route>
 			<Route path="/rental/planning/forecast">
@@ -647,7 +748,7 @@ function Router() {
 				<ProtectedRoute component={RentalPlanningBroadcast} />
 			</Route>
 			<Route path="/rental/settings">
-				<ProtectedRoute component={RentalSettings} />
+				<ProtectedRoute component={() => <Redirect to="/settings?area=rental" />} />
 			</Route>
 			<Route path="/rental/help">
 				<ProtectedRoute component={ModuleHelp} />
@@ -656,7 +757,7 @@ function Router() {
 				<ProtectedRoute component={RentalOperationsLog} />
 			</Route>
 
-			{/* ── Закуп / Снабжение ── */}
+			{/* ── Снабжение ── */}
 			<Route path="/warehouse/dashboard">
 				<ProtectedRoute component={() => <DashboardLegacyRedirect tab="supply" />} />
 			</Route>
@@ -709,7 +810,7 @@ function Router() {
 				<ProtectedRoute component={WarehouseEmployees} />
 			</Route>
 			<Route path="/warehouse/settings">
-				<ProtectedRoute component={WarehouseSettings} />
+				<ProtectedRoute component={() => <Redirect to="/settings?area=warehouse" />} />
 			</Route>
 			<Route path="/warehouse/help">
 				<ProtectedRoute component={ModuleHelp} />

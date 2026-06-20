@@ -85,13 +85,13 @@ export default function WarehouseCosts() {
 				<div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 					<div>
 						<div className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-700">
-							Складской капитал
+							Капитал снабжения
 						</div>
 						<h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
 							Стоимость запасов
 						</h1>
 						<p className="mt-1 max-w-2xl text-sm text-slate-500">
-							Расчет строится по фактическим карточкам склада: остаток, минимальный
+							Расчет строится по фактическим карточкам снабжения: остаток, минимальный
 							порог и закупочная цена.
 						</p>
 					</div>
@@ -147,7 +147,7 @@ export default function WarehouseCosts() {
 						<div className="mb-5 flex items-center justify-between">
 							<div>
 								<h2 className="text-lg font-bold text-slate-950">Категории</h2>
-								<p className="text-sm text-slate-500">Доля стоимости по группам склада</p>
+								<p className="text-sm text-slate-500">Доля стоимости по группам снабжения</p>
 							</div>
 							<Badge variant="outline">{categories.length} групп</Badge>
 						</div>
@@ -200,7 +200,7 @@ export default function WarehouseCosts() {
 							{isLoading && <Skeleton className="h-28 w-full rounded-2xl" />}
 							{!isLoading && lowStock.length === 0 && (
 								<div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6 text-sm text-emerald-800">
-									Все складские позиции выше минимального порога.
+									Все позиции снабжения выше минимального порога.
 								</div>
 							)}
 							{lowStock.slice(0, 8).map((item) => {

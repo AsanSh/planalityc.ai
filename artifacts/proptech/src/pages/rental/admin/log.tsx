@@ -242,7 +242,7 @@ function LogRow({
 					<div className="flex-1 min-w-0">
 						<div className="flex items-center gap-2 flex-wrap">
 							{ec && (
-								<span className="flex items-center gap-1 text-xs text-gray-500">
+								<span className="flex items-center gap-1 am-kpi-label">
 									<EntityIcon className="w-3 h-3" /> {ec.label}
 									{entry.entityId && (
 										<span className="font-mono text-gray-600">
@@ -450,10 +450,10 @@ export default function RentalOperationsLog() {
 						<Clock className="w-4.5 h-4.5 text-gray-500" />
 					</div>
 					<div>
-						<div className="text-2xl font-bold text-gray-900">
+						<div className="am-kpi-value text-2xl text-gray-900">
 							{entries.length}
 						</div>
-						<div className="text-xs text-gray-500">Всего записей</div>
+						<div className="am-kpi-label">Всего записей</div>
 					</div>
 				</div>
 				<div className="rounded-xl border border-rose-100 bg-rose-50 p-4 flex items-center gap-3">
@@ -461,7 +461,7 @@ export default function RentalOperationsLog() {
 						<Trash2 className="w-4.5 h-4.5 text-rose-600" />
 					</div>
 					<div>
-						<div className="text-2xl font-bold text-rose-700">
+						<div className="am-kpi-value text-2xl text-rose-700">
 							{deleteCount}
 						</div>
 						<div className="text-xs text-rose-600">
@@ -474,7 +474,7 @@ export default function RentalOperationsLog() {
 						<RotateCcw className="w-4.5 h-4.5 text-indigo-600" />
 					</div>
 					<div>
-						<div className="text-2xl font-bold text-indigo-700">
+						<div className="am-kpi-value text-2xl text-indigo-700">
 							{restoreCount}
 						</div>
 						<div className="text-xs text-indigo-600">Восстановлений</div>

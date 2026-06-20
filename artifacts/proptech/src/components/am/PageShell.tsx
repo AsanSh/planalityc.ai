@@ -63,9 +63,9 @@ function ListShell({ title, subtitle, primaryAction, backLink, breadcrumb, kpis,
 	return (
 		<div className="am-page space-y-5 max-w-full">
 			<PageHeader {...{ title, subtitle, primaryAction, backLink, breadcrumb }} />
-			{kpis && <div className="w-full min-w-0">{kpis}</div>}
+			{kpis && <div className="am-kpi-surface w-full min-w-0">{kpis}</div>}
 			{filters && (
-				<div className="am-shell-filter p-2.5 flex items-center gap-2 flex-wrap">
+				<div className="am-shell-filter am-toolbar p-2.5">
 					{filters}
 				</div>
 			)}
@@ -112,9 +112,9 @@ function DashboardShell({ title, subtitle, primaryAction, backLink, breadcrumb, 
 		<div className="am-page space-y-5 max-w-full">
 			<PageHeader {...{ title, subtitle, primaryAction, backLink, breadcrumb }} />
 			{filters && (
-				<div className="am-shell-filter p-2.5 flex items-center gap-2 flex-wrap">{filters}</div>
+				<div className="am-shell-filter am-toolbar p-2.5">{filters}</div>
 			)}
-			{kpis && <div className="w-full min-w-0">{kpis}</div>}
+			{kpis && <div className="am-kpi-surface w-full min-w-0">{kpis}</div>}
 			<div className="space-y-5">{children}</div>
 		</div>
 	);
@@ -135,10 +135,10 @@ function ReportShell({ title, subtitle, primaryAction, backLink, breadcrumb, fil
 			<PageHeader
 				{...{ title, subtitle, primaryAction: exportAction || primaryAction, backLink, breadcrumb }}
 			/>
-			<div className="am-shell-filter p-2.5 flex items-center gap-2 flex-wrap">
+			<div className="am-shell-filter am-toolbar p-2.5">
 				{filters}
 			</div>
-			{summary && <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{summary}</div>}
+			{summary && <div className="am-kpi-surface grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{summary}</div>}
 			<div>{children}</div>
 		</div>
 	);

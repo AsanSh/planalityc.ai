@@ -3,6 +3,7 @@ import {
 	ArrowLeftRight,
 	Download,
 	Filter,
+	Loader2,
 	Search,
 	TrendingDown,
 	TrendingUp,
@@ -745,14 +746,14 @@ export default function ConstructionOperations() {
 						{/* Amount */}
 						<div>
 							<Label className="text-xs text-gray-500">СУММА *</Label>
-							<div className="flex gap-2 mt-1">
+							<div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-2 mt-1">
 								<Input
 									type="number"
 									value={form.amount}
 									onChange={(e) =>
 										setForm((f) => ({ ...f, amount: e.target.value }))
 									}
-									className="flex-1 h-9 text-sm font-mono border-gray-200"
+									className="min-w-0 h-9 text-sm font-mono border-gray-200"
 									placeholder="0,00"
 									autoFocus
 								/>
@@ -760,7 +761,7 @@ export default function ConstructionOperations() {
 									value={form.currency}
 									onValueChange={(v) => setForm((f) => ({ ...f, currency: v }))}
 								>
-									<SelectTrigger className="w-20 h-9 text-sm border-gray-200">
+									<SelectTrigger className="h-9 text-sm border-gray-200">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent className={SIDE_PANEL_SELECT_CONTENT}>
@@ -973,13 +974,15 @@ export default function ConstructionOperations() {
 						{/* Category */}
 						{panelType !== "transfer" && (
 							<div>
-								<Label className="text-xs text-gray-500">СТАТЬЯ</Label>
+								<Label className="text-xs text-gray-500">
+									КАТЕГОРИЯ ОПЕРАЦИИ
+								</Label>
 								<Select
 									value={form.category || undefined}
 									onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}
 								>
 									<SelectTrigger className="mt-1 h-9 text-sm border-gray-200">
-										<SelectValue placeholder="Выберите статью" />
+										<SelectValue placeholder="Выберите категорию" />
 									</SelectTrigger>
 									<SelectContent className={SIDE_PANEL_SELECT_CONTENT}>
 										{categories.map((c) => (
@@ -1096,6 +1099,9 @@ export default function ConstructionOperations() {
 								})
 							}
 						>
+							{saveMut.isPending && (
+								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+							)}
 							{saveMut.isPending
 								? "Сохранение..."
 								: editingId

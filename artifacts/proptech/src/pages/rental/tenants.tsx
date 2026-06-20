@@ -271,12 +271,6 @@ export default function RentalTenants() {
 	const companyCount = tenantsArray.filter((t) => (t as Tenant & { type?: string }).type === "company").length;
 	const individualCount = tenantsArray.length - companyCount;
 
-	const [statusFilter, setStatusFilter] = useState("all");
-	const filteredTenants = useMemo(
-		() => statusFilter === "all" ? tenantsArray : tenantsArray.filter((t) => t.status === statusFilter),
-		[tenantsArray, statusFilter],
-	);
-
 	const handleAdd = () => { setSelectedTenant(undefined); setDialogOpen(true); };
 	const handleEdit = useCallback((tenant: Tenant) => {
 		setSelectedTenant(tenant);
@@ -395,7 +389,7 @@ export default function RentalTenants() {
 	);
 
 	return (
-		<div className="p-6 space-y-4">
+		<div className="p-6 space-y-3">
 			<KpiRow>
 				<KpiCard variant="strip" label="Всего арендаторов" value={tenantsArray.length} sub="в базе" icon={Users} color="blue" loading={isLoading} />
 				<KpiCard variant="strip" label="Активных" value={activeCount} sub={inactiveCount > 0 ? `${inactiveCount} неактивных` : "все активны"} icon={UserCheck} color="green" loading={isLoading} />
@@ -403,47 +397,34 @@ export default function RentalTenants() {
 				<KpiCard variant="strip" label="Неактивных" value={inactiveCount} sub={inactiveCount > 0 ? "требуют проверки" : "нет"} icon={UserX} color={inactiveCount > 0 ? "yellow" : "green"} loading={isLoading} />
 			</KpiRow>
 
-			<div className="flex flex-wrap items-center justify-between gap-3">
+			<div className="flex justify-between items-center">
 				<div>
 					<h1 className="text-2xl font-bold">Арендаторы</h1>
 					<p className="text-muted-foreground text-sm">Управление базой арендаторов</p>
 				</div>
-				<div className="flex items-center gap-2">
-					<Select value={statusFilter} onValueChange={setStatusFilter}>
-						<SelectTrigger className="h-9 w-44">
-							<SelectValue placeholder="Все статусы" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">Все статусы</SelectItem>
-							<SelectItem value="active">Активный</SelectItem>
-							<SelectItem value="inactive">Неактивный</SelectItem>
-							<SelectItem value="blacklisted">Черный список</SelectItem>
-						</SelectContent>
-					</Select>
-					<Button onClick={handleAdd}>
-						<Plus className="w-4 h-4 mr-2" />Добавить
-					</Button>
-				</div>
+				<Button onClick={handleAdd}>
+					<Plus className="w-4 h-4 mr-2" />Добавить
+				</Button>
 			</div>
 
 			<RentalQueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
 				<DataTable
 					tableId="rental-tenants"
 					columns={columns}
-					data={filteredTenants}
+					data={tenantsArray}
 					isLoading={isLoading}
 					enableSearch
 					searchPlaceholder="Поиск по ФИО, телефону, email, ИИН…"
 					initialSorting={[{ id: "fullName", desc: false }]}
 					emptyState="Арендаторы не найдены"
 					footer={
-						!isLoading && filteredTenants.length > 0 ? (
+						!isLoading && tenantsArray.length > 0 ? (
 							<tr className="bg-gray-50 font-semibold border-t-2">
 								<td colSpan={4} className="px-3 py-2 text-sm text-gray-600">
-									Итого: {filteredTenants.length} арендаторов
+									Итого: {tenantsArray.length} арендаторов
 								</td>
 								<td className="px-3 py-2 text-sm text-gray-600">
-									{filteredTenants.filter((t) => t.status === "active").length} активных
+									{activeCount} активных
 								</td>
 								<td />
 							</tr>

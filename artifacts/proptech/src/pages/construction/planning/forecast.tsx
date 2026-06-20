@@ -204,11 +204,13 @@ export default function ConstructionForecast() {
 							Прогноз cashflow на основе действующих договоров и графиков
 						</p>
 					</div>
-					<DateRangePicker value={period} onChange={setPeriod} />
+					<div className="am-toolbar">
+						<DateRangePicker value={period} onChange={setPeriod} />
+					</div>
 				</div>
 			</div>
 
-			<div className="mb-5 grid gap-3 md:grid-cols-3">
+			<div className="am-kpi-surface mb-5 grid gap-3 md:grid-cols-3">
 				<div className="rounded-lg border border-cyan-100 bg-white p-4 shadow-sm">
 					<div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Всего к получению</div>
 					<div className="text-2xl font-black text-cyan-700">

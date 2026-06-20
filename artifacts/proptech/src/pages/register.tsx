@@ -1,5 +1,5 @@
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { PlanalitycLogo } from "@/components/brand/PlanalitycLogo";
 import { Button } from "@/components/ui/button";
@@ -37,8 +37,8 @@ const SIGNUP_MODULES: Array<{
 	},
 	{
 		key: "warehouse",
-		title: "Закуп",
-		description: "заявки, поставщики, склад, списания",
+		title: "Снабжение",
+		description: "заявки, поставщики, остатки, списания",
 	},
 	{
 		key: "crm",
@@ -52,12 +52,25 @@ async function registerOrg(body: Record<string, string>) {
 	return data;
 }
 
+async function startEmailVerification(email: string) {
+	const { data } = await api.post("/auth/register/start", { email });
+	return data;
+}
+
+async function verifyEmailCode(email: string, code: string) {
+	const { data } = await api.post("/auth/register/verify-code", { email, code });
+	return data as { registrationToken: string };
+}
+
 export default function Register() {
 	const { login } = useAuth();
 	const [, setLocation] = useLocation();
 	const { toast } = useToast();
 	const [loading, setLoading] = useState(false);
-	const [step, setStep] = useState<"company" | "admin">("company");
+	const [step, setStep] = useState<"company" | "verify" | "admin">("company");
+	const [verificationCode, setVerificationCode] = useState("");
+	const [registrationToken, setRegistrationToken] = useState("");
+	const [verifiedEmail, setVerifiedEmail] = useState("");
 	const [selectedModules, setSelectedModules] = useState<SignupModule[]>([
 		"construction",
 	]);
@@ -78,6 +91,33 @@ export default function Register() {
 	const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
 		setForm((f) => ({ ...f, [field]: e.target.value }));
 
+	useEffect(() => {
+		const params = new URLSearchParams(window.location.search);
+		const token = params.get("verifiedToken");
+		const email = params.get("email");
+		const verification = params.get("verification");
+		if (token && email) {
+			setRegistrationToken(token);
+			setVerifiedEmail(email);
+			setForm((f) => ({ ...f, email }));
+			setStep("company");
+			toast({
+				title: "Email подтверждён",
+				description: "Заполните данные компании и администратора.",
+			});
+			window.history.replaceState(null, "", "/register");
+			return;
+		}
+		if (verification === "expired") {
+			toast({
+				title: "Ссылка истекла",
+				description: "Запросите новый код подтверждения.",
+				variant: "destructive",
+			});
+			window.history.replaceState(null, "", "/register");
+		}
+	}, [toast]);
+
 	const toggleModule = (key: SignupModule) => {
 		setSelectedModules((current) => {
 			if (current.includes(key)) {
@@ -87,7 +127,31 @@ export default function Register() {
 		});
 	};
 
-	const handleNext = (e: React.FormEvent) => {
+	const requestEmailCode = async () => {
+		const email = form.email.trim().toLowerCase();
+		setLoading(true);
+		try {
+			await startEmailVerification(email);
+			setRegistrationToken("");
+			setVerifiedEmail("");
+			setVerificationCode("");
+			setStep("verify");
+			toast({
+				title: "Код отправлен",
+				description: `Проверьте почту ${email}`,
+			});
+		} catch (err: any) {
+			toast({
+				title: "Не удалось отправить код",
+				description: err.message || "Попробуйте позже",
+				variant: "destructive",
+			});
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const handleNext = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!form.companyName) {
 			toast({
@@ -105,7 +169,36 @@ export default function Register() {
 			});
 			return;
 		}
-		setStep("admin");
+		const email = form.email.trim().toLowerCase();
+		if (registrationToken && verifiedEmail === email) {
+			setStep("admin");
+			return;
+		}
+		await requestEmailCode();
+	};
+
+	const handleVerify = async (e: React.FormEvent) => {
+		e.preventDefault();
+		const email = form.email.trim().toLowerCase();
+		setLoading(true);
+		try {
+			const data = await verifyEmailCode(email, verificationCode.trim());
+			setRegistrationToken(data.registrationToken);
+			setVerifiedEmail(email);
+			setStep("admin");
+			toast({
+				title: "Email подтверждён",
+				description: "Теперь создайте аккаунт администратора.",
+			});
+		} catch (err: any) {
+			toast({
+				title: "Код не подтверждён",
+				description: err.message || "Проверьте код и попробуйте ещё раз",
+				variant: "destructive",
+			});
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -116,6 +209,15 @@ export default function Register() {
 				description: "Введите имя и фамилию",
 				variant: "destructive",
 			});
+			return;
+		}
+		if (!registrationToken) {
+			toast({
+				title: "Подтвердите email",
+				description: "Сначала подтвердите код из письма.",
+				variant: "destructive",
+			});
+			setStep("verify");
 			return;
 		}
 
@@ -185,6 +287,7 @@ export default function Register() {
 				firstName: form.firstName,
 				lastName: form.lastName,
 				password: form.password,
+				registrationToken,
 			});
 
 			// Set new token
@@ -278,9 +381,15 @@ export default function Register() {
 						</div>
 						<div className="flex-1 h-px bg-gray-200" />
 						<div
-							className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${step === "admin" ? "bg-cyan-700 text-white" : "bg-slate-100 text-slate-700"}`}
+							className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${step === "verify" ? "bg-cyan-700 text-white" : registrationToken ? "bg-cyan-50 text-cyan-700" : "bg-slate-100 text-slate-700"}`}
 						>
 							2
+						</div>
+						<div className="flex-1 h-px bg-gray-200" />
+						<div
+							className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${step === "admin" ? "bg-cyan-700 text-white" : "bg-slate-100 text-slate-700"}`}
+						>
+							3
 						</div>
 					</div>
 
@@ -292,7 +401,7 @@ export default function Register() {
 										Данные организации
 									</h2>
 									<p className="text-gray-500 text-sm mt-1">
-										Шаг 1 из 2 — информация о вашей компании
+										Шаг 1 из 3 — информация о вашей компании
 									</p>
 								</div>
 								<form onSubmit={handleNext} className="space-y-4">
@@ -351,10 +460,16 @@ export default function Register() {
 											type="email"
 											value={form.email}
 											onChange={set("email")}
+											readOnly={Boolean(registrationToken && verifiedEmail === form.email.trim().toLowerCase())}
 											placeholder="info@company.kg"
 											required
-											className="mt-1.5 h-11 rounded-lg border-slate-200 bg-slate-50/80 focus:bg-white focus-visible:ring-cyan-600/20"
+											className="mt-1.5 h-11 rounded-lg border-slate-200 bg-slate-50/80 focus:bg-white focus-visible:ring-cyan-600/20 read-only:bg-cyan-50 read-only:text-cyan-900"
 										/>
+										{registrationToken && verifiedEmail === form.email.trim().toLowerCase() ? (
+											<p className="mt-1 text-xs font-medium text-cyan-700">
+												Email уже подтверждён
+											</p>
+										) : null}
 									</div>
 									<div>
 										<Label className="text-sm font-medium text-gray-700">
@@ -413,12 +528,17 @@ export default function Register() {
 									<Button
 										type="submit"
 										className="w-full h-11 rounded-lg text-sm font-semibold bg-cyan-700 hover:bg-cyan-800 text-white mt-2 shadow-sm shadow-cyan-900/10"
+										disabled={loading}
 									>
-										Далее →
+										{loading
+											? "Отправляем код..."
+											: registrationToken && verifiedEmail === form.email.trim().toLowerCase()
+												? "Далее"
+												: "Подтвердить email"}
 									</Button>
 								</form>
 							</>
-						) : (
+						) : step === "verify" ? (
 							<>
 								<div className="mb-6">
 									<button
@@ -429,10 +549,65 @@ export default function Register() {
 										Назад
 									</button>
 									<h2 className="text-2xl font-bold text-gray-900">
+										Подтвердите email
+									</h2>
+									<p className="text-gray-500 text-sm mt-1">
+										Шаг 2 из 3 — код отправлен на {form.email}
+									</p>
+								</div>
+								<form onSubmit={handleVerify} className="space-y-4">
+									<div>
+										<Label className="text-sm font-medium text-gray-700">
+											Код из письма *
+										</Label>
+										<Input
+											inputMode="numeric"
+											maxLength={6}
+											value={verificationCode}
+											onChange={(event) =>
+												setVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+											}
+											placeholder="000000"
+											required
+											className="mt-1.5 h-12 rounded-lg border-slate-200 bg-slate-50/80 text-center text-xl font-bold tracking-[0.35em] focus:bg-white focus-visible:ring-cyan-600/20"
+										/>
+										<p className="mt-2 text-xs leading-5 text-slate-500">
+											Также можно нажать кнопку подтверждения в письме, тогда эта
+											страница откроется уже с подтверждённым email.
+										</p>
+									</div>
+									<Button
+										type="submit"
+										className="w-full h-11 rounded-lg text-sm font-semibold bg-cyan-700 hover:bg-cyan-800 text-white mt-2 shadow-sm shadow-cyan-900/10"
+										disabled={loading || verificationCode.length !== 6}
+									>
+										{loading ? "Проверяем код..." : "Подтвердить и продолжить"}
+									</Button>
+									<button
+										type="button"
+										onClick={requestEmailCode}
+										disabled={loading}
+										className="w-full text-sm font-medium text-cyan-700 hover:text-cyan-800 disabled:opacity-50"
+									>
+										Отправить код повторно
+									</button>
+								</form>
+							</>
+						) : (
+							<>
+								<div className="mb-6">
+									<button
+										onClick={() => setStep(registrationToken ? "company" : "verify")}
+										className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-4"
+									>
+										<ArrowLeft className="h-4 w-4" />
+										Назад
+									</button>
+									<h2 className="text-2xl font-bold text-gray-900">
 										Данные администратора
 									</h2>
 									<p className="text-gray-500 text-sm mt-1">
-										Шаг 2 из 2 — создание аккаунта администратора
+										Шаг 3 из 3 — создание аккаунта администратора
 									</p>
 								</div>
 								<form onSubmit={handleSubmit} className="space-y-4">

@@ -35,6 +35,11 @@ export type UnitContract = {
 	status: string;
 	contractDate: string | null;
 	currency: string;
+	contractDocument?: {
+		fileName: string;
+		mimeType: string;
+		uploadedAt: string;
+	} | null;
 };
 
 export type OverviewUnit = {

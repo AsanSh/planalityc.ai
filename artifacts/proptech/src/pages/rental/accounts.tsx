@@ -379,7 +379,7 @@ export default function RentalAccounts() {
 	}
 
 	return (
-		<div className="p-6 space-y-4">
+		<div className="space-y-3">
 			<KpiRow cols={3}>
 				<KpiCard variant="strip" label="Всего счетов" value={accounts.length} sub="в модуле аренды" icon={Wallet} color="blue" loading={isLoading} />
 				<KpiCard variant="strip" label="Суммарный баланс" value={fmt(totalBalance, "KGS")} sub="в сомах" icon={CreditCard} color="green" loading={isLoading} />
@@ -393,7 +393,7 @@ export default function RentalAccounts() {
 						Только модуль «Аренда» — счета строительства и других модулей не видны
 					</p>
 				</div>
-				<div className="flex items-center gap-2 flex-wrap">
+				<div className="am-toolbar">
 					<CashSummary accounts={accounts} />
 					<Button
 						variant="outline"

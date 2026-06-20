@@ -230,10 +230,10 @@ export default function WarehouseReports() {
 				<div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 					<div>
 						<div className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-700">
-							Складская аналитика
+							Аналитика снабжения
 						</div>
 						<h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
-							Отчёты по складу
+							Отчёты по снабжению
 						</h1>
 						<p className="mt-1 max-w-2xl text-sm text-slate-500">
 							Единый отчет по движению, остаткам и закупочной стоимости без
@@ -258,10 +258,10 @@ export default function WarehouseReports() {
 			</section>
 
 			<Card className="rounded-3xl border-slate-200 shadow-sm">
-				<CardContent className="flex flex-col gap-4 p-5 xl:flex-row xl:items-center">
+				<CardContent className="am-toolbar p-5">
 					<PeriodPicker value={period} onChange={setPeriod} />
 					<Select value={reportType} onValueChange={setReportType}>
-						<SelectTrigger className="w-full xl:w-64">
+						<SelectTrigger className="w-64">
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
@@ -269,13 +269,13 @@ export default function WarehouseReports() {
 								<div className="flex items-center gap-2"><TrendingUp className="h-4 w-4" />Движение товаров</div>
 							</SelectItem>
 							<SelectItem value="inventory">
-								<div className="flex items-center gap-2"><Package className="h-4 w-4" />Остатки на складе</div>
+								<div className="flex items-center gap-2"><Package className="h-4 w-4" />Остатки снабжения</div>
 							</SelectItem>
 							<SelectItem value="turnover">
 								<div className="flex items-center gap-2"><BarChart className="h-4 w-4" />Оборачиваемость</div>
 							</SelectItem>
 							<SelectItem value="suppliers">
-								<div className="flex items-center gap-2"><FileText className="h-4 w-4" />Закупки у поставщиков</div>
+								<div className="flex items-center gap-2"><FileText className="h-4 w-4" />Поставки от поставщиков</div>
 							</SelectItem>
 						</SelectContent>
 					</Select>
@@ -314,7 +314,7 @@ export default function WarehouseReports() {
 				enableSearch
 				searchPlaceholder="Поиск по товару, контрагенту, документу..."
 				initialSorting={[{ id: "date", desc: true }]}
-				emptyState="За выбранный период движений по складу нет"
+				emptyState="За выбранный период движений по снабжению нет"
 			/>
 		</div>
 	);

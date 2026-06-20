@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ConstructionLoader } from "@/components/ui/construction-loader";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -49,9 +50,9 @@ export type TableDensity = "compact" | "normal" | "comfortable";
 type Persisted = TableViewLayout;
 
 const DENSITY_PADDING: Record<TableDensity, string> = {
-	compact: "py-1.5",
-	normal: "py-2.5",
-	comfortable: "py-4",
+	compact: "py-1",
+	normal: "py-2",
+	comfortable: "py-3",
 };
 
 export type DataTableColumnMeta = {
@@ -311,22 +312,22 @@ export function DataTable<T>({
 	);
 
 	return (
-		<div className="space-y-3">
+		<div className="space-y-2.5">
 			{!hideToolbar && (
-				<div className="am-shell-filter p-2 flex items-center gap-2 flex-wrap rounded-[24px]">
+				<div className="am-shell-filter am-table-toolbar rounded-[20px] p-1.5">
 				{toolbar}
 				{enableSearch && (
-					<div className="relative min-w-[220px] flex-1 sm:flex-none">
-						<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600" />
+					<div className="am-search-field min-w-[220px] w-[260px]">
+						<Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
 						<Input
 							value={globalFilter}
 							onChange={(e) => setGlobalFilter(e.target.value)}
 							placeholder={searchPlaceholder}
-							className="pl-8 h-10 w-full sm:w-64"
+							className="h-10 w-full truncate"
 						/>
 					</div>
 				)}
-				<div className="flex-1" />
+				<div className="min-w-3 flex-1" />
 				{toolbarEnd}
 				<div className="flex items-center gap-0.5 rounded-full border border-slate-200/90 bg-white/70 p-0.5 shadow-sm shadow-slate-950/5">
 					{densityBtn("compact", Rows4, "Компактно")}
@@ -400,10 +401,8 @@ export function DataTable<T>({
 			<div
 				ref={containerRef}
 				className={cn(
-					"overflow-auto",
-					isExcel
-						? "rounded-[24px] border border-slate-200/90 bg-white/86 shadow-xl shadow-slate-950/8 backdrop-blur-xl"
-						: "am-card rounded-[24px] border border-white/70 bg-white/80 shadow-xl shadow-slate-950/8 backdrop-blur-xl",
+					"am-table-wrap",
+					isExcel ? "rounded-[18px]" : "rounded-[18px]",
 				)}
 				style={maxHeight ? { maxHeight } : undefined}
 			>
@@ -423,7 +422,7 @@ export function DataTable<T>({
 								className={
 									isExcel
 										? "border-b border-slate-800/40 bg-slate-950 text-white"
-										: "border-b border-slate-200/70 bg-slate-900 text-white"
+										: "am-table-head border-b border-slate-200/70"
 								}
 							>
 								{showRowIndex && (
@@ -452,8 +451,8 @@ export function DataTable<T>({
 											className={cn(
 												"relative select-none group/col",
 												isExcel
-													? "border border-slate-800/70 bg-slate-950 py-2 px-2 font-bold text-white/72 whitespace-nowrap text-[10px] uppercase tracking-[0.12em] sticky top-0 z-20"
-													: "px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/78 whitespace-nowrap sticky top-0 z-20",
+													? "border border-slate-800/70 bg-slate-950 px-2 py-1.5 font-bold text-white/72 whitespace-nowrap text-[10px] uppercase tracking-[0.12em] sticky top-0 z-20"
+													: "px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-white/78 whitespace-nowrap sticky top-0 z-20",
 												align === "right"
 													? "text-right"
 													: align === "center"
@@ -468,7 +467,7 @@ export function DataTable<T>({
 													onClick={header.column.getToggleSortingHandler()}
 													className={cn(
 														"inline-flex items-center gap-1 uppercase tracking-wide",
-														canSort && "cursor-pointer hover:text-gray-600",
+														canSort && "cursor-pointer hover:text-white",
 														align === "right" && "flex-row-reverse",
 													)}
 												>
@@ -524,10 +523,7 @@ export function DataTable<T>({
 									colSpan={leafColumns.length + (showRowIndex ? 1 : 0)}
 									className="text-center py-16 text-slate-500"
 								>
-									<div className="mx-auto flex w-fit items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/80 px-4 py-3 shadow-sm">
-										<span className="h-4 w-4 animate-spin rounded-full border-2 border-cyan-600 border-t-transparent" />
-										Загрузка…
-									</div>
+									<ConstructionLoader className="mx-auto" size="sm" label="Загрузка…" />
 								</td>
 							</tr>
 						) : table.getRowModel().rows.length === 0 ? (
@@ -563,7 +559,7 @@ export function DataTable<T>({
 											? rowIndex % 2 === 0
 												? "bg-white/80"
 												: "bg-slate-50/80"
-											: "border-b border-slate-100/80 bg-white/70 transition-colors odd:bg-white/55",
+											: "am-table-row",
 										onRowClick && "cursor-pointer hover:bg-cyan-50/70",
 										rowClassName?.(row.original),
 									)}

@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	CheckSquare,
 	Download,
@@ -55,7 +55,13 @@ import { UnitDrawer } from "./UnitDrawer";
 import { useLegacyUnits, useSalesGridStats, useSalesGridUnits } from "./useUnits";
 import { useSalesGridState } from "./useSalesGridState";
 import { ViewSwitcher } from "./ViewSwitcher";
-import { kpiBucket, type SalesGridProject, type SalesGridUnit, type UnitsStats } from "./types";
+import {
+	kpiBucket,
+	type SalesGridProject,
+	type SalesGridUnit,
+	type UnitsAreaStats,
+	type UnitsStats,
+} from "./types";
 
 function computeStatsFromUnits(units: SalesGridUnit[]): UnitsStats {
 	const stats: UnitsStats = {
@@ -69,6 +75,26 @@ function computeStatsFromUnits(units: SalesGridUnit[]): UnitsStats {
 	};
 	for (const u of units) {
 		stats[kpiBucket(u.status)] += 1;
+	}
+	return stats;
+}
+
+function computeAreaStatsFromUnits(units: SalesGridUnit[]): UnitsAreaStats {
+	const stats: UnitsAreaStats = {
+		all: 0,
+		free: 0,
+		reserved: 0,
+		sold: 0,
+		settled: 0,
+		building: 0,
+		closed: 0,
+	};
+	for (const u of units) {
+		const area = parseFloat(String(u.area ?? "0"));
+		if (!Number.isFinite(area) || area <= 0) continue;
+		const bucket = kpiBucket(u.status);
+		stats.all += area;
+		stats[bucket] += area;
 	}
 	return stats;
 }
@@ -133,6 +159,25 @@ export default function SalesGrid() {
 
 	const statusGridMap = buildStatusGridCfg(unitStatuses);
 	const statusBadgeMap = buildStatusBadgeCfg(unitStatuses);
+	const terminateContractMut = useMutation({
+		mutationFn: (contractId: number) =>
+			api
+				.patch(`/construction/contracts-sales/${contractId}`, { status: "cancelled" })
+				.then((r) => r.data),
+		onSuccess: () => {
+			toast({ title: "Договор расторгнут" });
+			invalidateAll();
+			qc.invalidateQueries({ queryKey: ["construction-contracts-sales"] });
+			qc.invalidateQueries({ queryKey: ["construction-accruals"] });
+		},
+		onError: (err: unknown) => {
+			toast({
+				title: "Не удалось расторгнуть договор",
+				description: getApiErrorMessage(err, "Попробуйте открыть договор и изменить статус вручную"),
+				variant: "destructive",
+			});
+		},
+	});
 
 	const { data: projects = [] } = useQuery<SalesGridProject[]>({
 		queryKey: ["construction-projects"],
@@ -148,6 +193,7 @@ export default function SalesGrid() {
 		status: kpiFilter,
 		search,
 	});
+	const allUnitsQuery = useSalesGridUnits(projectId);
 	const legacyUnitsQuery = useLegacyUnits(projectId);
 	const useLegacy = gridUnitsQuery.isError && !gridUnitsQuery.isLoading;
 
@@ -158,12 +204,15 @@ export default function SalesGrid() {
 	const stats = statsQuery.isError
 		? computeStatsFromUnits(rawUnits ?? [])
 		: statsQuery.data;
+	const areaStats = computeAreaStatsFromUnits(
+		allUnitsQuery.isError ? (legacyUnitsQuery.data ?? []) : (allUnitsQuery.data ?? []),
+	);
 
 	const selectedProject = projects.find((p) => p.id === projectId);
 
 	const filteredUnits = useMemo(() => {
 		let list = rawUnits ?? [];
-		if (kpiFilter !== "all") {
+		if (useLegacy && kpiFilter !== "all") {
 			list = list.filter((u) => kpiBucket(u.status) === kpiFilter);
 		}
 		if (useLegacy && search.trim()) {
@@ -458,7 +507,7 @@ export default function SalesGrid() {
 					<div className="py-20 text-center text-slate-500">Выберите проект</div>
 				) : (
 					<>
-						<KpiRow stats={stats} active={kpiFilter} onSelect={setKpiFilter} />
+						<KpiRow stats={stats} areaStats={areaStats} active={kpiFilter} onSelect={setKpiFilter} />
 
 						{isPricingMode && (
 							<div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/50 p-2">
@@ -587,6 +636,11 @@ export default function SalesGrid() {
 										setSaleFlow({ unit: panelUnit as ChessDialogUnit, status });
 										setPanelUnitId(null);
 									}}
+									onTerminateContract={(contractId) => {
+										if (confirm("Расторгнуть договор и освободить юнит?")) {
+											terminateContractMut.mutate(contractId);
+										}
+									}}
 									onSaved={() => void refreshAll()}
 								/>
 							)}
@@ -613,6 +667,11 @@ export default function SalesGrid() {
 					onRequestSale={(status) => {
 						setSaleFlow({ unit: panelUnit as ChessDialogUnit, status });
 						setPanelUnitId(null);
+					}}
+					onTerminateContract={(contractId) => {
+						if (confirm("Расторгнуть договор и освободить юнит?")) {
+							terminateContractMut.mutate(contractId);
+						}
 					}}
 					onSaved={() => void refreshAll()}
 				/>

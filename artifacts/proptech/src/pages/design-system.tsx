@@ -180,7 +180,7 @@ export default function DesignSystemShowcase() {
 						{ title: "Юниты — продажа", keys: ["available", "reserved", "sold"] },
 						{ title: "Юниты — строительство", keys: ["under_construction", "commissioning", "commissioned"] },
 						{ title: "Аренда", keys: ["vacant", "occupied", "notice", "expired"] },
-						{ title: "Закуп / склад", keys: ["requested", "ordered", "awaiting_delivery", "delivered", "used"] },
+						{ title: "Снабжение", keys: ["requested", "ordered", "awaiting_delivery", "delivered", "used"] },
 						{ title: "Приоритеты", keys: ["low", "medium", "high", "critical"] },
 					].map((g) => (
 						<div key={g.title} className="mb-4">
@@ -304,7 +304,7 @@ export default function DesignSystemShowcase() {
 							{[
 								{ name: "Стройка", count: 41 },
 								{ name: "Аренда", count: 31 },
-								{ name: "Склад", count: 16 },
+								{ name: "Снабжение", count: 16 },
 								{ name: "CRM", count: 9 },
 								{ name: "Портал", count: 7 },
 								{ name: "Отчёты", count: 5 },

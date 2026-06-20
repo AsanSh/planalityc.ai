@@ -17,9 +17,9 @@ export default function WarehouseSettings() {
 		<div className="p-6 space-y-6">
 			{/* Header */}
 			<div>
-				<h1 className="text-3xl font-bold text-gray-900">Настройки склада</h1>
+				<h1 className="text-3xl font-bold text-gray-900">Настройки снабжения</h1>
 				<p className="text-gray-500 mt-1">
-					Управление параметрами работы склада
+					Управление параметрами работы снабжения
 				</p>
 			</div>
 
@@ -34,11 +34,11 @@ export default function WarehouseSettings() {
 				<CardContent className="space-y-6">
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div className="space-y-2 flex flex-col">
-							<Label className="leading-tight mb-1.5">Название склада</Label>
+							<Label className="leading-tight mb-1.5">Название контура снабжения</Label>
 							<Input
 								className="mt-auto"
-								placeholder="Центральный склад"
-								defaultValue="Центральный склад"
+								placeholder="Центральное снабжение"
+								defaultValue="Центральное снабжение"
 							/>
 						</div>
 
@@ -62,7 +62,7 @@ export default function WarehouseSettings() {
 						</div>
 
 						<div className="space-y-2 flex flex-col">
-							<Label className="leading-tight mb-1.5">Телефон склада</Label>
+							<Label className="leading-tight mb-1.5">Телефон снабжения</Label>
 							<Input placeholder="+996 555 123 456" />
 								className="mt-auto"
 						</div>

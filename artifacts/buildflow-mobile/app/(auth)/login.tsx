@@ -64,8 +64,8 @@ export default function LoginScreen() {
         <View style={styles.iconWrap}>
           <Feather name="home" size={28} color="#ffffff" />
         </View>
-        <Text style={styles.brand}>Planalityc.ai</Text>
-        <Text style={styles.sub}>Управление недвижимостью и арендой</Text>
+        <Text style={styles.brand}>BuildFlow</Text>
+        <Text style={styles.sub}>Платформа управления недвижимостью</Text>
       </View>
 
       <View style={[styles.card, { paddingBottom: botPad + 32 }]}>
@@ -84,7 +84,7 @@ export default function LoginScreen() {
             <Feather name="mail" size={16} color="#6c7a8d" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="user@company.kg"
+              placeholder="admin@buildflow.kz"
               placeholderTextColor="#9aa5b4"
               value={email}
               onChangeText={setEmail}

@@ -316,7 +316,7 @@ export default function Accruals() {
 	};
 
 	return (
-		<div className="p-6 space-y-4">
+		<div className="space-y-3">
 			<KpiRow>
 				<KpiCard variant="strip" label="Начислений" value={filtered.length} sub="за период" icon={Receipt} color="blue" loading={isLoading} />
 				<KpiCard variant="strip" label="Ожидают" value={filteredPending} sub={filteredOverdue > 0 ? `${filteredOverdue} просрочено` : "подтверждения"} icon={Clock} color="yellow" loading={isLoading} />
@@ -338,47 +338,6 @@ export default function Accruals() {
 				</div>
 			</div>
 
-			<div className="flex flex-wrap items-center gap-3">
-				<PeriodPicker value={period} onChange={setPeriod} />
-				<LeaseCombobox
-					value={leaseFilter}
-					onValueChange={setLeaseFilter}
-					leases={leases || []}
-				/>
-
-				<Select value={statusFilter} onValueChange={setStatusFilter}>
-					<SelectTrigger className="w-44 h-9">
-						<SelectValue placeholder="Все статусы" />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="all">Все статусы</SelectItem>
-						<SelectItem value="pending">Ожидает</SelectItem>
-						<SelectItem value="approved">Подтверждено</SelectItem>
-						<SelectItem value="partial">Частично</SelectItem>
-						<SelectItem value="paid">Оплачено</SelectItem>
-						<SelectItem value="overdue">Просрочено</SelectItem>
-						<SelectItem value="cancelled">Отменено</SelectItem>
-					</SelectContent>
-				</Select>
-
-				{leaseFilter !== "all" && (
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={handleRecalculate}
-						disabled={recalcLoading}
-						className="gap-2 text-blue-700 border-blue-300 hover:bg-blue-50"
-					>
-						<RefreshCw
-							className={cn("w-4 h-4", recalcLoading && "animate-spin")}
-						/>
-						{recalcLoading ? "Пересчёт..." : "Пересчитать начисления"}
-					</Button>
-				)}
-
-				<p className="text-xs text-gray-500 ml-auto">{enrichedAccruals.length} записей</p>
-			</div>
-
 			<DataTable
 					tableId="rental-accruals"
 					columns={tableColumns}
@@ -386,6 +345,49 @@ export default function Accruals() {
 					isLoading={isLoading}
 					enableSearch
 					searchPlaceholder="Поиск по объекту, договору…"
+					toolbar={
+						<>
+							<PeriodPicker value={period} onChange={setPeriod} className="shrink-0" />
+							<LeaseCombobox
+								value={leaseFilter}
+								onValueChange={setLeaseFilter}
+								leases={leases || []}
+							/>
+							<Select value={statusFilter} onValueChange={setStatusFilter}>
+								<SelectTrigger className="h-10 w-[168px]">
+									<SelectValue placeholder="Все статусы" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="all">Все статусы</SelectItem>
+									<SelectItem value="pending">Ожидает</SelectItem>
+									<SelectItem value="approved">Подтверждено</SelectItem>
+									<SelectItem value="partial">Частично</SelectItem>
+									<SelectItem value="paid">Оплачено</SelectItem>
+									<SelectItem value="overdue">Просрочено</SelectItem>
+									<SelectItem value="cancelled">Отменено</SelectItem>
+								</SelectContent>
+							</Select>
+							{leaseFilter !== "all" && (
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={handleRecalculate}
+									disabled={recalcLoading}
+									className="h-10 gap-2 text-blue-700 border-blue-300 hover:bg-blue-50"
+								>
+									<RefreshCw
+										className={cn("w-4 h-4", recalcLoading && "animate-spin")}
+									/>
+									{recalcLoading ? "Пересчёт..." : "Пересчитать"}
+								</Button>
+							)}
+						</>
+					}
+					toolbarEnd={
+						<span className="px-2 text-xs text-gray-500">
+							{enrichedAccruals.length} записей
+						</span>
+					}
 					initialSorting={[{ id: "dueDate", desc: true }]}
 					emptyState={
 						<div className="py-8 text-center text-sm text-muted-foreground">

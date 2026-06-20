@@ -68,7 +68,7 @@ export default function WarehouseEmployees() {
 							Доступ снабжения
 						</div>
 						<h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
-							Сотрудники склада
+							Сотрудники снабжения
 						</h1>
 						<p className="mt-1 max-w-2xl text-sm text-slate-500">
 							Список строится из реальных пользователей компании с доступом к модулю
@@ -174,7 +174,7 @@ export default function WarehouseEmployees() {
 				<Card className="rounded-3xl border-dashed border-slate-200 shadow-sm">
 					<CardContent className="flex flex-col items-center gap-3 p-10 text-center">
 						<UserCircle className="h-10 w-10 text-slate-300" />
-						<div className="text-lg font-bold text-slate-950">Нет пользователей с доступом к складу</div>
+						<div className="text-lg font-bold text-slate-950">Нет пользователей с доступом к снабжению</div>
 						<p className="max-w-md text-sm text-slate-500">
 							Откройте пользователей, назначьте роль или модуль снабжения, и сотрудник появится здесь.
 						</p>

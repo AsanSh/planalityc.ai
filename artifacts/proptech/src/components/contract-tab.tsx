@@ -396,7 +396,7 @@ export function ContractTab({ salesContractId, projectId, initialPayload }: Prop
 	const pronoun = buyer.gender === "м" ? "именуемый" : "именуемая";
 
 	return (
-		<div className="space-y-6">
+		<div className="min-w-0 space-y-6">
 			<div className="flex flex-wrap items-end justify-between gap-4">
 				<div>
 					<h3 className="font-semibold text-lg">Предварительный договор</h3>
@@ -451,8 +451,8 @@ export function ContractTab({ salesContractId, projectId, initialPayload }: Prop
 				</p>
 			)}
 
-			<div className="grid lg:grid-cols-2 gap-6">
-				<div className="space-y-4 border rounded-xl p-4 bg-gray-50/50">
+			<div className="grid min-w-0 gap-6 xl:grid-cols-2">
+				<div className="min-w-0 space-y-4 border rounded-xl p-4 bg-gray-50/50">
 					<div className="flex items-center justify-between gap-2">
 						<p className="text-xs font-semibold text-gray-500 uppercase">
 							Покупатель (для шаблона)
@@ -583,7 +583,7 @@ export function ContractTab({ salesContractId, projectId, initialPayload }: Prop
 					</div>
 				</div>
 
-				<div className="space-y-4 border rounded-xl p-4 bg-gray-50/50">
+				<div className="min-w-0 space-y-4 border rounded-xl p-4 bg-gray-50/50">
 					<p className="text-xs font-semibold text-gray-500 uppercase">
 						Помещение
 					</p>
@@ -680,9 +680,9 @@ export function ContractTab({ salesContractId, projectId, initialPayload }: Prop
 				</div>
 			</div>
 
-			<div className="overflow-auto bg-gray-200/60 p-6 rounded-xl max-h-[80vh] space-y-6">
+			<div className="max-w-full overflow-auto bg-gray-200/60 p-3 sm:p-6 rounded-xl max-h-[80vh] space-y-6">
 				<div
-					className="contract-preview bg-white mx-auto shadow-lg"
+					className="contract-preview bg-white mx-auto shadow-lg max-sm:mx-0"
 					style={{
 						width: "794px",
 						minHeight: "1123px",
@@ -725,7 +725,7 @@ export function ContractTab({ salesContractId, projectId, initialPayload }: Prop
 				</div>
 
 				<div
-					className="contract-preview bg-white mx-auto shadow-lg"
+					className="contract-preview bg-white mx-auto shadow-lg max-sm:mx-0"
 					style={{
 						width: "794px",
 						minHeight: "600px",

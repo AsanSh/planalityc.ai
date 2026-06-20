@@ -396,19 +396,19 @@ export default function Distributions() {
 
 			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				<div className="bg-white rounded-xl border border-gray-200 p-4">
-					<p className="text-xs text-gray-500 mb-1">Всего периодов</p>
-					<p className="text-2xl font-bold text-blue-600">
+					<p className="am-kpi-label mb-1">Всего периодов</p>
+					<p className="am-kpi-value text-2xl text-blue-600">
 						{distributions.length}
 					</p>
 				</div>
 				<div className="bg-white rounded-xl border border-gray-200 p-4">
-					<p className="text-xs text-gray-500 mb-1">Суммарная прибыль</p>
+					<p className="am-kpi-label mb-1">Суммарная прибыль</p>
 					<p className="text-lg font-bold text-emerald-600">
 						{fmtCurrency(totalNet)}
 					</p>
 				</div>
 				<div className="bg-white rounded-xl border border-gray-200 p-4">
-					<p className="text-xs text-gray-500 mb-1">Ожидает выплаты</p>
+					<p className="am-kpi-label mb-1">Ожидает выплаты</p>
 					<p className="text-lg font-bold text-amber-600">
 						{fmtCurrency(pendingNet)}
 					</p>

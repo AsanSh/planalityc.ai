@@ -553,7 +553,7 @@ export default function RentalODDS() {
 							Отчёт о движении денежных средств
 						</p>
 					</div>
-					<div className="flex flex-wrap items-center gap-2">
+					<div className="am-toolbar">
 						<Button
 							variant="outline"
 							size="sm"
@@ -572,7 +572,7 @@ export default function RentalODDS() {
 				</div>
 			</div>
 
-			<div className="overflow-auto rounded-[24px] border border-slate-200 bg-white shadow-sm">
+			<div className="am-table-wrap rounded-[18px] overflow-auto">
 				<table
 					className="border-collapse text-sm"
 					style={{ minWidth: `${360 + visibleMonths.length * 112 + 128}px` }}
@@ -609,7 +609,7 @@ export default function RentalODDS() {
 							return (
 								<tr
 									key={row.id}
-									className={`${rowClass(row)} hover:brightness-95`}
+									className={`${rowClass(row)} transition-colors hover:bg-cyan-50/70`}
 								>
 									<td
 										className={`py-1.5 pr-3 sticky left-0 z-10 border-r border-gray-200 ${stickyBg[row.type]}`}

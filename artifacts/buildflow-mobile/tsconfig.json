@@ -13,7 +13,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "types/env.d.ts"
+    "expo-env.d.ts"
   ],
   "references": [
     {

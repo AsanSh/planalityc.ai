@@ -184,7 +184,7 @@ export default function TenantDetail() {
 			<div className="flex items-center gap-4">
 				<button
 					onClick={() => navigate("/rental/tenants")}
-					className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
+					className="w-8 h-8 flex items-center justify-center hover:bg-cyan-50/70 rounded-lg transition-colors"
 				>
 					<ArrowLeft className="w-4 h-4 text-gray-600" />
 				</button>
@@ -492,7 +492,7 @@ export default function TenantDetail() {
 								{myContracts.map((c: any) => (
 									<tr
 										key={c.id}
-										className="border-b last:border-0 hover:bg-gray-50"
+										className="border-b last:border-0 hover:bg-cyan-50/70"
 									>
 										<td className="px-5 py-3">
 											<div className="flex items-center gap-2">
@@ -593,7 +593,7 @@ export default function TenantDetail() {
 										return (
 											<tr
 												key={p.id}
-												className="border-b last:border-0 hover:bg-gray-50"
+												className="border-b last:border-0 hover:bg-cyan-50/70"
 											>
 												<td className="px-5 py-3 text-gray-500 text-xs">
 													{fmtDate(p.paymentDate || p.createdAt)}

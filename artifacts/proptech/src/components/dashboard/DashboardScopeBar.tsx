@@ -55,13 +55,15 @@ export function DashboardScopeBar() {
 		scope.period.preset !== "all";
 
 	return (
-		<div className="flex flex-wrap items-center gap-2 py-2 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm">
-			<span className="text-xs font-medium text-gray-500 uppercase tracking-wide shrink-0">
-				Контекст
-			</span>
-			<span className="text-xs text-gray-600 shrink-0 hidden sm:inline">
-				{company?.name || "Холдинг"}
-			</span>
+		<div className="grid grid-cols-1 gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm lg:grid-cols-[auto_minmax(180px,240px)_minmax(220px,1fr)_auto_auto] lg:items-center">
+			<div className="flex min-w-0 items-center gap-2">
+				<span className="text-xs font-medium text-gray-500 uppercase tracking-wide shrink-0">
+					Контекст
+				</span>
+				<span className="hidden truncate text-xs text-gray-600 sm:inline lg:max-w-[150px] xl:max-w-[220px]">
+					{company?.name || "Холдинг"}
+				</span>
+			</div>
 
 			<Select
 				value={scope.legalEntityId != null ? String(scope.legalEntityId) : "all"}
@@ -72,7 +74,7 @@ export function DashboardScopeBar() {
 					})
 				}
 			>
-				<SelectTrigger className="h-8 w-[160px] bg-white text-xs">
+				<SelectTrigger className="h-8 !w-full bg-white text-xs lg:!w-[220px]">
 					<SelectValue placeholder="Все ОсОО" />
 				</SelectTrigger>
 				<SelectContent>
@@ -93,7 +95,7 @@ export function DashboardScopeBar() {
 					})
 				}
 			>
-				<SelectTrigger className="h-8 w-[180px] bg-white text-xs">
+				<SelectTrigger className="h-8 !w-full bg-white text-xs">
 					<SelectValue placeholder="Все проекты" />
 				</SelectTrigger>
 				<SelectContent>
@@ -109,7 +111,7 @@ export function DashboardScopeBar() {
 			<PeriodPicker
 				value={scope.period}
 				onChange={(period) => setScope({ period })}
-				className="h-8"
+				className="h-8 !w-full justify-start lg:!w-[280px] [&>button:nth-child(2)]:!min-w-0 [&>button:nth-child(2)]:!w-auto [&>button:nth-child(2)]:flex-1"
 			/>
 
 			{hasFilter && (
@@ -117,7 +119,7 @@ export function DashboardScopeBar() {
 					type="button"
 					variant="ghost"
 					size="sm"
-					className="h-8 text-xs text-gray-500"
+					className="h-8 justify-self-start text-xs text-gray-500 lg:justify-self-end"
 					onClick={resetScope}
 				>
 					<X className="w-3.5 h-3.5 mr-1" />

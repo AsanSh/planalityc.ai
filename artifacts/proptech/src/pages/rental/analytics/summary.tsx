@@ -251,7 +251,7 @@ function ImportModal({ rows, onClose, onDone }: { rows: ImportRow[]; onClose: ()
 				<div className="flex justify-end gap-2 px-5 py-3 border-t border-gray-100 flex-shrink-0">
 					{step === "preview" && (
 						<>
-							<button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Отмена</button>
+							<button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-cyan-50/70 rounded-lg transition-colors">Отмена</button>
 							<button onClick={startImport} className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2">
 								<Upload className="w-4 h-4" /> Импортировать {rows.length} записей
 							</button>
@@ -391,7 +391,7 @@ function EditRowDialog({ row, onClose, onSaved }: { row: EditRow; onClose: () =>
 					{error && <p className="text-xs text-rose-600">{error}</p>}
 				</div>
 				<div className="flex justify-end gap-2 px-5 py-3 border-t">
-					<button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Отмена</button>
+					<button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-cyan-50/70 rounded-lg transition-colors">Отмена</button>
 					<button onClick={save} disabled={saving}
 						className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50">
 						{saving && <Loader2 className="w-4 h-4 animate-spin" />} Сохранить
@@ -636,33 +636,33 @@ export default function RentalSummary() {
 
 			<div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 flex-shrink-0">
 				<div className="bg-white rounded-xl border border-gray-200 p-4">
-					<div className="flex items-center gap-2 mb-1.5"><Building2 className="w-4 h-4 text-blue-500" /><span className="text-xs text-gray-500">Объектов</span></div>
-					<p className="text-2xl font-bold text-gray-900">{totalProps}</p>
+					<div className="flex items-center gap-2 mb-1.5"><Building2 className="w-4 h-4 text-blue-500" /><span className="am-kpi-label">Объектов</span></div>
+					<p className="am-kpi-value text-2xl text-gray-900">{totalProps}</p>
 					<p className="text-xs text-gray-600 mt-0.5">{activeRows.length} арендуется</p>
 				</div>
 				<div className="bg-white rounded-xl border border-gray-200 p-4">
-					<div className="flex items-center gap-2 mb-1.5"><Percent className="w-4 h-4 text-emerald-700" /><span className="text-xs text-gray-500">Заполн.</span></div>
-					<p className="text-2xl font-bold text-emerald-700">{occupancy}%</p>
+					<div className="flex items-center gap-2 mb-1.5"><Percent className="w-4 h-4 text-emerald-700" /><span className="am-kpi-label">Заполн.</span></div>
+					<p className="am-kpi-value text-2xl text-emerald-700">{occupancy}%</p>
 					<div className="mt-1.5 bg-gray-100 rounded-full h-1.5"><div className="bg-emerald-600 h-1.5 rounded-full" style={{ width: `${occupancy}%` }} /></div>
 				</div>
 				<div className="bg-white rounded-xl border border-gray-200 p-4">
-					<div className="flex items-center gap-2 mb-1.5"><TrendingUp className="w-4 h-4 text-blue-500" /><span className="text-xs text-gray-500">Взносы/мес</span></div>
-					<p className="text-lg font-bold text-gray-900 truncate">{fmtNum(totalRent)} с</p>
+					<div className="flex items-center gap-2 mb-1.5"><TrendingUp className="w-4 h-4 text-blue-500" /><span className="am-kpi-label">Взносы/мес</span></div>
+					<p className="am-kpi-value text-lg text-gray-900 truncate">{fmtNum(totalRent)} с</p>
 					<p className="text-xs text-gray-600 mt-0.5">актив. договоры</p>
 				</div>
 				<div className="bg-white rounded-xl border border-gray-200 p-4">
-					<div className="flex items-center gap-2 mb-1.5"><Users className="w-4 h-4 text-purple-700" /><span className="text-xs text-gray-500">Договоров</span></div>
-					<p className="text-2xl font-bold text-gray-900">{rows.length}</p>
+					<div className="flex items-center gap-2 mb-1.5"><Users className="w-4 h-4 text-purple-700" /><span className="am-kpi-label">Договоров</span></div>
+					<p className="am-kpi-value text-2xl text-gray-900">{rows.length}</p>
 					<p className="text-xs text-gray-600 mt-0.5">{activeRows.length} активных</p>
 				</div>
 				<div className={cn("rounded-xl border p-4", expiringIn30 > 0 ? "bg-amber-50 border-amber-200" : "bg-white border-gray-200")}>
-					<div className="flex items-center gap-2 mb-1.5"><AlertTriangle className={cn("w-4 h-4", expiringIn30 > 0 ? "text-amber-500" : "text-gray-300")} /><span className="text-xs text-gray-500">Истекают ≤30д</span></div>
-					<p className={cn("text-2xl font-bold", expiringIn30 > 0 ? "text-amber-700" : "text-gray-300")}>{expiringIn30}</p>
+					<div className="flex items-center gap-2 mb-1.5"><AlertTriangle className={cn("w-4 h-4", expiringIn30 > 0 ? "text-amber-500" : "text-gray-300")} /><span className="am-kpi-label">Истекают ≤30д</span></div>
+					<p className={cn("am-kpi-value text-2xl", expiringIn30 > 0 ? "text-amber-700" : "text-gray-300")}>{expiringIn30}</p>
 					<p className="text-xs text-gray-600 mt-0.5">договоров</p>
 				</div>
 				<div className="bg-white rounded-xl border border-gray-200 p-4">
-					<div className="flex items-center gap-2 mb-1.5"><Percent className="w-4 h-4 text-green-500" /><span className="text-xs text-gray-500">Ср. ROI мес</span></div>
-					<p className={cn("text-2xl font-bold", avgRoi != null ? "text-emerald-700" : "text-gray-300")}>
+					<div className="flex items-center gap-2 mb-1.5"><Percent className="w-4 h-4 text-green-500" /><span className="am-kpi-label">Ср. ROI мес</span></div>
+					<p className={cn("am-kpi-value text-2xl", avgRoi != null ? "text-emerald-700" : "text-gray-300")}>
 						{avgRoi != null ? `${avgRoi.toFixed(2)}%` : "—"}
 					</p>
 					<p className="text-xs text-gray-600 mt-0.5">{roiRows.length} объектов</p>
@@ -694,7 +694,7 @@ export default function RentalSummary() {
 							<PopoverTrigger asChild>
 								<button
 									type="button"
-									className="inline-flex items-center gap-1.5 h-8 px-3 rounded border border-am-border bg-am-surface text-xs font-medium text-am-text-muted hover:bg-gray-50 transition-colors"
+									className="inline-flex items-center gap-1.5 h-8 px-3 rounded border border-am-border bg-am-surface text-xs font-medium text-am-text-muted hover:bg-cyan-50/70 transition-colors"
 								>
 									<Columns className="w-3.5 h-3.5" /> Столбцы
 								</button>
@@ -706,7 +706,7 @@ export default function RentalSummary() {
 								{COLUMNS.map((col) => (
 									<label
 										key={col.key}
-										className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer"
+										className="flex items-center gap-2 px-2 py-1 rounded hover:bg-cyan-50/70 cursor-pointer"
 									>
 										<input
 											type="checkbox"
@@ -756,7 +756,7 @@ export default function RentalSummary() {
 					<thead>
 						<tr>
 							<th
-								className={`border border-gray-300 ${MATRIX_TH} text-center sticky top-0 left-0 z-30 shadow-[0_1px_0_0_#d1d5db] w-10 bg-gray-50/95`}
+								className={`border border-slate-800 ${MATRIX_TH} text-center sticky top-0 left-0 z-30 shadow-none w-10 bg-slate-950`}
 							>
 								#
 							</th>
@@ -766,15 +766,15 @@ export default function RentalSummary() {
 								<th
 									key={col.key}
 									onClick={() => handleSort(col.key)}
-									className={`border border-gray-300 ${MATRIX_TH} text-left cursor-pointer select-none hover:bg-gray-100 transition-colors sticky top-0 z-20 shadow-[0_1px_0_0_#d1d5db] relative bg-gray-50/95`}
+									className={`border border-slate-800 ${MATRIX_TH} text-left cursor-pointer select-none hover:bg-slate-800 transition-colors sticky top-0 z-20 shadow-none relative bg-slate-950`}
 									style={{ width: w, minWidth: w, maxWidth: w }}
 								>
 									<span className="inline-flex items-center gap-1 pr-1">
 										{col.label}
-										{sortKey === col.key ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3 text-blue-600" /> : <ChevronDown className="w-3 h-3 text-blue-600" />) : <ChevronsUpDown className="w-3 h-3 text-gray-300" />}
+										{sortKey === col.key ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3 text-cyan-300" /> : <ChevronDown className="w-3 h-3 text-cyan-300" />) : <ChevronsUpDown className="w-3 h-3 text-white/35" />}
 									</span>
 									<div
-										className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize hover:bg-blue-400 z-30"
+										className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize hover:bg-cyan-400 z-30"
 										onMouseDown={startResize(col.key)}
 										onClick={(e) => e.stopPropagation()}
 									/>
@@ -799,7 +799,7 @@ export default function RentalSummary() {
 							const isExpired    = row.endDate && new Date(row.endDate) < new Date();
 							const isEndingSoon = row.daysLeft != null && row.daysLeft >= 0 && row.daysLeft <= 30;
 							return (
-								<tr key={row.id} className={cn(bg, "hover:bg-[#EEF2FF] transition-colors group/row")}>
+								<tr key={row.id} className={cn(bg, "transition-colors hover:bg-cyan-50/70 group/row")}>
 									<td className="border border-gray-200 text-center text-gray-600 py-1 px-2 sticky left-0 z-10 select-none" style={{ background: "inherit" }}>
 										<span className="inline-flex items-center gap-1">
 											{i + 1}

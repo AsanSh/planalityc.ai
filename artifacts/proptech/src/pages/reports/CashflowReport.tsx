@@ -137,26 +137,28 @@ export default function CashflowReport() {
 	return (
 		<div className="space-y-6">
 			<div className="space-y-3">
-				<div className="flex items-center justify-between flex-wrap gap-3">
+				<div className="flex items-center justify-between gap-3">
 					<div>
 						<h1 className="text-2xl font-bold text-gray-900">Денежный поток</h1>
 						<p className="text-sm text-gray-500 mt-1">
 							Поступления и расходы за период
 						</p>
 					</div>
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => refetch()}
-						disabled={isLoading}
-					>
-						<RefreshCw
-							className={cn("w-4 h-4 mr-2", isLoading && "animate-spin")}
-						/>{" "}
-						Обновить
-					</Button>
+					<div className="am-toolbar">
+						<PeriodPicker value={period} onChange={setPeriod} />
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => refetch()}
+							disabled={isLoading}
+						>
+							<RefreshCw
+								className={cn("w-4 h-4 mr-2", isLoading && "animate-spin")}
+							/>{" "}
+							Обновить
+						</Button>
+					</div>
 				</div>
-				<PeriodPicker value={period} onChange={setPeriod} />
 			</div>
 
 			<div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -179,11 +179,13 @@ export default function ConstructionOverdue() {
 							Реестр просроченных платежей по договорам
 						</p>
 					</div>
-					<DateRangePicker value={period} onChange={setPeriod} />
+					<div className="am-toolbar">
+						<DateRangePicker value={period} onChange={setPeriod} />
+					</div>
 				</div>
 			</div>
 
-			<div className="mb-5 grid gap-3 md:grid-cols-3">
+			<div className="am-kpi-surface mb-5 grid gap-3 md:grid-cols-3">
 				<div className="rounded-lg border border-rose-100 bg-rose-50 p-4 shadow-sm">
 					<div className="mb-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-rose-600">
 						<AlertTriangle className="w-3 h-3" />

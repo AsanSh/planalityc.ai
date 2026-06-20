@@ -12,12 +12,25 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { apiFetch, formatCurrency } from "@/lib/api";
-import {
-  parseCashflow,
-  parseDebtReport,
-  parseRentalSummary,
-} from "@/lib/api-adapters";
 import { useColors } from "@/hooks/useColors";
+
+interface DebtReport {
+  totalDebt: string;
+  debtorsCount: number;
+  items?: { tenantName: string; amount: string; contractId: number }[];
+}
+interface RentalSummary {
+  totalCharged: string;
+  totalPaid: string;
+  collectionRate: number;
+  periodFrom?: string;
+  periodTo?: string;
+}
+interface CashflowReport {
+  totalInflow: string;
+  totalOutflow: string;
+  netFlow: string;
+}
 
 export default function ReportsScreen() {
   const colors = useColors();
@@ -31,17 +44,15 @@ export default function ReportsScreen() {
 
   const { data: debt, isLoading: ld, refetch: rd } = useQuery({
     queryKey: ["debt-report"],
-    queryFn: async () => parseDebtReport(await apiFetch("/reports/debt")),
+    queryFn: () => apiFetch<DebtReport>("/reports/debt"),
   });
   const { data: rental, isLoading: lr, refetch: rr } = useQuery({
     queryKey: ["rental-summary", from, to],
-    queryFn: async () =>
-      parseRentalSummary(await apiFetch(`/reports/rental-summary?from=${from}&to=${to}`)),
+    queryFn: () => apiFetch<RentalSummary>(`/reports/rental-summary?from=${from}&to=${to}`),
   });
   const { data: cashflow, isLoading: lc, refetch: rc } = useQuery({
     queryKey: ["cashflow", from, to],
-    queryFn: async () =>
-      parseCashflow(await apiFetch(`/reports/cashflow?from=${from}&to=${to}`)),
+    queryFn: () => apiFetch<CashflowReport>(`/reports/cashflow?from=${from}&to=${to}`),
   });
 
   const isLoading = ld || lr || lc;
@@ -56,7 +67,7 @@ export default function ReportsScreen() {
   }
 
   const collRate = rental?.collectionRate ?? 0;
-  const netFlow = cashflow?.netFlow ?? 0;
+  const netFlow = parseFloat(cashflow?.netFlow ?? "0");
 
   return (
     <View style={[s.container, { backgroundColor: colors.background }]}>
@@ -121,7 +132,7 @@ export default function ReportsScreen() {
         {(debt?.items ?? []).length > 0 && (
           <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[s.cardTitle, { color: colors.foreground }]}>Должники</Text>
-            {(debt!.items).slice(0, 5).map((item, i) => (
+            {(debt!.items!).slice(0, 5).map((item, i) => (
               <View key={i} style={[s.debtRow, { borderTopColor: colors.border }]}>
                 <Text style={[s.debtName, { color: colors.foreground }]} numberOfLines={1}>
                   {item.tenantName}

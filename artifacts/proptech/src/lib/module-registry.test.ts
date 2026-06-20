@@ -12,7 +12,7 @@ describe("module-registry", () => {
 		assert.equal(moduleIdFromSettingsKey("construction"), "construction");
 		assert.equal(moduleIdFromSettingsKey("sales"), "construction");
 		assert.equal(moduleIdFromSettingsKey("finance"), "finance");
-		assert.equal(moduleIdFromSettingsKey("reports"), "finance");
+		assert.equal(moduleIdFromSettingsKey("reports"), "reports");
 		assert.equal(moduleIdFromSettingsKey("crm"), "proptech");
 		assert.equal(moduleIdFromSettingsKey("warehouse"), "warehouse");
 		assert.equal(moduleIdFromSettingsKey("rental"), "rental");
@@ -24,7 +24,7 @@ describe("module-registry", () => {
 		assert.deepEqual(settingsKeysToModuleIds(["warehouse"]), ["warehouse"]);
 		assert.deepEqual(
 			settingsKeysToModuleIds(["construction", "sales", "reports"]),
-			["construction", "finance", "consolidated"],
+			["construction", "reports", "consolidated"],
 		);
 		assert.deepEqual(
 			settingsKeysToModuleIds(["construction", "warehouse", "crm"]),

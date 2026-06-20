@@ -35,6 +35,8 @@
     { "idx": 30, "version": "7", "when": 1780030000000, "tag": "0030_rental_payments_account_amount", "breakpoints": true },
     { "idx": 31, "version": "7", "when": 1780035000000, "tag": "0031_unit_sale_pricing_gate", "breakpoints": true },
     { "idx": 32, "version": "7", "when": 1780040000000, "tag": "0032_payroll_legal_entity", "breakpoints": true },
-    { "idx": 33, "version": "7", "when": 1780045000000, "tag": "0033_project_area_fields", "breakpoints": true }
+    { "idx": 33, "version": "7", "when": 1780045000000, "tag": "0033_project_area_fields", "breakpoints": true },
+    { "idx": 34, "version": "7", "when": 1780050000000, "tag": "0034_rental_property_legal_entity", "breakpoints": true },
+    { "idx": 35, "version": "7", "when": 1780055000000, "tag": "0035_registration_verifications", "breakpoints": true }
   ]
 }

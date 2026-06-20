@@ -107,18 +107,18 @@ export default function RentalCashflow() {
 				<div className="bg-white border rounded-lg p-4">
 					<div className="flex items-center gap-2 mb-1">
 						<ArrowUpRight className="w-4 h-4 text-emerald-600" />
-						<span className="text-sm text-gray-500">Поступления</span>
+						<span className="am-kpi-label">Поступления</span>
 					</div>
-					<p className="text-xl font-bold text-emerald-600">
+					<p className="am-kpi-value text-xl text-emerald-600">
 						{fmtFull(totalIncome)}
 					</p>
 				</div>
 				<div className="bg-white border rounded-lg p-4">
 					<div className="flex items-center gap-2 mb-1">
 						<ArrowDownRight className="w-4 h-4 text-rose-600" />
-						<span className="text-sm text-gray-500">Расходы</span>
+						<span className="am-kpi-label">Расходы</span>
 					</div>
-					<p className="text-xl font-bold text-rose-700">
+					<p className="am-kpi-value text-xl text-rose-700">
 						{fmtFull(totalExpense)}
 					</p>
 				</div>
@@ -129,10 +129,10 @@ export default function RentalCashflow() {
 						) : (
 							<TrendingDown className="w-4 h-4 text-amber-600" />
 						)}
-						<span className="text-sm text-gray-500">Чистый поток</span>
+						<span className="am-kpi-label">Чистый поток</span>
 					</div>
 					<p
-						className={`text-xl font-bold ${net >= 0 ? "text-blue-600" : "text-amber-600"}`}
+						className={`am-kpi-value text-xl ${net >= 0 ? "text-blue-600" : "text-amber-600"}`}
 					>
 						{fmtFull(net)}
 					</p>

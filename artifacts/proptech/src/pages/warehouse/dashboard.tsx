@@ -108,14 +108,14 @@ export default function WarehouseDashboard() {
 	return (
 		<div className="p-6 space-y-6">
 			<div>
-				<h1 className="text-2xl font-bold">Склад - Панель управления</h1>
+				<h1 className="text-2xl font-bold">Снабжение - Панель управления</h1>
 				<p className="text-muted-foreground text-sm">
-					Обзор складских операций и остатков
+					Обзор операций снабжения и остатков
 				</p>
 			</div>
 
 			{/* KPI Cards */}
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+			<div className="am-kpi-surface grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 				<KPICard
 					title="Всего позиций"
 					value={dashboardData?.totalItems ?? 0}

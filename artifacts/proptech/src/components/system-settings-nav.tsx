@@ -6,6 +6,7 @@ import {
 	CheckSquare,
 	Coins,
 	Landmark,
+	Layers,
 	Settings,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
@@ -19,6 +20,7 @@ export const SYSTEM_SETTINGS_LINKS = [
 	{ href: "/settings/periods", label: "Периоды учёта", icon: CalendarDays },
 	{ href: "/import", label: "Импорт данных", icon: Calculator },
 	{ href: "/activity", label: "Лог действий", icon: Activity },
+	{ href: "/design-system", label: "Дизайн-система", icon: Layers },
 ] as const;
 
 export function SystemSettingsBar() {

@@ -223,34 +223,34 @@ export default function RentalForecast() {
 				<div className="bg-white border rounded-xl p-4">
 					<div className="flex items-center gap-2 mb-1">
 						<TrendingUp className="w-4 h-4 text-blue-500" />
-						<span className="text-xs text-gray-500">
+						<span className="am-kpi-label">
 							Ожидается за {horizon} мес.
 						</span>
 					</div>
-					<p className="text-xl font-bold text-blue-600">
+					<p className="am-kpi-value text-xl text-blue-600">
 						{fmtKGS(totalExpected)} сом
 					</p>
 				</div>
 				<div className="bg-white border rounded-xl p-4">
 					<div className="flex items-center gap-2 mb-1">
 						<CalendarClock className="w-4 h-4 text-emerald-600" />
-						<span className="text-xs text-gray-500">Активных договоров</span>
+						<span className="am-kpi-label">Активных договоров</span>
 					</div>
-					<p className="text-xl font-bold text-emerald-600">{rows.length}</p>
+					<p className="am-kpi-value text-xl text-emerald-600">{rows.length}</p>
 				</div>
 				<div className="bg-white border rounded-xl p-4">
 					<div className="flex items-center gap-2 mb-1">
 						<CheckCircle className="w-4 h-4 text-emerald-600" />
-						<span className="text-xs text-gray-500">Оплачено периодов</span>
+						<span className="am-kpi-label">Оплачено периодов</span>
 					</div>
-					<p className="text-xl font-bold text-emerald-600">{paidCount}</p>
+					<p className="am-kpi-value text-xl text-emerald-600">{paidCount}</p>
 				</div>
 				<div className="bg-white border rounded-xl p-4">
 					<div className="flex items-center gap-2 mb-1">
 						<AlertTriangle className="w-4 h-4 text-rose-600" />
-						<span className="text-xs text-gray-500">Просроченных</span>
+						<span className="am-kpi-label">Просроченных</span>
 					</div>
-					<p className="text-xl font-bold text-rose-600">{overdueCount}</p>
+					<p className="am-kpi-value text-xl text-rose-600">{overdueCount}</p>
 				</div>
 			</div>
 
@@ -361,7 +361,7 @@ export default function RentalForecast() {
 								return (
 									<tr
 										key={row.contract.id}
-										className={`border-b ${idx % 2 === 0 ? "bg-white" : "bg-gray-50/30"}`}
+										className={`border-b transition-colors hover:bg-cyan-50/70 ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/80"}`}
 									>
 										<td className="p-3 sticky left-0 bg-inherit font-medium text-gray-900 border-r">
 											<p className="font-medium">

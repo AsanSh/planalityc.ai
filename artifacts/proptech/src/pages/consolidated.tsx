@@ -15,7 +15,7 @@ import { api } from "@/lib/api";
 const MODULE_LABELS: Record<string, string> = {
 	arenda: "Аренда",
 	kontrol: "Контроль строительства",
-	zakup: "Закуп",
+	zakup: "Снабжение",
 	crm: "CRM / Продажи",
 };
 

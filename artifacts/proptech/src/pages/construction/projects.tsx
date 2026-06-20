@@ -11,6 +11,7 @@ import {
 	MapPin,
 	Plus,
 	Trash2,
+	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -54,7 +55,7 @@ const BUILD_TYPES = [
 	{ value: "apartment", label: "Жилой дом (квартиры)" },
 	{ value: "commercial", label: "Коммерческая недвижимость" },
 	{ value: "office", label: "Офисный центр" },
-	{ value: "warehouse", label: "Склад" },
+	{ value: "warehouse", label: "Снабжение" },
 	{ value: "mixed", label: "Многофункциональный" },
 	{ value: "cottage", label: "Коттедж / дача" },
 ];
@@ -90,6 +91,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 interface Project {
 	id: number;
+	legalEntityId?: number | null;
 	name: string;
 	address?: string;
 	region?: string;
@@ -113,6 +115,13 @@ interface Project {
 	contractTemplateMeta?: string | Record<string, unknown> | null;
 	createdAt: string;
 }
+
+type LegalEntity = {
+	id: number;
+	name: string;
+	fullLegalName?: string | null;
+	isActive?: boolean | null;
+};
 
 function parseContractTemplateMeta(
 	raw: string | Record<string, unknown> | null | undefined,
@@ -144,6 +153,7 @@ function parseDocumentMeta(
 }
 
 const emptyForm = () => ({
+	legalEntityId: "",
 	name: "",
 	address: "",
 	region: "",
@@ -178,6 +188,11 @@ function ProjectDialog({
 	onRequestDocUpload?: () => void;
 }) {
 	const { toast } = useToast();
+	const { data: legalEntitiesRaw = [] } = useQuery<LegalEntity[]>({
+		queryKey: ["legal-entities"],
+		queryFn: () => api.get("/legal-entities").then((r) => r.data),
+	});
+	const legalEntities = legalEntitiesRaw.filter((entity) => entity.isActive !== false);
 	const isEdit = project && project !== "new";
 	const init = isEdit ? (project as Project) : null;
 	const [form, setForm] = useState(() => {
@@ -187,6 +202,7 @@ function ProjectDialog({
 		}
 		if (init) {
 			return {
+				legalEntityId: init.legalEntityId != null ? String(init.legalEntityId) : "",
 				name: init.name,
 				address: init.address || "",
 				region: init.region || "",
@@ -220,6 +236,7 @@ function ProjectDialog({
 	);
 	const [templateUploading, setTemplateUploading] = useState(false);
 	const [loading, setLoading] = useState(false);
+	const [isDesktopDrawer, setIsDesktopDrawer] = useState(false);
 	const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
 	useEffect(() => {
@@ -228,6 +245,19 @@ function ProjectDialog({
 		setForm((f) => ({ ...f, ...rest }));
 		if (dm) setDocumentMeta(dm);
 	}, [prefill]);
+
+	useEffect(() => {
+		if (form.legalEntityId || !legalEntities[0]) return;
+		set("legalEntityId", String(legalEntities[0].id));
+	}, [form.legalEntityId, legalEntities]);
+
+	useEffect(() => {
+		const mq = window.matchMedia("(min-width: 768px)");
+		const update = () => setIsDesktopDrawer(mq.matches);
+		update();
+		mq.addEventListener("change", update);
+		return () => mq.removeEventListener("change", update);
+	}, []);
 
 	const areaStr = form.totalConstructionArea || form.totalArea || "0";
 	const area = parseFloat(areaStr);
@@ -247,8 +277,8 @@ function ProjectDialog({
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!form.name.trim()) {
-			toast({ title: "Укажите название проекта", variant: "destructive" });
+		if (!form.legalEntityId || !form.name.trim()) {
+			toast({ title: "Выберите ОсОО и укажите название проекта", variant: "destructive" });
 			return;
 		}
 		setLoading(true);
@@ -324,14 +354,8 @@ function ProjectDialog({
 		}
 	};
 
-	return (
-		<Dialog open={!!project} onOpenChange={(v) => !v && onClose()}>
-			<DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-				<DialogHeader>
-					<DialogTitle>
-						{isEdit ? "Редактировать проект" : "Новый строительный проект"}
-					</DialogTitle>
-				</DialogHeader>
+	const title = isEdit ? "Редактировать проект" : "Новый строительный проект";
+	const formContent = (
 				<form onSubmit={handleSubmit} className="space-y-5">
 					{onRequestDocUpload && (
 						<Button
@@ -355,6 +379,24 @@ function ProjectDialog({
 							Основное
 						</p>
 						<div className="grid gap-3 sm:grid-cols-2">
+							<div className="sm:col-span-2 flex flex-col">
+								<Label className="leading-tight mb-1.5">ОсОО *</Label>
+								<Select
+									value={form.legalEntityId || undefined}
+									onValueChange={(v) => set("legalEntityId", v)}
+								>
+									<SelectTrigger className="mt-auto">
+										<SelectValue placeholder="Выберите ОсОО" />
+									</SelectTrigger>
+									<SelectContent>
+										{legalEntities.map((entity) => (
+											<SelectItem key={entity.id} value={String(entity.id)}>
+												{entity.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
 							<div className="sm:col-span-2 flex flex-col">
 								<Label className="leading-tight mb-1.5">Название проекта *</Label>
 								<Input
@@ -767,11 +809,57 @@ function ProjectDialog({
 									: "Создать проект"}
 						</Button>
 					</div>
-				</form>
+					</form>
+	);
+
+	if (!project) return null;
+
+	if (isDesktopDrawer) {
+		return (
+			<>
+				<button
+					type="button"
+					aria-label="Закрыть редактор проекта"
+					className="fixed inset-0 z-30 cursor-default bg-transparent"
+					onClick={onClose}
+				/>
+				<aside className="fixed bottom-4 right-4 top-4 z-40 flex w-[min(560px,calc(100vw-32px))] flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-2xl shadow-slate-950/20">
+					<div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+						<div>
+							<h2 className="text-xl font-bold text-slate-950">{title}</h2>
+							<p className="mt-0.5 text-sm text-slate-500">
+								Карточка проекта открыта справа, без перехода из списка
+							</p>
+						</div>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="h-9 w-9 shrink-0 rounded-full"
+							onClick={onClose}
+						>
+							<X className="h-5 w-5" />
+						</Button>
+					</div>
+					<div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+						{formContent}
+					</div>
+				</aside>
+			</>
+		);
+	}
+
+	return (
+		<Dialog open={!!project} onOpenChange={(v) => !v && onClose()}>
+			<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+				<DialogHeader>
+					<DialogTitle>{title}</DialogTitle>
+				</DialogHeader>
+				{formContent}
 			</DialogContent>
 		</Dialog>
 	);
-}
+	}
 
 export default function ConstructionProjects() {
 	const queryClient = useQueryClient();
@@ -858,10 +946,10 @@ export default function ConstructionProjects() {
 	);
 
 	return (
-		<div className="am-page space-y-5">
-			<div className="am-page-header">
+		<div className="am-page space-y-4">
+			<div className="flex flex-col gap-3 border-b border-am-border bg-transparent pb-4 lg:flex-row lg:items-end lg:justify-between">
 				<div>
-					<h1 className="am-page-title text-2xl">
+					<h1 className="am-page-title text-2xl leading-tight">
 						Строительные проекты
 					</h1>
 					<p className="am-page-subtitle text-sm">
@@ -872,7 +960,7 @@ export default function ConstructionProjects() {
 					<Button
 						variant="outline"
 						onClick={() => setDocUploadOpen(true)}
-						className="gap-2"
+						className="h-9 gap-2 rounded-md"
 					>
 						<FileUp className="w-4 h-4" /> Из документа
 					</Button>
@@ -881,7 +969,7 @@ export default function ConstructionProjects() {
 							setPrefill(null);
 							setDialog("new");
 						}}
-						className="bg-amber-500 hover:bg-orange-600 gap-2"
+						className="h-9 gap-2 rounded-md bg-amber-500 hover:bg-amber-600"
 					>
 						<Plus className="w-4 h-4" /> Новый проект
 					</Button>
@@ -889,9 +977,9 @@ export default function ConstructionProjects() {
 			</div>
 
 			<Tabs value={pageTab} onValueChange={setPageTab}>
-				<TabsList className="mb-4">
+				<TabsList className="mb-3 h-9 rounded-md border border-am-border bg-white p-1 shadow-sm">
 					<TabsTrigger value="cards">Карточки</TabsTrigger>
-					<TabsTrigger value="progress">ПРОГРЕСС</TabsTrigger>
+					<TabsTrigger value="progress">Прогресс</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="progress" className="mt-0">

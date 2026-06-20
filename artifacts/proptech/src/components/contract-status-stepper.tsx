@@ -105,38 +105,37 @@ export function ContractStatusStepper({
 	}
 
 	return (
-		<div className="rounded-xl border border-gray-200 bg-gradient-to-b from-gray-50/80 to-white p-4 space-y-4">
-			<div className="flex flex-wrap items-start justify-between gap-2">
+		<div className="rounded-2xl border border-cyan-100 bg-gradient-to-br from-white via-cyan-50/35 to-slate-50 p-4 shadow-sm space-y-4">
+			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div>
-					<p className="text-sm font-semibold text-gray-900">
+					<p className="text-sm font-semibold text-slate-950">
 						Этап сделки по договору
 					</p>
-					<p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+					<p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
 						<UserCircle className="w-3.5 h-3.5 shrink-0" />
-						Меняет <span className="font-medium text-gray-700">менеджер продаж</span>{" "}
-						— нажмите этап или кнопку ниже
+						Меняет <span className="font-medium text-slate-700">менеджер продаж</span>
 					</p>
 				</div>
 				{currentIdx >= 0 && (
-					<span className="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+					<span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-cyan-50 text-cyan-800 border border-cyan-200">
 						Сейчас: {CONTRACT_PIPELINE[currentIdx].label}
 					</span>
 				)}
 			</div>
 
 			{/* Stepper */}
-			<div className="relative pt-1">
+			<div className="relative rounded-2xl bg-white/70 px-4 py-4">
 				<div
-					className="absolute top-[18px] left-[8%] right-[8%] h-0.5 bg-gray-200 -z-0"
+					className="absolute top-[32px] left-[9%] right-[9%] h-1 rounded-full bg-slate-200"
 					aria-hidden
 				/>
 				<div
-					className="absolute top-[18px] left-[8%] h-0.5 bg-amber-400 -z-0 transition-all"
+					className="absolute top-[32px] left-[9%] h-1 rounded-full bg-cyan-500 transition-all"
 					style={{
 						width:
 							currentIdx <= 0
 								? "0%"
-								: `${(currentIdx / (CONTRACT_PIPELINE.length - 1)) * 84}%`,
+								: `${(currentIdx / (CONTRACT_PIPELINE.length - 1)) * 82}%`,
 					}}
 					aria-hidden
 				/>
@@ -161,12 +160,12 @@ export function ContractStatusStepper({
 								>
 									<span
 										className={`
-											flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-bold
+											flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-bold
 											transition-all shadow-sm
-											${current ? "border-amber-500 bg-amber-500 text-white ring-4 ring-amber-100 scale-110" : ""}
+											${current ? "border-cyan-600 bg-slate-950 text-white ring-4 ring-cyan-100 scale-105" : ""}
 											${done ? "border-emerald-500 bg-emerald-600 text-white" : ""}
-											${upcoming ? "border-gray-300 bg-white text-gray-600 group-hover:border-amber-300 group-hover:text-amber-600" : ""}
-											${!current && !done && !upcoming && currentIdx < 0 ? "border-gray-300 bg-white text-gray-600" : ""}
+											${upcoming ? "border-slate-300 bg-white text-slate-500 group-hover:border-cyan-300 group-hover:text-cyan-700" : ""}
+											${!current && !done && !upcoming && currentIdx < 0 ? "border-slate-300 bg-white text-slate-500" : ""}
 										`}
 									>
 										{done ? (
@@ -178,15 +177,15 @@ export function ContractStatusStepper({
 									<span
 										className={`
 											mt-2 text-[10px] sm:text-xs font-medium text-center leading-tight px-0.5
-											${current ? "text-amber-700 font-semibold" : ""}
+											${current ? "text-slate-950 font-semibold" : ""}
 											${done ? "text-emerald-700" : ""}
-											${upcoming ? "text-gray-500 group-hover:text-amber-700" : ""}
+											${upcoming ? "text-slate-500 group-hover:text-cyan-700" : ""}
 										`}
 									>
 										{step.short}
 									</span>
 									{current && (
-										<span className="text-[9px] text-amber-600 font-medium mt-0.5">
+										<span className="text-[9px] text-cyan-700 font-semibold mt-0.5">
 											вы здесь
 										</span>
 									)}
@@ -198,16 +197,16 @@ export function ContractStatusStepper({
 			</div>
 
 			{currentIdx >= 0 && (
-				<p className="text-xs text-gray-600 bg-white/80 border border-gray-100 rounded-lg px-3 py-2">
+				<p className="text-xs text-slate-600 bg-white/80 border border-cyan-100 rounded-xl px-3 py-2">
 					{CONTRACT_PIPELINE[currentIdx].hint}
 				</p>
 			)}
 
-			<div className="flex flex-wrap gap-2 pt-1 border-t border-gray-100">
+			<div className="flex flex-wrap gap-2 pt-1 border-t border-cyan-100/70">
 				{next && (
 					<Button
 						size="sm"
-						className="bg-amber-500 hover:bg-orange-600 gap-1"
+						className="bg-cyan-700 hover:bg-cyan-800 gap-1"
 						disabled={loading}
 						onClick={() => changeStatus(next.key, next.label)}
 					>
@@ -220,7 +219,7 @@ export function ContractStatusStepper({
 					<Button
 						size="sm"
 						variant="outline"
-						className="text-rose-700 border-rose-200 hover:bg-rose-50 ml-auto"
+						className="text-rose-700 border-rose-200 hover:bg-rose-50 sm:ml-auto"
 						disabled={loading}
 						onClick={() => changeStatus("cancelled", "Расторгнут")}
 					>

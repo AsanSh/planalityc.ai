@@ -1,12 +1,9 @@
 import { createHash } from "crypto";
 import { eq } from "drizzle-orm";
-import { getFrontendBaseUrl } from "./app-urls";
 import { db, passwordResetTokensTable, usersTable } from "./db";
 import { generateSecureToken, hashPassword } from "./security";
 import { sendPasswordResetEmail } from "./email";
 import { logger } from "./logger";
-
-export { getFrontendBaseUrl } from "./app-urls";
 
 const RESET_TTL_MS = 60 * 60 * 1000; // 1 час
 
@@ -96,6 +93,14 @@ export function maskEmail(email: string): string {
   if (!domain) return "***";
   const visible = local.slice(0, Math.min(2, local.length));
   return `${visible}***@${domain}`;
+}
+
+export function getFrontendBaseUrl(): string {
+  const raw =
+    process.env.FRONTEND_URL ||
+    process.env.APP_URL ||
+    "https://proptech-sigma-eight.vercel.app";
+  return raw.replace(/\/+$/, "");
 }
 
 export function buildPasswordResetLink(token: string): string {

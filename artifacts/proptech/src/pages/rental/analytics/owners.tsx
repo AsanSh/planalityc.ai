@@ -169,25 +169,25 @@ export default function RentalOwners() {
 
 			<div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
 				<div className="bg-white border rounded-lg p-4">
-					<p className="text-xs text-gray-500 mb-1">Валовой доход</p>
-					<p className="text-xl font-bold text-emerald-600">{fmtSom(totalIncome)}</p>
+					<p className="am-kpi-label mb-1">Валовой доход</p>
+					<p className="am-kpi-value text-xl text-emerald-600">{fmtSom(totalIncome)}</p>
 				</div>
 				<div className="bg-white border rounded-lg p-4">
-					<p className="text-xs text-gray-500 mb-1">Расходы</p>
-					<p className="text-xl font-bold text-rose-600">
+					<p className="am-kpi-label mb-1">Расходы</p>
+					<p className="am-kpi-value text-xl text-rose-600">
 						{fmtSom(totalExpense)}
 					</p>
 				</div>
 				<div className="bg-white border rounded-lg p-4">
-					<p className="text-xs text-gray-500 mb-1">Комиссия УК</p>
-					<p className="text-xl font-bold text-amber-600">
+					<p className="am-kpi-label mb-1">Комиссия УК</p>
+					<p className="am-kpi-value text-xl text-amber-600">
 						{fmtSom(totalFee)}
 					</p>
 				</div>
 				<div className="bg-white border rounded-lg p-4">
-					<p className="text-xs text-gray-500 mb-1">Чистый доход</p>
+					<p className="am-kpi-label mb-1">Чистый доход</p>
 					<p
-						className={`text-xl font-bold ${totalNet >= 0 ? "text-blue-600" : "text-rose-700"}`}
+						className={`am-kpi-value text-xl ${totalNet >= 0 ? "text-blue-600" : "text-rose-700"}`}
 					>
 						{fmtSom(totalNet)}
 					</p>

@@ -159,19 +159,19 @@ export default function RentalEmployees() {
 			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 mb-6">
 				<div className="bg-white border rounded-lg p-4">
 					<p className="text-sm text-gray-500">Всего сотрудников</p>
-					<p className="text-2xl font-bold text-gray-900 mt-1">
+					<p className="am-kpi-value text-2xl text-gray-900 mt-1">
 						{users.length}
 					</p>
 				</div>
 				<div className="bg-white border rounded-lg p-4">
 					<p className="text-sm text-gray-500">Активных</p>
-					<p className="text-2xl font-bold text-emerald-600 mt-1">
+					<p className="am-kpi-value text-2xl text-emerald-600 mt-1">
 						{active.length}
 					</p>
 				</div>
 				<div className="bg-white border rounded-lg p-4">
 					<p className="text-sm text-gray-500">Администраторов</p>
-					<p className="text-2xl font-bold text-rose-600 mt-1">
+					<p className="am-kpi-value text-2xl text-rose-600 mt-1">
 						{users.filter((u) => u.role === "admin").length}
 					</p>
 				</div>

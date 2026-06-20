@@ -5,6 +5,7 @@ import { z } from "zod/v4";
 export const propertiesTable = pgTable("properties", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id"),
+  legalEntityId: integer("legal_entity_id"),
   projectName: text("project_name").notNull(),
   block: text("block"),
   floor: integer("floor"),

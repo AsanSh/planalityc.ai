@@ -80,6 +80,9 @@ export default function ContractorPortal({ previewContractorId }: { previewContr
 						: "/portal/contractor/me",
 				)
 				.then((r) => r.data),
+		staleTime: 60_000,
+		refetchOnWindowFocus: false,
+		retry: 1,
 	});
 
 	const handleDownloadContract = async () => {
@@ -142,9 +145,9 @@ export default function ContractorPortal({ previewContractorId }: { previewContr
 		: [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Подрядчик";
 
 	return (
-		<div className="min-h-screen bg-gray-50">
+		<div className="min-h-screen bg-slate-100">
 			<header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-				<div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
 					<div className="flex items-center gap-3">
 						<div className="w-9 h-9 bg-amber-600 rounded-xl flex items-center justify-center">
 							<Briefcase className="w-5 h-5 text-white" />
@@ -177,16 +180,26 @@ export default function ContractorPortal({ previewContractorId }: { previewContr
 				</div>
 			</header>
 
-			<div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-				<div className="bg-gradient-to-r from-amber-600 to-orange-600 rounded-2xl p-5 sm:p-6 text-white">
-					<p className="text-sm opacity-80 mb-1">Добро пожаловать,</p>
-					<h1 className="text-2xl font-bold">
-						{contractor?.fullName || userName}
-					</h1>
-					<p className="text-sm opacity-70 mt-1">Личный кабинет подрядчика</p>
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+				<div className="overflow-hidden rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 p-5 text-white shadow-sm sm:p-6 lg:p-8">
+					<div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+						<div>
+							<p className="text-sm opacity-80 mb-1">Добро пожаловать,</p>
+							<h1 className="text-2xl font-bold sm:text-3xl">
+								{contractor?.fullName || userName}
+							</h1>
+							<p className="text-sm opacity-70 mt-1">Личный кабинет подрядчика</p>
+						</div>
+						<div className="rounded-2xl bg-white/15 px-4 py-3 text-sm backdrop-blur">
+							<p className="text-white/70">Статус взаиморасчётов</p>
+							<p className="mt-1 font-semibold">
+								{outstanding > 0 ? "Есть остаток к оплате" : "Расчёты закрыты"}
+							</p>
+						</div>
+					</div>
 				</div>
 
-				<div className="grid gap-4 sm:grid-cols-2">
+				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 					<KPI
 						icon={<FileText className="w-6 h-6 text-amber-600" />}
 						label="Сумма договора"
@@ -223,48 +236,51 @@ export default function ContractorPortal({ previewContractorId }: { previewContr
 					/>
 				</div>
 
-				<div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
-					<div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-4 border-b bg-gray-50">
-						<div className="flex items-center gap-3">
-							<FileText className="w-4 h-4 text-gray-500" />
-							<h2 className="font-semibold text-gray-900">Договор</h2>
-						</div>
-						{contractor?.contractDocument && (
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() => void handleDownloadContract()}
-								className="gap-1.5 text-xs"
-							>
-								<Download className="w-3.5 h-3.5" /> Скачать
-							</Button>
-						)}
-					</div>
-					<div className="px-4 sm:px-6 py-5">
-						{contractor?.contractDocument ? (
-							<div className="flex items-center gap-3">
-								<div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
-									<FileText className="w-5 h-5 text-amber-600" />
+				<div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
+					<div className="space-y-6">
+						<div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+							<div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-4 border-b bg-gray-50">
+								<div className="flex items-center gap-3">
+									<FileText className="w-4 h-4 text-gray-500" />
+									<h2 className="font-semibold text-gray-900">Договор</h2>
 								</div>
-								<div>
-									<p className="font-medium text-gray-900">
-										{contractor.contractDocument.fileName}
-									</p>
-									<p className="text-xs text-gray-600">
-										Загружен{" "}
-										{fmtDate(contractor.contractDocument.uploadedAt)}
-									</p>
-								</div>
+								{contractor?.contractDocument && (
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => void handleDownloadContract()}
+										className="gap-1.5 text-xs"
+									>
+										<Download className="w-3.5 h-3.5" /> Скачать
+									</Button>
+								)}
 							</div>
-						) : (
-							<p className="text-sm text-gray-600 text-center py-6">
-								Договор ещё не загружен заказчиком
-							</p>
-						)}
+							<div className="px-4 sm:px-6 py-5">
+								{contractor?.contractDocument ? (
+									<div className="flex items-center gap-3">
+										<div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+											<FileText className="w-5 h-5 text-amber-600" />
+										</div>
+										<div>
+											<p className="font-medium text-gray-900">
+												{contractor.contractDocument.fileName}
+											</p>
+											<p className="text-xs text-gray-600">
+												Загружен{" "}
+												{fmtDate(contractor.contractDocument.uploadedAt)}
+											</p>
+										</div>
+									</div>
+								) : (
+									<p className="text-sm text-gray-600 text-center py-8">
+										Договор ещё не загружен заказчиком
+									</p>
+								)}
+							</div>
+						</div>
 					</div>
-				</div>
 
-				<div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden print:shadow-none">
+				<div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:shadow-none">
 					<div className="flex items-center justify-between gap-2 flex-wrap px-4 sm:px-6 py-4 border-b bg-gray-50">
 						<div className="flex items-center gap-3">
 							<CreditCard className="w-4 h-4 text-gray-500" />
@@ -340,6 +356,7 @@ export default function ContractorPortal({ previewContractorId }: { previewContr
 							</table>
 						</div>
 					)}
+				</div>
 				</div>
 			</div>
 		</div>

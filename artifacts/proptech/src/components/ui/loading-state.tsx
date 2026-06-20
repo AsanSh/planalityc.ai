@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { ConstructionLoader } from "@/components/ui/construction-loader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -13,12 +13,6 @@ export function LoadingState({
 	className?: string;
 	size?: "sm" | "default" | "lg";
 }) {
-	const spinnerSizes = {
-		sm: "w-4 h-4",
-		default: "w-8 h-8",
-		lg: "w-12 h-12",
-	};
-
 	const skeletonHeights = {
 		sm: "h-8",
 		default: "h-12",
@@ -43,7 +37,7 @@ export function LoadingState({
 			<div className={cn("flex items-center justify-center py-12", className)}>
 				<div
 					className={cn(
-						spinnerSizes[size],
+						size === "sm" ? "h-4 w-4" : size === "lg" ? "h-12 w-12" : "h-8 w-8",
 						"rounded-full bg-cyan-500/20 animate-pulse",
 					)}
 				/>
@@ -53,8 +47,9 @@ export function LoadingState({
 
 	return (
 		<div className={cn("flex items-center justify-center py-12", className)}>
-			<Loader2
-				className={cn(spinnerSizes[size], "text-cyan-600 animate-spin")}
+			<ConstructionLoader
+				size={size === "sm" ? "sm" : size === "lg" ? "lg" : "default"}
+				showLabel={size !== "sm"}
 			/>
 		</div>
 	);

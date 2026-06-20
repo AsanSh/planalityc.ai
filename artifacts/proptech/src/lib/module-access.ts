@@ -14,8 +14,8 @@ export type ModuleId =
 	| "rental"
 	| "proptech"
 	| "warehouse"
-	| "consolidated"
-	| "ai";
+	| "reports"
+	| "consolidated";
 
 export const ALL_MODULE_IDS: ModuleId[] = MODULE_REGISTRY.map((m) => m.id);
 
@@ -26,12 +26,13 @@ export const MODULE_URL_PREFIXES: Record<ModuleId, string[]> =
 const SYSTEM_ROLE_MODULES: Record<string, ModuleId[] | "all"> = {
 	company_admin: "all",
 	admin: "all",
+	super_admin: "all",
 	rental_manager: ["rental"],
 	sales_manager: ["proptech"],
 	finance: ["finance"],
 	staff: ["consolidated"],
-	pto: ["construction", "ai"],
-	engineer: ["construction", "ai"],
+	pto: ["construction"],
+	engineer: ["construction"],
 };
 
 const PERMISSION_PREFIX_TO_MODULE: Record<string, ModuleId> = {
@@ -39,11 +40,12 @@ const PERMISSION_PREFIX_TO_MODULE: Record<string, ModuleId> = {
 	users: getSettingsKeyModuleId("users") ?? "consolidated",
 	rental: getSettingsKeyModuleId("rental") ?? "rental",
 	construction: getSettingsKeyModuleId("construction") ?? "construction",
-	finance: getSettingsKeyModuleId("reports") ?? "finance",
+	finance: getSettingsKeyModuleId("finance") ?? "finance",
 	counterparties: getSettingsKeyModuleId("counterparties") ?? "consolidated",
 	settings: getSettingsKeyModuleId("settings") ?? "consolidated",
 	admin: getSettingsKeyModuleId("admin") ?? "consolidated",
 	warehouse: getSettingsKeyModuleId("warehouse") ?? "warehouse",
+	reports: getSettingsKeyModuleId("reports") ?? "reports",
 };
 
 const DEFAULT_HOME_LEGACY: Record<string, string> = {

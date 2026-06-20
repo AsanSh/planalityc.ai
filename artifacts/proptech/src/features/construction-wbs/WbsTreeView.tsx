@@ -16,7 +16,7 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Eye, EyeOff, GripVertical, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -46,12 +46,18 @@ function WbsRowContent({
 	onSelect,
 	onAddSub,
 	isOverlay,
+	isExpanded,
+	onToggleExpanded,
+	showChildrenControl,
 }: {
 	node: FlatWbsNode;
 	fmt: (kgs: number) => string;
 	onSelect: (s: WbsStage) => void;
 	onAddSub: (s: WbsStage) => void;
 	isOverlay?: boolean;
+	isExpanded?: boolean;
+	onToggleExpanded?: () => void;
+	showChildrenControl?: boolean;
 }) {
 	const st = inferStageStatus(node.stage, node.metrics);
 	const meta = statusMeta(st);
@@ -59,8 +65,8 @@ function WbsRowContent({
 
 	return (
 		<div
-			className={`flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3 flex-1 min-w-0 py-2 pr-2 ${
-				isOverlay ? "bg-white shadow-lg rounded-lg border border-amber-200 px-2" : ""
+			className={`flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 flex-1 min-w-0 py-3 pr-3 ${
+				isOverlay ? "bg-white shadow-lg rounded-xl border border-amber-200 px-3" : ""
 			}`}
 			onClick={() => onSelect(node.stage)}
 			onKeyDown={(e) => {
@@ -70,8 +76,25 @@ function WbsRowContent({
 			tabIndex={0}
 		>
 			<div className="flex items-center gap-2 min-w-0 flex-1">
-				<span className="text-[11px] font-mono text-gray-600 w-10 shrink-0">{node.wbsCode}</span>
-				<p className={`text-sm font-medium truncate ${behind ? "text-rose-800" : "text-gray-900"}`}>
+				{showChildrenControl ? (
+					<button
+						type="button"
+						className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-am-border bg-white text-am-text-muted shadow-sm hover:border-am-brand/40 hover:text-am-brand"
+						title={isExpanded ? "Скрыть подэтапы" : "Показать подэтапы"}
+						onClick={(e) => {
+							e.stopPropagation();
+							onToggleExpanded?.();
+						}}
+					>
+						{isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+					</button>
+				) : (
+					<span className="h-7 w-7 shrink-0" />
+				)}
+				<span className="w-12 shrink-0 rounded-lg bg-am-brand-surface px-2 py-1 text-center font-mono text-[11px] font-semibold text-am-brand">
+					{node.wbsCode}
+				</span>
+				<p className={`truncate text-sm font-semibold ${behind ? "text-rose-800" : "text-am-text-strong"}`}>
 					{node.stage.name}
 				</p>
 				<span className={`hidden md:inline-flex text-[10px] px-1.5 py-0.5 rounded border ${meta.badge}`}>
@@ -105,7 +128,9 @@ function WbsRowContent({
 					<span className="text-rose-600 font-semibold">Проблемы: {node.metrics.issueCount}</span>
 				)}
 				{node.childrenCount > 0 && (
-					<span className="text-gray-600">Подэтапы: {node.childrenCount}</span>
+					<span className="rounded-full bg-slate-100 px-2 py-0.5 text-gray-600">
+						Подэтапы: {node.childrenCount}
+					</span>
 				)}
 			</div>
 			{!isOverlay && (
@@ -130,6 +155,9 @@ function WbsRowContent({
 
 function SortableRow({
 	node,
+	isExpanded,
+	showChildrenControl,
+	onToggleExpanded,
 	overId,
 	activeId,
 	projectedDepth,
@@ -139,6 +167,9 @@ function SortableRow({
 	reorderEnabled,
 }: {
 	node: FlatWbsNode;
+	isExpanded: boolean;
+	showChildrenControl: boolean;
+	onToggleExpanded: () => void;
 	overId: number | null;
 	activeId: number | null;
 	projectedDepth: number | null;
@@ -166,8 +197,8 @@ function SortableRow({
 			ref={setNodeRef}
 			style={style}
 			data-wbs-id={node.id}
-			className={`group relative flex items-stretch border-b border-gray-100 bg-white ${
-				isDragging ? "opacity-30" : "hover:bg-amber-50/30"
+			className={`am-table-row group relative flex items-stretch ${
+				isDragging ? "opacity-30" : "hover:bg-am-brand-surface/70"
 			}`}
 		>
 			{showProjection && (
@@ -194,7 +225,15 @@ function SortableRow({
 					<GripVertical className="w-4 h-4" />
 				</button>
 			</div>
-			<WbsRowContent node={node} fmt={fmt} onSelect={onSelect} onAddSub={onAddSub} />
+			<WbsRowContent
+				node={node}
+				fmt={fmt}
+				onSelect={onSelect}
+				onAddSub={onAddSub}
+				isExpanded={isExpanded}
+				onToggleExpanded={onToggleExpanded}
+				showChildrenControl={showChildrenControl}
+			/>
 		</div>
 	);
 }
@@ -220,13 +259,44 @@ export function WbsTreeView({
 	const [overId, setOverId] = useState<number | null>(null);
 	const [projectedDepth, setProjectedDepth] = useState<number | null>(null);
 	const [dragStartDepth, setDragStartDepth] = useState(0);
+	const [showAll, setShowAll] = useState(false);
+	const [expandedRoots, setExpandedRoots] = useState<Set<number>>(() => new Set());
 
 	const sensors = useSensors(
 		useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
 	);
 
-	const ids = useMemo(() => flat.map((n) => n.id), [flat]);
+	const rootByNodeId = useMemo(() => {
+		const map = new Map<number, number>();
+		let currentRootId: number | null = null;
+		for (const node of flat) {
+			if (node.depth === 0) currentRootId = node.id;
+			if (currentRootId != null) map.set(node.id, currentRootId);
+		}
+		return map;
+	}, [flat]);
+
+	const visibleFlat = useMemo(() => {
+		if (showAll) return flat;
+		return flat.filter((node) => {
+			if (node.depth === 0) return true;
+			const rootId = rootByNodeId.get(node.id);
+			return rootId != null && expandedRoots.has(rootId);
+		});
+	}, [expandedRoots, flat, rootByNodeId, showAll]);
+
+	const ids = useMemo(() => visibleFlat.map((n) => n.id), [visibleFlat]);
 	const activeNode = activeId != null ? flat.find((n) => n.id === activeId) : null;
+	const rootCount = flat.filter((node) => node.depth === 0).length;
+
+	const toggleRoot = (rootId: number) => {
+		setExpandedRoots((prev) => {
+			const next = new Set(prev);
+			if (next.has(rootId)) next.delete(rootId);
+			else next.add(rootId);
+			return next;
+		});
+	};
 
 	const handleDragStart = (e: DragStartEvent) => {
 		if (!reorderEnabled) return;
@@ -265,9 +335,27 @@ export function WbsTreeView({
 	};
 
 	return (
-		<div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-			<div className="px-3 py-2 border-b border-gray-100 bg-gray-50 text-[11px] text-gray-500 hidden md:grid md:grid-cols-[1fr_9rem_12rem_8rem] gap-2">
-				<span>Структура WBS</span>
+		<div className="am-card overflow-hidden rounded-[24px] border border-am-border bg-white/90">
+			<div className="flex flex-col gap-3 border-b border-am-border bg-am-surface px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+				<div>
+					<p className="text-sm font-semibold text-am-text-strong">Структура WBS</p>
+					<p className="text-xs text-am-text-muted">
+						Показано {visibleFlat.length} из {flat.length} · основных этапов: {rootCount}
+					</p>
+				</div>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					className="h-9 gap-2 rounded-xl bg-white"
+					onClick={() => setShowAll((v) => !v)}
+				>
+					{showAll ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+					{showAll ? "Свернуть подэтапы" : "Показать все"}
+				</Button>
+			</div>
+			<div className="hidden border-b border-am-border bg-am-table-head px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.04em] md:grid md:grid-cols-[1fr_9rem_12rem_8rem] gap-2">
+				<span>Этап / подэтап</span>
 				<span>Прогресс</span>
 				<span>Бюджет / освоение</span>
 				<span>Задачи</span>
@@ -289,10 +377,17 @@ export function WbsTreeView({
 				}}
 			>
 				<SortableContext items={ids} strategy={verticalListSortingStrategy}>
-					{flat.map((node) => (
+					{visibleFlat.map((node) => {
+						const rootId = rootByNodeId.get(node.id) ?? node.id;
+						const isRoot = node.depth === 0;
+						const isExpanded = showAll || expandedRoots.has(rootId);
+						return (
 						<SortableRow
 							key={node.id}
 							node={node}
+							isExpanded={isExpanded}
+							showChildrenControl={!showAll && isRoot && node.childrenCount > 0}
+							onToggleExpanded={() => toggleRoot(rootId)}
 							overId={overId}
 							activeId={activeId}
 							projectedDepth={projectedDepth}
@@ -301,7 +396,8 @@ export function WbsTreeView({
 							onAddSub={onAddSub}
 							reorderEnabled={reorderEnabled}
 						/>
-					))}
+						);
+					})}
 				</SortableContext>
 				<DragOverlay>
 					{activeNode ? (

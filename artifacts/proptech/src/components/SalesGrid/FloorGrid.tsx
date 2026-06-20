@@ -39,8 +39,8 @@ export function FloorGrid({
 	const dragUnitId = useRef<number | null>(null);
 
 	return (
-		<MatrixTableFrame className="overflow-x-auto bg-[linear-gradient(180deg,#f8fbfc_0%,#f1f7f8_100%)] p-3">
-			<table className="border-separate border-spacing-[4px]">
+		<MatrixTableFrame className="overflow-x-auto">
+			<table className="border-collapse">
 				<tbody>
 					{floors.map((floor, idx) => {
 						const rowUnits = units
@@ -52,24 +52,14 @@ export function FloorGrid({
 						const isDropTarget = dragOverFloor === floor;
 
 						const tdBase = [
-							isDropTarget ? "bg-cyan-50/80" : "",
-							"rounded-[18px] transition-colors duration-150",
+							idx !== 0 ? "border-t-2 border-slate-300" : "",
+							isDropTarget ? "bg-blue-50/60" : "",
+							"transition-colors duration-100",
 						]
 							.filter(Boolean)
 							.join(" ");
 
 						return (
-							<>
-								{idx > 0 && (
-									<tr key={`sep-${floor}`} aria-hidden>
-										<td
-											colSpan={maxCols + 1}
-											className="py-0"
-										>
-											<div className="mx-1 border-t border-dashed border-slate-200" />
-										</td>
-									</tr>
-								)}
 							<tr
 								key={floor}
 								onDragOver={(e) => {
@@ -86,15 +76,15 @@ export function FloorGrid({
 									dragUnitId.current = null;
 								}}
 							>
-								<td className={`sticky left-0 z-10 pr-2 align-middle ${tdBase}`}>
+								<td className={`sticky left-0 z-10 bg-white pr-2 align-middle ${tdBase}`}>
 									<button
 										type="button"
 										onClick={() => onBulkFloor(floor, floorIds)}
 										className={[
-											"flex h-20 w-12 flex-col items-center justify-center rounded-[16px] border text-xs font-bold shadow-[0_10px_24px_-22px_rgba(15,23,42,0.65)] transition-all duration-200",
+											"flex h-20 w-12 flex-col items-center justify-center rounded-lg text-xs font-bold",
 											isDropTarget
-												? "border-cyan-300 bg-cyan-100 text-cyan-800"
-												: "border-slate-200 bg-white/90 text-slate-600 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50",
+												? "bg-blue-200 text-blue-700"
+												: "bg-slate-100 text-slate-600 hover:bg-slate-200",
 										].join(" ")}
 										title={showBulkCheckbox ? "Выбрать этаж (клик)" : undefined}
 									>
@@ -135,7 +125,6 @@ export function FloorGrid({
 									);
 								})}
 							</tr>
-						</>
 						);
 					})}
 				</tbody>

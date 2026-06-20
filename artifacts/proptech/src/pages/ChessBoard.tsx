@@ -65,7 +65,7 @@ const TYPE_LABELS: Record<string, string> = {
 	apartment: "Квартира",
 	office: "Офис",
 	retail: "Торговля",
-	warehouse: "Склад",
+	warehouse: "Снабжение",
 	parking: "Парковка",
 	other: "Другое",
 };

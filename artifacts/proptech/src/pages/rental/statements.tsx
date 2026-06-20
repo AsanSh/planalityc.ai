@@ -301,7 +301,7 @@ export default function OwnerStatements() {
 	);
 
 	return (
-		<div className="p-6 space-y-4">
+		<div className="space-y-3">
 			<KpiRow>
 				<KpiCard variant="strip" label="Начислено" value={fmtKGS(totalCharged)} sub="за период" icon={TrendingUp} color="blue" loading={isLoading} />
 				<KpiCard variant="strip" label="Собрано" value={fmtKGS(totalReceived)} sub="за период" icon={Wallet} color="green" loading={isLoading} />
@@ -541,7 +541,7 @@ export default function OwnerStatements() {
 										Собрано от начисленного
 									</p>
 								</div>
-								<p className="text-2xl font-bold text-blue-700">
+								<p className="am-kpi-value text-2xl text-blue-700">
 									{parseFloat(selectedStatement.rentCharged) > 0
 										? (
 												(parseFloat(selectedStatement.rentReceived) /

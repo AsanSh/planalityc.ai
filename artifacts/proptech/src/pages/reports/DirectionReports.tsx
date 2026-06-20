@@ -372,7 +372,7 @@ export default function DirectionReportsPage() {
 							Арендатор · Покупатель · Подрядчик · Поставщик — оплачено и остаток
 						</p>
 					</div>
-					<div className="flex items-center gap-2 flex-wrap">
+					<div className="am-toolbar">
 						<PeriodPicker value={period} onChange={setPeriod} />
 						<Select value={roleFilter} onValueChange={setRoleFilter}>
 							<SelectTrigger className="w-44 h-9 text-sm">

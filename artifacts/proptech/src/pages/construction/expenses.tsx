@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Receipt, Trash2, TrendingDown } from "lucide-react";
+import { Loader2, Plus, Receipt, Trash2, TrendingDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useSearch } from "wouter";
@@ -238,7 +238,15 @@ function ExpenseDialog({
 		if (stageOptions.length > 0 && !form.stageId) {
 			toast({
 				title: "Выберите этап WBS",
-				description: "Расход привязывается к этапу — освоение попадёт в Гант и план проекта. Статья бюджета опциональна.",
+				description: "Этап нужен для WBS и Ганта, статья — для бюджетной аналитики.",
+				variant: "destructive",
+			});
+			return;
+		}
+		if (budgetForStage.length > 0 && form.budgetItemId === "none") {
+			toast({
+				title: "Выберите статью бюджета",
+				description: "Так расход сохранит и строительный этап, и финансовую детализацию.",
 				variant: "destructive",
 			});
 			return;
@@ -361,7 +369,9 @@ function ExpenseDialog({
 									</Select>
 								</div>
 								<div className="flex flex-col sm:col-span-2">
-									<Label className="leading-tight mb-1.5">Статья бюджета</Label>
+									<Label className="leading-tight mb-1.5">
+										Статья бюджета{budgetForStage.length > 0 ? " *" : ""}
+									</Label>
 									<Select
 										value={form.budgetItemId}
 										onValueChange={(v) => set("budgetItemId", v)}
@@ -370,7 +380,9 @@ function ExpenseDialog({
 											<SelectValue placeholder="Необязательно" />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="none">— без статьи —</SelectItem>
+											<SelectItem value="none">
+												{budgetForStage.length > 0 ? "Выберите статью" : "— без статьи —"}
+											</SelectItem>
 											{budgetForStage.map((item) => (
 												<SelectItem key={item.id} value={String(item.id)}>
 													{item.name}
@@ -380,7 +392,9 @@ function ExpenseDialog({
 										</SelectContent>
 									</Select>
 									<p className="text-[10px] text-gray-600 mt-1">
-										Этап — для WBS и Ганта; статья — детализация в бюджете проекта
+										{budgetForStage.length > 0
+											? "Этап — для WBS и Ганта; статья — для бюджета и план-факта"
+											: "Для этого этапа нет статей бюджета — расход сохранится только на WBS"}
 									</p>
 								</div>
 							</>
@@ -525,13 +539,14 @@ function ExpenseDialog({
 						>
 							Отмена
 						</Button>
-						<Button
-							type="submit"
-							className="bg-amber-500 hover:bg-orange-600"
-							disabled={loading}
-						>
-							{loading ? "..." : "Сохранить"}
-						</Button>
+							<Button
+								type="submit"
+								className="bg-amber-500 hover:bg-orange-600"
+								disabled={loading}
+							>
+								{loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+								{loading ? "Сохранение..." : "Сохранить"}
+							</Button>
 					</div>
 				</form>
 			</DialogContent>
@@ -760,8 +775,6 @@ export default function ConstructionExpenses() {
 				</Button>
 			</div>
 
-			<PeriodPicker value={period} onChange={setPeriod} />
-
 			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				<div className="bg-white rounded-xl border border-gray-200 p-4">
 					<p className="text-xs text-gray-500 mb-1">Всего расходов</p>
@@ -825,6 +838,7 @@ export default function ConstructionExpenses() {
 				data={filteredExpenses}
 				isLoading={isLoading}
 				initialSorting={[{ id: "date", desc: true }]}
+				toolbar={<PeriodPicker value={period} onChange={setPeriod} />}
 				emptyState={
 					<div className="flex flex-col items-center gap-2">
 						<Receipt className="w-10 h-10 text-gray-200" />

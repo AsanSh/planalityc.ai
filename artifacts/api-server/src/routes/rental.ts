@@ -28,6 +28,7 @@ import {
 import { investmentsTable } from "../lib/db";
 import { ensureCounterpartyWithRole } from "../lib/counterparty-sync";
 import { resolveRentalPaymentAccountCredit } from "../lib/rental-payment-fx";
+import { resolveCompanyLegalEntityId } from "../lib/settings-catalog-sync";
 
 const RENTAL_ACCOUNTS = BANK_ACCOUNT_MODULE.rental;
 
@@ -1103,13 +1104,21 @@ router.delete("/rental/expenses/:id", async (req: AuthenticatedRequest, res): Pr
 
 // RENTAL PROPERTIES
 router.post("/rental/properties", async (req: AuthenticatedRequest, res): Promise<void> => {
-  const { projectName, unitNumber, type, area, block, floor, comment } = req.body;
+  const { projectName, unitNumber, type, area, block, floor, comment, legalEntityId: rawLegalEntityId } = req.body;
   if (!projectName || !unitNumber) {
     res.status(400).json({ error: "Укажите проект и номер объекта" });
     return;
   }
+  let legalEntityId: number | null;
+  try {
+    legalEntityId = await resolveCompanyLegalEntityId(req.scopedCompanyId!, rawLegalEntityId);
+  } catch {
+    res.status(400).json({ error: "Выберите ОсОО из вашей компании" });
+    return;
+  }
   const [row] = await db.insert(propertiesTable).values({
     companyId: req.scopedCompanyId!,
+    legalEntityId,
     projectName: String(projectName).trim(),
     unitNumber: String(unitNumber).trim(),
     type: type || "apartment",
@@ -1123,6 +1132,7 @@ router.post("/rental/properties", async (req: AuthenticatedRequest, res): Promis
   res.status(201).json({
     id: row.id,
     propertyId: row.id,
+    legalEntityId: row.legalEntityId,
     unitNumber: row.unitNumber,
     projectName: row.projectName,
     type: row.type,
@@ -1170,6 +1180,14 @@ router.patch("/rental/properties/:id", async (req: AuthenticatedRequest, res): P
   if (body.rentalStatus != null) patch.rentalStatus = String(body.rentalStatus);
   if (body.marketValue !== undefined) {
     patch.marketValue = body.marketValue != null && body.marketValue !== "" ? String(body.marketValue) : null;
+  }
+  if (body.legalEntityId !== undefined) {
+    try {
+      patch.legalEntityId = await resolveCompanyLegalEntityId(req.scopedCompanyId!, body.legalEntityId);
+    } catch {
+      res.status(400).json({ error: "Выберите ОсОО из вашей компании" });
+      return;
+    }
   }
 
   const [row] = await db
@@ -1322,10 +1340,14 @@ router.get("/rental/properties", async (req: AuthenticatedRequest, res): Promise
     return {
       id: p.id,
       propertyId: p.id,
+      legalEntityId: p.legalEntityId,
       unitNumber: p.unitNumber,
       projectName: p.projectName,
       type: p.type,
       area: p.area ? parseFloat(p.area) : null,
+      block: p.block,
+      floor: p.floor,
+      comment: p.comment,
       rentalStatus: p.rentalStatus || "free",
       currentTenantName,
       currentRentAmount,

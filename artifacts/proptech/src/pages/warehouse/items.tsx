@@ -302,7 +302,7 @@ function ItemDialog({ open, onClose, item }: ItemDialogProps) {
 							onChange={(e) =>
 								setFormData({ ...formData, location: e.target.value })
 							}
-							placeholder="Склад А, стеллаж 3, полка 2"
+							placeholder="Зона А, стеллаж 3, полка 2"
 						/>
 					</div>
 
@@ -531,9 +531,9 @@ export default function WarehouseItems() {
 		<div className="p-6 space-y-4">
 			<div className="flex justify-between items-center">
 				<div>
-					<h1 className="text-2xl font-bold">Товары на складе</h1>
+					<h1 className="text-2xl font-bold">Товары снабжения</h1>
 					<p className="text-muted-foreground text-sm">
-						Управление складскими позициями
+						Управление позициями снабжения
 					</p>
 				</div>
 				<Button
@@ -587,7 +587,7 @@ export default function WarehouseItems() {
 						<span>
 							{categoryFilter !== "all" || stockFilter !== "all"
 								? "Ничего не найдено"
-								: "Нет товаров на складе"}
+								: "Нет товаров в снабжении"}
 						</span>
 					</div>
 				}

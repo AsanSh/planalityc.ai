@@ -6,14 +6,15 @@ export function useSalesGridUnits(
 	projectId: number | null,
 	opts?: { status?: KpiFilter; search?: string },
 ) {
+	const status = opts?.status && opts.status !== "all" ? opts.status : undefined;
 	const search = opts?.search?.trim() || undefined;
 
 	return useQuery<SalesGridUnit[]>({
-		queryKey: ["sales-grid-units", projectId, search],
+		queryKey: ["sales-grid-units", projectId, status, search],
 		queryFn: async () => {
 			const { data } = await api.get<SalesGridUnit[]>(
 				`/construction/projects/${projectId}/units`,
-				{ params: { search } },
+				{ params: { status, search } },
 			);
 			return data;
 		},

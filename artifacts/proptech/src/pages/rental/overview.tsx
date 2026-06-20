@@ -250,7 +250,7 @@ export default function RentalOverview() {
 						<PopoverTrigger asChild>
 							<button
 								type="button"
-								className="inline-flex items-center gap-1.5 h-8 px-3 rounded border border-am-border bg-am-surface text-xs font-medium text-am-text-muted hover:bg-gray-50 transition-colors"
+								className="inline-flex items-center gap-1.5 h-8 px-3 rounded border border-am-border bg-am-surface text-xs font-medium text-am-text-muted hover:bg-cyan-50/70 transition-colors"
 							>
 								<Columns className="w-3.5 h-3.5" />
 								Столбцы
@@ -263,7 +263,7 @@ export default function RentalOverview() {
 							{COLUMNS.map((col) => (
 								<label
 									key={col.key}
-									className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer"
+									className="flex items-center gap-2 px-2 py-1 rounded hover:bg-cyan-50/70 cursor-pointer"
 								>
 									<input
 										type="checkbox"
@@ -297,7 +297,7 @@ export default function RentalOverview() {
 						{/* Header labels */}
 						<tr>
 							<th
-								className={`border border-gray-300 ${MATRIX_TH} text-center sticky left-0 z-10 bg-gray-50/95`}
+								className={`border border-slate-800 ${MATRIX_TH} text-center sticky left-0 z-10 bg-slate-950`}
 							>
 								#
 							</th>
@@ -305,13 +305,13 @@ export default function RentalOverview() {
 								<th
 									key={col.key}
 									onClick={() => handleSort(col.key)}
-									className={`border border-gray-300 ${MATRIX_TH} text-left cursor-pointer select-none hover:bg-gray-100 transition-colors`}
+									className={`border border-slate-800 ${MATRIX_TH} text-left cursor-pointer select-none hover:bg-slate-800 transition-colors`}
 								>
 									<span className="inline-flex items-center gap-1">
 										{col.label}
 										{sortKey === col.key
-											? sortDir === "asc" ? <ChevronUp className="w-3 h-3 text-blue-600" /> : <ChevronDown className="w-3 h-3 text-blue-600" />
-											: <ChevronsUpDown className="w-3 h-3 text-gray-300" />}
+											? sortDir === "asc" ? <ChevronUp className="w-3 h-3 text-cyan-300" /> : <ChevronDown className="w-3 h-3 text-cyan-300" />
+											: <ChevronsUpDown className="w-3 h-3 text-white/35" />}
 									</span>
 								</th>
 							))}
@@ -341,7 +341,7 @@ export default function RentalOverview() {
 								})();
 								const isExpired = row.endDate && new Date(row.endDate) < new Date();
 								return (
-									<tr key={row.id} className={cn(bg, "hover:bg-[#EEF2FF] transition-colors")}>
+									<tr key={row.id} className={cn(bg, "transition-colors hover:bg-cyan-50/70")}>
 										<td className="border border-gray-200 text-center text-gray-600 py-1 px-2 sticky left-0 z-10 select-none" style={{ background: "inherit" }}>{i + 1}</td>
 										{visibleDefs.map((col) => {
 											const v = (row as any)[col.key];

@@ -256,7 +256,7 @@ export default function PlanFact() {
 				<table className="text-xs border-collapse w-full" style={{ minWidth: "1700px" }}>
 					<thead>
 						{/* Row 1: month group headers */}
-						<tr className="sticky top-0 z-20 bg-gray-100/90">
+						<tr className="sticky top-0 z-20 bg-slate-950">
 							<th
 								rowSpan={2}
 								className={`${MATRIX_TH_STICKY_LEFT} text-left align-bottom border-r border-am-border`}
@@ -288,7 +288,7 @@ export default function PlanFact() {
 							</th>
 						</tr>
 						{/* Row 2: П / Ф sub-headers */}
-						<tr className="sticky z-20 bg-gray-50/95" style={{ top: "28px" }}>
+						<tr className="sticky z-20 bg-slate-950" style={{ top: "36px" }}>
 							{MONTHS.map((_, i) => {
 								const isCur =
 									i === curMonth &&
@@ -339,9 +339,9 @@ export default function PlanFact() {
 								return (
 									<tr
 										key={row.pid}
-										className="border-b border-gray-100 hover:bg-gray-50"
+										className="border-b border-slate-100 transition-colors hover:bg-cyan-50/70"
 									>
-										<td className="py-1.5 px-3 sticky left-0 bg-white border-r border-gray-200 font-medium text-gray-800 hover:bg-gray-50">
+										<td className="py-1.5 px-3 sticky left-0 bg-inherit border-r border-gray-200 font-medium text-gray-800">
 											{row.name}
 										</td>
 										{row.plan.map((p, i) => {

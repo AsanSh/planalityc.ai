@@ -13,16 +13,18 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/context/auth";
 import { apiFetch, formatCurrency } from "@/lib/api";
-import {
-  mapAccrual,
-  mapProperty,
-  mapTenant,
-  parseDebtReport,
-  type AccrualRow,
-  type PropertyRow,
-  type TenantRow,
-} from "@/lib/api-adapters";
 import { useColors } from "@/hooks/useColors";
+
+interface Property { id: number; status: string; name: string; }
+interface Tenant { id: number; status: string; }
+interface Accrual {
+  id: number;
+  month: string;
+  amount: string;
+  balance: string;
+  status: string;
+}
+interface DebtReport { totalDebt: string; debtorsCount: number; }
 
 export default function DashboardScreen() {
   const colors = useColors();
@@ -31,31 +33,22 @@ export default function DashboardScreen() {
 
   const { data: properties, isLoading: lp, refetch: rp } = useQuery({
     queryKey: ["properties"],
-    queryFn: async () => {
-      const rows = await apiFetch<Record<string, unknown>[]>("/properties");
-      return rows.map(mapProperty);
-    },
+    queryFn: () => apiFetch<Property[]>("/properties"),
     enabled: !!user,
   });
   const { data: tenants, isLoading: lt, refetch: rt } = useQuery({
     queryKey: ["tenants"],
-    queryFn: async () => {
-      const rows = await apiFetch<Record<string, unknown>[]>("/rental/tenants");
-      return rows.map(mapTenant);
-    },
+    queryFn: () => apiFetch<Tenant[]>("/rental/tenants"),
     enabled: !!user,
   });
   const { data: accruals, isLoading: la, refetch: ra } = useQuery({
     queryKey: ["accruals-pending"],
-    queryFn: async () => {
-      const rows = await apiFetch<Record<string, unknown>[]>("/rental/accruals?status=pending");
-      return rows.map(mapAccrual);
-    },
+    queryFn: () => apiFetch<Accrual[]>("/rental/accruals?status=pending"),
     enabled: !!user,
   });
   const { data: debt, isLoading: ld, refetch: rd } = useQuery({
     queryKey: ["debt"],
-    queryFn: async () => parseDebtReport(await apiFetch("/reports/debt")),
+    queryFn: () => apiFetch<DebtReport>("/reports/debt"),
     enabled: !!user,
   });
 
@@ -83,7 +76,7 @@ export default function DashboardScreen() {
   }
 
   const pending = (accruals ?? []).slice(0, 5);
-  const activeTenants = (tenants ?? []).filter((t: TenantRow) => t.status === "active").length;
+  const activeTenants = (tenants ?? []).filter(t => (t as any).status === "active").length;
 
   return (
     <View style={s.container}>
@@ -115,7 +108,7 @@ export default function DashboardScreen() {
             iconColor="#2563eb"
             value={String(properties?.length ?? 0)}
             label="Объектов"
-            sub={`${(properties ?? []).filter((p: PropertyRow) => p.status === "available").length} свободно`}
+            sub={`${(properties ?? []).filter(p => p.status === "available").length} свободно`}
             colors={colors}
           />
           <StatCard

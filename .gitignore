@@ -130,3 +130,4 @@ artifacts/api-server/drizzle/.drizzle/
 !artifacts/buildflow-mobile/assets/**
 !artifacts/buildflow-mobile/scripts/
 !artifacts/buildflow-mobile/scripts/**
+.gstack/

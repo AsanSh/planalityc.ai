@@ -232,7 +232,7 @@ function OutgoingDialog({ open, onClose }: OutgoingDialogProps) {
 							<Alert variant="destructive" className="mt-2">
 								<AlertCircle className="h-4 w-4" />
 								<AlertDescription>
-									Недостаточно товара на складе. Доступно:{" "}
+									Недостаточно товара в снабжении. Доступно:{" "}
 									{formatNumber(selectedItem.currentStock)} {selectedItem.unit}
 								</AlertDescription>
 							</Alert>
@@ -451,7 +451,7 @@ export default function OutgoingOperations() {
 				<div>
 					<h1 className="text-2xl font-bold">Расход товаров</h1>
 					<p className="text-muted-foreground text-sm">
-						История отпуска товаров со склада
+						История отпуска товаров
 					</p>
 				</div>
 				<Button onClick={() => setDialogOpen(true)}>
@@ -459,8 +459,6 @@ export default function OutgoingOperations() {
 					Оформить расход
 				</Button>
 			</div>
-
-			<PeriodPicker value={period} onChange={setPeriod} />
 
 			{filteredOperations.length > 0 && (
 				<div className="flex gap-4">
@@ -482,17 +480,20 @@ export default function OutgoingOperations() {
 				searchPlaceholder="Поиск по товару, получателю, документу…"
 				initialSorting={[{ id: "date", desc: true }]}
 				toolbar={
-					<Select value={recipientTypeFilter} onValueChange={setRecipientTypeFilter}>
-						<SelectTrigger className="w-[200px] h-8">
-							<SelectValue placeholder="Тип получателя" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">Все типы</SelectItem>
-							<SelectItem value="construction_project">Строительные проекты</SelectItem>
-							<SelectItem value="department">Отделы</SelectItem>
-							<SelectItem value="other">Другое</SelectItem>
-						</SelectContent>
-					</Select>
+					<>
+						<PeriodPicker value={period} onChange={setPeriod} />
+						<Select value={recipientTypeFilter} onValueChange={setRecipientTypeFilter}>
+							<SelectTrigger className="w-[200px] h-8">
+								<SelectValue placeholder="Тип получателя" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">Все типы</SelectItem>
+								<SelectItem value="construction_project">Строительные проекты</SelectItem>
+								<SelectItem value="department">Отделы</SelectItem>
+								<SelectItem value="other">Другое</SelectItem>
+							</SelectContent>
+						</Select>
+					</>
 				}
 				emptyState={
 					recipientTypeFilter !== "all"

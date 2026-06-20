@@ -381,17 +381,16 @@ export default function Deposits() {
 				</div>
 			</div>
 
-			<div className="flex items-center justify-between flex-wrap gap-2">
-				<PeriodPicker value={period} onChange={setPeriod} />
-				<p className="text-xs text-gray-500">{enriched.length} записей</p>
-			</div>
-
 			<DataTable
 					tableId="rental-deposits"
 					columns={tableColumns}
 					data={enriched}
 					isLoading={isLoading}
 					initialSorting={[{ id: "receivedDate", desc: true }]}
+					toolbar={<PeriodPicker value={period} onChange={setPeriod} />}
+					toolbarEnd={
+						<p className="px-2 text-xs text-gray-500">{enriched.length} записей</p>
+					}
 					emptyState={
 						<div className="flex flex-col items-center gap-2 text-muted-foreground">
 							<Banknote className="h-8 w-8 opacity-30" />

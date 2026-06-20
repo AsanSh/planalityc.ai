@@ -50,7 +50,7 @@ export default function ProfileScreen() {
   };
 
   const initials = [user?.firstName?.[0], user?.lastName?.[0]].filter(Boolean).join("").toUpperCase() || "U";
-  const isAdmin = ["admin", "company_admin", "super_admin"].includes(user?.role ?? "");
+  const isAdmin = user?.role === "admin";
 
   return (
     <View style={[s.container, { backgroundColor: colors.background }]}>
@@ -113,7 +113,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
 
         <Text style={[s.versionText, { color: colors.mutedForeground }]}>
-          Planalityc.ai Mobile · v1.0.0
+          BuildFlow Mobile · v1.0.0
         </Text>
       </ScrollView>
     </View>

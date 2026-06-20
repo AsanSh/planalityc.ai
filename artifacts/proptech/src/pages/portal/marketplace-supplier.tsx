@@ -81,6 +81,9 @@ export default function MarketplaceSupplierPortal({
 						: "/portal/marketplace-supplier/me",
 				)
 				.then((r) => r.data),
+		staleTime: 60_000,
+		refetchOnWindowFocus: false,
+		retry: 1,
 	});
 
 	const { data: products = [] } = useQuery({
@@ -104,6 +107,9 @@ export default function MarketplaceSupplierPortal({
 						: "/portal/marketplace-supplier/products",
 				)
 				.then((r) => r.data),
+		staleTime: 60_000,
+		refetchOnWindowFocus: false,
+		retry: 1,
 	});
 
 	const parseMut = useMutation({

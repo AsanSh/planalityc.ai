@@ -81,6 +81,9 @@ export default function SupplierPortal({ previewSupplierId }: { previewSupplierI
 						: "/portal/supplier/me",
 				)
 				.then((r) => r.data),
+		staleTime: 60_000,
+		refetchOnWindowFocus: false,
+		retry: 1,
 	});
 
 	const handleDownloadContract = async () => {
@@ -144,9 +147,9 @@ export default function SupplierPortal({ previewSupplierId }: { previewSupplierI
 		: [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Поставщик";
 
 	return (
-		<div className="min-h-screen bg-gray-50">
+		<div className="min-h-screen bg-slate-100">
 			<header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-				<div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
 					<div className="flex items-center gap-3">
 						<div className="w-9 h-9 bg-emerald-600 rounded-xl flex items-center justify-center">
 							<Factory className="w-5 h-5 text-white" />
@@ -179,8 +182,8 @@ export default function SupplierPortal({ previewSupplierId }: { previewSupplierI
 				</div>
 			</header>
 
-			<div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-				<div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-5 sm:p-6 text-white">
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+				<div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-5 sm:p-6 lg:p-8 text-white shadow-sm">
 					<p className="text-sm opacity-80 mb-1">Добро пожаловать,</p>
 					<h1 className="text-2xl font-bold">
 						{supplier?.name || userName}
@@ -188,7 +191,7 @@ export default function SupplierPortal({ previewSupplierId }: { previewSupplierI
 					<p className="text-sm opacity-70 mt-1">Личный кабинет поставщика</p>
 				</div>
 
-				<div className="grid gap-4 sm:grid-cols-2">
+				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 					<KPI
 						icon={<FileText className="w-6 h-6 text-emerald-600" />}
 						label="Сумма договора"

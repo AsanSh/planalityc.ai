@@ -63,9 +63,9 @@ function KpiCard({
 	};
 	const c = colors[color] || colors.blue;
 	const card = (
-		<div className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-5 ${href ? "hover:shadow-md hover:border-gray-200 transition-all cursor-pointer" : ""}`}>
+		<div className={`am-kpi-card rounded-2xl border-gray-100 p-5 ${href ? "hover:shadow-md hover:border-gray-200 transition-all cursor-pointer" : ""}`}>
 			<div className="flex items-start justify-between mb-3">
-				<p className="text-xs font-medium text-gray-500">{label}</p>
+				<p className="am-kpi-label">{label}</p>
 				<div
 					className={`w-8 h-8 ${c.bg} rounded-lg flex items-center justify-center`}
 				>
@@ -76,7 +76,7 @@ function KpiCard({
 				<Skeleton className="h-7 w-24 mb-1" />
 			) : (
 				<>
-					<p className="text-2xl font-bold text-gray-900">{value}</p>
+					<p className="am-kpi-value text-2xl text-gray-900">{value}</p>
 					{sub && <p className="text-xs text-gray-600 mt-1">{sub}</p>}
 				</>
 			)}

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ClientPortalExperience } from "@/components/client-portal-experience";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -86,6 +87,9 @@ export default function BuyerPortal({ previewBuyerId }: { previewBuyerId?: numbe
 				: "/portal/buyer/me";
 			return api.get(url).then((r) => r.data);
 		},
+		staleTime: 60_000,
+		refetchOnWindowFocus: false,
+		retry: 1,
 	});
 
 	const handleDownloadContract = async (contractId: number) => {
@@ -191,6 +195,14 @@ export default function BuyerPortal({ previewBuyerId }: { previewBuyerId?: numbe
 					<h1 className="text-2xl font-bold">{buyer?.fullName || userName}</h1>
 					<p className="text-sm opacity-70 mt-1">Личный кабинет покупателя</p>
 				</div>
+
+				<ClientPortalExperience
+					audience="buyers"
+					userName={buyer?.fullName || userName}
+					projectName={contracts[0]?.projectName || "Ваш ЖК"}
+					unitLabel={contracts[0]?.unitNumber ? `Квартира №${contracts[0].unitNumber}` : "Мой объект"}
+					managerName="Менеджер объекта"
+				/>
 
 				<div className="grid gap-4 sm:grid-cols-2">
 					<KPI

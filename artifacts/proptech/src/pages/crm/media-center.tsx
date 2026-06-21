@@ -520,19 +520,18 @@ export default function CrmMediaCenter() {
 						</SelectContent>
 					</Select>
 				</div>
-				<div className="mx-auto max-w-md rounded-[28px] border border-am-border bg-am-surface-subtle p-3 shadow-inner">
-					<ClientPortalExperience
-						audience={previewAudience}
-						editable
-						includeDrafts
-						activeId={editing?.id ?? null}
-						onSelectItem={openEditor}
-						userName="Клиент"
-						projectName="ОсОО Смарт Эстейт"
-						unitLabel="Квартира №264"
-						managerName="Менеджер объекта"
-					/>
-				</div>
+				<ClientPortalExperience
+					variant="desktop"
+					audience={previewAudience}
+					editable
+					includeDrafts
+					activeId={editing?.id ?? null}
+					onSelectItem={openEditor}
+					userName="Клиент"
+					projectName="ОсОО Смарт Эстейт"
+					unitLabel="Квартира №264"
+					managerName="Менеджер объекта"
+				/>
 			</section>
 
 			<div className="pointer-events-none sticky bottom-4 z-30 flex justify-center">

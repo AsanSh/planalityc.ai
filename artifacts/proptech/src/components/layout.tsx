@@ -877,16 +877,24 @@ export function Layout({ children }: { children: ReactNode }) {
 	const { allowedModules, homePath, canAccess, isLoading: accessLoading, role, permissions } =
 		useModuleAccess();
 	const [createOpen, setCreateOpen] = useState(false);
+	const [mobileModuleOpen, setMobileModuleOpen] = useState(false);
 	const [mobileNavOpen, setMobileNavOpen] = useState(false);
 	const [openSectionTitle, setOpenSectionTitle] = useState<string | null>(null);
 	const { open: commandOpen, setOpen: setCommandOpen } = useCommandPalette();
 	useFinanceHotkeys(!!user);
 	const createRef = useRef<HTMLDivElement>(null);
+	const moduleSwitcherRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		function handleClickOutside(e: MouseEvent) {
 			if (createRef.current && !createRef.current.contains(e.target as Node)) {
 				setCreateOpen(false);
+			}
+			if (
+				moduleSwitcherRef.current &&
+				!moduleSwitcherRef.current.contains(e.target as Node)
+			) {
+				setMobileModuleOpen(false);
 			}
 		}
 		document.addEventListener("mousedown", handleClickOutside);
@@ -1052,6 +1060,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
 	useEffect(() => {
 		setMobileNavOpen(false);
+		setMobileModuleOpen(false);
 	}, [pathWithSearch]);
 
 	return (
@@ -1070,7 +1079,7 @@ export function Layout({ children }: { children: ReactNode }) {
 			{mobileNavOpen && (
 				<button
 					type="button"
-					className="fixed inset-0 z-40 bg-black/40 md:hidden"
+					className="fixed inset-0 z-40 bg-black/40 lg:hidden"
 					aria-label="Закрыть меню"
 					onClick={() => setMobileNavOpen(false)}
 				/>
@@ -1086,8 +1095,8 @@ export function Layout({ children }: { children: ReactNode }) {
 			<aside
 				className={cn(
 					"flex-shrink-0 flex flex-col overflow-hidden z-50",
-					"fixed inset-y-0 left-0 transition-transform duration-200 md:hidden",
-					"w-[244px]",
+					"fixed inset-y-0 left-0 transition-transform duration-200 lg:hidden",
+					"w-[min(86vw,300px)]",
 					mobileNavOpen ? "translate-x-0" : "-translate-x-full",
 				)}
 				style={{
@@ -1211,7 +1220,7 @@ export function Layout({ children }: { children: ReactNode }) {
 				<header className="min-h-16 border-b border-white/70 bg-white/62 backdrop-blur-2xl flex items-center px-3 md:px-5 gap-2 md:gap-3 flex-shrink-0 relative z-50 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.45)]">
 					<button
 						type="button"
-						className="md:hidden p-2 rounded-lg hover:bg-gray-100 text-gray-600"
+						className="lg:hidden p-2 rounded-lg hover:bg-gray-100 text-gray-600"
 						aria-label="Открыть меню"
 						onClick={() => setMobileNavOpen(true)}
 					>
@@ -1221,11 +1230,15 @@ export function Layout({ children }: { children: ReactNode }) {
 					{/* Module switcher */}
 					{showModuleSwitcher ? (
 						<div
+							ref={moduleSwitcherRef}
 							className="relative flex-shrink-0"
 						>
 							<button
 								type="button"
+								onClick={() => setMobileModuleOpen((open) => !open)}
 								className="flex lg:hidden items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 text-sm font-medium text-gray-700 bg-white transition-all whitespace-nowrap"
+								aria-expanded={mobileModuleOpen}
+								aria-haspopup="menu"
 								title={activeModule.label}
 							>
 								<ModuleIcon
@@ -1235,6 +1248,52 @@ export function Layout({ children }: { children: ReactNode }) {
 								<span>{activeModuleShortLabel}</span>
 								<ChevronDown className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
 							</button>
+							{mobileModuleOpen && (
+								<div
+									className="absolute left-0 top-full z-[9999] mt-2 w-[min(86vw,320px)] overflow-hidden rounded-2xl border border-slate-200/80 bg-white/98 p-1.5 shadow-2xl shadow-slate-950/18 backdrop-blur-xl lg:hidden"
+									role="menu"
+								>
+									{moduleSwitcherModules.map((m) => {
+										const Icon = m.icon;
+										const active = m.id === activeModule.id;
+										return (
+											<Link key={m.id} href={getModuleEntryHref(m)}>
+												<div
+													className={cn(
+														"flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
+														active
+															? "bg-cyan-50 text-cyan-800 ring-1 ring-cyan-200"
+															: "text-slate-700 hover:bg-slate-50 hover:text-slate-950",
+													)}
+													onClick={() => setMobileModuleOpen(false)}
+													role="menuitem"
+												>
+													<div
+														className={cn(
+															"flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl",
+															active ? "bg-cyan-100" : "bg-slate-100",
+														)}
+													>
+														<Icon
+															className="h-4 w-4"
+															style={{ color: active ? "#0e7490" : m.color }}
+														/>
+													</div>
+													<div className="min-w-0 flex-1">
+														<p className="truncate leading-tight">{m.label}</p>
+														<p className="mt-0.5 text-[11px] font-medium text-slate-500">
+															{m.shortLabel}
+														</p>
+													</div>
+													{active && (
+														<span className="h-2 w-2 rounded-full bg-cyan-500" />
+													)}
+												</div>
+											</Link>
+										);
+									})}
+								</div>
+							)}
 							<div className="relative hidden lg:flex items-center gap-1 rounded-[26px] border border-white/80 bg-white/76 p-1.5 shadow-[0_22px_60px_-34px_rgba(8,47,73,0.65)] backdrop-blur-2xl before:pointer-events-none before:absolute before:inset-x-5 before:-top-px before:h-px before:bg-gradient-to-r before:from-transparent before:via-cyan-300/80 before:to-transparent">
 								{moduleSwitcherModules.map((m) => {
 									const Icon = m.icon;
@@ -1350,7 +1409,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
 				<div className="flex min-h-0 flex-1">
 					{/* ── VERTICAL MODULE MENU ── */}
-					<aside className="hidden w-[280px] flex-shrink-0 flex-col border-r border-white/70 bg-white/72 px-3 py-3 shadow-[18px_0_42px_-34px_rgba(15,23,42,0.55)] backdrop-blur-2xl md:flex">
+					<aside className="hidden w-[280px] flex-shrink-0 flex-col border-r border-white/70 bg-white/72 px-3 py-3 shadow-[18px_0_42px_-34px_rgba(15,23,42,0.55)] backdrop-blur-2xl lg:flex">
 						<div className="mb-3 rounded-[20px] border border-white/80 bg-white/76 p-3 shadow-lg shadow-slate-950/5">
 							<div className="flex items-center gap-3">
 								<div

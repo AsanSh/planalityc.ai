@@ -5,9 +5,9 @@
   "framework": "vite",
   "installCommand": "npm install --include=dev",
   "devCommand": "npm run dev",
-  "env": {
-    "VITE_API_URL": "https://proptech-api.vercel.app"
-  },
+	"env": {
+		"VITE_API_URL": "https://planalityc-api.vercel.app"
+	},
   "rewrites": [
     {
       "source": "/((?!assets/).*)",

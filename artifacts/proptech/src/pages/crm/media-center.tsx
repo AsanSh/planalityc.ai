@@ -222,7 +222,7 @@ function PortalPreviewCard({ draft }: { draft: DraftContent }) {
 						</Badge>
 					)}
 				</div>
-				{(draft.priceLabel || draft.rewardPoints) && (
+				{(Boolean(draft.priceLabel) || Number(draft.rewardPoints) > 0) && (
 					<div className="flex flex-wrap gap-2 text-sm">
 						{draft.priceLabel && (
 							<span className="rounded-full bg-amber-50 px-3 py-1.5 font-semibold text-amber-800">
@@ -494,7 +494,7 @@ export default function CrmMediaCenter() {
 				</div>
 			</section>
 
-			<div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+			<div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
 				<KpiCard label="Опубликовано" value={kpi.published} icon={CheckCircle2} tone="text-emerald-700" />
 				<KpiCard label="Черновики" value={kpi.draft} icon={Clock3} tone="text-amber-700" />
 				<KpiCard label="Опросы" value={kpi.polls} icon={Vote} tone="text-blue-700" />
@@ -532,7 +532,7 @@ export default function CrmMediaCenter() {
 					</div>
 					<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
 						<Select value={previewAudience} onValueChange={(value) => setPreviewAudience(value as PortalAudience)}>
-							<SelectTrigger className="w-full sm:w-[220px]">
+							<SelectTrigger className="w-full sm:!w-[220px]">
 								<SelectValue placeholder="Аудитория превью" />
 							</SelectTrigger>
 							<SelectContent>
@@ -602,8 +602,8 @@ export default function CrmMediaCenter() {
 				<div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_430px]">
 					<div className="space-y-4">
 						<section className="rounded-2xl border border-am-border bg-white p-4 shadow-sm">
-							<div className="flex flex-wrap items-center gap-3">
-								<div className="relative min-w-[260px] flex-1">
+							<div className="flex flex-col gap-3">
+								<div className="relative">
 									<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-am-text-muted" />
 									<Input
 										value={searchQuery}
@@ -612,73 +612,75 @@ export default function CrmMediaCenter() {
 										className="pl-9"
 									/>
 								</div>
-								<Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as typeof typeFilter)}>
-									<SelectTrigger className="w-full min-w-0 sm:w-[150px]">
-										<SelectValue placeholder="Тип" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="all">Все типы</SelectItem>
-										{Object.entries(TYPE_LABELS).map(([value, label]) => (
-											<SelectItem key={value} value={value}>
-												{label}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								<Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}>
-									<SelectTrigger className="w-full min-w-0 sm:w-[150px]">
-										<SelectValue placeholder="Статус" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="all">Все статусы</SelectItem>
-										{Object.entries(STATUS_LABELS).map(([value, label]) => (
-											<SelectItem key={value} value={value}>
-												{label}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								<Select value={audienceFilter} onValueChange={(value) => setAudienceFilter(value as typeof audienceFilter)}>
-									<SelectTrigger className="w-full min-w-0 sm:w-[170px]">
-										<SelectValue placeholder="Аудитория" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="all">Все порталы</SelectItem>
-										{Object.entries(AUDIENCE_LABELS).map(([value, label]) => (
-											value === "all" ? null :
-											<SelectItem key={value} value={value}>
-												{label}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								<Select value={placementFilter} onValueChange={(value) => setPlacementFilter(value as typeof placementFilter)}>
-									<SelectTrigger className="w-full min-w-0 sm:w-[160px]">
-										<SelectValue placeholder="Размещение" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="all">Все места</SelectItem>
-										{Object.entries(PLACEMENT_LABELS).map(([value, label]) => (
-											<SelectItem key={value} value={value}>
-												{label}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								<Button
-									type="button"
-									variant="outline"
-									className="w-full whitespace-nowrap sm:w-auto"
-									onClick={() => {
-										setSearchQuery("");
-										setTypeFilter("all");
-										setStatusFilter("all");
-										setAudienceFilter("all");
-										setPlacementFilter("all");
-									}}
-								>
-									Сбросить
-								</Button>
+								<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+									<Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as typeof typeFilter)}>
+										<SelectTrigger>
+											<SelectValue placeholder="Тип" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="all">Все типы</SelectItem>
+											{Object.entries(TYPE_LABELS).map(([value, label]) => (
+												<SelectItem key={value} value={value}>
+													{label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									<Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}>
+										<SelectTrigger>
+											<SelectValue placeholder="Статус" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="all">Все статусы</SelectItem>
+											{Object.entries(STATUS_LABELS).map(([value, label]) => (
+												<SelectItem key={value} value={value}>
+													{label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									<Select value={audienceFilter} onValueChange={(value) => setAudienceFilter(value as typeof audienceFilter)}>
+										<SelectTrigger>
+											<SelectValue placeholder="Аудитория" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="all">Все порталы</SelectItem>
+											{Object.entries(AUDIENCE_LABELS).map(([value, label]) => (
+												value === "all" ? null :
+												<SelectItem key={value} value={value}>
+													{label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									<Select value={placementFilter} onValueChange={(value) => setPlacementFilter(value as typeof placementFilter)}>
+										<SelectTrigger>
+											<SelectValue placeholder="Размещение" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="all">Все места</SelectItem>
+											{Object.entries(PLACEMENT_LABELS).map(([value, label]) => (
+												<SelectItem key={value} value={value}>
+													{label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									<Button
+										type="button"
+										variant="outline"
+										className="col-span-2 w-full whitespace-nowrap sm:col-span-1"
+										onClick={() => {
+											setSearchQuery("");
+											setTypeFilter("all");
+											setStatusFilter("all");
+											setAudienceFilter("all");
+											setPlacementFilter("all");
+										}}
+									>
+										Сбросить
+									</Button>
+								</div>
 							</div>
 						</section>
 
@@ -795,7 +797,7 @@ export default function CrmMediaCenter() {
 								</div>
 							</div>
 
-							<div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-1">
+							<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
 								<div>
 									<Label>Тип материала</Label>
 									<Select value={draft.type} onValueChange={(value) => setDraft({ ...draft, type: value as PortalContentType })}>
@@ -905,7 +907,7 @@ export default function CrmMediaCenter() {
 								</div>
 							)}
 
-							<div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-1">
+							<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
 								<div>
 									<Label>Проект / ЖК</Label>
 									<Input
@@ -944,7 +946,7 @@ export default function CrmMediaCenter() {
 								</div>
 							</div>
 
-							<div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-1">
+							<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
 								<div>
 									<Label>Цена / подпись</Label>
 									<Input

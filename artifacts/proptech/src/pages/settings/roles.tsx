@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit2, Lock, Plus, Search, Shield, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Edit2, Lock, Plus, RotateCcw, Save, Search, Shield, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -22,6 +22,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -127,6 +134,326 @@ const PERMISSION_GROUPS = [
 		],
 	},
 ];
+
+const ACCESS_LEVELS = {
+	full: {
+		label: "Полный доступ",
+		className: "border-emerald-200 bg-emerald-50 text-emerald-800",
+	},
+	read: {
+		label: "Просмотр",
+		className: "border-amber-200 bg-amber-50 text-amber-800",
+	},
+	none: {
+		label: "Нет доступа",
+		className: "border-rose-200 bg-rose-50 text-rose-800",
+	},
+} as const;
+
+type AccessLevel = keyof typeof ACCESS_LEVELS;
+
+interface MatrixRow {
+	id: string;
+	block: string;
+	label: string;
+	read: string[];
+	full: string[];
+}
+
+const JOB_TITLES = [
+	"Генеральный директор",
+	"Исполнительный и Операционный директор",
+	"Директор по строительству",
+	"Главный бухгалтер",
+	"Руководитель строительного проекта",
+	"Коммерческий директор",
+	"Финансовый директор",
+	"Специалист по финансовым операциям",
+	"Руководитель отдела аренды",
+	"Специалист отдела аренды",
+	"Руководитель отдела продаж",
+	"Менеджер по продажам",
+	"Инженер ПТО",
+	"Специалист по снабжению",
+	"Юрист",
+	"Кассир",
+];
+
+const MATRIX_ROWS: MatrixRow[] = [
+	{
+		id: "core.overview",
+		block: "Блок 1 · Дашборд компании",
+		label: "Обзор",
+		read: ["settings.read", "counterparties.read"],
+		full: ["settings.write"],
+	},
+	{
+		id: "core.users",
+		block: "Блок 1 · Дашборд компании",
+		label: "Пользователи и роли",
+		read: ["users.read", "settings.read"],
+		full: ["users.write", "users.delete", "settings.roles"],
+	},
+	{
+		id: "construction.overview",
+		block: "Блок 2 · Строительство",
+		label: "Обзор",
+		read: ["construction.read"],
+		full: ["construction.write"],
+	},
+	{
+		id: "construction.projects",
+		block: "Блок 2 · Строительство",
+		label: "Проекты",
+		read: ["construction.projects.read", "construction.read"],
+		full: ["construction.projects.write", "construction.write"],
+	},
+	{
+		id: "construction.wbs",
+		block: "Блок 2 · Строительство",
+		label: "План проекта / этапы работ",
+		read: ["construction.wbs.read", "construction.read"],
+		full: ["construction.wbs.write", "construction.write"],
+	},
+	{
+		id: "construction.tasks",
+		block: "Блок 2 · Строительство",
+		label: "Задачи",
+		read: ["construction.tasks.read", "construction.read"],
+		full: ["construction.tasks.write", "construction.write"],
+	},
+	{
+		id: "construction.finance",
+		block: "Блок 2 · Строительство",
+		label: "Финансы",
+		read: ["construction.finance.read", "finance.read"],
+		full: ["construction.finance", "finance.write", "finance.reports"],
+	},
+	{
+		id: "construction.resources",
+		block: "Блок 2 · Строительство",
+		label: "Ресурсы / аналитика",
+		read: ["construction.analytics.read", "reports.read"],
+		full: ["construction.analytics.write", "reports.write"],
+	},
+	{
+		id: "rental.overview",
+		block: "Блок 3 · Аренда",
+		label: "Обзор",
+		read: ["rental.read"],
+		full: ["rental.write"],
+	},
+	{
+		id: "rental.objects",
+		block: "Блок 3 · Аренда",
+		label: "Объекты",
+		read: ["rental.objects.read", "rental.read"],
+		full: ["rental.objects.write", "rental.write"],
+	},
+	{
+		id: "rental.tenants",
+		block: "Блок 3 · Аренда",
+		label: "Арендаторы",
+		read: ["rental.tenants.read", "counterparties.read"],
+		full: ["rental.tenants.write", "counterparties.write"],
+	},
+	{
+		id: "rental.contracts",
+		block: "Блок 3 · Аренда",
+		label: "Договоры и документы",
+		read: ["rental.contracts.read", "rental.read"],
+		full: ["rental.contracts.write", "rental.write"],
+	},
+	{
+		id: "rental.finance",
+		block: "Блок 3 · Аренда",
+		label: "Финансы / аналитика",
+		read: ["rental.finance.read", "finance.read"],
+		full: ["rental.payments", "rental.write", "finance.write"],
+	},
+	{
+		id: "crm.overview",
+		block: "Блок 4 · CRM / продажа недвижимости",
+		label: "Обзор",
+		read: ["properties.read"],
+		full: ["properties.write"],
+	},
+	{
+		id: "crm.chess",
+		block: "Блок 4 · CRM / продажа недвижимости",
+		label: "Шахматка",
+		read: ["properties.chess.read", "properties.read"],
+		full: ["properties.chess.write", "properties.write"],
+	},
+	{
+		id: "crm.leads",
+		block: "Блок 4 · CRM / продажа недвижимости",
+		label: "Лиды",
+		read: ["crm.leads.read", "properties.read"],
+		full: ["crm.leads.write", "properties.write"],
+	},
+	{
+		id: "crm.clients",
+		block: "Блок 4 · CRM / продажа недвижимости",
+		label: "Покупатели / контрагенты",
+		read: ["crm.clients.read", "counterparties.read"],
+		full: ["crm.clients.write", "counterparties.write"],
+	},
+	{
+		id: "crm.deals",
+		block: "Блок 4 · CRM / продажа недвижимости",
+		label: "Сделки",
+		read: ["crm.deals.read", "properties.read"],
+		full: ["crm.deals.write", "properties.write"],
+	},
+	{
+		id: "crm.contracts",
+		block: "Блок 4 · CRM / продажа недвижимости",
+		label: "Договоры и документы",
+		read: ["crm.contracts.read", "properties.read"],
+		full: ["crm.contracts.write", "properties.write"],
+	},
+	{
+		id: "warehouse.overview",
+		block: "Блок 5 · Снабжение",
+		label: "Обзор",
+		read: ["warehouse.read"],
+		full: ["warehouse.write"],
+	},
+	{
+		id: "warehouse.marketplace",
+		block: "Блок 5 · Снабжение",
+		label: "Маркетплейс",
+		read: ["warehouse.marketplace.read", "warehouse.read"],
+		full: ["warehouse.marketplace.write", "warehouse.write"],
+	},
+	{
+		id: "warehouse.orders",
+		block: "Блок 5 · Снабжение",
+		label: "Заказы",
+		read: ["warehouse.orders.read", "warehouse.read"],
+		full: ["warehouse.orders.write", "warehouse.write"],
+	},
+	{
+		id: "warehouse.requests",
+		block: "Блок 5 · Снабжение",
+		label: "Заявки / согласования",
+		read: ["warehouse.requests.read", "warehouse.read"],
+		full: ["warehouse.requests.write", "warehouse.write"],
+	},
+	{
+		id: "warehouse.suppliers",
+		block: "Блок 5 · Снабжение",
+		label: "Поставщики / товары",
+		read: ["warehouse.suppliers.read", "counterparties.read"],
+		full: ["warehouse.suppliers.write", "counterparties.write", "warehouse.write"],
+	},
+];
+
+const FULL_ACCESS_JOBS = new Set([
+	"Генеральный директор",
+	"Исполнительный и Операционный директор",
+]);
+
+function templateAccess(jobTitle: string, row: MatrixRow): AccessLevel {
+	if (FULL_ACCESS_JOBS.has(jobTitle)) return "full";
+	if (jobTitle === "Директор по строительству") {
+		if (row.id.startsWith("construction.")) return "full";
+		if (row.id.startsWith("warehouse.") || row.id.startsWith("crm.")) return "read";
+		return row.id === "core.overview" ? "read" : "none";
+	}
+	if (jobTitle === "Руководитель строительного проекта") {
+		if (["construction.overview", "construction.projects", "construction.wbs", "construction.tasks"].includes(row.id)) return "full";
+		if (row.id === "construction.finance" || row.id.startsWith("warehouse.")) return "read";
+		return row.id === "core.overview" ? "read" : "none";
+	}
+	if (jobTitle === "Инженер ПТО") {
+		if (["construction.projects", "construction.wbs", "construction.tasks"].includes(row.id)) return "full";
+		if (row.id === "construction.overview" || row.id === "construction.resources") return "read";
+		return "none";
+	}
+	if (jobTitle === "Главный бухгалтер" || jobTitle === "Финансовый директор") {
+		if (row.id.includes(".finance") || row.id === "core.overview") return "full";
+		if (row.id.includes("contracts") || row.id.startsWith("construction.") || row.id.startsWith("rental.") || row.id.startsWith("crm.")) return "read";
+		return "none";
+	}
+	if (jobTitle === "Специалист по финансовым операциям" || jobTitle === "Кассир") {
+		if (row.id.includes(".finance")) return "full";
+		if (row.id.includes("contracts") || row.id === "core.overview") return "read";
+		return "none";
+	}
+	if (jobTitle === "Коммерческий директор") {
+		if (row.id.startsWith("crm.") || row.id.startsWith("rental.")) return "full";
+		if (row.id.startsWith("construction.")) return "read";
+		return row.id === "core.overview" ? "read" : "none";
+	}
+	if (jobTitle === "Руководитель отдела аренды" || jobTitle === "Специалист отдела аренды") {
+		if (row.id.startsWith("rental.")) return "full";
+		if (row.id.startsWith("crm.") || row.id === "core.overview") return "read";
+		return "none";
+	}
+	if (jobTitle === "Руководитель отдела продаж" || jobTitle === "Менеджер по продажам") {
+		if (row.id.startsWith("crm.")) return "full";
+		if (row.id === "construction.overview" || row.id === "construction.projects") return "read";
+		return row.id === "core.overview" ? "read" : "none";
+	}
+	if (jobTitle === "Специалист по снабжению") {
+		if (row.id.startsWith("warehouse.")) return "full";
+		if (row.id === "construction.tasks" || row.id === "construction.wbs") return "read";
+		return row.id === "core.overview" ? "read" : "none";
+	}
+	if (jobTitle === "Юрист") {
+		if (row.id.includes("contracts")) return "full";
+		if (row.id.startsWith("crm.") || row.id.startsWith("rental.") || row.id.startsWith("construction.")) return "read";
+		return "none";
+	}
+	return "none";
+}
+
+function buildTemplateMatrix(jobTitles = JOB_TITLES) {
+	return Object.fromEntries(
+		jobTitles.map((jobTitle) => [
+			jobTitle,
+			Object.fromEntries(
+				MATRIX_ROWS.map((row) => [row.id, templateAccess(jobTitle, row)]),
+			) as Record<string, AccessLevel>,
+		]),
+	) as Record<string, Record<string, AccessLevel>>;
+}
+
+function roleAccessForRow(permissions: string[] = [], row: MatrixRow): AccessLevel {
+	const hasFull = row.full.some((p) => permissions.includes(p));
+	if (hasFull) return "full";
+	const hasRead = [...row.read, ...row.full].some((p) => permissions.includes(p));
+	return hasRead ? "read" : "none";
+}
+
+function permissionsFromMatrixRow(row: MatrixRow, level: AccessLevel) {
+	if (level === "none") return [];
+	if (level === "read") return row.read;
+	return [...row.read, ...row.full];
+}
+
+function collectPermissionsForRole(rowAccess: Record<string, AccessLevel>) {
+	const permissions = new Set<string>();
+	MATRIX_ROWS.forEach((row) => {
+		permissionsFromMatrixRow(row, rowAccess[row.id] ?? "none").forEach((permission) =>
+			permissions.add(permission),
+		);
+	});
+	return [...permissions].sort();
+}
+
+function accessSummary(rowAccess: Record<string, AccessLevel>) {
+	return MATRIX_ROWS.reduce(
+		(acc, row) => {
+			const level = rowAccess[row.id] ?? "none";
+			acc[level] += 1;
+			return acc;
+		},
+		{ full: 0, read: 0, none: 0 } as Record<AccessLevel, number>,
+	);
+}
 
 interface RoleDialogProps {
 	open: boolean;
@@ -371,6 +698,424 @@ function RoleDialog({ open, onClose, role }: RoleDialogProps) {
 	);
 }
 
+function AccessMatrix({
+	roles,
+}: {
+	roles: Role[];
+}) {
+	const { toast } = useToast();
+	const queryClient = useQueryClient();
+	const [jobTitles, setJobTitles] = useState<string[]>(JOB_TITLES);
+	const [newJobTitle, setNewJobTitle] = useState("");
+	const [selectedJob, setSelectedJob] = useState(JOB_TITLES[0]);
+	const [selectedBlock, setSelectedBlock] = useState(MATRIX_ROWS[0].block);
+	const [dirty, setDirty] = useState(false);
+	const [matrix, setMatrix] = useState<Record<string, Record<string, AccessLevel>>>(
+		() => buildTemplateMatrix(),
+	);
+
+	const roleByName = useMemo(() => {
+		return new Map(
+			roles.map((role) => [role.name.trim().toLowerCase(), role]),
+		);
+	}, [roles]);
+
+	useEffect(() => {
+		if (dirty) return;
+		setMatrix((current) => {
+			const next = buildTemplateMatrix(jobTitles);
+			for (const jobTitle of jobTitles) {
+				const existing = roleByName.get(jobTitle.trim().toLowerCase());
+				if (!existing) {
+					next[jobTitle] = current[jobTitle] ?? next[jobTitle];
+					continue;
+				}
+				next[jobTitle] = Object.fromEntries(
+					MATRIX_ROWS.map((row) => [
+						row.id,
+						roleAccessForRow(existing.permissions, row),
+					]),
+				) as Record<string, AccessLevel>;
+			}
+			return next;
+		});
+	}, [dirty, jobTitles, roleByName]);
+
+	const groupedRows = useMemo(() => {
+		const groups = new Map<string, MatrixRow[]>();
+		for (const row of MATRIX_ROWS) {
+			const rows = groups.get(row.block) ?? [];
+			rows.push(row);
+			groups.set(row.block, rows);
+		}
+		return [...groups.entries()];
+	}, []);
+
+	const blockRows = useMemo(
+		() => MATRIX_ROWS.filter((row) => row.block === selectedBlock),
+		[selectedBlock],
+	);
+
+	useEffect(() => {
+		if (!jobTitles.includes(selectedJob)) {
+			setSelectedJob(jobTitles[0] ?? "");
+		}
+	}, [jobTitles, selectedJob]);
+
+	const saveMatrixMutation = useMutation({
+		mutationFn: async () => {
+			for (const jobTitle of jobTitles) {
+				const permissions = collectPermissionsForRole(matrix[jobTitle] ?? {});
+				const payload = {
+					name: jobTitle,
+					description: "Матрица доступов по должности",
+					permissions,
+					isActive: true,
+				};
+				const existing = roleByName.get(jobTitle.trim().toLowerCase());
+				if (existing) {
+					await api.patch(`/roles/${existing.id}`, payload);
+				} else {
+					await api.post("/roles", payload);
+				}
+			}
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["roles"] });
+			queryClient.invalidateQueries({ queryKey: ["company-roles"] });
+			setDirty(false);
+			toast({ title: "Матрица доступов сохранена" });
+		},
+		onError: (error: any) => {
+			toast({
+				title: "Не удалось сохранить матрицу",
+				description: error?.message || "Проверьте доступ к настройкам ролей",
+				variant: "destructive",
+			});
+		},
+	});
+
+	const setAccess = (jobTitle: string, rowId: string, value: AccessLevel) => {
+		setDirty(true);
+		setMatrix((current) => ({
+			...current,
+			[jobTitle]: {
+				...(current[jobTitle] ?? {}),
+				[rowId]: value,
+			},
+		}));
+	};
+
+	const setColumnAccess = (jobTitle: string, value: AccessLevel) => {
+		setDirty(true);
+		setMatrix((current) => ({
+			...current,
+			[jobTitle]: Object.fromEntries(
+				MATRIX_ROWS.map((row) => [row.id, value]),
+			) as Record<string, AccessLevel>,
+		}));
+	};
+
+	const setBlockAccess = (jobTitle: string, value: AccessLevel) => {
+		setDirty(true);
+		setMatrix((current) => {
+			const nextRole = { ...(current[jobTitle] ?? {}) };
+			blockRows.forEach((row) => {
+				nextRole[row.id] = value;
+			});
+			return {
+				...current,
+				[jobTitle]: nextRole,
+			};
+		});
+	};
+
+	const addJobTitle = () => {
+		const title = newJobTitle.trim();
+		if (!title || jobTitles.some((job) => job.toLowerCase() === title.toLowerCase())) return;
+		setJobTitles((current) => [...current, title]);
+		setMatrix((current) => ({
+			...current,
+			[title]: Object.fromEntries(
+				MATRIX_ROWS.map((row) => [row.id, "none"]),
+			) as Record<string, AccessLevel>,
+		}));
+		setSelectedJob(title);
+		setNewJobTitle("");
+		setDirty(true);
+	};
+
+	const resetTemplate = () => {
+		setJobTitles(JOB_TITLES);
+		setMatrix(buildTemplateMatrix());
+		setDirty(true);
+	};
+
+	const selectedSummary = accessSummary(matrix[selectedJob] ?? {});
+	const blockSummary = blockRows.reduce(
+		(acc, row) => {
+			const level = matrix[selectedJob]?.[row.id] ?? "none";
+			acc[level] += 1;
+			return acc;
+		},
+		{ full: 0, read: 0, none: 0 } as Record<AccessLevel, number>,
+	);
+
+	return (
+		<section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+			<div className="flex flex-col gap-4 border-b border-slate-200 bg-gradient-to-br from-white to-cyan-50/60 p-5 lg:flex-row lg:items-start lg:justify-between">
+				<div>
+					<p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-700">
+						Матрица доступа
+					</p>
+					<h2 className="mt-1 text-xl font-bold text-slate-950">
+						Должности и права по разделам
+					</h2>
+					<p className="mt-1 max-w-3xl text-sm text-slate-600">
+						Выберите должность, настройте блоки доступа и сохраните. Должности
+						после сохранения доступны в карточке сотрудника.
+					</p>
+				</div>
+				<div className="flex flex-col gap-2 sm:flex-row sm:items-center lg:justify-end">
+					<Input
+						value={newJobTitle}
+						onChange={(event) => setNewJobTitle(event.target.value)}
+						onKeyDown={(event) => {
+							if (event.key === "Enter") {
+								event.preventDefault();
+								addJobTitle();
+							}
+						}}
+						placeholder="Новая должность"
+						className="h-10 sm:w-56"
+					/>
+					<Button type="button" variant="outline" onClick={addJobTitle}>
+						<Plus className="mr-2 h-4 w-4" />
+						Добавить
+					</Button>
+					<Button type="button" variant="outline" onClick={resetTemplate}>
+						<RotateCcw className="mr-2 h-4 w-4" />
+						Шаблон
+					</Button>
+					<Button
+						type="button"
+						onClick={() => saveMatrixMutation.mutate()}
+						disabled={saveMatrixMutation.isPending}
+						className="bg-cyan-700 hover:bg-cyan-800"
+					>
+						<Save className="mr-2 h-4 w-4" />
+						{saveMatrixMutation.isPending ? "Сохранение..." : "Сохранить матрицу"}
+					</Button>
+				</div>
+			</div>
+
+			<div className="grid gap-0 xl:grid-cols-[320px_1fr]">
+				<aside className="border-b border-slate-200 bg-slate-50/70 p-4 xl:border-b-0 xl:border-r">
+					<div className="mb-3 flex items-center justify-between gap-3">
+						<div>
+							<p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+								Должности
+							</p>
+							<p className="text-sm text-slate-600">{jobTitles.length} ролей в матрице</p>
+						</div>
+						{dirty && (
+							<span className="rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-xs font-bold text-cyan-800">
+								Не сохранено
+							</span>
+						)}
+					</div>
+
+					<div className="max-h-[620px] space-y-2 overflow-y-auto pr-1">
+						{jobTitles.map((jobTitle) => {
+							const summary = accessSummary(matrix[jobTitle] ?? {});
+							const active = jobTitle === selectedJob;
+							return (
+								<button
+									key={jobTitle}
+									type="button"
+									onClick={() => setSelectedJob(jobTitle)}
+									className={cn(
+										"w-full rounded-2xl border bg-white p-3 text-left transition hover:border-cyan-200 hover:bg-cyan-50/50",
+										active && "border-cyan-400 bg-cyan-50 shadow-sm",
+									)}
+								>
+									<div className="flex items-start justify-between gap-3">
+										<p className="text-sm font-bold leading-snug text-slate-950">
+											{jobTitle}
+										</p>
+										<span
+											className={cn(
+												"mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full",
+												active ? "bg-cyan-600" : "bg-slate-300",
+											)}
+										/>
+									</div>
+									<div className="mt-3 grid grid-cols-3 gap-1.5 text-center text-[11px] font-bold">
+										<span className="rounded-full bg-emerald-50 px-2 py-1 text-emerald-700">
+											{summary.full} полн.
+										</span>
+										<span className="rounded-full bg-amber-50 px-2 py-1 text-amber-700">
+											{summary.read} просм.
+										</span>
+										<span className="rounded-full bg-rose-50 px-2 py-1 text-rose-700">
+											{summary.none} нет
+										</span>
+									</div>
+								</button>
+							);
+						})}
+					</div>
+				</aside>
+
+				<div className="min-w-0 p-4">
+					<div className="mb-4 flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+						<div className="min-w-0">
+							<p className="text-xs font-bold uppercase tracking-[0.14em] text-cyan-700">
+								Настройка роли
+							</p>
+							<h3 className="mt-1 truncate text-2xl font-bold text-slate-950">
+								{selectedJob}
+							</h3>
+							<div className="mt-2 flex flex-wrap gap-2 text-xs font-bold">
+								<span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+									Полный доступ: {selectedSummary.full}
+								</span>
+								<span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">
+									Просмотр: {selectedSummary.read}
+								</span>
+								<span className="rounded-full bg-rose-50 px-3 py-1 text-rose-700">
+									Нет доступа: {selectedSummary.none}
+								</span>
+							</div>
+						</div>
+						<div className="flex flex-wrap gap-2">
+							{Object.entries(ACCESS_LEVELS).map(([key, item]) => (
+								<Button
+									key={key}
+									type="button"
+									variant="outline"
+									size="sm"
+									onClick={() => setColumnAccess(selectedJob, key as AccessLevel)}
+									className={cn("rounded-full border font-bold", item.className)}
+								>
+									Везде: {item.label}
+								</Button>
+							))}
+						</div>
+					</div>
+
+					<div className="mb-4 overflow-x-auto">
+						<div className="flex min-w-max gap-2">
+							{groupedRows.map(([block, rows]) => {
+								const active = block === selectedBlock;
+								return (
+									<button
+										key={block}
+										type="button"
+										onClick={() => setSelectedBlock(block)}
+										className={cn(
+											"rounded-2xl border px-4 py-3 text-left text-sm transition",
+											active
+												? "border-cyan-400 bg-cyan-50 text-cyan-900 shadow-sm"
+												: "border-slate-200 bg-white text-slate-600 hover:border-cyan-200",
+										)}
+									>
+										<span className="block font-bold">{block}</span>
+										<span className="mt-1 block text-xs text-slate-500">
+											{rows.length} разделов
+										</span>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+
+					<div className="rounded-3xl border border-slate-200 bg-white shadow-sm">
+						<div className="flex flex-col gap-3 border-b border-slate-200 p-4 lg:flex-row lg:items-center lg:justify-between">
+							<div>
+								<p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+									{selectedBlock}
+								</p>
+								<p className="mt-1 text-sm text-slate-600">
+									{blockRows.length} разделов · полный {blockSummary.full} · просмотр {blockSummary.read} · запрет {blockSummary.none}
+								</p>
+							</div>
+							<div className="flex flex-wrap gap-2">
+								{Object.entries(ACCESS_LEVELS).map(([key, item]) => (
+									<Button
+										key={key}
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={() => setBlockAccess(selectedJob, key as AccessLevel)}
+										className={cn("rounded-full border font-bold", item.className)}
+									>
+										Блок: {item.label}
+									</Button>
+								))}
+							</div>
+						</div>
+
+						<div className="divide-y divide-slate-100">
+							{blockRows.map((row) => {
+								const value = matrix[selectedJob]?.[row.id] ?? "none";
+								return (
+									<div
+										key={row.id}
+										className="grid gap-3 p-4 transition hover:bg-slate-50 lg:grid-cols-[minmax(220px,1fr)_auto]"
+									>
+										<div className="min-w-0">
+											<p className="font-bold text-slate-950">{row.label}</p>
+											<p className="mt-1 text-xs text-slate-500">
+												{row.read.length + row.full.length} технических разрешений
+											</p>
+										</div>
+										<div className="grid grid-cols-3 gap-2 sm:w-[480px]">
+											{Object.entries(ACCESS_LEVELS).map(([key, item]) => {
+												const active = value === key;
+												return (
+													<button
+														key={key}
+														type="button"
+														onClick={() =>
+															setAccess(selectedJob, row.id, key as AccessLevel)
+														}
+														className={cn(
+															"min-h-10 rounded-full border px-3 text-xs font-bold transition",
+															active
+																? item.className
+																: "border-slate-200 bg-white text-slate-500 hover:bg-slate-50",
+														)}
+													>
+														{item.label}
+													</button>
+												);
+											})}
+										</div>
+									</div>
+								);
+							})}
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div className="border-t border-slate-100 px-5 py-3">
+				<div className="flex flex-wrap gap-2 text-xs">
+					{Object.entries(ACCESS_LEVELS).map(([key, item]) => (
+						<span
+							key={key}
+							className={cn("rounded-full border px-3 py-1 font-semibold", item.className)}
+						>
+							{item.label}
+						</span>
+					))}
+				</div>
+			</div>
+		</section>
+	);
+}
+
 export default function Roles() {
 	const [search, setSearch] = useState("");
 	const { toast } = useToast();
@@ -449,6 +1194,8 @@ export default function Roles() {
 					/>
 				</div>
 			</div>
+
+			<AccessMatrix roles={rolesArray} />
 
 			<div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
 				<Table>

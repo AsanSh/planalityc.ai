@@ -154,32 +154,41 @@ function typeTone(type: PortalContentType) {
 	return "bg-cyan-50 text-cyan-700";
 }
 
+type KpiAccent = { bar: string; chip: string; value: string };
+
+const KPI_ACCENTS: Record<string, KpiAccent> = {
+	emerald: { bar: "bg-emerald-500", chip: "bg-emerald-50 text-emerald-600", value: "text-emerald-600" },
+	amber: { bar: "bg-amber-500", chip: "bg-amber-50 text-amber-600", value: "text-amber-600" },
+	blue: { bar: "bg-blue-500", chip: "bg-blue-50 text-blue-600", value: "text-blue-600" },
+	rose: { bar: "bg-rose-500", chip: "bg-rose-50 text-rose-600", value: "text-rose-600" },
+	teal: { bar: "bg-teal-500", chip: "bg-teal-50 text-teal-600", value: "text-teal-600" },
+};
+
 function KpiCard({
 	label,
 	value,
 	icon: Icon,
-	tone = "text-cyan-700",
+	accent,
 }: {
 	label: string;
 	value: number;
 	icon: ElementType;
-	tone?: string;
+	accent: KpiAccent;
 }) {
 	return (
-		<div className="rounded-xl border border-am-border bg-white p-3 shadow-sm">
-			<div className="flex items-start justify-between gap-3">
-				<div>
-					<p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-am-text-muted">
-						{label}
-					</p>
-					<p className={cn("mt-1.5 font-mono text-xl font-semibold leading-none", tone)}>
-						{value}
-					</p>
+		<div className="group relative overflow-hidden rounded-2xl border border-am-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+			<span className={cn("absolute inset-x-0 top-0 h-1", accent.bar)} />
+			<div className="flex items-center justify-between gap-3">
+				<div className={cn("flex h-10 w-10 items-center justify-center rounded-xl", accent.chip)}>
+					<Icon className="h-5 w-5" />
 				</div>
-				<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-am-surface-subtle">
-					<Icon className="h-4 w-4 text-am-text-muted" />
-				</div>
+				<span className={cn("font-mono text-3xl font-bold leading-none tabular-nums", accent.value)}>
+					{value}
+				</span>
 			</div>
+			<p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-am-text-muted">
+				{label}
+			</p>
 		</div>
 	);
 }
@@ -464,14 +473,17 @@ export default function CrmMediaCenter() {
 
 	return (
 		<div className="space-y-5 p-6">
-			<section className="rounded-2xl border border-am-border bg-white p-6 shadow-sm">
-				<div className="flex flex-wrap items-start justify-between gap-4">
-					<div className="min-w-0">
-						<p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
-							CRM-маркетинг
-						</p>
-						<h1 className="mt-2 text-3xl font-bold text-am-text-strong">Медиацентр порталов</h1>
-						<p className="mt-1 max-w-3xl text-am-text-muted">
+			<section className="relative overflow-hidden rounded-3xl border border-am-border bg-gradient-to-br from-slate-950 via-cyan-950 to-teal-800 p-6 text-white shadow-lg sm:p-8">
+				<div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-teal-400/25 blur-3xl" />
+				<div className="pointer-events-none absolute -bottom-28 left-1/3 h-56 w-56 rounded-full bg-cyan-400/15 blur-3xl" />
+				<div className="relative flex flex-wrap items-start justify-between gap-5">
+					<div className="min-w-0 max-w-3xl">
+						<span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100 ring-1 ring-inset ring-white/20">
+							<Radio className="h-3.5 w-3.5" />
+							CRM · Маркетинг
+						</span>
+						<h1 className="mt-4 text-3xl font-bold leading-tight sm:text-4xl">Медиацентр порталов</h1>
+						<p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/70 sm:text-base">
 							Управление тем, что клиенты видят в своих порталах: объявления, опросы, новости,
 							закрытые продажи, услуги, клубные задания и ход строительства.
 						</p>
@@ -480,13 +492,13 @@ export default function CrmMediaCenter() {
 						<Button
 							type="button"
 							variant="outline"
-							className="gap-2 rounded-full"
+							className="gap-2 rounded-full border-white/25 bg-white/10 text-white hover:bg-white/20 hover:text-white"
 							onClick={() => setWorkspaceMode("preview")}
 						>
 							<Eye className="h-4 w-4" />
 							Превью портала
 						</Button>
-						<Button onClick={startCreate} className="gap-2 rounded-full bg-teal-600 px-5 hover:bg-teal-700">
+						<Button onClick={startCreate} className="gap-2 rounded-full bg-white px-5 text-teal-900 shadow-sm hover:bg-cyan-50">
 							<Plus className="h-4 w-4" />
 							Новый материал
 						</Button>
@@ -494,12 +506,12 @@ export default function CrmMediaCenter() {
 				</div>
 			</section>
 
-			<div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
-				<KpiCard label="Опубликовано" value={kpi.published} icon={CheckCircle2} tone="text-emerald-700" />
-				<KpiCard label="Черновики" value={kpi.draft} icon={Clock3} tone="text-amber-700" />
-				<KpiCard label="Опросы" value={kpi.polls} icon={Vote} tone="text-blue-700" />
-				<KpiCard label="Закрытые продажи" value={kpi.closedSales} icon={Radio} tone="text-rose-700" />
-				<KpiCard label="Услуги" value={kpi.services} icon={Wrench} tone="text-cyan-700" />
+			<div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+				<KpiCard label="Опубликовано" value={kpi.published} icon={CheckCircle2} accent={KPI_ACCENTS.emerald} />
+				<KpiCard label="Черновики" value={kpi.draft} icon={Clock3} accent={KPI_ACCENTS.amber} />
+				<KpiCard label="Опросы" value={kpi.polls} icon={Vote} accent={KPI_ACCENTS.blue} />
+				<KpiCard label="Закрытые продажи" value={kpi.closedSales} icon={Radio} accent={KPI_ACCENTS.rose} />
+				<KpiCard label="Услуги" value={kpi.services} icon={Wrench} accent={KPI_ACCENTS.teal} />
 			</div>
 
 			<section className="rounded-2xl border border-am-border bg-white p-3 shadow-sm">
@@ -735,7 +747,7 @@ export default function CrmMediaCenter() {
 											Начните с шаблона: объявление, опрос, услуга, закрытая продажа или ход строительства.
 										</p>
 									</div>
-									<div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+									<div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 										{QUICK_TEMPLATES.map((type) => {
 											const Icon = TYPE_ICONS[type];
 											return (
@@ -743,10 +755,12 @@ export default function CrmMediaCenter() {
 													key={type}
 													type="button"
 													onClick={() => applyTemplate(type)}
-													className="rounded-xl border border-am-border bg-white p-3 text-left shadow-sm transition hover:border-cyan-200 hover:shadow-md"
+													className="group flex items-center gap-3 rounded-2xl border border-am-border bg-white p-3 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md"
 												>
-													<Icon className="h-4 w-4 text-cyan-700" />
-													<p className="mt-2 text-sm font-semibold text-am-text-strong">{TYPE_LABELS[type]}</p>
+													<span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition group-hover:scale-105", typeTone(type))}>
+														<Icon className="h-5 w-5" />
+													</span>
+													<span className="text-sm font-semibold text-am-text-strong">{TYPE_LABELS[type]}</span>
 												</button>
 											);
 										})}

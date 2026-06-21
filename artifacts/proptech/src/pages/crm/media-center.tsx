@@ -34,6 +34,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	Sheet,
+	SheetContent,
+	SheetHeader,
+	SheetTitle,
+} from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -314,31 +320,8 @@ export default function CrmMediaCenter() {
 	const [items, setItems] = useState<PortalContentItem[]>(() => getPortalContentItems());
 	const [editing, setEditing] = useState<PortalContentItem | null>(null);
 	const [draft, setDraft] = useState<DraftContent>(emptyDraft);
-	const [workspaceMode, setWorkspaceMode] = useState<"content" | "preview">("content");
+	const [editorOpen, setEditorOpen] = useState(false);
 	const [previewAudience, setPreviewAudience] = useState<PortalAudience>("buyers");
-	const [typeFilter, setTypeFilter] = useState<"all" | PortalContentType>("all");
-	const [statusFilter, setStatusFilter] = useState<"all" | PortalContentStatus>("all");
-	const [audienceFilter, setAudienceFilter] = useState<"all" | PortalAudience>("all");
-	const [placementFilter, setPlacementFilter] = useState<"all" | PortalPlacement>("all");
-	const [searchQuery, setSearchQuery] = useState("");
-
-	const filtered = useMemo(() => {
-		const query = searchQuery.trim().toLowerCase();
-		return items.filter((item) => {
-			const matchesQuery =
-				!query ||
-				item.title.toLowerCase().includes(query) ||
-				item.body.toLowerCase().includes(query) ||
-				(item.projectName || "").toLowerCase().includes(query);
-			return (
-				matchesQuery &&
-				(typeFilter === "all" || item.type === typeFilter) &&
-				(statusFilter === "all" || item.status === statusFilter) &&
-				(audienceFilter === "all" || item.audience === audienceFilter) &&
-				(placementFilter === "all" || (item.placement ?? "home") === placementFilter)
-			);
-		});
-	}, [audienceFilter, items, placementFilter, searchQuery, statusFilter, typeFilter]);
 
 	const kpi = {
 		published: items.filter((item) => item.status === "published").length,
@@ -350,8 +333,14 @@ export default function CrmMediaCenter() {
 
 	const startCreate = () => {
 		setEditing(null);
-		setDraft(emptyDraft());
-		setWorkspaceMode("content");
+		setDraft({ ...emptyDraft(), audience: previewAudience });
+		setEditorOpen(true);
+	};
+
+	const openEditor = (item: PortalContentItem) => {
+		setEditing(item);
+		setDraft(item);
+		setEditorOpen(true);
 	};
 
 	const save = (publish = false) => {
@@ -388,6 +377,7 @@ export default function CrmMediaCenter() {
 		setItems(getPortalContentItems());
 		setEditing(null);
 		setDraft(emptyDraft());
+		setEditorOpen(false);
 		toast({ title: "Материал удалён" });
 	};
 
@@ -468,7 +458,8 @@ export default function CrmMediaCenter() {
 			},
 		};
 		setEditing(null);
-		setDraft({ ...emptyDraft(), ...templates[type] });
+		setDraft({ ...emptyDraft(), audience: previewAudience, ...templates[type] });
+		setEditorOpen(true);
 	};
 
 	return (
@@ -489,15 +480,6 @@ export default function CrmMediaCenter() {
 						</p>
 					</div>
 					<div className="flex flex-wrap gap-2">
-						<Button
-							type="button"
-							variant="outline"
-							className="gap-2 rounded-full border-white/25 bg-white/10 text-white hover:bg-white/20 hover:text-white"
-							onClick={() => setWorkspaceMode("preview")}
-						>
-							<Eye className="h-4 w-4" />
-							Превью портала
-						</Button>
 						<Button onClick={startCreate} className="gap-2 rounded-full bg-white px-5 text-teal-900 shadow-sm hover:bg-cyan-50">
 							<Plus className="h-4 w-4" />
 							Новый материал
@@ -514,523 +496,300 @@ export default function CrmMediaCenter() {
 				<KpiCard label="Услуги" value={kpi.services} icon={Wrench} accent={KPI_ACCENTS.teal} />
 			</div>
 
-			<section className="rounded-2xl border border-am-border bg-white p-3 shadow-sm">
-				<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-					<div className="inline-flex w-full rounded-full bg-am-surface-subtle p-1 sm:w-auto">
-						<button
-							type="button"
-							onClick={() => setWorkspaceMode("content")}
-							className={cn(
-								"flex-1 rounded-full px-4 py-2 text-sm font-semibold transition sm:flex-none",
-								workspaceMode === "content"
-									? "bg-am-primary text-white shadow-sm"
-									: "text-am-text-muted hover:text-am-text-strong",
-							)}
-						>
-							Контент
-						</button>
-						<button
-							type="button"
-							onClick={() => setWorkspaceMode("preview")}
-							className={cn(
-								"flex-1 rounded-full px-4 py-2 text-sm font-semibold transition sm:flex-none",
-								workspaceMode === "preview"
-									? "bg-am-primary text-white shadow-sm"
-									: "text-am-text-muted hover:text-am-text-strong",
-							)}
-						>
-							Превью клиента
-						</button>
-					</div>
-					<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-						<Select value={previewAudience} onValueChange={(value) => setPreviewAudience(value as PortalAudience)}>
-							<SelectTrigger className="w-full sm:!w-[220px]">
-								<SelectValue placeholder="Аудитория превью" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="buyers">Покупатель</SelectItem>
-								<SelectItem value="tenants">Арендатор</SelectItem>
-								<SelectItem value="investors">Инвестор</SelectItem>
-								<SelectItem value="contractors">Подрядчик</SelectItem>
-								<SelectItem value="suppliers">Поставщик</SelectItem>
-							</SelectContent>
-						</Select>
-						<p className="text-xs text-am-text-muted">
-							Предпросмотр показывает опубликованные материалы выбранной аудитории.
+			<section className="rounded-2xl border border-am-border bg-white p-4 shadow-sm sm:p-6">
+				<div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+					<div>
+						<p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700">
+							Живой портал клиента
+						</p>
+						<h2 className="text-2xl font-bold text-am-text-strong">Портал глазами клиента</h2>
+						<p className="mt-1 text-sm text-am-text-muted">
+							Нажмите на блок, чтобы отредактировать. Новые блоки добавляйте из меню снизу.
 						</p>
 					</div>
+					<Select value={previewAudience} onValueChange={(value) => setPreviewAudience(value as PortalAudience)}>
+						<SelectTrigger className="w-full sm:!w-[220px]">
+							<SelectValue placeholder="Аудитория" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="buyers">Покупатель</SelectItem>
+							<SelectItem value="tenants">Арендатор</SelectItem>
+							<SelectItem value="investors">Инвестор</SelectItem>
+							<SelectItem value="contractors">Подрядчик</SelectItem>
+							<SelectItem value="suppliers">Поставщик</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="mx-auto max-w-md rounded-[28px] border border-am-border bg-am-surface-subtle p-3 shadow-inner">
+					<ClientPortalExperience
+						audience={previewAudience}
+						editable
+						includeDrafts
+						activeId={editing?.id ?? null}
+						onSelectItem={openEditor}
+						userName="Клиент"
+						projectName="ОсОО Смарт Эстейт"
+						unitLabel="Квартира №264"
+						managerName="Менеджер объекта"
+					/>
 				</div>
 			</section>
 
-			{workspaceMode === "preview" ? (
-				<div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_420px]">
-					<section className="rounded-2xl border border-am-border bg-white p-5 shadow-sm">
-						<div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-							<div>
-								<p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700">
-									Живой предпросмотр
-								</p>
-								<h2 className="text-2xl font-bold text-am-text-strong">Портал глазами клиента</h2>
-								<p className="mt-1 text-sm text-am-text-muted">
-									Проверяйте, как опубликованные материалы попадут на главную, в “Мой дом”, услуги,
-									клуб и каталог.
-								</p>
-							</div>
-							<Badge variant="secondary">{AUDIENCE_LABELS[previewAudience]}</Badge>
-						</div>
-						<div className="mx-auto max-w-5xl">
-							<ClientPortalExperience
-								audience={previewAudience}
-								userName="Клиент"
-								projectName="ОсОО Смарт Эстейт"
-								unitLabel="Квартира №264"
-								managerName="Менеджер объекта"
-							/>
-						</div>
-					</section>
-					<aside className="space-y-4 rounded-2xl border border-am-border bg-white p-5 shadow-sm">
-						<div>
-							<p className="text-xs font-semibold uppercase tracking-[0.14em] text-am-text-muted">
-								Редакционный контроль
-							</p>
-							<h2 className="mt-1 text-xl font-bold text-am-text-strong">Что увидит клиент</h2>
-							<p className="mt-2 text-sm text-am-text-muted">
-								Черновики остаются внутри CRM. В портал попадают только опубликованные материалы
-								для выбранной аудитории и места показа.
-							</p>
-						</div>
-						<PortalPreviewCard draft={draft} />
-						<Button
-							type="button"
-							variant="outline"
-							className="w-full rounded-full"
-							onClick={() => setWorkspaceMode("content")}
-						>
-							Вернуться к редактору
-						</Button>
-					</aside>
+			<div className="pointer-events-none sticky bottom-4 z-30 flex justify-center">
+				<div className="pointer-events-auto flex max-w-full items-center gap-2 overflow-x-auto rounded-2xl border border-am-border bg-white/95 p-2 shadow-lg backdrop-blur">
+					<span className="shrink-0 pl-2 pr-1 text-xs font-semibold uppercase tracking-wide text-am-text-muted">
+						+ Блок
+					</span>
+					{QUICK_TEMPLATES.map((type) => {
+						const Icon = TYPE_ICONS[type];
+						return (
+							<button
+								key={type}
+								type="button"
+								onClick={() => applyTemplate(type)}
+								className="group flex shrink-0 items-center gap-2 rounded-xl border border-am-border bg-white px-3 py-2 text-sm font-semibold text-am-text-strong shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-md"
+							>
+								<span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", typeTone(type))}>
+									<Icon className="h-4 w-4" />
+								</span>
+								<span className="whitespace-nowrap">{TYPE_LABELS[type]}</span>
+							</button>
+						);
+					})}
 				</div>
-			) : (
-				<div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_430px]">
-					<div className="space-y-4">
-						<section className="rounded-2xl border border-am-border bg-white p-4 shadow-sm">
-							<div className="flex flex-col gap-3">
-								<div className="relative">
-									<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-am-text-muted" />
-									<Input
-										value={searchQuery}
-										onChange={(event) => setSearchQuery(event.target.value)}
-										placeholder="Поиск по заголовку, тексту, проекту..."
-										className="pl-9"
-									/>
-								</div>
-								<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-									<Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as typeof typeFilter)}>
-										<SelectTrigger>
-											<SelectValue placeholder="Тип" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="all">Все типы</SelectItem>
-											{Object.entries(TYPE_LABELS).map(([value, label]) => (
-												<SelectItem key={value} value={value}>
-													{label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-									<Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}>
-										<SelectTrigger>
-											<SelectValue placeholder="Статус" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="all">Все статусы</SelectItem>
-											{Object.entries(STATUS_LABELS).map(([value, label]) => (
-												<SelectItem key={value} value={value}>
-													{label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-									<Select value={audienceFilter} onValueChange={(value) => setAudienceFilter(value as typeof audienceFilter)}>
-										<SelectTrigger>
-											<SelectValue placeholder="Аудитория" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="all">Все порталы</SelectItem>
-											{Object.entries(AUDIENCE_LABELS).map(([value, label]) => (
-												value === "all" ? null :
-												<SelectItem key={value} value={value}>
-													{label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-									<Select value={placementFilter} onValueChange={(value) => setPlacementFilter(value as typeof placementFilter)}>
-										<SelectTrigger>
-											<SelectValue placeholder="Размещение" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="all">Все места</SelectItem>
-											{Object.entries(PLACEMENT_LABELS).map(([value, label]) => (
-												<SelectItem key={value} value={value}>
-													{label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-									<Button
-										type="button"
-										variant="outline"
-										className="col-span-2 w-full whitespace-nowrap sm:col-span-1"
-										onClick={() => {
-											setSearchQuery("");
-											setTypeFilter("all");
-											setStatusFilter("all");
-											setAudienceFilter("all");
-											setPlacementFilter("all");
-										}}
-									>
-										Сбросить
-									</Button>
-								</div>
-							</div>
-						</section>
+			</div>
 
-						<section className="rounded-2xl border border-am-border bg-white p-5 shadow-sm">
-							<div className="flex flex-wrap items-center justify-between gap-3">
-								<div>
-									<h2 className="text-xl font-bold text-am-text-strong">Материалы портала</h2>
-									<p className="text-sm text-am-text-muted">
-										{filtered.length} из {items.length} материалов · откройте карточку для редактирования в конструкторе
-									</p>
-								</div>
-								<div className="flex flex-wrap gap-2">
-									{QUICK_TEMPLATES.slice(0, 4).map((type) => {
-										const Icon = TYPE_ICONS[type];
-										return (
-											<Button
-												key={type}
-												type="button"
-												variant="outline"
-												size="sm"
-												className="gap-1.5 rounded-full"
-												onClick={() => applyTemplate(type)}
-											>
-												<Icon className="h-3.5 w-3.5" />
-												{TYPE_LABELS[type]}
-											</Button>
-										);
-									})}
-								</div>
-							</div>
-
-							{filtered.length > 0 ? (
-								<div className="mt-4 grid gap-3 xl:grid-cols-2">
-									{filtered.map((item) => (
-										<MaterialCard
-											key={item.id}
-											item={item}
-											active={editing?.id === item.id}
-											onOpen={() => {
-												setEditing(item);
-												setDraft(item);
-											}}
-										/>
-									))}
-								</div>
-							) : (
-								<div className="mt-5 rounded-2xl border border-dashed border-am-border bg-am-surface-subtle p-6">
-									<div className="mx-auto max-w-2xl text-center">
-										<Newspaper className="mx-auto h-10 w-10 text-am-text-muted/40" />
-										<h3 className="mt-3 text-lg font-bold text-am-text-strong">Материалов пока нет</h3>
-										<p className="mt-1 text-sm text-am-text-muted">
-											Начните с шаблона: объявление, опрос, услуга, закрытая продажа или ход строительства.
-										</p>
-									</div>
-									<div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-										{QUICK_TEMPLATES.map((type) => {
-											const Icon = TYPE_ICONS[type];
-											return (
-												<button
-													key={type}
-													type="button"
-													onClick={() => applyTemplate(type)}
-													className="group flex items-center gap-3 rounded-2xl border border-am-border bg-white p-3 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md"
-												>
-													<span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition group-hover:scale-105", typeTone(type))}>
-														<Icon className="h-5 w-5" />
-													</span>
-													<span className="text-sm font-semibold text-am-text-strong">{TYPE_LABELS[type]}</span>
-												</button>
-											);
-										})}
-									</div>
-								</div>
-							)}
-						</section>
-					</div>
-
-					<aside className="h-fit rounded-2xl border border-am-border bg-white p-5 shadow-sm xl:sticky xl:top-4">
-						<div className="mb-5 flex items-start justify-between gap-3">
-							<div>
-								<p className="text-xs font-semibold uppercase tracking-[0.14em] text-am-text-muted">
-									Конструктор публикации
-								</p>
-								<h2 className="text-xl font-bold text-am-text-strong">
-									{editing ? "Редактировать материал" : "Новый материал"}
-								</h2>
-							</div>
+			<Sheet open={editorOpen} onOpenChange={setEditorOpen}>
+				<SheetContent side="right" className="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-md">
+					<SheetHeader className="border-b border-am-border p-5">
+						<SheetTitle className="flex items-center justify-between gap-3">
+							<span>{editing ? "Редактировать материал" : "Новый материал"}</span>
 							{editing && (
 								<Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={remove}>
 									<Trash2 className="h-3.5 w-3.5" />
 									Удалить
 								</Button>
 							)}
-						</div>
+						</SheetTitle>
+					</SheetHeader>
 
-						<div className="space-y-5">
-							<PortalPreviewCard draft={draft} />
+					<div className="space-y-5 p-5">
+						<PortalPreviewCard draft={draft} />
 
+						<div className="grid grid-cols-2 gap-3">
 							<div>
-								<p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-am-text-muted">
-									Быстрый шаблон
-								</p>
-								<div className="flex flex-wrap gap-2 rounded-xl border border-am-border bg-am-surface-subtle p-3">
-									{QUICK_TEMPLATES.map((type) => (
-										<Button
-											key={type}
-											type="button"
-											variant="outline"
-											size="sm"
-											className="h-8 rounded-full bg-white"
-											onClick={() => applyTemplate(type)}
-										>
-											{TYPE_LABELS[type]}
-										</Button>
-									))}
-								</div>
-							</div>
-
-							<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-								<div>
-									<Label>Тип материала</Label>
-									<Select value={draft.type} onValueChange={(value) => setDraft({ ...draft, type: value as PortalContentType })}>
-										<SelectTrigger className="mt-1">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											{Object.entries(TYPE_LABELS).map(([value, label]) => (
-												<SelectItem key={value} value={value}>
-													{label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-								<div>
-									<Label>Статус</Label>
-									<Select value={draft.status} onValueChange={(value) => setDraft({ ...draft, status: value as PortalContentStatus })}>
-										<SelectTrigger className="mt-1">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="draft">Черновик</SelectItem>
-											<SelectItem value="published">Опубликовано</SelectItem>
-											<SelectItem value="archived">Архив</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
-								<div>
-									<Label>Аудитория</Label>
-									<Select value={draft.audience} onValueChange={(value) => setDraft({ ...draft, audience: value as PortalAudience })}>
-										<SelectTrigger className="mt-1">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											{Object.entries(AUDIENCE_LABELS).map(([value, label]) => (
-												<SelectItem key={value} value={value}>
-													{label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-								<div>
-									<Label>Размещение</Label>
-									<Select value={draft.placement || "home"} onValueChange={(value) => setDraft({ ...draft, placement: value as PortalPlacement })}>
-										<SelectTrigger className="mt-1">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											{Object.entries(PLACEMENT_LABELS).map(([value, label]) => (
-												<SelectItem key={value} value={value}>
-													{label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-							</div>
-
-							<div className="space-y-3">
-								<div>
-									<Label>Заголовок</Label>
-									<Input
-										className="mt-1"
-										value={draft.title}
-										onChange={(event) => setDraft({ ...draft, title: event.target.value })}
-										placeholder="Например: передача ключей"
-									/>
-								</div>
-								<div>
-									<Label>Текст для клиента</Label>
-									<Textarea
-										className="mt-1 min-h-[112px]"
-										value={draft.body}
-										onChange={(event) => setDraft({ ...draft, body: event.target.value })}
-										placeholder="Что клиент увидит в портале"
-									/>
-								</div>
-							</div>
-
-							{draft.type === "poll" && (
-								<div>
-									<Label>Варианты опроса</Label>
-									<div className="mt-2 space-y-2">
-										{(draft.pollOptions || []).map((option, index) => (
-											<Input
-												key={index}
-												value={option}
-												onChange={(event) => {
-													const next = [...(draft.pollOptions || [])];
-													next[index] = event.target.value;
-													setDraft({ ...draft, pollOptions: next });
-												}}
-												placeholder={`Вариант ${index + 1}`}
-											/>
+								<Label>Тип материала</Label>
+								<Select value={draft.type} onValueChange={(value) => setDraft({ ...draft, type: value as PortalContentType })}>
+									<SelectTrigger className="mt-1">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{Object.entries(TYPE_LABELS).map(([value, label]) => (
+											<SelectItem key={value} value={value}>
+												{label}
+											</SelectItem>
 										))}
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											onClick={() => setDraft({ ...draft, pollOptions: [...(draft.pollOptions || []), ""] })}
-										>
-											Добавить вариант
-										</Button>
-									</div>
-								</div>
-							)}
-
-							<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-								<div>
-									<Label>Проект / ЖК</Label>
-									<Input
-										className="mt-1"
-										value={draft.projectName || ""}
-										onChange={(event) => setDraft({ ...draft, projectName: event.target.value })}
-										placeholder="Опционально"
-									/>
-								</div>
-								<div>
-									<Label>Баннер URL</Label>
-									<Input
-										className="mt-1"
-										value={draft.imageUrl || ""}
-										onChange={(event) => setDraft({ ...draft, imageUrl: event.target.value })}
-										placeholder="https://..."
-									/>
-								</div>
-								<div>
-									<Label>Дата публикации</Label>
-									<Input
-										className="mt-1"
-										type="date"
-										value={draft.publishAt.slice(0, 10)}
-										onChange={(event) => setDraft({ ...draft, publishAt: event.target.value })}
-									/>
-								</div>
-								<div>
-									<Label>Дата окончания</Label>
-									<Input
-										className="mt-1"
-										type="date"
-										value={(draft.expiresAt || "").slice(0, 10)}
-										onChange={(event) => setDraft({ ...draft, expiresAt: event.target.value })}
-									/>
-								</div>
+									</SelectContent>
+								</Select>
 							</div>
-
-							<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-								<div>
-									<Label>Цена / подпись</Label>
-									<Input
-										className="mt-1"
-										value={draft.priceLabel || ""}
-										onChange={(event) => setDraft({ ...draft, priceLabel: event.target.value })}
-										placeholder="от 12 000 сом"
-									/>
-								</div>
-								<div>
-									<Label>Бонусы клуба</Label>
-									<Input
-										className="mt-1"
-										type="number"
-										value={draft.rewardPoints || 0}
-										onChange={(event) => setDraft({ ...draft, rewardPoints: Number(event.target.value) })}
-										placeholder="200"
-									/>
-								</div>
-								<div>
-									<Label>Текст кнопки</Label>
-									<Input
-										className="mt-1"
-										value={draft.ctaLabel || ""}
-										onChange={(event) => setDraft({ ...draft, ctaLabel: event.target.value })}
-										placeholder="Подробнее"
-									/>
-								</div>
-								<div>
-									<Label>Ссылка кнопки</Label>
-									<Input
-										className="mt-1"
-										value={draft.ctaUrl || ""}
-										onChange={(event) => setDraft({ ...draft, ctaUrl: event.target.value })}
-										placeholder="https://..."
-									/>
-								</div>
+							<div>
+								<Label>Статус</Label>
+								<Select value={draft.status} onValueChange={(value) => setDraft({ ...draft, status: value as PortalContentStatus })}>
+									<SelectTrigger className="mt-1">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="draft">Черновик</SelectItem>
+										<SelectItem value="published">Опубликовано</SelectItem>
+										<SelectItem value="archived">Архив</SelectItem>
+									</SelectContent>
+								</Select>
 							</div>
-
-							<div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-am-border bg-am-surface-subtle p-3">
-								<button
-									type="button"
-									onClick={() => setDraft({ ...draft, pinned: !draft.pinned })}
-									className={cn(
-										"inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold",
-										draft.pinned ? "bg-amber-100 text-amber-800" : "bg-white text-am-text-muted",
-									)}
-								>
-									<Pin className="h-3.5 w-3.5" />
-									{draft.pinned ? "Закреплено" : "Не закреплено"}
-								</button>
-								<p className="text-xs text-am-text-muted">
-									Публикация попадёт в портал после сохранения со статусом “Опубликовано”.
-								</p>
+							<div>
+								<Label>Аудитория</Label>
+								<Select value={draft.audience} onValueChange={(value) => setDraft({ ...draft, audience: value as PortalAudience })}>
+									<SelectTrigger className="mt-1">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{Object.entries(AUDIENCE_LABELS).map(([value, label]) => (
+											<SelectItem key={value} value={value}>
+												{label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
-
-							<div className="grid gap-2 sm:grid-cols-2">
-								<Button type="button" variant="outline" className="gap-2 rounded-full" onClick={() => save(false)}>
-									<Archive className="h-4 w-4" />
-									Сохранить
-								</Button>
-								<Button type="button" className="gap-2 rounded-full bg-teal-600 hover:bg-teal-700" onClick={() => save(true)}>
-									<CheckCircle2 className="h-4 w-4" />
-									Опубликовать
-								</Button>
+							<div>
+								<Label>Размещение</Label>
+								<Select value={draft.placement || "home"} onValueChange={(value) => setDraft({ ...draft, placement: value as PortalPlacement })}>
+									<SelectTrigger className="mt-1">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{Object.entries(PLACEMENT_LABELS).map(([value, label]) => (
+											<SelectItem key={value} value={value}>
+												{label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
 						</div>
-					</aside>
-				</div>
-			)}
+
+						<div>
+							<Label>Заголовок</Label>
+							<Input
+								className="mt-1"
+								value={draft.title}
+								onChange={(event) => setDraft({ ...draft, title: event.target.value })}
+								placeholder="Например: передача ключей"
+							/>
+						</div>
+						<div>
+							<Label>Текст для клиента</Label>
+							<Textarea
+								className="mt-1 min-h-[100px]"
+								value={draft.body}
+								onChange={(event) => setDraft({ ...draft, body: event.target.value })}
+								placeholder="Что клиент увидит в портале"
+							/>
+						</div>
+
+						{draft.type === "poll" && (
+							<div>
+								<Label>Варианты опроса</Label>
+								<div className="mt-2 space-y-2">
+									{(draft.pollOptions || []).map((option, index) => (
+										<Input
+											key={index}
+											value={option}
+											onChange={(event) => {
+												const next = [...(draft.pollOptions || [])];
+												next[index] = event.target.value;
+												setDraft({ ...draft, pollOptions: next });
+											}}
+											placeholder={`Вариант ${index + 1}`}
+										/>
+									))}
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={() => setDraft({ ...draft, pollOptions: [...(draft.pollOptions || []), ""] })}
+									>
+										Добавить вариант
+									</Button>
+								</div>
+							</div>
+						)}
+
+						<div className="grid grid-cols-2 gap-3">
+							<div>
+								<Label>Проект / ЖК</Label>
+								<Input
+									className="mt-1"
+									value={draft.projectName || ""}
+									onChange={(event) => setDraft({ ...draft, projectName: event.target.value })}
+									placeholder="Опционально"
+								/>
+							</div>
+							<div>
+								<Label>Баннер URL</Label>
+								<Input
+									className="mt-1"
+									value={draft.imageUrl || ""}
+									onChange={(event) => setDraft({ ...draft, imageUrl: event.target.value })}
+									placeholder="https://..."
+								/>
+							</div>
+							<div>
+								<Label>Дата публикации</Label>
+								<Input
+									className="mt-1"
+									type="date"
+									value={draft.publishAt.slice(0, 10)}
+									onChange={(event) => setDraft({ ...draft, publishAt: event.target.value })}
+								/>
+							</div>
+							<div>
+								<Label>Дата окончания</Label>
+								<Input
+									className="mt-1"
+									type="date"
+									value={(draft.expiresAt || "").slice(0, 10)}
+									onChange={(event) => setDraft({ ...draft, expiresAt: event.target.value })}
+								/>
+							</div>
+							<div>
+								<Label>Цена / подпись</Label>
+								<Input
+									className="mt-1"
+									value={draft.priceLabel || ""}
+									onChange={(event) => setDraft({ ...draft, priceLabel: event.target.value })}
+									placeholder="от 12 000 сом"
+								/>
+							</div>
+							<div>
+								<Label>Бонусы клуба</Label>
+								<Input
+									className="mt-1"
+									type="number"
+									value={draft.rewardPoints || 0}
+									onChange={(event) => setDraft({ ...draft, rewardPoints: Number(event.target.value) })}
+									placeholder="200"
+								/>
+							</div>
+							<div>
+								<Label>Текст кнопки</Label>
+								<Input
+									className="mt-1"
+									value={draft.ctaLabel || ""}
+									onChange={(event) => setDraft({ ...draft, ctaLabel: event.target.value })}
+									placeholder="Подробнее"
+								/>
+							</div>
+							<div>
+								<Label>Ссылка кнопки</Label>
+								<Input
+									className="mt-1"
+									value={draft.ctaUrl || ""}
+									onChange={(event) => setDraft({ ...draft, ctaUrl: event.target.value })}
+									placeholder="https://..."
+								/>
+							</div>
+						</div>
+
+						<div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-am-border bg-am-surface-subtle p-3">
+							<button
+								type="button"
+								onClick={() => setDraft({ ...draft, pinned: !draft.pinned })}
+								className={cn(
+									"inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold",
+									draft.pinned ? "bg-amber-100 text-amber-800" : "bg-white text-am-text-muted",
+								)}
+							>
+								<Pin className="h-3.5 w-3.5" />
+								{draft.pinned ? "Закреплено" : "Не закреплено"}
+							</button>
+							<p className="text-xs text-am-text-muted">
+								В портал попадёт только со статусом «Опубликовано».
+							</p>
+						</div>
+					</div>
+
+					<div className="sticky bottom-0 mt-auto grid grid-cols-2 gap-2 border-t border-am-border bg-white p-4">
+						<Button type="button" variant="outline" className="gap-2 rounded-full" onClick={() => save(false)}>
+							<Archive className="h-4 w-4" />
+							Сохранить
+						</Button>
+						<Button type="button" className="gap-2 rounded-full bg-teal-600 hover:bg-teal-700" onClick={() => save(true)}>
+							<CheckCircle2 className="h-4 w-4" />
+							Опубликовать
+						</Button>
+					</div>
+				</SheetContent>
+			</Sheet>
 		</div>
 	);
 }

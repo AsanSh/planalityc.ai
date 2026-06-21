@@ -204,7 +204,7 @@ export default function BuyerPortal({ previewBuyerId }: { previewBuyerId?: numbe
 					managerName="Менеджер объекта"
 				/>
 
-				<div className="grid gap-4 sm:grid-cols-2">
+				<div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))]">
 					<KPI
 						icon={<Building2 className="w-6 h-6 text-blue-600" />}
 						label="Договоров"
@@ -361,7 +361,7 @@ export default function BuyerPortal({ previewBuyerId }: { previewBuyerId?: numbe
 							</Button>
 						</div>
 					</div>
-					<div className="px-4 sm:px-6 py-4 border-b bg-gray-50/50 text-sm grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+					<div className="grid gap-4 border-b bg-gray-50/50 px-4 py-4 text-sm sm:px-6 [grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))]">
 						<div>
 							<p className="text-gray-500 text-xs">По графику</p>
 							<p className="font-semibold">{fmt(summary.totalCharged)} {currency}</p>

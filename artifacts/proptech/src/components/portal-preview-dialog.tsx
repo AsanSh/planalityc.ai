@@ -27,7 +27,7 @@ export function PortalPreviewDialog({
 }) {
 	return (
 		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-			<DialogContent className="w-[96vw] max-w-[1280px] max-h-[92vh] overflow-y-auto p-0 gap-0">
+			<DialogContent className="!w-[96vw] !max-w-[1280px] max-h-[92vh] overflow-y-auto p-0 gap-0">
 				<DialogTitle className="sr-only">Предпросмотр портала</DialogTitle>
 				{open && type === "contractor" && (
 					<ContractorPortal previewContractorId={id} />

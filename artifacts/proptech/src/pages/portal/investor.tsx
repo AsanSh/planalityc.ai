@@ -167,7 +167,7 @@ export default function InvestorPortal({ previewInvestorId }: { previewInvestorI
 				/>
 
 				{/* KPIs */}
-				<div className="grid gap-4 sm:grid-cols-2">
+				<div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))]">
 					<KPI
 						icon={<Wallet className="w-6 h-6 text-blue-600" />}
 						label="Инвестировано"

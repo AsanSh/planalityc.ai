@@ -832,7 +832,20 @@ function AccessMatrix({
 
 	const addJobTitle = () => {
 		const title = newJobTitle.trim();
-		if (!title || jobTitles.some((job) => job.toLowerCase() === title.toLowerCase())) return;
+		if (!title) {
+			toast({
+				title: "Введите название должности",
+				description: "Например: Руководитель отдела маркетинга",
+			});
+			return;
+		}
+		if (jobTitles.some((job) => job.toLowerCase() === title.toLowerCase())) {
+			toast({
+				title: "Такая должность уже есть",
+				description: "Выберите её в списке слева или укажите другое название.",
+			});
+			return;
+		}
 		setJobTitles((current) => [...current, title]);
 		setMatrix((current) => ({
 			...current,
@@ -876,24 +889,40 @@ function AccessMatrix({
 						после сохранения доступны в карточке сотрудника.
 					</p>
 				</div>
-				<div className="flex flex-col gap-2 sm:flex-row sm:items-center lg:justify-end">
-					<Input
-						value={newJobTitle}
-						onChange={(event) => setNewJobTitle(event.target.value)}
-						onKeyDown={(event) => {
-							if (event.key === "Enter") {
-								event.preventDefault();
-								addJobTitle();
-							}
-						}}
-						placeholder="Новая должность"
-						className="h-10 sm:w-56"
-					/>
-					<Button type="button" variant="outline" onClick={addJobTitle}>
+				<div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end lg:max-w-[760px] lg:justify-end">
+					<div className="min-w-[260px] flex-1 sm:flex-[1_1_280px]">
+						<Label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+							Новая должность
+						</Label>
+						<Input
+							value={newJobTitle}
+							onChange={(event) => setNewJobTitle(event.target.value)}
+							onKeyDown={(event) => {
+								if (event.key === "Enter") {
+									event.preventDefault();
+									addJobTitle();
+								}
+							}}
+							placeholder="Например: Маркетолог"
+							className="h-12 w-full min-w-[260px] rounded-2xl bg-white"
+						/>
+					</div>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={addJobTitle}
+						disabled={!newJobTitle.trim()}
+						className="h-12 rounded-2xl px-5"
+					>
 						<Plus className="mr-2 h-4 w-4" />
 						Добавить
 					</Button>
-					<Button type="button" variant="outline" onClick={resetTemplate}>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={resetTemplate}
+						className="h-12 rounded-2xl px-5"
+					>
 						<RotateCcw className="mr-2 h-4 w-4" />
 						Шаблон
 					</Button>
@@ -901,7 +930,7 @@ function AccessMatrix({
 						type="button"
 						onClick={() => saveMatrixMutation.mutate()}
 						disabled={saveMatrixMutation.isPending}
-						className="bg-cyan-700 hover:bg-cyan-800"
+						className="h-12 rounded-2xl bg-cyan-700 px-6 hover:bg-cyan-800"
 					>
 						<Save className="mr-2 h-4 w-4" />
 						{saveMatrixMutation.isPending ? "Сохранение..." : "Сохранить матрицу"}

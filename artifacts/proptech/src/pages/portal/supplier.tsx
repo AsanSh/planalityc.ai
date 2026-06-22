@@ -12,6 +12,7 @@ import {
 	Share2,
 	Wallet,
 } from "lucide-react";
+import { ClientPortalExperience } from "@/components/client-portal-experience";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
@@ -190,6 +191,11 @@ export default function SupplierPortal({ previewSupplierId }: { previewSupplierI
 					</h1>
 					<p className="text-sm opacity-70 mt-1">Личный кабинет поставщика</p>
 				</div>
+
+				<section className="space-y-3">
+					<h2 className="text-lg font-bold text-gray-900">Новости и предложения</h2>
+					<ClientPortalExperience variant="feed" audience="suppliers" />
+				</section>
 
 				<div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))]">
 					<KPI

@@ -38,11 +38,21 @@ export async function runMigrations(): Promise<void> {
   for (const file of selfHeal) {
     const sqlPath = path.join(migrationsFolder, file);
     if (!existsSync(sqlPath)) continue;
-    try {
-      await pool.query(readFileSync(sqlPath, "utf8"));
-      logger.info({ file }, "DB self-heal migration applied");
-    } catch (err) {
-      logger.error({ err, file }, "DB self-heal migration failed");
+    // Run each statement independently: one failing statement (e.g. a backfill
+    // referencing a wrong column) must NOT abort the rest, otherwise columns get
+    // applied only partially. Strip comment lines, split on ";".
+    const raw = readFileSync(sqlPath, "utf8")
+      .split("\n")
+      .filter((l) => !l.trim().startsWith("--"))
+      .join("\n");
+    const statements = raw.split(";").map((s) => s.trim()).filter(Boolean);
+    for (const stmt of statements) {
+      try {
+        await pool.query(stmt);
+      } catch (err) {
+        logger.error({ err, file, stmt: stmt.slice(0, 80) }, "DB self-heal statement failed");
+      }
     }
+    logger.info({ file, statements: statements.length }, "DB self-heal migration processed");
   }
 }

@@ -6,6 +6,7 @@ import { z } from "zod/v4";
 export const supplyRequestsTable = pgTable("supply_requests", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull(),
+  legalEntityId: integer("legal_entity_id"),
   projectId: integer("project_id"),
   constructionStageId: integer("construction_stage_id"),
   requestedBy: integer("requested_by").notNull(),
@@ -47,6 +48,7 @@ export const supplyApprovalsTable = pgTable("supply_approvals", {
 export const supplyOrdersTable = pgTable("supply_orders", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull(),
+  legalEntityId: integer("legal_entity_id"),
   supplierId: integer("supplier_id").notNull(),
   requestId: integer("request_id"),
   status: text("status").notNull().default("draft"), // draft | placed | processing | delivered | closed

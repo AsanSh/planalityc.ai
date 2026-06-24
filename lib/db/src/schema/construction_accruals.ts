@@ -5,6 +5,7 @@ import { z } from "zod/v4";
 export const constructionAccrualsTable = pgTable("construction_accruals", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull(),
+  legalEntityId: integer("legal_entity_id"),
   contractId: integer("contract_id").notNull(),
   projectId: integer("project_id"),
   installmentNumber: integer("installment_number").notNull().default(1), // 1,2,3...

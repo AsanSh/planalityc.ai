@@ -5,6 +5,8 @@ import { z } from "zod/v4";
 export const counterpartiesTable = pgTable("counterparties", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id"),
+  // linkedLegalEntityId: помечает контрагента, который САМ является другим юрлицом группы (для intercompany netting)
+  linkedLegalEntityId: integer("linked_legal_entity_id"),
   // type: юридическое лицо / физическое лицо
   type: text("type").notNull().default("individual"),
   // category: legacy одиночная роль (deprecated, оставлено для обратной совместимости)

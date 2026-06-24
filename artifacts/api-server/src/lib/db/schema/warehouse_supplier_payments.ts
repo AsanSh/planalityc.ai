@@ -5,6 +5,7 @@ import { z } from "zod/v4";
 export const warehouseSupplierPaymentsTable = pgTable("warehouse_supplier_payments", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull(),
+  legalEntityId: integer("legal_entity_id"),
   supplierId: integer("supplier_id").notNull(),
   date: text("date").notNull(),
   amount: numeric("amount", { precision: 15, scale: 2 }).notNull(),

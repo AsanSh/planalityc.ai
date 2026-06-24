@@ -90,7 +90,22 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 		shortLabel: "Финансы",
 		description: "Счета, операции, зарплата, ОДДС, ОПУ, бюджет, задолженности и платежный календарь.",
 		settingsKeys: ["finance"],
-		routePrefixes: ["/finance"],
+		// Финансовые страницы исторически живут и под /finance, и под /construction/* (см. layout.tsx, модуль finance).
+		// Более длинные префиксы приоритетнее /construction (сортировка по длине в ROUTE_PREFIX_TO_MODULE_ID).
+		routePrefixes: [
+			"/finance",
+			"/construction/accounts",
+			"/construction/operations",
+			"/construction/accruals",
+			"/construction/cashier",
+			"/construction/reconciliation",
+			"/construction/budget",
+			"/construction/payroll",
+			"/construction/planning/forecast",
+			"/construction/planning/overdue",
+			"/construction/planning/approvals",
+			"/construction/analytics",
+		],
 		dashboardTabs: ["finance"],
 		defaultPath: "/dashboard?tab=finance",
 		ownedEntities: ["account", "operation", "budget", "accrual", "payment", "payrollEmployee", "approvalRequest"],

@@ -36,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		data: user,
 		isLoading,
 		isError,
+		error,
 		refetch,
 	} = useQuery({
 		...getGetMeQueryOptions(),
@@ -46,10 +47,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	});
 
 	useEffect(() => {
-		if (isError) {
+		if (!isError) return;
+		// Only force logout on a real auth failure. A 429 (rate limit), 5xx, or
+		// network blip must NOT clear the token — otherwise normal active use
+		// kicks the user back to /login.
+		const status =
+			(error as { response?: { status?: number }; status?: number } | null)?.response?.status ??
+			(error as { status?: number } | null)?.status;
+		if (status === 401 || status === 403) {
 			setToken(null);
 		}
-	}, [isError]);
+	}, [isError, error]);
 
 	useEffect(() => {
 		if (token && !isLoading && !user && !isError) {

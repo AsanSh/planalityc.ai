@@ -1,11 +1,12 @@
 import { Building2, HardHat, Megaphone, Newspaper, Percent, Radio, Send, Vote, Wrench } from "lucide-react";
 import type { ElementType } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
 	getPortalContentItems,
 	isContentVisibleForAudience,
+	PORTAL_CONTENT_QUERY_KEY,
 	type PortalAudience,
-	type PortalContentItem,
 	type PortalContentType,
 } from "@/lib/client-portal";
 
@@ -36,17 +37,10 @@ const TYPE_ICONS: Record<PortalContentType, ElementType> = {
 };
 
 export function PortalMediaFeed({ audience }: { audience: PortalAudience }) {
-	const [items, setItems] = useState<PortalContentItem[]>(() => getPortalContentItems());
-
-	useEffect(() => {
-		const sync = () => setItems(getPortalContentItems());
-		window.addEventListener("storage", sync);
-		window.addEventListener("planalityc:portal-storage", sync as EventListener);
-		return () => {
-			window.removeEventListener("storage", sync);
-			window.removeEventListener("planalityc:portal-storage", sync as EventListener);
-		};
-	}, []);
+	const { data: items = [] } = useQuery({
+		queryKey: PORTAL_CONTENT_QUERY_KEY,
+		queryFn: () => getPortalContentItems(),
+	});
 
 	const visibleItems = useMemo(
 		() =>

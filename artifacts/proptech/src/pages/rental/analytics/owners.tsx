@@ -20,7 +20,7 @@ type OwnerRow = {
 export default function RentalOwners() {
 	const { data: statements = [] } = useQuery<any[]>({
 		queryKey: ["rental-owner-statements"],
-		queryFn: () => api.get("/rental/owner-statements").then((r) => r.data),
+		queryFn: () => api.get("/rental/statements").then((r) => r.data),
 	});
 
 	const statementsArray = Array.isArray(statements) ? statements : [];

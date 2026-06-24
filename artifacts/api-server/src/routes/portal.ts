@@ -8,7 +8,7 @@ import {
   warehouseSupplierPaymentsTable,
   counterpartiesTable, constructionSalesContractsTable, constructionAccrualsTable,
   constructionOperationsTable, constructionUnitsTable, constructionProjectsTable,
-  companiesTable,
+  companiesTable, portalContentTable,
 } from "../lib/db";
 import { requireAuth, requireRole, AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
@@ -827,6 +827,117 @@ router.get("/portal/account-status/:type/:id", requireRole("admin", "company_adm
     lastName: user.lastName ?? null,
     isActive: user.isActive,
   });
+});
+
+// ── PORTAL CONTENT (медиацентр) ──────────────────────────────────────────────
+// Контент, который клиенты видят в своих порталах. Scoped по компании.
+
+type PortalContentBody = {
+  type?: string;
+  status?: string;
+  audience?: string;
+  placement?: string | null;
+  title?: string;
+  body?: string;
+  projectName?: string | null;
+  imageUrl?: string | null;
+  priceLabel?: string | null;
+  rewardPoints?: number | null;
+  ctaLabel?: string | null;
+  ctaUrl?: string | null;
+  pollOptions?: string[] | null;
+  pinned?: boolean;
+  publishAt?: string | null;
+  expiresAt?: string | null;
+};
+
+/** Normalize writable fields from the request body into DB column values. */
+function normalizePortalContent(body: PortalContentBody) {
+  const toDate = (v?: string | null) => (v ? new Date(v) : null);
+  return {
+    type: body.type ?? "news",
+    status: body.status ?? "draft",
+    audience: body.audience ?? "all",
+    placement: body.placement ?? "home",
+    title: (body.title ?? "").trim(),
+    body: (body.body ?? "").trim(),
+    projectName: body.projectName ?? null,
+    imageUrl: body.imageUrl ?? null,
+    priceLabel: body.priceLabel ?? null,
+    rewardPoints:
+      body.rewardPoints == null ? null : Number(body.rewardPoints) || 0,
+    ctaLabel: body.ctaLabel ?? null,
+    ctaUrl: body.ctaUrl ?? null,
+    pollOptions: Array.isArray(body.pollOptions)
+      ? body.pollOptions.filter((o) => typeof o === "string")
+      : null,
+    pinned: Boolean(body.pinned),
+    publishAt: toDate(body.publishAt) ?? new Date(),
+    expiresAt: toDate(body.expiresAt),
+  };
+}
+
+// GET /portal-content — список материалов компании (для админа и порталов клиентов)
+router.get("/portal-content", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const companyId = req.scopedCompanyId!;
+  const audience = typeof req.query.audience === "string" ? req.query.audience : undefined;
+  const status = typeof req.query.status === "string" ? req.query.status : undefined;
+
+  const filters = [eq(portalContentTable.companyId, companyId)];
+  if (audience) filters.push(eq(portalContentTable.audience, audience));
+  if (status) filters.push(eq(portalContentTable.status, status));
+
+  const rows = await db
+    .select()
+    .from(portalContentTable)
+    .where(and(...filters))
+    .orderBy(desc(portalContentTable.pinned), desc(portalContentTable.publishAt));
+
+  res.json(rows);
+});
+
+// POST /portal-content — создать материал (только админ компании)
+router.post("/portal-content", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+  const values = normalizePortalContent(req.body ?? {});
+  if (!values.title) {
+    res.status(400).json({ error: "Укажите заголовок" }); return;
+  }
+  const [row] = await db.insert(portalContentTable).values({
+    companyId: req.scopedCompanyId!,
+    ...values,
+  }).returning();
+  res.status(201).json(row);
+});
+
+// PUT /portal-content/:id — обновить материал (только админ компании)
+router.put("/portal-content/:id", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
+  if (!id) { res.status(400).json({ error: "Некорректный id" }); return; }
+  const values = normalizePortalContent(req.body ?? {});
+  if (!values.title) {
+    res.status(400).json({ error: "Укажите заголовок" }); return;
+  }
+  const [row] = await db.update(portalContentTable)
+    .set(values)
+    .where(and(
+      eq(portalContentTable.id, id),
+      eq(portalContentTable.companyId, req.scopedCompanyId!),
+    ))
+    .returning();
+  if (!row) { res.status(404).json({ error: "Материал не найден" }); return; }
+  res.json(row);
+});
+
+// DELETE /portal-content/:id — удалить материал (только админ компании)
+router.delete("/portal-content/:id", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
+  if (!id) { res.status(400).json({ error: "Некорректный id" }); return; }
+  await db.delete(portalContentTable)
+    .where(and(
+      eq(portalContentTable.id, id),
+      eq(portalContentTable.companyId, req.scopedCompanyId!),
+    ));
+  res.json({ ok: true });
 });
 
 export default router;

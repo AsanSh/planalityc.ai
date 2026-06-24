@@ -1,3 +1,5 @@
+import { api } from "./api";
+
 export type PortalAudience =
 	| "all"
 	| "buyers"
@@ -66,7 +68,6 @@ export interface PortalContentItem {
 }
 
 const ACCESS_KEY = "planalityc.clientPortal.access.v1";
-const CONTENT_KEY = "planalityc.clientPortal.media.v1";
 
 function readJson<T>(key: string, fallback: T): T {
 	if (typeof window === "undefined") return fallback;
@@ -148,39 +149,75 @@ export function upsertPortalAccess(input: {
 	return next;
 }
 
-export function getPortalContentItems() {
-	return readJson<PortalContentItem[]>(CONTENT_KEY, []);
+// ── Portal content (медиацентр) — backed by API ──────────────────────────────
+
+function toIso(value: unknown): string {
+	if (!value) return "";
+	if (typeof value === "string") return value;
+	try {
+		return new Date(value as string).toISOString();
+	} catch {
+		return "";
+	}
 }
 
-export function savePortalContentItems(items: PortalContentItem[]) {
-	writeJson(CONTENT_KEY, items);
-}
-
-export function createPortalContentItem(
-	input: Omit<PortalContentItem, "id" | "createdAt" | "updatedAt">,
-) {
-	const now = new Date().toISOString();
-	const item: PortalContentItem = {
-		...input,
-		id: `portal-media-${Date.now()}`,
-		createdAt: now,
-		updatedAt: now,
+/** Map a raw DB row (numeric id, Date columns) to the PortalContentItem shape. */
+function mapPortalContentRow(row: Record<string, unknown>): PortalContentItem {
+	return {
+		id: String(row.id),
+		type: (row.type as PortalContentType) ?? "news",
+		status: (row.status as PortalContentStatus) ?? "draft",
+		audience: (row.audience as PortalAudience) ?? "all",
+		placement: (row.placement as PortalPlacement) ?? undefined,
+		title: (row.title as string) ?? "",
+		body: (row.body as string) ?? "",
+		projectName: (row.projectName as string) ?? undefined,
+		imageUrl: (row.imageUrl as string) ?? undefined,
+		priceLabel: (row.priceLabel as string) ?? undefined,
+		rewardPoints: row.rewardPoints == null ? undefined : Number(row.rewardPoints),
+		ctaLabel: (row.ctaLabel as string) ?? undefined,
+		ctaUrl: (row.ctaUrl as string) ?? undefined,
+		pollOptions: Array.isArray(row.pollOptions) ? (row.pollOptions as string[]) : undefined,
+		pinned: Boolean(row.pinned),
+		publishAt: toIso(row.publishAt),
+		expiresAt: row.expiresAt ? toIso(row.expiresAt) : undefined,
+		createdAt: toIso(row.createdAt),
+		updatedAt: toIso(row.updatedAt),
 	};
-	savePortalContentItems([item, ...getPortalContentItems()]);
-	return item;
 }
 
-export function updatePortalContentItem(id: string, input: Partial<PortalContentItem>) {
-	const items = getPortalContentItems();
-	const next = items.map((item) =>
-		item.id === id ? { ...item, ...input, updatedAt: new Date().toISOString() } : item,
-	);
-	savePortalContentItems(next);
-	return next.find((item) => item.id === id) ?? null;
+export const PORTAL_CONTENT_QUERY_KEY = ["portal-content"] as const;
+
+export async function getPortalContentItems(params?: {
+	audience?: PortalAudience;
+	status?: PortalContentStatus;
+}): Promise<PortalContentItem[]> {
+	const { data } = await api.get<Record<string, unknown>[]>("/portal-content", {
+		params: {
+			audience: params?.audience,
+			status: params?.status,
+		},
+	});
+	return (Array.isArray(data) ? data : []).map(mapPortalContentRow);
 }
 
-export function deletePortalContentItem(id: string) {
-	savePortalContentItems(getPortalContentItems().filter((item) => item.id !== id));
+export async function createPortalContentItem(
+	input: Omit<PortalContentItem, "id" | "createdAt" | "updatedAt">,
+): Promise<PortalContentItem> {
+	const { data } = await api.post<Record<string, unknown>>("/portal-content", input);
+	return mapPortalContentRow(data);
+}
+
+export async function updatePortalContentItem(
+	id: string,
+	input: Omit<PortalContentItem, "id" | "createdAt" | "updatedAt">,
+): Promise<PortalContentItem> {
+	const { data } = await api.put<Record<string, unknown>>(`/portal-content/${id}`, input);
+	return mapPortalContentRow(data);
+}
+
+export async function deletePortalContentItem(id: string): Promise<void> {
+	await api.delete(`/portal-content/${id}`);
 }
 
 export function isContentVisibleForAudience(item: PortalContentItem, audience: PortalAudience) {

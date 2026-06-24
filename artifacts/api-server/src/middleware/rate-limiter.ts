@@ -4,7 +4,7 @@ import { Request, Response } from 'express';
 // Базовый rate limiter для всех endpoints
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 минут
-  max: 100, // максимум 100 запросов
+  max: 2000, // SPA шлёт 5–15 запросов на страницу; прежние 100 выбивались за ~2 перехода
   message: { error: 'Слишком много запросов, попробуйте позже' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -35,7 +35,9 @@ export const authLimiter = rateLimit({
 // Limiter для API endpoints
 export const apiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 минута
-  max: 60, // 60 запросов в минуту
+  max: 300, // активный пользователь открывает ~20–30 страниц/мин × ~10 запросов
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { error: 'API rate limit exceeded' },
 });
 

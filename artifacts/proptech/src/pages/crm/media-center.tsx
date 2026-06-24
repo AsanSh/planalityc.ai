@@ -21,7 +21,8 @@ import {
 	Wrench,
 } from "lucide-react";
 import type { ElementType } from "react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClientPortalExperience } from "@/components/client-portal-experience";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ import {
 	createPortalContentItem,
 	deletePortalContentItem,
 	getPortalContentItems,
+	PORTAL_CONTENT_QUERY_KEY,
 	type PortalAudience,
 	type PortalContentItem,
 	type PortalContentStatus,
@@ -317,11 +319,53 @@ function MaterialCard({
 
 export default function CrmMediaCenter() {
 	const { toast } = useToast();
-	const [items, setItems] = useState<PortalContentItem[]>(() => getPortalContentItems());
+	const queryClient = useQueryClient();
 	const [editing, setEditing] = useState<PortalContentItem | null>(null);
 	const [draft, setDraft] = useState<DraftContent>(emptyDraft);
 	const [editorOpen, setEditorOpen] = useState(false);
 	const [previewAudience, setPreviewAudience] = useState<PortalAudience>("buyers");
+
+	const { data: items = [] } = useQuery({
+		queryKey: PORTAL_CONTENT_QUERY_KEY,
+		queryFn: () => getPortalContentItems(),
+	});
+
+	const invalidate = () =>
+		queryClient.invalidateQueries({ queryKey: PORTAL_CONTENT_QUERY_KEY });
+
+	const createMutation = useMutation({
+		mutationFn: ({ payload }: { payload: DraftContent; publish: boolean }) =>
+			createPortalContentItem(payload),
+		onSuccess: (created, vars) => {
+			invalidate();
+			setEditing(created);
+			toast({ title: vars.publish ? "Материал опубликован" : "Материал создан" });
+		},
+		onError: () => toast({ title: "Не удалось сохранить", variant: "destructive" }),
+	});
+
+	const updateMutation = useMutation({
+		mutationFn: ({ id, payload }: { id: string; payload: DraftContent; publish: boolean }) =>
+			updatePortalContentItem(id, payload),
+		onSuccess: (updated, vars) => {
+			invalidate();
+			if (updated) setEditing(updated);
+			toast({ title: vars.publish ? "Материал опубликован" : "Материал сохранён" });
+		},
+		onError: () => toast({ title: "Не удалось сохранить", variant: "destructive" }),
+	});
+
+	const deleteMutation = useMutation({
+		mutationFn: (id: string) => deletePortalContentItem(id),
+		onSuccess: () => {
+			invalidate();
+			setEditing(null);
+			setDraft(emptyDraft());
+			setEditorOpen(false);
+			toast({ title: "Материал удалён" });
+		},
+		onError: () => toast({ title: "Не удалось удалить", variant: "destructive" }),
+	});
 
 	const kpi = {
 		published: items.filter((item) => item.status === "published").length,
@@ -358,27 +402,16 @@ export default function CrmMediaCenter() {
 			rewardPoints: Number(draft.rewardPoints || 0),
 		};
 		if (editing) {
-			const updated = updatePortalContentItem(editing.id, payload);
-			setItems(getPortalContentItems());
-			if (updated) setEditing(updated);
-			toast({ title: publish ? "Материал опубликован" : "Материал сохранён" });
+			updateMutation.mutate({ id: editing.id, payload, publish });
 			return;
 		}
-		const created = createPortalContentItem(payload);
-		setItems(getPortalContentItems());
-		setEditing(created);
-		toast({ title: publish ? "Материал опубликован" : "Материал создан" });
+		createMutation.mutate({ payload, publish });
 	};
 
 	const remove = () => {
 		if (!editing) return;
 		if (!confirm(`Удалить «${editing.title}»?`)) return;
-		deletePortalContentItem(editing.id);
-		setItems(getPortalContentItems());
-		setEditing(null);
-		setDraft(emptyDraft());
-		setEditorOpen(false);
-		toast({ title: "Материал удалён" });
+		deleteMutation.mutate(editing.id);
 	};
 
 	const applyTemplate = (type: PortalContentType) => {

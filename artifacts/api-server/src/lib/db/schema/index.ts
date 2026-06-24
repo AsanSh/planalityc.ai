@@ -81,3 +81,4 @@ export * from "./project_legal_entities";
 export * from "./supply";
 export * from "./global_catalog";
 export * from "./user_table_views";
+export * from "./portal_content";

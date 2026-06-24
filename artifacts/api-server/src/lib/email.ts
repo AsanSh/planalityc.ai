@@ -5,6 +5,14 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 const FROM = process.env.FROM_EMAIL ?? "onboarding@resend.dev";
 const APP_NAME = "Asset Manager";
 
+function handleMissingResendConfig(context: Record<string, unknown>): boolean {
+  logger.warn(context, "RESEND_API_KEY not set — email was not sent");
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production") {
+    throw new Error("Email-сервис не настроен: отсутствует RESEND_API_KEY.");
+  }
+  return false;
+}
+
 export async function sendRegistrationVerificationEmail(
   email: string,
   code: string,
@@ -60,7 +68,7 @@ export async function sendRegistrationVerificationEmail(
 </html>`;
 
   if (!resend) {
-    logger.warn({ email, code, verifyLink }, "RESEND_API_KEY not set — registration code logged only");
+    handleMissingResendConfig({ email, code, verifyLink, emailType: "registration_verification" });
     return;
   }
 
@@ -121,7 +129,7 @@ export async function sendVerificationEmail(email: string, code: string, firstNa
 </html>`;
 
   if (!resend) {
-    logger.warn({ email, code }, "RESEND_API_KEY not set — verification code logged only");
+    handleMissingResendConfig({ email, code, emailType: "email_verification" });
     return;
   }
 

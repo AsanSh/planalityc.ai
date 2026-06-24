@@ -64,6 +64,12 @@ export function formatPriceSom(v: number): string {
 	return `${new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(v)} сом`;
 }
 
+export function formatUnitMoney(v: number, currency = "KGS"): string {
+	if (!Number.isFinite(v) || v <= 0) return "—";
+	const suffix = currency === "USD" ? "$" : currency === "KGS" ? "сом" : currency;
+	return `${new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(v)} ${suffix}`;
+}
+
 export function formatPricePerSqmCompact(v: number): string {
 	if (!Number.isFinite(v) || v <= 0) return "—";
 	return `${new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(v)}/м²`;

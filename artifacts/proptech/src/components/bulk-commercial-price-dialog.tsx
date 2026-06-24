@@ -108,6 +108,7 @@ export function BulkCommercialPriceDialog({
 					unitIds,
 					baseSalePricePerSqm: base,
 					priceCoefficient: coef,
+					currency: project?.currency || "KGS",
 					approvePrice: approvePrice || publishForSale,
 					publishForSale,
 					savePriceOnly: approvePrice && !publishForSale,

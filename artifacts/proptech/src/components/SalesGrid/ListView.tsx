@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { Tablo } from "@/components/am";
 import { Badge } from "@/components/ui/badge";
 import {
-	formatPriceSom,
+	formatUnitMoney,
 	resolvedPricePerSqm,
 	resolvedTotalPrice,
 } from "@/lib/unit-pricing";
@@ -104,7 +104,10 @@ export function ListView({
 				meta: { align: "right" as const },
 				cell: ({ row }) => (
 					<span className="font-mono tabular-nums text-right block text-emerald-700">
-						{formatPriceSom(resolvedTotalPrice(row.original))}
+						{formatUnitMoney(
+							resolvedTotalPrice(row.original),
+							row.original.currency || "KGS",
+						)}
 					</span>
 				),
 			},

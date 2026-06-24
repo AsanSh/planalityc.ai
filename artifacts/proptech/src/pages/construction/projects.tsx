@@ -43,6 +43,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
 import { ProjectsProgressTab } from "@/pages/construction/projects-progress-tab";
 import {
+	convertProjectAmount,
 	currencySymbol,
 	fmtProjectAmount,
 	projectCostBreakdown,
@@ -877,6 +878,7 @@ export default function ConstructionProjects() {
 	> | null>(null);
 	const [search, setSearch] = useState("");
 	const [pageTab, setPageTab] = useState("cards");
+	const [displayCurrency, setDisplayCurrency] = useState<"KGS" | "USD">("KGS");
 
 	useEffect(() => {
 		const params = new URLSearchParams(window.location.search);
@@ -962,7 +964,23 @@ export default function ConstructionProjects() {
 						Управление проектами и расчёт себестоимости
 					</p>
 				</div>
-				<div className="flex flex-wrap gap-2">
+				<div className="flex flex-wrap items-center gap-2">
+					<div className="flex h-9 rounded-md border border-am-border bg-white p-1 shadow-sm">
+						{(["KGS", "USD"] as const).map((currency) => (
+							<button
+								key={currency}
+								type="button"
+								onClick={() => setDisplayCurrency(currency)}
+								className={`rounded px-3 text-sm font-bold transition ${
+									displayCurrency === currency
+										? "bg-slate-950 text-white shadow-sm"
+										: "text-slate-500 hover:text-slate-900"
+								}`}
+							>
+								{currency === "KGS" ? "Сом" : "USD"}
+							</button>
+						))}
+					</div>
 					<Button
 						variant="outline"
 						onClick={() => setDocUploadOpen(true)}
@@ -1019,9 +1037,19 @@ export default function ConstructionProjects() {
 			) : (
 				<div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
 					{filtered.map((p) => {
+						const projectCurrency = p.currency || "KGS";
 						const cost = projectCostInCurrency(p);
-						const breakdown = projectCostBreakdown(p);
-						const sym = currencySymbol(p.currency || "KGS");
+						const displayCostTotal = convertProjectAmount(
+							cost.total,
+							projectCurrency,
+							displayCurrency,
+							p.exchangeRate,
+						);
+						const sym = currencySymbol(displayCurrency);
+						const rateLabel =
+							projectCurrency !== displayCurrency && p.exchangeRate
+								? ` · курс 1 USD = ${p.exchangeRate} сом`
+								: "";
 						const meta = parseDocumentMeta(p.documentMeta);
 						const templateMeta = parseContractTemplateMeta(p.contractTemplateMeta);
 
@@ -1038,11 +1066,23 @@ export default function ConstructionProjects() {
 								? manualSaleableArea
 								: (summary?.totalSaleableArea ?? totalConstructionArea);
 						const totalSpent = summary?.totalSpent ?? 0;
-						const plannedCostPerSqm = parseFloat(p.costPerSqm || "0");
-						const actualCostPerSqm =
+						const plannedCostPerSqmRaw = parseFloat(p.costPerSqm || "0");
+						const plannedCostPerSqm = convertProjectAmount(
+							plannedCostPerSqmRaw,
+							projectCurrency,
+							displayCurrency,
+							p.exchangeRate,
+						);
+						const actualCostPerSqmRaw =
 							totalConstructionArea > 0
 								? totalSpent / totalConstructionArea
 								: summary?.actualCostPerSqm ?? 0;
+						const actualCostPerSqm = convertProjectAmount(
+							actualCostPerSqmRaw,
+							"KGS",
+							displayCurrency,
+							p.exchangeRate,
+						);
 						const fmtArea = (value: number) =>
 							value > 0
 								? value.toLocaleString("ru-KG", {
@@ -1182,26 +1222,25 @@ export default function ConstructionProjects() {
 									</div>
 
 									<div className="space-y-3 p-4">
-									{cost.total > 0 && (
+									{displayCostTotal > 0 && (
 											<div className="rounded-[24px] border border-amber-200/90 bg-gradient-to-br from-amber-50 via-white to-cyan-50 p-4 shadow-inner">
 												<p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">
-												{projectCostLabel(p.currency || "KGS")}
+												{projectCostLabel(displayCurrency)}
 											</p>
 												<p className="mt-2 text-2xl font-black text-slate-950">
-												{fmtProjectAmount(cost.total)} {sym}
+												{fmtProjectAmount(displayCostTotal)} {sym}
 											</p>
-											{breakdown && (
-													<p className="mt-1 text-sm text-orange-600">
-													{breakdown}
-													{p.currency !== "KGS" &&
-														p.exchangeRate &&
-														` · курс ${p.exchangeRate}`}
+											{totalConstructionArea > 0 && plannedCostPerSqm > 0 && (
+												<p className="mt-1 text-sm text-orange-600">
+													{fmtProjectAmount(totalConstructionArea)} м² ×{" "}
+													{fmtProjectAmount(plannedCostPerSqm)} {sym}
+													{rateLabel}
 												</p>
 											)}
 										</div>
 									)}
 
-									{(plannedCostPerSqm > 0 || summary != null) && (
+									{(plannedCostPerSqmRaw > 0 || summary != null) && (
 											<div className="rounded-[22px] border border-slate-200/80 bg-white/70 p-3.5 shadow-sm shadow-slate-950/4">
 												<p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
 													Себестоимость за м²

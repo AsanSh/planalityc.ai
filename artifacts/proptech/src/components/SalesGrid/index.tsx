@@ -373,6 +373,21 @@ export default function SalesGrid() {
 		}
 	};
 
+	const handlePriceSave = async (unit: SalesGridUnit, pricePerSqm: number) => {
+		try {
+			await api.patch(`/construction/units/${unit.id}/pricing`, {
+				basePricePerSqm: pricePerSqm,
+				saleCoefficient: 1,
+				isPublishedForSale: unit.isPublishedForSale !== false,
+			});
+			toast({ title: "Цена сохранена" });
+			await refreshAll();
+		} catch (e) {
+			toast({ title: getApiErrorMessage(e), variant: "destructive" });
+			throw e;
+		}
+	};
+
 	const handleExportCsv = () => {
 		if (filteredUnits.length === 0) return;
 		exportChessUnitsCsv(filteredUnits, (code) => badgeCfgFor(statusBadgeMap, code).label);
@@ -607,6 +622,8 @@ export default function SalesGrid() {
 										onSelect={openUnit}
 										canEditArea={canEditArea}
 										onAreaSave={canEditArea ? handleAreaSave : undefined}
+										canEditPrice={canEditPrices}
+										onPriceSave={canEditPrices ? handlePriceSave : undefined}
 									/>
 								) : (
 									<AgentsView

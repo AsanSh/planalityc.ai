@@ -3,6 +3,7 @@
   "version": 2,
   "installCommand": "npm install",
   "buildCommand": "npm run build",
+  "outputDirectory": ".",
   "rewrites": [{ "source": "/(.*)", "destination": "/api" }],
   "crons": [
     {
@@ -12,7 +13,7 @@
   ],
   "functions": {
     "api/index.ts": {
-      "includeFiles": "dist/drizzle/migrations/**",
+      "includeFiles": "{dist/**,templates/**,drizzle/migrations/**}",
       "maxDuration": 120,
       "memory": 1024
     }

@@ -107,7 +107,7 @@ const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth, requireTenantCompany, requireEnabledModule("construction"));
 
 function canApproveUnitPricing(role: string | undefined): boolean {
-  return ["super_admin", "admin", "company_admin", "commercial_director"].includes(role || "");
+  return ["super_admin", "admin", "company_admin", "owner", "commercial_director"].includes(role || "");
 }
 
 function canImportUnits(role: string | undefined): boolean {

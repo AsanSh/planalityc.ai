@@ -34,7 +34,7 @@ import {
 	downloadUnitsTemplate,
 	exportUnitsToExcel,
 } from "@/lib/chess-units-xlsx";
-import { isUnitPublishedForSale } from "@/lib/unit-pricing";
+import { canManageUnitPricing, isUnitPublishedForSale } from "@/lib/unit-pricing";
 import {
 	badgeCfgFor,
 	buildStatusBadgeCfg,
@@ -135,7 +135,7 @@ export default function SalesGrid() {
 		isMobile,
 	} = state;
 
-	const canEditPrices = isCommercialDirector || (isAdmin && adminMode === "prices");
+	const canEditPrices = canManageUnitPricing(userRole);
 	const canEditArea = canEditPrices || isPTO || (isAdmin && adminMode === "pto");
 	const canBulkFloor = canEditPrices;
 

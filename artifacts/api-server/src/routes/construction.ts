@@ -267,6 +267,7 @@ router.post("/projects", async (req: AuthenticatedRequest, res): Promise<void> =
       row.totalFloors,
       row.totalUnits,
       row.currency || "KGS",
+      row.buildingType,
     );
   }
 
@@ -336,6 +337,7 @@ router.post("/projects/:id/generate-units", async (req: AuthenticatedRequest, re
     project.totalFloors,
     project.totalUnits,
     project.currency || "KGS",
+    project.buildingType,
   );
 
   res.json({ success: true, unitsCreated });
@@ -505,6 +507,7 @@ router.patch("/projects/:id", async (req: AuthenticatedRequest, res): Promise<vo
       row.totalFloors,
       row.totalUnits,
       row.currency || "KGS",
+      row.buildingType,
     );
   }
   if (body.currency) {

@@ -1,9 +1,18 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, constructionUnitsTable } from "./db";
 
+/** Тип здания проекта → тип юнита в шахматке. */
+function unitTypeFromBuilding(buildingType?: string | null): string {
+  return buildingType === "commercial" ? "commercial" : "apartment";
+}
+
 /**
- * Создаёт квартиры (construction_units) для шахматки по параметрам проекта.
- * totalUnits — общее число квартир; равномерно распределяется по этажам.
+ * Создаёт/досоздаёт юниты (construction_units) для шахматки по параметрам проекта.
+ * Инкрементально: добавляет только НЕДОСТАЮЩИЕ номера, существующие юниты
+ * (с ценами/статусами/покупателями) не трогает. Так правка проекта (рост этажей/
+ * числа юнитов) дорастает шахматку без потери данных. Полное пересоздание — через
+ * отдельный confirm-эндпоинт.
+ * totalUnits — общее число юнитов; равномерно распределяется по этажам.
  */
 export async function seedProjectUnits(
   companyId: number,
@@ -11,12 +20,14 @@ export async function seedProjectUnits(
   totalFloors: number,
   totalUnits: number,
   currency = "KGS",
+  buildingType?: string | null,
 ): Promise<number> {
   const floors = Math.max(1, Math.floor(totalFloors));
   const targetTotal = Math.max(1, Math.floor(totalUnits));
+  const unitType = unitTypeFromBuilding(buildingType);
 
-  const [existing] = await db
-    .select({ n: sql<number>`count(*)::int` })
+  const existingRows = await db
+    .select({ unitNumber: constructionUnitsTable.unitNumber })
     .from(constructionUnitsTable)
     .where(
       and(
@@ -24,10 +35,7 @@ export async function seedProjectUnits(
         eq(constructionUnitsTable.companyId, companyId),
       ),
     );
-
-  if (Number(existing?.n ?? 0) > 0) {
-    return 0;
-  }
+  const existing = new Set(existingRows.map((r) => r.unitNumber));
 
   const basePerFloor = Math.floor(targetTotal / floors);
   const extraFloors = targetTotal % floors;
@@ -38,12 +46,13 @@ export async function seedProjectUnits(
     const unitsOnFloor = basePerFloor + (f <= extraFloors ? 1 : 0);
     for (let u = 1; u <= unitsOnFloor; u++) {
       const unitNum = `${f}${String(u).padStart(2, "0")}`;
+      if (existing.has(unitNum)) continue; // не дублируем и не затираем существующие
       values.push({
         companyId,
         projectId,
         unitNumber: unitNum,
         floor: f,
-        unitType: "apartment",
+        unitType,
         currency,
         status: "available",
       });

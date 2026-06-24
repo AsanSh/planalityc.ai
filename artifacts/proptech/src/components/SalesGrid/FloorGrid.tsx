@@ -81,7 +81,7 @@ export function FloorGrid({
 										type="button"
 										onClick={() => onBulkFloor(floor, floorIds)}
 										className={[
-											"flex h-20 w-12 flex-col items-center justify-center rounded-lg text-xs font-bold",
+											"flex h-16 w-10 flex-col items-center justify-center rounded-lg text-xs font-bold sm:h-20 sm:w-12",
 											isDropTarget
 												? "bg-blue-200 text-blue-700"
 												: "bg-slate-100 text-slate-600 hover:bg-slate-200",

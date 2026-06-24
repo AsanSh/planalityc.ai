@@ -252,6 +252,19 @@ export default function SalesGrid() {
 		qc.invalidateQueries({ queryKey: ["construction-units", projectId] });
 	};
 
+	const handleDeleteUnit = async () => {
+		if (!panelUnit) return;
+		if (!confirm(`Удалить юнит ${panelUnit.unitNumber}? Действие необратимо.`)) return;
+		try {
+			await api.delete(`/construction/units/${panelUnit.id}`);
+			toast({ title: "Юнит удалён" });
+			setPanelUnitId(null);
+			invalidateAll();
+		} catch (e) {
+			toast({ title: getApiErrorMessage(e, "Не удалось удалить юнит"), variant: "destructive" });
+		}
+	};
+
 	const refreshAll = async () => {
 		invalidateAll();
 		await Promise.allSettled([
@@ -659,6 +672,7 @@ export default function SalesGrid() {
 											terminateContractMut.mutate(contractId);
 										}
 									}}
+									onDelete={handleDeleteUnit}
 									onSaved={() => void refreshAll()}
 								/>
 							)}

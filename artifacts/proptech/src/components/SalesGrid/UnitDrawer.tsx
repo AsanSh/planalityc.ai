@@ -1,4 +1,4 @@
-import { History, Pencil, Receipt, Ruler, X, XCircle } from "lucide-react";
+import { History, Pencil, Receipt, Ruler, Trash2, X, XCircle } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -36,6 +36,7 @@ export function UnitDrawer({
 	onRequestSale,
 	onTerminateContract,
 	onSaved,
+	onDelete,
 }: {
 	unit: SalesGridUnit | null;
 	project: SalesGridProject | undefined;
@@ -53,6 +54,7 @@ export function UnitDrawer({
 	onRequestSale?: (status: "reserved" | "sold") => void;
 	onTerminateContract?: (contractId: number) => void;
 	onSaved: () => void;
+	onDelete?: () => void;
 }) {
 	const isMobile = useIsMobile();
 	const [tab, setTab] = useState<DrawerTab>("main");
@@ -157,6 +159,17 @@ export function UnitDrawer({
 					<Button size="sm" variant="outline" className="gap-1.5" onClick={onEdit}>
 						<Pencil className="h-3.5 w-3.5" />
 						Редактировать
+					</Button>
+				)}
+				{!isPTO && !isPricingMode && onDelete && !isSold && !isReserved && !hasActiveContract && (
+					<Button
+						size="sm"
+						variant="outline"
+						className="gap-1.5 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+						onClick={onDelete}
+					>
+						<Trash2 className="h-3.5 w-3.5" />
+						Удалить
 					</Button>
 				)}
 				{canSell && (

@@ -2008,6 +2008,26 @@ router.post("/units", async (req: AuthenticatedRequest, res): Promise<void> => {
   res.status(201).json(row);
 });
 
+// DELETE /units/:id — удалить юнит из шахматки (для этажей нестандартной комплектности).
+// Защита: нельзя удалить проданный/забронированный или с привязанным клиентом/договором.
+router.delete("/units/:id", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const id = parseInt(req.params.id as string);
+  if (!id) { res.status(400).json({ error: "Некорректный id" }); return; }
+  const [unit] = await db
+    .select()
+    .from(constructionUnitsTable)
+    .where(and(eq(constructionUnitsTable.id, id), eq(constructionUnitsTable.companyId, req.scopedCompanyId!)));
+  if (!unit) { res.status(404).json({ error: "Юнит не найден" }); return; }
+  if (unit.status === "sold" || unit.buyerId || unit.salesContractId) {
+    res.status(409).json({ error: "Нельзя удалить: по юниту есть клиент или договор. Сначала отмените сделку." });
+    return;
+  }
+  await db
+    .delete(constructionUnitsTable)
+    .where(and(eq(constructionUnitsTable.id, id), eq(constructionUnitsTable.companyId, req.scopedCompanyId!)));
+  res.json({ ok: true });
+});
+
 router.patch("/units/:id", async (req: AuthenticatedRequest, res): Promise<void> => {
   const id = parseInt(req.params.id as string);
   const { unitNumber, floor, block, unitType, roomCount, area, pricePerSqm, currency, status, buyerId, contractDate, notes } = req.body;

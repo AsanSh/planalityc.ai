@@ -127,7 +127,7 @@ export function UnitCell({
 					onOpen();
 				}}
 				className={cn(
-					"relative flex h-20 w-20 flex-col items-center justify-center rounded-xl border-2 text-center shadow-sm transition-all",
+					"relative flex h-16 w-16 flex-col items-center justify-center rounded-xl border-2 text-center shadow-sm transition-all sm:h-20 sm:w-20",
 					locked ? "cursor-not-allowed opacity-60 bg-gray-100 border-gray-200" : "cursor-pointer hover:-translate-y-0.5 hover:shadow-md",
 					selected && "ring-2 ring-slate-900 ring-offset-2",
 					bulkChecked && "ring-2 ring-emerald-600 ring-offset-1",

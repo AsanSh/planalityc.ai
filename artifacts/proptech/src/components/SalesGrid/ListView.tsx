@@ -92,6 +92,7 @@ export function ListView({
 				cell: ({ row }) => (
 					<EditablePriceCell
 						price={resolvedPricePerSqm(row.original)}
+						currency={row.original.currency || "KGS"}
 						editable={!!canEditPrice && !!onPriceSave}
 						onSave={(val) => onPriceSave!(row.original, val)}
 					/>

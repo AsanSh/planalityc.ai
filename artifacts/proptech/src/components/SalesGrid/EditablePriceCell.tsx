@@ -1,15 +1,23 @@
 import { Pencil } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { formatPriceSom, parseNum } from "@/lib/unit-pricing";
+import { parseNum } from "@/lib/unit-pricing";
 import { cn } from "@/lib/utils";
+
+function formatPrice(value: number, currency: string) {
+	if (!Number.isFinite(value) || value <= 0) return "—";
+	const suffix = currency === "USD" ? "$" : currency === "KGS" ? "сом" : currency;
+	return `${new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(value)} ${suffix}`;
+}
 
 export function EditablePriceCell({
 	price,
+	currency = "KGS",
 	editable,
 	onSave,
 }: {
 	price: number;
+	currency?: string;
 	editable: boolean;
 	onSave: (value: number) => Promise<void>;
 }) {
@@ -52,7 +60,7 @@ export function EditablePriceCell({
 	if (!editable) {
 		return (
 			<span className="block text-right font-mono tabular-nums">
-				{formatPriceSom(price)}
+				{formatPrice(price, currency)}
 			</span>
 		);
 	}
@@ -78,7 +86,9 @@ export function EditablePriceCell({
 					}}
 					onBlur={() => void save()}
 				/>
-				<span className="text-[10px] text-slate-400">сом</span>
+				<span className="text-[10px] text-slate-400">
+					{currency === "USD" ? "$" : currency === "KGS" ? "сом" : currency}
+				</span>
 			</div>
 		);
 	}
@@ -97,8 +107,8 @@ export function EditablePriceCell({
 				setEditing(true);
 			}}
 		>
-			{formatPriceSom(price)}
-			<Pencil className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-60" />
+			{formatPrice(price, currency)}
+			<Pencil className="h-3 w-3 shrink-0 opacity-35 group-hover:opacity-70" />
 		</button>
 	);
 }

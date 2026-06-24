@@ -2063,6 +2063,7 @@ router.patch("/units/:id/pricing", async (req: AuthenticatedRequest, res): Promi
     const basePricePerSqm = parseDecimalInput(req.body?.basePricePerSqm);
     const saleCoefficient = parseDecimalInput(req.body?.saleCoefficient);
     const publish = req.body?.isPublishedForSale !== false;
+    const requestedCurrency = String(req.body?.currency || "").trim().toUpperCase();
 
     if (!Number.isFinite(basePricePerSqm) || basePricePerSqm <= 0) {
       res.status(400).json({ error: "Укажите базовую цену за м² больше 0" });
@@ -2089,7 +2090,10 @@ router.patch("/units/:id/pricing", async (req: AuthenticatedRequest, res): Promi
           eq(constructionProjectsTable.companyId, req.scopedCompanyId!),
         ),
       );
-    const unitCurrency = project?.currency || unit.currency || "KGS";
+    const unitCurrency =
+      requestedCurrency === "USD" || requestedCurrency === "KGS"
+        ? requestedCurrency
+        : project?.currency || unit.currency || "KGS";
 
     const area = parseFloat(String(unit.area || "0"));
     const approvedSalePricePerSqm = Math.round(basePricePerSqm * saleCoefficient * 100) / 100;
@@ -2142,6 +2146,7 @@ router.put("/units/:id/commercial-price", async (req: AuthenticatedRequest, res)
     const coefRaw = req.body?.priceCoefficient ?? req.body?.saleCoefficient;
     const areaRaw = req.body?.area;
     const activeForSale = req.body?.activeForSale !== false;
+    const requestedCurrency = String(req.body?.currency || "").trim().toUpperCase();
 
     let area = parseFloat(String(existing.area || "0"));
     if (areaRaw !== undefined && areaRaw !== null && String(areaRaw).trim() !== "") {
@@ -2164,17 +2169,6 @@ router.put("/units/:id/commercial-price", async (req: AuthenticatedRequest, res)
       return;
     }
 
-    if (base > 0) {
-      await db
-        .update(constructionProjectsTable)
-        .set({ costPerSqm: String(base), updatedAt: new Date() })
-        .where(
-          and(
-            eq(constructionProjectsTable.id, existing.projectId),
-            eq(constructionProjectsTable.companyId, req.scopedCompanyId!),
-          ),
-        );
-    }
     const [project] = await db
       .select({ currency: constructionProjectsTable.currency })
       .from(constructionProjectsTable)
@@ -2184,7 +2178,22 @@ router.put("/units/:id/commercial-price", async (req: AuthenticatedRequest, res)
           eq(constructionProjectsTable.companyId, req.scopedCompanyId!),
         ),
       );
-    const unitCurrency = project?.currency || existing.currency || "KGS";
+    const unitCurrency =
+      requestedCurrency === "USD" || requestedCurrency === "KGS"
+        ? requestedCurrency
+        : project?.currency || existing.currency || "KGS";
+
+    if (base > 0) {
+      await db
+        .update(constructionProjectsTable)
+        .set({ costPerSqm: String(base), currency: unitCurrency, updatedAt: new Date() })
+        .where(
+          and(
+            eq(constructionProjectsTable.id, existing.projectId),
+            eq(constructionProjectsTable.companyId, req.scopedCompanyId!),
+          ),
+        );
+    }
 
     const approvedSalePricePerSqm = Math.round(base * coef * 100) / 100;
     const approvedTotalPrice =
@@ -2761,7 +2770,9 @@ router.patch("/units/:id/area", async (req: AuthenticatedRequest, res): Promise<
   const oldArea = parseFloat(String(unit.area || "0"));
   const delta = newArea - oldArea;
   const pricePerSqm = parseFloat(String(unit.pricePerSqm || "0"));
-  const newTotalPrice = pricePerSqm > 0 ? newArea * pricePerSqm : null;
+  const approvedSalePricePerSqm = parseFloat(String(unit.approvedSalePricePerSqm || "0"));
+  const resolvedPricePerSqm = approvedSalePricePerSqm > 0 ? approvedSalePricePerSqm : pricePerSqm;
+  const newTotalPrice = resolvedPricePerSqm > 0 ? newArea * resolvedPricePerSqm : null;
 
   // Валидация документа: до 8 МБ в base64
   let docMeta: string | null = null;
@@ -2783,6 +2794,8 @@ router.patch("/units/:id/area", async (req: AuthenticatedRequest, res): Promise<
     .set({
       area: String(newArea),
       totalPrice: newTotalPrice ? String(newTotalPrice) : null,
+      approvedTotalPrice:
+        approvedSalePricePerSqm > 0 && newTotalPrice ? String(newTotalPrice) : unit.approvedTotalPrice,
       originalArea: unit.originalArea ?? String(oldArea),
       areaModified: true,
       areaModifiedBy: req.userId ?? null,

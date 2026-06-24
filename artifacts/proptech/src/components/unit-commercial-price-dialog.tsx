@@ -9,6 +9,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api-error";
@@ -30,6 +37,7 @@ export interface CommercialPriceProject {
 	baseSalePricePerSqm?: string | null;
 	costPerSqm?: string | null;
 	currency?: string;
+	exchangeRate?: string | null;
 }
 
 function fmtMoney(v: number) {
@@ -56,6 +64,7 @@ export function UnitCommercialPriceDialog({
 }) {
 	const { toast } = useToast();
 	const [basePrice, setBasePrice] = useState("");
+	const [priceCurrency, setPriceCurrency] = useState("KGS");
 	const [coefficient, setCoefficient] = useState("1");
 	const [areaSqm, setAreaSqm] = useState("");
 	const [activeForSale, setActiveForSale] = useState(true);
@@ -68,6 +77,7 @@ export function UnitCommercialPriceDialog({
 			project.costPerSqm ||
 			"";
 		setBasePrice(base ? String(base) : "");
+		setPriceCurrency(unit.currency || project.currency || "KGS");
 		setCoefficient(unit.priceCoefficient || unit.saleCoefficient || "1");
 		setAreaSqm(unit.area ? String(unit.area) : "");
 		setActiveForSale(unit.priceApproved ?? unit.isPublishedForSale ?? true);
@@ -78,7 +88,11 @@ export function UnitCommercialPriceDialog({
 	const coef = parseNum(coefficient) || 1;
 	const approvedPerSqm = base > 0 ? base * coef : 0;
 	const total = area > 0 && approvedPerSqm > 0 ? area * approvedPerSqm : 0;
-	const moneyUnit = currencyLabel(unit?.currency || project?.currency);
+	const moneyUnit = currencyLabel(priceCurrency);
+	const rateLabel =
+		priceCurrency === "USD" && project?.exchangeRate
+			? `Курс проекта: 1 USD = ${project.exchangeRate} сом`
+			: null;
 
 	const areaHint = useMemo(() => {
 		if (area > 0) return null;
@@ -114,6 +128,7 @@ export function UnitCommercialPriceDialog({
 				baseSalePricePerSqm: base,
 				priceCoefficient: coef,
 				area,
+				currency: priceCurrency,
 				activeForSale,
 			});
 			toast({ title: activeForSale ? "Цена сохранена и утверждена" : "Цена сохранена" });
@@ -162,6 +177,21 @@ export function UnitCommercialPriceDialog({
 								value={basePrice}
 								onChange={(e) => setBasePrice(e.target.value)}
 							/>
+							{rateLabel && (
+								<p className="mt-1 text-[11px] text-slate-500">{rateLabel}</p>
+							)}
+						</div>
+						<div className="flex flex-col">
+							<Label className="text-xs">Валюта цены</Label>
+							<Select value={priceCurrency} onValueChange={setPriceCurrency}>
+								<SelectTrigger className="mt-1">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="KGS">Сом (KGS)</SelectItem>
+									<SelectItem value="USD">Доллар (USD)</SelectItem>
+								</SelectContent>
+							</Select>
 						</div>
 						<div className="flex flex-col">
 							<Label className="text-xs">Коэффициент</Label>

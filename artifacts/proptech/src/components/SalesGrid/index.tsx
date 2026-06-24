@@ -378,6 +378,7 @@ export default function SalesGrid() {
 			await api.patch(`/construction/units/${unit.id}/pricing`, {
 				basePricePerSqm: pricePerSqm,
 				saleCoefficient: 1,
+				currency: unit.currency || selectedProject?.currency || "KGS",
 				isPublishedForSale: unit.isPublishedForSale !== false,
 			});
 			toast({ title: "Цена сохранена" });

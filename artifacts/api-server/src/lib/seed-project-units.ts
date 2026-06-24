@@ -10,6 +10,7 @@ export async function seedProjectUnits(
   projectId: number,
   totalFloors: number,
   totalUnits: number,
+  currency = "KGS",
 ): Promise<number> {
   const floors = Math.max(1, Math.floor(totalFloors));
   const targetTotal = Math.max(1, Math.floor(totalUnits));
@@ -43,7 +44,7 @@ export async function seedProjectUnits(
         unitNumber: unitNum,
         floor: f,
         unitType: "apartment",
-        currency: "KGS",
+        currency,
         status: "available",
       });
     }

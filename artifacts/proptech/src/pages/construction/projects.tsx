@@ -72,7 +72,6 @@ const STATUS_OPTS = [
 	{ value: "paused", label: "Приостановлен" },
 	{ value: "completed", label: "Завершён" },
 ];
-const CURRENCY_OPTS = ["KGS", "USD", "EUR", "RUB", "CNY"];
 const RATE_SOURCES = [
 	{ value: "nbkr", label: "НБКР (официальный)" },
 	{ value: "optima", label: "Optima Bank" },
@@ -545,8 +544,36 @@ function ProjectDialog({
 						<p className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
 							<Calculator className="w-3.5 h-3.5" /> Расчёт себестоимости
 						</p>
+						<div className="rounded-xl border border-slate-200 bg-slate-50/70 p-2">
+							<Label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+								Валюта расчёта проекта
+							</Label>
+							<div className="grid grid-cols-2 gap-2">
+								{["KGS", "USD"].map((currency) => (
+									<Button
+										key={currency}
+										type="button"
+										variant={form.currency === currency ? "default" : "outline"}
+										className={
+											form.currency === currency
+												? "h-10 bg-slate-950 text-white hover:bg-slate-800"
+												: "h-10 bg-white"
+										}
+										onClick={() => {
+											set("currency", currency);
+											if (currency === "KGS") set("exchangeRate", "1");
+										}}
+									>
+										{currency === "KGS" ? "Сом (KGS)" : "Доллар (USD)"}
+									</Button>
+								))}
+							</div>
+							<p className="mt-2 text-xs text-slate-500">
+								Цена за м², себестоимость и новые квартиры шахматки будут сохранены в выбранной валюте.
+							</p>
+						</div>
 						<div className="grid gap-3 sm:grid-cols-2">
-							<div className="flex flex-col">
+							<div className="flex flex-col sm:col-span-2">
 								<Label className="leading-tight mb-1.5">Стоимость за 1 кв.м ({form.currency})</Label>
 								<Input
 									className="mt-auto"
@@ -556,27 +583,6 @@ function ProjectDialog({
 									onChange={(e) => set("costPerSqm", e.target.value)}
 									placeholder={form.currency === "USD" ? "1200" : "105000"}
 								/>
-							</div>
-							<div className="flex flex-col">
-								<Label className="leading-tight mb-1.5">Валюта проекта</Label>
-								<Select
-									value={form.currency}
-									onValueChange={(v) => {
-										set("currency", v);
-										if (v === "KGS") set("exchangeRate", "1");
-									}}
-								>
-									<SelectTrigger className="mt-auto">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										{CURRENCY_OPTS.map((c) => (
-											<SelectItem key={c} value={c}>
-												{c}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
 							</div>
 							{form.currency !== "KGS" && (
 								<>

@@ -266,6 +266,7 @@ router.post("/projects", async (req: AuthenticatedRequest, res): Promise<void> =
       row.id,
       row.totalFloors,
       row.totalUnits,
+      row.currency || "KGS",
     );
   }
 
@@ -334,6 +335,7 @@ router.post("/projects/:id/generate-units", async (req: AuthenticatedRequest, re
     id,
     project.totalFloors,
     project.totalUnits,
+    project.currency || "KGS",
   );
 
   res.json({ success: true, unitsCreated });
@@ -502,7 +504,19 @@ router.patch("/projects/:id", async (req: AuthenticatedRequest, res): Promise<vo
       row.id,
       row.totalFloors,
       row.totalUnits,
+      row.currency || "KGS",
     );
+  }
+  if (body.currency) {
+    await db
+      .update(constructionUnitsTable)
+      .set({ currency: row.currency || body.currency, updatedAt: new Date() })
+      .where(
+        and(
+          eq(constructionUnitsTable.projectId, row.id),
+          eq(constructionUnitsTable.companyId, req.scopedCompanyId!),
+        ),
+      );
   }
 
   // Invalidate cache
@@ -1971,12 +1985,22 @@ router.post("/units", async (req: AuthenticatedRequest, res): Promise<void> => {
   }
   const a = parseDecimalInput(area);
   const pps = parseDecimalInput(pricePerSqm);
+  const [project] = await db
+    .select({ currency: constructionProjectsTable.currency })
+    .from(constructionProjectsTable)
+    .where(
+      and(
+        eq(constructionProjectsTable.id, projectIdNum),
+        eq(constructionProjectsTable.companyId, req.scopedCompanyId!),
+      ),
+    );
+  const unitCurrency = currency || project?.currency || "KGS";
   const [row] = await db.insert(constructionUnitsTable).values({
     companyId: req.scopedCompanyId!, projectId: projectIdNum, unitNumber: unitNumberValue, floor: floor ? parseInt(floor) : null,
     block, unitType: resolveUnitType(unitType), roomCount: roomCount ? parseInt(roomCount) : null,
     area: a > 0 ? String(a) : null, pricePerSqm: pps > 0 ? String(pps) : null,
     totalPrice: a > 0 && pps > 0 ? String(a * pps) : null,
-    currency: currency || "KGS", status: status || "available", notes,
+    currency: unitCurrency, status: status || "available", notes,
   }).returning();
   res.status(201).json(row);
 });
@@ -1991,13 +2015,34 @@ router.patch("/units/:id", async (req: AuthenticatedRequest, res): Promise<void>
   }
   const a = parseDecimalInput(area);
   const pps = parseDecimalInput(pricePerSqm);
+  const [existing] = await db
+    .select({
+      projectId: constructionUnitsTable.projectId,
+      currency: constructionUnitsTable.currency,
+    })
+    .from(constructionUnitsTable)
+    .where(and(eq(constructionUnitsTable.id, id), eq(constructionUnitsTable.companyId, req.scopedCompanyId!)));
+  if (!existing) {
+    res.status(404).json({ error: "Квартира не найдена" });
+    return;
+  }
+  const [project] = await db
+    .select({ currency: constructionProjectsTable.currency })
+    .from(constructionProjectsTable)
+    .where(
+      and(
+        eq(constructionProjectsTable.id, existing.projectId),
+        eq(constructionProjectsTable.companyId, req.scopedCompanyId!),
+      ),
+    );
+  const unitCurrency = currency || project?.currency || existing.currency || "KGS";
   const [row] = await db.update(constructionUnitsTable)
     .set({
       unitNumber: unitNumberValue, floor: floor ? parseInt(floor) : null, block,
       unitType: resolveUnitType(unitType), roomCount: roomCount ? parseInt(roomCount) : null,
       area: a > 0 ? String(a) : null, pricePerSqm: pps > 0 ? String(pps) : null,
       totalPrice: a > 0 && pps > 0 ? String(a * pps) : null,
-      currency, status, buyerId: buyerId || null, contractDate: contractDate || null, notes,
+      currency: unitCurrency, status, buyerId: buyerId || null, contractDate: contractDate || null, notes,
     })
     .where(and(eq(constructionUnitsTable.id, id), eq(constructionUnitsTable.companyId, req.scopedCompanyId!)))
     .returning();
@@ -2032,6 +2077,16 @@ router.patch("/units/:id/pricing", async (req: AuthenticatedRequest, res): Promi
       res.status(404).json({ error: "Квартира не найдена" });
       return;
     }
+    const [project] = await db
+      .select({ currency: constructionProjectsTable.currency })
+      .from(constructionProjectsTable)
+      .where(
+        and(
+          eq(constructionProjectsTable.id, unit.projectId),
+          eq(constructionProjectsTable.companyId, req.scopedCompanyId!),
+        ),
+      );
+    const unitCurrency = project?.currency || unit.currency || "KGS";
 
     const area = parseFloat(String(unit.area || "0"));
     const approvedSalePricePerSqm = Math.round(basePricePerSqm * saleCoefficient * 100) / 100;
@@ -2045,6 +2100,7 @@ router.patch("/units/:id/pricing", async (req: AuthenticatedRequest, res): Promi
         approvedTotalPrice: approvedTotalPrice != null ? String(approvedTotalPrice) : null,
         pricePerSqm: String(approvedSalePricePerSqm),
         totalPrice: approvedTotalPrice != null ? String(approvedTotalPrice) : null,
+        currency: unitCurrency,
         isPublishedForSale: publish,
         priceApprovedBy: req.userId || null,
         priceApprovedAt: new Date(),
@@ -2116,6 +2172,16 @@ router.put("/units/:id/commercial-price", async (req: AuthenticatedRequest, res)
           ),
         );
     }
+    const [project] = await db
+      .select({ currency: constructionProjectsTable.currency })
+      .from(constructionProjectsTable)
+      .where(
+        and(
+          eq(constructionProjectsTable.id, existing.projectId),
+          eq(constructionProjectsTable.companyId, req.scopedCompanyId!),
+        ),
+      );
+    const unitCurrency = project?.currency || existing.currency || "KGS";
 
     const approvedSalePricePerSqm = Math.round(base * coef * 100) / 100;
     const approvedTotalPrice =
@@ -2131,6 +2197,7 @@ router.put("/units/:id/commercial-price", async (req: AuthenticatedRequest, res)
         approvedTotalPrice: approvedTotalPrice != null ? String(approvedTotalPrice) : null,
         pricePerSqm: String(approvedSalePricePerSqm),
         totalPrice: approvedTotalPrice != null ? String(approvedTotalPrice) : null,
+        currency: unitCurrency,
         isPublishedForSale: activeForSale,
         priceApprovedBy: activeForSale ? req.userId || null : null,
         priceApprovedAt: activeForSale ? new Date() : null,
@@ -2160,6 +2227,16 @@ router.post("/units/bulk", async (req: AuthenticatedRequest, res): Promise<void>
   }
   const a = parseDecimalInput(area);
   const pps = parseDecimalInput(pricePerSqm);
+  const [project] = await db
+    .select({ currency: constructionProjectsTable.currency })
+    .from(constructionProjectsTable)
+    .where(
+      and(
+        eq(constructionProjectsTable.id, projectIdNum),
+        eq(constructionProjectsTable.companyId, req.scopedCompanyId!),
+      ),
+    );
+  const unitCurrency = currency || project?.currency || "KGS";
   const existing = await db.select().from(constructionUnitsTable).where(
     and(
       eq(constructionUnitsTable.companyId, req.scopedCompanyId!),
@@ -2178,7 +2255,7 @@ router.post("/units/bulk", async (req: AuthenticatedRequest, res): Promise<void>
         area: a > 0 ? String(a) : null,
         pricePerSqm: pps > 0 ? String(pps) : null,
         totalPrice: a > 0 && pps > 0 ? String(a * pps) : null,
-        currency: currency || "KGS", status: "available",
+        currency: unitCurrency, status: "available",
       });
     }
   }

@@ -872,9 +872,11 @@ export default function Clients() {
 			<div className="flex justify-between items-start">
 				<div>
 					<h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-						<Users className="w-6 h-6 text-blue-600" /> Клиенты
+						<Users className="w-6 h-6 text-blue-600" /> Клиенты 360
 					</h1>
-					<p className="text-sm text-gray-500 mt-1">База клиентов компании</p>
+					<p className="text-sm text-gray-500 mt-1">
+						Карточка клиента, сделки, договоры и история в одном правом окне
+					</p>
 				</div>
 				<Button
 					onClick={() => {
@@ -884,6 +886,12 @@ export default function Clients() {
 				>
 					<Plus className="w-4 h-4 mr-2" /> Добавить клиента
 				</Button>
+			</div>
+
+			<div className="rounded-[22px] border border-cyan-100 bg-cyan-50/70 px-4 py-3 text-sm text-slate-700">
+				<span className="font-semibold text-slate-950">Новая CRM-логика:</span>{" "}
+				нажмите на строку клиента, чтобы открыть справа карточку 360 со сделками,
+				договорами, контактами и историей.
 			</div>
 
 			<DataTable

@@ -502,7 +502,7 @@ const MODULES: Module[] = [
 			{
 				title: "Клиенты",
 				items: [
-					{ href: "/crm/clients", label: "Клиенты", icon: Users },
+					{ href: "/crm/clients", label: "Клиенты 360", icon: Users },
 					{ href: "/crm/leads/intake", label: "Приём лидов", icon: Rss },
 					{ href: "/crm/client-relations", label: "Клиентский сервис", icon: MessageCircle },
 					{ href: "/crm/media-center", label: "Медиацентр", icon: Megaphone },

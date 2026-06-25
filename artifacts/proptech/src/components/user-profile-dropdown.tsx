@@ -186,7 +186,7 @@ export default function UserProfileDropdown() {
 				</div>
 
 				{open && (
-					<div className="absolute right-0 top-12 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-[1000] overflow-hidden">
+					<div className="absolute bottom-12 right-0 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-[1000] overflow-hidden">
 						{/* Header */}
 						<div className="px-4 py-3 bg-gray-50 border-b">
 							<div className="flex items-center gap-3">

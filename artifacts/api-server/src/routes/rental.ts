@@ -706,6 +706,7 @@ router.get("/rental/accruals", async (req: AuthenticatedRequest, res): Promise<v
   const { leaseContractId, status, month } = req.query as Record<string, string | undefined>;
   const conditions: SQL[] = [];
   conditions.push(eq(accrualsTable.companyId, req.scopedCompanyId!));
+  if (req.query.legalEntityId) conditions.push(eq(accrualsTable.legalEntityId, parseInt(String(req.query.legalEntityId), 10)));
   if (leaseContractId) conditions.push(eq(accrualsTable.leaseContractId, parseInt(leaseContractId, 10)));
   if (status) conditions.push(eq(accrualsTable.status, status));
 
@@ -763,6 +764,7 @@ router.patch("/rental/accruals/:id", async (req: AuthenticatedRequest, res): Pro
   const { status, notes, discountType, discountAmount, discountReason, gracePeriodDays, dueDate } = req.body;
   const conditions: SQL[] = [eq(accrualsTable.id, id)];
   conditions.push(eq(accrualsTable.companyId, req.scopedCompanyId!));
+  if (req.query.legalEntityId) conditions.push(eq(accrualsTable.legalEntityId, parseInt(String(req.query.legalEntityId), 10)));
 
   const [existing] = await db.select().from(accrualsTable).where(and(...conditions));
   if (!existing) { res.status(404).json({ error: "Not found" }); return; }
@@ -818,6 +820,7 @@ router.post("/rental/accruals/:id/discount", async (req: AuthenticatedRequest, r
 
   const conditions: SQL[] = [eq(accrualsTable.id, id)];
   conditions.push(eq(accrualsTable.companyId, req.scopedCompanyId!));
+  if (req.query.legalEntityId) conditions.push(eq(accrualsTable.legalEntityId, parseInt(String(req.query.legalEntityId), 10)));
 
   const [existing] = await db.select().from(accrualsTable).where(and(...conditions));
   if (!existing) { res.status(404).json({ error: "Начисление не найдено" }); return; }
@@ -860,6 +863,7 @@ router.get("/rental/payments", async (req: AuthenticatedRequest, res): Promise<v
   const { leaseContractId } = req.query as Record<string, string | undefined>;
   const conditions: SQL[] = [];
   conditions.push(eq(paymentsTable.companyId, req.scopedCompanyId!));
+  if (req.query.legalEntityId) conditions.push(eq(paymentsTable.legalEntityId, parseInt(String(req.query.legalEntityId), 10)));
   if (leaseContractId) conditions.push(eq(paymentsTable.leaseContractId, parseInt(leaseContractId, 10)));
   const rows = await db.select().from(paymentsTable)
     .where(conditions.length ? and(...conditions) : undefined)
@@ -1129,6 +1133,7 @@ router.get("/rental/expenses", async (req: AuthenticatedRequest, res): Promise<v
   const { propertyId, category } = req.query as Record<string, string | undefined>;
   const conditions: SQL[] = [];
   conditions.push(eq(expensesTable.companyId, req.scopedCompanyId!));
+  if (req.query.legalEntityId) conditions.push(eq(expensesTable.legalEntityId, parseInt(String(req.query.legalEntityId), 10)));
   if (propertyId) conditions.push(eq(expensesTable.propertyId, parseInt(propertyId, 10)));
   if (category) conditions.push(eq(expensesTable.category, category));
   const rows = await db.select().from(expensesTable)
@@ -1166,6 +1171,7 @@ router.patch("/rental/expenses/:id", async (req: AuthenticatedRequest, res): Pro
   const { propertyId, leaseContractId, category, amount, currency, expenseDate, accountId, description } = req.body;
   const conditions: SQL[] = [eq(expensesTable.id, id)];
   conditions.push(eq(expensesTable.companyId, req.scopedCompanyId!));
+  if (req.query.legalEntityId) conditions.push(eq(expensesTable.legalEntityId, parseInt(String(req.query.legalEntityId), 10)));
   if (accountId !== undefined && !accountId) {
     res.status(400).json({ error: "Укажите расчётный счёт" });
     return;
@@ -1199,6 +1205,7 @@ router.delete("/rental/expenses/:id", async (req: AuthenticatedRequest, res): Pr
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
   const conditions: SQL[] = [eq(expensesTable.id, id)];
   conditions.push(eq(expensesTable.companyId, req.scopedCompanyId!));
+  if (req.query.legalEntityId) conditions.push(eq(expensesTable.legalEntityId, parseInt(String(req.query.legalEntityId), 10)));
   const [row] = await db.delete(expensesTable).where(and(...conditions)).returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
   res.json({ ok: true });

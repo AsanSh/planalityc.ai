@@ -1832,11 +1832,12 @@ router.delete("/materials/:id", async (req: AuthenticatedRequest, res): Promise<
 // ── BUDGET ────────────────────────────────────────────────────────────────────
 
 router.get("/budget", async (req: AuthenticatedRequest, res): Promise<void> => {
-  const { projectId } = req.query;
+  const { projectId, legalEntityId } = req.query;
   const rows = await db.select().from(constructionBudgetItemsTable)
     .where(and(
       eq(constructionBudgetItemsTable.companyId, req.scopedCompanyId!),
-      ...(projectId ? [eq(constructionBudgetItemsTable.projectId, parseInt(projectId as string))] : [])
+      ...(projectId ? [eq(constructionBudgetItemsTable.projectId, parseInt(projectId as string))] : []),
+      ...(legalEntityId ? [eq(constructionBudgetItemsTable.legalEntityId, Number(legalEntityId))] : [])
     ))
     .orderBy(constructionBudgetItemsTable.category, constructionBudgetItemsTable.createdAt);
   res.json(rows);
@@ -1874,7 +1875,7 @@ router.delete("/budget/:id", async (req: AuthenticatedRequest, res): Promise<voi
 // ── EXPENSES ──────────────────────────────────────────────────────────────────
 
 router.get("/expenses", async (req: AuthenticatedRequest, res): Promise<void> => {
-  const { projectId } = req.query;
+  const { projectId, legalEntityId } = req.query;
   const rows = await db.select({
     id: constructionExpensesTable.id,
     companyId: constructionExpensesTable.companyId,
@@ -1904,7 +1905,8 @@ router.get("/expenses", async (req: AuthenticatedRequest, res): Promise<void> =>
     .leftJoin(constructionStagesTable, eq(constructionExpensesTable.stageId, constructionStagesTable.id))
     .where(and(
       eq(constructionExpensesTable.companyId, req.scopedCompanyId!),
-      ...(projectId ? [eq(constructionExpensesTable.projectId, parseInt(projectId as string))] : [])
+      ...(projectId ? [eq(constructionExpensesTable.projectId, parseInt(projectId as string))] : []),
+      ...(legalEntityId ? [eq(constructionExpensesTable.legalEntityId, Number(legalEntityId))] : [])
     ))
     .orderBy(desc(constructionExpensesTable.date));
   res.json(rows);

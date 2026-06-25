@@ -383,6 +383,9 @@ async function resolveOperationCounterpartyId(
 
 router.get("/operations", async (req: AuthenticatedRequest, res): Promise<void> => {
   const companyId = req.scopedCompanyId!;
+  const { legalEntityId } = req.query;
+  const conds = [eq(constructionOperationsTable.companyId, companyId)];
+  if (legalEntityId) conds.push(eq(constructionOperationsTable.legalEntityId, Number(legalEntityId)));
   const rows = await db
     .select({
       ...constructionOpColumns,
@@ -393,7 +396,7 @@ router.get("/operations", async (req: AuthenticatedRequest, res): Promise<void> 
       counterpartiesTable,
       eq(constructionOperationsTable.counterpartyId, counterpartiesTable.id),
     )
-    .where(eq(constructionOperationsTable.companyId, companyId))
+    .where(and(...conds))
     .orderBy(desc(constructionOperationsTable.date));
   res.json(rows);
 });

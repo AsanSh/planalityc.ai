@@ -1,5 +1,6 @@
 import { getApiErrorMessage } from "@/lib/api-error";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { Briefcase, Edit2, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -92,6 +93,16 @@ function CounterpartyDialog({
 	const updateMutation = useUpdateCounterparty();
 	const queryClient = useQueryClient();
 	const { toast } = useToast();
+	const { data: legalRaw = [] } = useQuery({
+		queryKey: ["legal-entities"],
+		queryFn: () =>
+			api
+				.get<{ id: number; name: string; isActive?: boolean }[]>("/legal-entities")
+				.then((r) => r.data),
+	});
+	const legalEntities = (Array.isArray(legalRaw) ? legalRaw : []).filter(
+		(e) => e.isActive !== false,
+	);
 
 	const [formData, setFormData] = useState({
 		fullName: "",
@@ -103,6 +114,7 @@ function CounterpartyDialog({
 		address: "",
 		additionalContact: "",
 		comment: "",
+		linkedLegalEntityId: "",
 	});
 
 	useEffect(() => {
@@ -117,6 +129,10 @@ function CounterpartyDialog({
 				address: (counterparty as any).address || "",
 				additionalContact: counterparty.additionalContact || "",
 				comment: counterparty.comment || "",
+				linkedLegalEntityId:
+					(counterparty as any).linkedLegalEntityId != null
+						? String((counterparty as any).linkedLegalEntityId)
+						: "",
 			});
 		} else if (!counterparty && open) {
 			setFormData({
@@ -129,6 +145,7 @@ function CounterpartyDialog({
 				address: "",
 				additionalContact: "",
 				comment: "",
+				linkedLegalEntityId: "",
 			});
 		}
 	}, [counterparty, open]);
@@ -146,6 +163,9 @@ function CounterpartyDialog({
 				address: formData.address || null,
 				additionalContact: formData.additionalContact || null,
 				comment: formData.comment || null,
+				linkedLegalEntityId: formData.linkedLegalEntityId
+					? Number(formData.linkedLegalEntityId)
+					: null,
 			};
 			if (counterparty) {
 				await updateMutation.mutateAsync({
@@ -304,6 +324,39 @@ function CounterpartyDialog({
 							className="mt-1"
 						/>
 					</div>
+
+					{formData.type === "company" && legalEntities.length > 0 && (
+						<div>
+							<Label className="leading-tight mb-1.5">
+								Связанное ОсОО (внутригрупповое)
+							</Label>
+							<Select
+								value={formData.linkedLegalEntityId || "none"}
+								onValueChange={(v) =>
+									setFormData({
+										...formData,
+										linkedLegalEntityId: v === "none" ? "" : v,
+									})
+								}
+							>
+								<SelectTrigger className="mt-1">
+									<SelectValue placeholder="Не входит в холдинг" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="none">Не входит в холдинг</SelectItem>
+									{legalEntities.map((le) => (
+										<SelectItem key={le.id} value={String(le.id)}>
+											{le.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<p className="mt-1 text-xs text-gray-500">
+								Обороты с этим контрагентом исключаются из управленческого
+								свода (внутригрупповые).
+							</p>
+						</div>
+					)}
 
 					<div className="flex justify-end gap-2 pt-2">
 						<Button type="button" variant="outline" onClick={onClose}>

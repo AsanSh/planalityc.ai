@@ -116,8 +116,9 @@ export const cacheKeys = {
     legalEntityId: string,
     from: string,
     to: string,
+    excludeIntercompany = "",
   ) =>
-    `dashboard:control-center:${companyId}:${projectId}:${legalEntityId}:${from}:${to}`,
+    `dashboard:control-center:${companyId}:${projectId}:${legalEntityId}:${from}:${to}:${excludeIntercompany}`,
 };
 
 /**

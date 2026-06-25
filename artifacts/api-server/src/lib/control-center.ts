@@ -11,6 +11,7 @@ import {
   payrollEmployeesTable,
   supplyRequestsTable,
   marketplaceOrdersTable,
+  counterpartiesTable,
 } from "./db";
 
 export type ControlCenterScope = {
@@ -18,6 +19,8 @@ export type ControlCenterScope = {
   legalEntityId: number | null;
   from: string | null;
   to: string | null;
+  /** Управленческий учёт: исключить внутригрупповые обороты (контрагент = юрлицо группы). */
+  excludeIntercompany: boolean;
 };
 
 export type AttentionSeverity = "critical" | "warning" | "info";
@@ -253,11 +256,15 @@ export async function buildControlCenter(
       .select({ status: marketplaceOrdersTable.status })
       .from(marketplaceOrdersTable)
       .where(eq(marketplaceOrdersTable.companyId, companyId)),
+    db
+      .select({ id: counterpartiesTable.id, linkedLegalEntityId: counterpartiesTable.linkedLegalEntityId })
+      .from(counterpartiesTable)
+      .where(eq(counterpartiesTable.companyId, companyId)),
   ]);
 
   const [
     projects,
-    ops,
+    opsRaw,
     units,
     contracts,
     accruals,
@@ -271,6 +278,25 @@ export async function buildControlCenter(
     optionalResults[1].status === "fulfilled" ? optionalResults[1].value : [];
   const marketplaceOrders =
     optionalResults[2].status === "fulfilled" ? optionalResults[2].value : [];
+  const counterpartiesRows =
+    optionalResults[3].status === "fulfilled" ? optionalResults[3].value : [];
+
+  // Intercompany netting (управленческий учёт): набор контрагентов-юрлиц группы.
+  const internalCounterpartyIds = new Set(
+    counterpartiesRows
+      .filter((c) => c.linkedLegalEntityId != null)
+      .map((c) => Number(c.id)),
+  );
+  // Когда включён тумблер «исключить внутригрупповое» — убираем операции,
+  // где контрагент = другое юрлицо группы (чтобы не задваивать обороты группы).
+  const ops =
+    scope.excludeIntercompany && internalCounterpartyIds.size > 0
+      ? opsRaw.filter(
+          (o) =>
+            o.counterpartyId == null ||
+            !internalCounterpartyIds.has(Number(o.counterpartyId)),
+        )
+      : opsRaw;
 
   const scopedProjects = projects.filter(
     (p) => matchesProjectScope(p.id, scope) && matchesLegalEntity(p, scope),
@@ -428,10 +454,12 @@ export function parseControlCenterScope(query: Record<string, unknown>): Control
     legalRaw != null && legalRaw !== "all" ? Number(legalRaw) : null;
   const from = typeof query.from === "string" ? query.from : null;
   const to = typeof query.to === "string" ? query.to : null;
+  const excludeIntercompany = query.excludeIntercompany === "1" || query.excludeIntercompany === true;
   return {
     projectId: Number.isFinite(projectId) ? projectId : null,
     legalEntityId: Number.isFinite(legalEntityId) ? legalEntityId : null,
     from,
     to,
+    excludeIntercompany,
   };
 }

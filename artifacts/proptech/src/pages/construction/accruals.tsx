@@ -52,6 +52,8 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/lib/api";
+import { useLegalEntityScope } from "@/hooks/use-legal-entity-scope";
+import { LegalEntityScopeSelect } from "@/components/legal-entity-scope-select";
 import {
 	accrualPaymentPeriod,
 	buildContractPeriodMap,
@@ -495,9 +497,13 @@ export default function ConstructionAccruals() {
 	const [payTarget, setPayTarget] = useState<AccrualRow | null>(null);
 	const [cancelTarget, setCancelTarget] = useState<AccrualRow | null>(null);
 
+	const scope = useLegalEntityScope();
 	const { data: accruals = [], isLoading } = useQuery({
-		queryKey: ["construction-accruals"],
-		queryFn: () => api.get("/construction/accruals").then((r) => r.data),
+		queryKey: ["construction-accruals", scope.queryKeyPart],
+		queryFn: () =>
+			api
+				.get("/construction/accruals", { params: scope.apiParam })
+				.then((r) => r.data),
 	});
 	const { data: contracts = [] } = useQuery({
 		queryKey: ["construction-contracts-sales"],
@@ -852,11 +858,14 @@ export default function ConstructionAccruals() {
 
 	return (
 		<div className="am-page">
-			<div className="mb-5">
-				<h1 className="am-page-title text-2xl">Начисления</h1>
-				<p className="am-page-subtitle text-sm">
-					График платежей по договорам
-				</p>
+			<div className="mb-5 flex items-start justify-between gap-3 flex-wrap">
+				<div>
+					<h1 className="am-page-title text-2xl">Начисления</h1>
+					<p className="am-page-subtitle text-sm">
+						График платежей по договорам
+					</p>
+				</div>
+				<LegalEntityScopeSelect />
 			</div>
 
 			<div className="am-kpi-grid mb-5">

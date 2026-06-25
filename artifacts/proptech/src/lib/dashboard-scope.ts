@@ -10,12 +10,15 @@ export type DashboardScopeState = {
 	projectId: number | null;
 	legalEntityId: number | null;
 	period: PeriodValue;
+	/** Управленческий учёт: исключить внутригрупповые обороты из свода. */
+	excludeIntercompany: boolean;
 };
 
 export const EMPTY_DASHBOARD_SCOPE: DashboardScopeState = {
 	projectId: null,
 	legalEntityId: null,
 	period: defaultPeriod("all"),
+	excludeIntercompany: false,
 };
 
 export function parseScopeFromSearch(search: string): DashboardScopeState {
@@ -41,6 +44,7 @@ export function parseScopeFromSearch(search: string): DashboardScopeState {
 		projectId: Number.isFinite(projectId) ? projectId : null,
 		legalEntityId: Number.isFinite(legalEntityId) ? legalEntityId : null,
 		period,
+		excludeIntercompany: qs.get("excludeIntercompany") === "1",
 	};
 }
 
@@ -63,6 +67,8 @@ export function scopeToSearchParams(
 		qs.delete("from");
 		qs.delete("to");
 	}
+	if (scope.excludeIntercompany) qs.set("excludeIntercompany", "1");
+	else qs.delete("excludeIntercompany");
 	return qs;
 }
 
@@ -76,6 +82,7 @@ export function scopeToApiParams(scope: DashboardScopeState): Record<string, str
 		params.from = scope.period.from;
 		params.to = scope.period.to;
 	}
+	if (scope.excludeIntercompany) params.excludeIntercompany = "1";
 	return params;
 }
 

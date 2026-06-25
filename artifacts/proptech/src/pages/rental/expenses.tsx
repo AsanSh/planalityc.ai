@@ -20,9 +20,10 @@ import { KpiCard, KpiRow } from "@/components/kpi-card";
 import { Button } from "@/components/ui/button";
 import {
 	getListExpensesQueryKey,
-	useListExpenses,
 	useListProperties,
 } from "@/api-client";
+import { useLegalEntityScope } from "@/hooks/use-legal-entity-scope";
+import { LegalEntityScopeSelect } from "@/components/legal-entity-scope-select";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { RentalQueryState } from "@/components/rental/rental-query-state";
 import {
@@ -299,7 +300,12 @@ function ExpenseDialog({ open, expense, onClose }: ExpenseDialogProps) {
 export default function Expenses() {
 	const queryClient = useQueryClient();
 	const { toast } = useToast();
-	const { data: expenses, isLoading, isError, error, refetch } = useListExpenses();
+	const scope = useLegalEntityScope();
+	const { data: expenses, isLoading, isError, error, refetch } = useQuery({
+		queryKey: [...getListExpensesQueryKey(), scope.queryKeyPart],
+		queryFn: () =>
+			api.get("/rental/expenses", { params: scope.apiParam }).then((r) => r.data),
+	});
 	const { data: properties } = useListProperties();
 	const propertiesArray = Array.isArray(properties) ? properties : [];
 	const expensesArray = Array.isArray(expenses) ? expenses : [];
@@ -453,6 +459,7 @@ export default function Expenses() {
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
+					<LegalEntityScopeSelect />
 					<Button onClick={openCreate}>
 						<Plus className="w-4 h-4 mr-2" />
 						Добавить

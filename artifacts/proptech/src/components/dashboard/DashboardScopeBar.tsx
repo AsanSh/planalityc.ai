@@ -52,10 +52,11 @@ export function DashboardScopeBar() {
 	const hasFilter =
 		scope.projectId != null ||
 		scope.legalEntityId != null ||
+		scope.excludeIntercompany ||
 		scope.period.preset !== "all";
 
 	return (
-		<div className="grid grid-cols-1 gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm lg:grid-cols-[auto_minmax(180px,240px)_minmax(220px,1fr)_auto_auto] lg:items-center">
+		<div className="grid grid-cols-1 gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm lg:grid-cols-[auto_minmax(180px,240px)_minmax(220px,1fr)_auto_auto_auto] lg:items-center">
 			<div className="flex min-w-0 items-center gap-2">
 				<span className="text-xs font-medium text-gray-500 uppercase tracking-wide shrink-0">
 					Контекст
@@ -113,6 +114,19 @@ export function DashboardScopeBar() {
 				onChange={(period) => setScope({ period })}
 				className="h-8 !w-full justify-start lg:!w-[280px] [&>button:nth-child(2)]:!min-w-0 [&>button:nth-child(2)]:!w-auto [&>button:nth-child(2)]:flex-1"
 			/>
+
+			<Button
+				type="button"
+				variant={scope.excludeIntercompany ? "default" : "outline"}
+				size="sm"
+				className="h-8 justify-self-start whitespace-nowrap text-xs lg:justify-self-end"
+				onClick={() =>
+					setScope({ excludeIntercompany: !scope.excludeIntercompany })
+				}
+				title="Управленческий свод: исключить внутригрупповые обороты между ОсОО холдинга"
+			>
+				Без внутригрупповых
+			</Button>
 
 			{hasFilter && (
 				<Button

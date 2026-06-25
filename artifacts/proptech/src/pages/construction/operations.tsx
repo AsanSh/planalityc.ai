@@ -34,6 +34,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
 import { unwrapList } from "@/lib/unwrap-list";
+import { useLegalEntityScope } from "@/hooks/use-legal-entity-scope";
+import { LegalEntityScopeSelect } from "@/components/legal-entity-scope-select";
 
 const RATE_SOURCES = ["НБКР", "Optima", "RSB", "Bakai", "DoBank", "MBank"];
 /** Панель z-[210] — контент Select должен быть выше backdrop и панели */
@@ -144,9 +146,13 @@ export default function ConstructionOperations() {
 		counterpartyId: "none",
 	});
 
+	const scope = useLegalEntityScope();
 	const { data: opsRaw, isLoading } = useQuery({
-		queryKey: ["construction-operations"],
-		queryFn: () => api.get("/construction/operations").then((r) => r.data),
+		queryKey: ["construction-operations", scope.queryKeyPart],
+		queryFn: () =>
+			api
+				.get("/construction/operations", { params: scope.apiParam })
+				.then((r) => r.data),
 	});
 	const ops = unwrapList<any>(opsRaw);
 
@@ -542,6 +548,7 @@ export default function ConstructionOperations() {
 			>
 				{/* Action buttons */}
 				<div className="flex items-center gap-2 mb-4 flex-wrap">
+					<LegalEntityScopeSelect />
 					<Button
 						onClick={() => setQuickWizardOpen(true)}
 						className="h-9 px-4 text-sm font-medium rounded-xl bg-amber-500 hover:bg-amber-600 text-white"

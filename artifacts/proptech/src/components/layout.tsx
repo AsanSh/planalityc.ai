@@ -265,7 +265,7 @@ const MODULES: Module[] = [
 				],
 			},
 			{
-				title: "Настройки",
+				title: "Справочники",
 				items: [
 					{
 						href: "/construction/counterparties",
@@ -471,7 +471,7 @@ const MODULES: Module[] = [
 				],
 			},
 			{
-				title: "Администратор",
+				title: "Справочники",
 				items: [
 					{ href: "/rental/employees", label: "Сотрудники", icon: UserCircle },
 					{ href: "/rental/admin/log", label: "Лог операций", icon: Activity },
@@ -509,7 +509,7 @@ const MODULES: Module[] = [
 				],
 			},
 			{
-				title: "Настройки CRM",
+				title: "Справочники",
 				items: [
 					{ href: "/crm/employees", label: "Сотрудники", icon: UserCircle },
 					{ href: "/crm/counterparties", label: "Контрагенты", icon: Briefcase },
@@ -681,16 +681,6 @@ const MODULES: Module[] = [
 						href: "/reports/payments",
 						label: "История платежей",
 						icon: Activity,
-					},
-				],
-			},
-			{
-				title: "Настройки",
-				items: [
-					{
-						href: "/design-system",
-						label: "Дизайн-система",
-						icon: Layers,
 					},
 				],
 			},

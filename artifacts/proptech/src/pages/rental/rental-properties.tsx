@@ -1,9 +1,9 @@
 import { useListRentalProperties, getListRentalPropertiesQueryKey } from "@/api-client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, ChevronDown, ChevronUp, ChevronsUpDown, Home, Pencil, Plus, Trash2, UserCircle, Wallet } from "lucide-react";
+import { Building2, ChevronDown, ChevronUp, ChevronsUpDown, Download, Home, Loader2, Pencil, Plus, Trash2, Upload, UserCircle, Wallet } from "lucide-react";
 import { useSortable } from "@/lib/use-sortable";
 import { useColResize } from "@/lib/use-col-resize";
-import { useEffect, useState } from "react";
+import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import { useSearch } from "wouter";
 import { KpiCard, KpiRow } from "@/components/kpi-card";
 import { Button } from "@/components/ui/button";
@@ -89,6 +89,121 @@ const EMPTY_FORM: FormState = {
 	floor: "",
 	comment: "",
 };
+
+const RENTAL_IMPORT_COLUMNS = [
+	"ОсОО",
+	"Проект",
+	"Номер объекта",
+	"Тип",
+	"Площадь",
+	"Блок",
+	"Этаж",
+	"Комментарий объекта",
+	"Арендатор",
+	"Телефон арендатора",
+	"Email арендатора",
+	"ИНН/ПИН арендатора",
+	"Тип арендатора",
+	"Номер договора",
+	"Дата начала",
+	"Дата окончания",
+	"Аренда в месяц",
+	"Валюта",
+	"Депозит",
+	"День начисления",
+	"Статус договора",
+	"Комментарий договора",
+] as const;
+
+type RentalImportColumn = (typeof RENTAL_IMPORT_COLUMNS)[number];
+type RentalImportRow = Partial<Record<RentalImportColumn, unknown>>;
+
+const RENTAL_TEMPLATE_SAMPLE: Record<RentalImportColumn, string | number>[] = [
+	{
+		"ОсОО": "ОсОО \"Бишкек Пропертис\"",
+		"Проект": "Бизнес-центр А",
+		"Номер объекта": "101",
+		"Тип": "Офис",
+		"Площадь": 65,
+		"Блок": "A",
+		"Этаж": 1,
+		"Комментарий объекта": "Угловое помещение",
+		"Арендатор": "ОсОО Альфа",
+		"Телефон арендатора": "+996 555 000 000",
+		"Email арендатора": "tenant@example.com",
+		"ИНН/ПИН арендатора": "12345678901234",
+		"Тип арендатора": "Компания",
+		"Номер договора": "АР-2026-0001",
+		"Дата начала": "2026-07-01",
+		"Дата окончания": "2027-06-30",
+		"Аренда в месяц": 120000,
+		"Валюта": "KGS",
+		"Депозит": 120000,
+		"День начисления": 1,
+		"Статус договора": "Активный",
+		"Комментарий договора": "Импорт из шаблона",
+	},
+];
+
+function cellText(value: unknown) {
+	return String(value ?? "").trim();
+}
+
+function cellNumber(value: unknown) {
+	if (value === null || value === undefined || value === "") return null;
+	if (typeof value === "number") return Number.isFinite(value) ? value : null;
+	const normalized = String(value)
+		.replace(/\s/g, "")
+		.replace(",", ".")
+		.replace(/[^\d.-]/g, "");
+	const parsed = Number(normalized);
+	return Number.isFinite(parsed) ? parsed : null;
+}
+
+function cellDate(value: unknown) {
+	if (!value) return "";
+	if (value instanceof Date && !Number.isNaN(value.getTime())) {
+		return value.toISOString().slice(0, 10);
+	}
+	if (typeof value === "number" && Number.isFinite(value)) {
+		const excelEpoch = Date.UTC(1899, 11, 30);
+		return new Date(excelEpoch + value * 86400000).toISOString().slice(0, 10);
+	}
+	const raw = cellText(value);
+	if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+	const match = raw.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+	if (match) {
+		const [, dd, mm, yyyy] = match;
+		return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+	}
+	return raw;
+}
+
+function normalizePropertyType(value: unknown) {
+	const raw = cellText(value).toLowerCase();
+	if (raw.includes("офис")) return "office";
+	if (raw.includes("парков") || raw.includes("мест")) return "parking";
+	if (raw.includes("клад") || raw.includes("склад")) return "storage";
+	return "apartment";
+}
+
+function normalizeTenantType(value: unknown) {
+	const raw = cellText(value).toLowerCase();
+	return raw.includes("компан") || raw.includes("юр") || raw.includes("осоо") ? "company" : "individual";
+}
+
+function normalizeCurrency(value: unknown) {
+	const raw = cellText(value).toUpperCase();
+	if (raw.includes("USD") || raw.includes("$") || raw.includes("ДОЛ")) return "USD";
+	return "KGS";
+}
+
+function normalizeContractStatus(value: unknown) {
+	const raw = cellText(value).toLowerCase();
+	if (raw.includes("черн") || raw.includes("draft")) return "draft";
+	if (raw.includes("раст") || raw.includes("term")) return "terminated";
+	return "active";
+}
 
 // ── Property Form Fields ──────────────────────────────────────────────────────
 function PropertyFormFields({
@@ -409,6 +524,7 @@ export default function RentalProperties() {
 	const searchString = useSearch();
 	const { toast } = useToast();
 	const qc = useQueryClient();
+	const importInputRef = useRef<HTMLInputElement | null>(null);
 	const { data: properties, isLoading, isError, error, refetch } = useListRentalProperties();
 	const propertiesArray = (Array.isArray(properties) ? properties : []) as RentalPropertyRow[];
 	const { sorted: sortedProps, sortKey, sortDir, toggle } = useSortable(propertiesArray, "projectName");
@@ -433,6 +549,7 @@ export default function RentalProperties() {
 	const [editing, setEditing] = useState<RentalPropertyRow | null>(null);
 	const [form, setForm] = useState<FormState>(EMPTY_FORM);
 	const [saving, setSaving] = useState(false);
+	const [importing, setImporting] = useState(false);
 	const { data: legalEntitiesRaw = [] } = useQuery<LegalEntity[]>({
 		queryKey: ["legal-entities"],
 		queryFn: () => api.get("/legal-entities").then((r) => r.data),
@@ -475,6 +592,163 @@ export default function RentalProperties() {
 	const invalidate = () => {
 		qc.invalidateQueries({ queryKey: ["/rental/properties"] });
 		qc.invalidateQueries({ queryKey: getListRentalPropertiesQueryKey() });
+		qc.invalidateQueries({ queryKey: ["rental-contracts"] });
+		qc.invalidateQueries({ queryKey: ["rental-tenants"] });
+	};
+
+	const findLegalEntityId = (value: unknown) => {
+		const raw = cellText(value).toLowerCase();
+		if (!raw) return legalEntities[0]?.id ?? null;
+		const entity = legalEntities.find((item) => {
+			const names = [item.name, item.fullLegalName].filter(Boolean).map((name) => String(name).toLowerCase());
+			return names.some((name) => name === raw || name.includes(raw) || raw.includes(name));
+		});
+		return entity?.id ?? legalEntities[0]?.id ?? null;
+	};
+
+	const downloadImportTemplate = async () => {
+		try {
+			const XLSX = await import("xlsx");
+			const workbook = XLSX.utils.book_new();
+			const sheet = XLSX.utils.json_to_sheet(RENTAL_TEMPLATE_SAMPLE, {
+				header: [...RENTAL_IMPORT_COLUMNS],
+			});
+			sheet["!cols"] = RENTAL_IMPORT_COLUMNS.map((column) => ({
+				wch: Math.max(14, column.length + 4),
+			}));
+			XLSX.utils.book_append_sheet(workbook, sheet, "Объекты аренды");
+			const rules = XLSX.utils.aoa_to_sheet([
+				["Правила заполнения"],
+				["Обязательные поля", "Проект, Номер объекта"],
+				["ОсОО", "Можно оставить пустым: будет выбрано первое активное ОсОО компании."],
+				["Договор", "Создаётся, если заполнены Арендатор, Дата начала и Аренда в месяц."],
+				["Тип объекта", "Квартира, Офис, Парковка, Кладовая"],
+				["Тип арендатора", "Физлицо или Компания"],
+				["Валюта", "KGS или USD"],
+				["Статус договора", "Активный, Черновик, Расторгнут"],
+				["Дата", "Формат YYYY-MM-DD или ДД.ММ.ГГГГ"],
+			]);
+			rules["!cols"] = [{ wch: 22 }, { wch: 80 }];
+			XLSX.utils.book_append_sheet(workbook, rules, "Инструкция");
+			XLSX.writeFile(workbook, "rental-import-template.xlsx");
+		} catch (e: unknown) {
+			toast({
+				title: "Не удалось создать шаблон",
+				description: getApiErrorMessage(e, "Попробуйте ещё раз"),
+				variant: "destructive",
+			});
+		}
+	};
+
+	const handleImportFile = async (event: ChangeEvent<HTMLInputElement>) => {
+		const file = event.target.files?.[0];
+		event.target.value = "";
+		if (!file) return;
+
+		setImporting(true);
+		try {
+			const XLSX = await import("xlsx");
+			const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
+			const firstSheetName = workbook.SheetNames[0];
+			if (!firstSheetName) throw new Error("В файле нет листов");
+
+			const sheet = workbook.Sheets[firstSheetName];
+			const rows = XLSX.utils.sheet_to_json<RentalImportRow>(sheet, {
+				defval: "",
+				raw: true,
+			});
+
+			if (!rows.length) {
+				toast({
+					title: "Файл пустой",
+					description: "Заполните шаблон и загрузите его повторно",
+					variant: "destructive",
+				});
+				return;
+			}
+
+			const counters = { properties: 0, tenants: 0, contracts: 0 };
+			const errors: string[] = [];
+
+			for (const [index, row] of rows.entries()) {
+				const rowNumber = index + 2;
+				const projectName = cellText(row["Проект"]);
+				const unitNumber = cellText(row["Номер объекта"]);
+
+				if (!projectName || !unitNumber) {
+					errors.push(`строка ${rowNumber}: нет проекта или номера объекта`);
+					continue;
+				}
+
+				try {
+					const propertyResponse = await api.post("/rental/properties", {
+						legalEntityId: findLegalEntityId(row["ОсОО"]),
+						projectName,
+						unitNumber,
+						type: normalizePropertyType(row["Тип"]),
+						area: cellNumber(row["Площадь"]),
+						block: cellText(row["Блок"]) || null,
+						floor: cellNumber(row["Этаж"]),
+						comment: cellText(row["Комментарий объекта"]) || null,
+					});
+					counters.properties += 1;
+
+					const tenantName = cellText(row["Арендатор"]);
+					let tenantId: number | null = null;
+					if (tenantName) {
+						const tenantResponse = await api.post("/rental/tenants", {
+							fullName: tenantName,
+							phone: cellText(row["Телефон арендатора"]) || null,
+							email: cellText(row["Email арендатора"]) || null,
+							iin: cellText(row["ИНН/ПИН арендатора"]) || null,
+							type: normalizeTenantType(row["Тип арендатора"]),
+							status: "active",
+							comment: null,
+						});
+						tenantId = Number(tenantResponse.data?.id);
+						counters.tenants += 1;
+					}
+
+					const rentAmount = cellNumber(row["Аренда в месяц"]);
+					const startDate = cellDate(row["Дата начала"]);
+					if (tenantId && rentAmount && startDate) {
+						await api.post("/rental/contracts", {
+							propertyId: Number(propertyResponse.data?.id),
+							tenantId,
+							contractNumber:
+								cellText(row["Номер договора"]) ||
+								`АР-${unitNumber}-${new Date().getFullYear()}-${String(rowNumber).padStart(4, "0")}`,
+							startDate,
+							endDate: cellDate(row["Дата окончания"]) || null,
+							rentAmount,
+							currency: normalizeCurrency(row["Валюта"]),
+							depositAmount: cellNumber(row["Депозит"]),
+							accrualDay: cellNumber(row["День начисления"]) ?? 1,
+							status: normalizeContractStatus(row["Статус договора"]),
+							comment: cellText(row["Комментарий договора"]) || null,
+						});
+						counters.contracts += 1;
+					}
+				} catch (e: unknown) {
+					errors.push(`строка ${rowNumber}: ${getApiErrorMessage(e, "ошибка импорта")}`);
+				}
+			}
+
+			invalidate();
+			toast({
+				title: "Импорт завершён",
+				description: `Объекты: ${counters.properties}, арендаторы: ${counters.tenants}, договоры: ${counters.contracts}${errors.length ? `. Ошибки: ${errors.slice(0, 3).join("; ")}` : ""}`,
+				variant: errors.length && counters.properties === 0 ? "destructive" : "default",
+			});
+		} catch (e: unknown) {
+			toast({
+				title: "Не удалось импортировать Excel",
+				description: getApiErrorMessage(e, "Проверьте файл и шаблон"),
+				variant: "destructive",
+			});
+		} finally {
+			setImporting(false);
+		}
 	};
 
 	const handleSave = async () => {
@@ -572,10 +846,33 @@ export default function RentalProperties() {
 						Реестр помещений для сдачи в аренду
 					</p>
 				</div>
-				<Button onClick={openCreate} className="gap-2">
-					<Plus className="w-4 h-4" />
-					Добавить объект
-				</Button>
+				<div className="flex flex-wrap justify-end gap-2">
+					<input
+						ref={importInputRef}
+						type="file"
+						accept=".xlsx,.xls"
+						className="hidden"
+						onChange={handleImportFile}
+					/>
+					<Button type="button" variant="outline" onClick={downloadImportTemplate} className="gap-2">
+						<Download className="w-4 h-4" />
+						Шаблон Excel
+					</Button>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => importInputRef.current?.click()}
+						disabled={importing}
+						className="gap-2"
+					>
+						{importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+						{importing ? "Импорт..." : "Импорт Excel"}
+					</Button>
+					<Button onClick={openCreate} className="gap-2">
+						<Plus className="w-4 h-4" />
+						Добавить объект
+					</Button>
+				</div>
 			</div>
 
 			<RentalQueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>

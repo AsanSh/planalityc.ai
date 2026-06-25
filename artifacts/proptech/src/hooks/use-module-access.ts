@@ -9,6 +9,7 @@ import {
 	type ModuleId,
 } from "@/lib/module-access";
 import { parseCustomRoleId } from "@/lib/custom-role-id";
+import { MATRIX_JOB_LABELS } from "@/lib/user-roles";
 import {
 	isModuleIntegrationEnabled,
 	settingsKeysToModuleIds,
@@ -30,7 +31,7 @@ export function useModuleAccess() {
 	const { data: roles = [], isLoading } = useQuery<CompanyRoleRow[]>({
 		queryKey: ["company-roles"],
 		queryFn: () => api.get("/roles").then((r) => r.data),
-		enabled: customRoleId !== null,
+		enabled: !!user,
 		staleTime: 60_000,
 	});
 
@@ -43,10 +44,18 @@ export function useModuleAccess() {
 	});
 
 	const permissions = useMemo(() => {
-		if (!customRoleId) return [] as string[];
-		const row = roles.find((r) => r.id === customRoleId);
+		let row: CompanyRoleRow | undefined;
+		if (customRoleId !== null) {
+			row = roles.find((r) => r.id === customRoleId);
+		} else {
+			const matrixRoleName = MATRIX_JOB_LABELS[role];
+			if (matrixRoleName) {
+				const normalized = matrixRoleName.trim().toLowerCase();
+				row = roles.find((r) => r.name.trim().toLowerCase() === normalized);
+			}
+		}
 		return Array.isArray(row?.permissions) ? row.permissions : [];
-	}, [customRoleId, roles]);
+	}, [customRoleId, role, roles]);
 
 	const allowedModules = useMemo(() => {
 		const byRole = resolveAllowedModules(role, permissions);
@@ -72,7 +81,7 @@ export function useModuleAccess() {
 	);
 
 	return {
-		isLoading: (!!customRoleId && isLoading) || (!!user && modulesLoading),
+		isLoading: (!!user && isLoading) || (!!user && modulesLoading),
 		role,
 		permissions,
 		allowedModules,

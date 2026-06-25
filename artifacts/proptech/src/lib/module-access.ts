@@ -82,7 +82,7 @@ export function resolveAllowedModules(
 	if (system) return system;
 
 	const customId = parseCustomRoleId(role);
-	if (customId) {
+	if (customId || permissions.length > 0) {
 		if (permissions.includes("admin.all")) return ALL_MODULE_IDS;
 		const modules = new Set<ModuleId>();
 		for (const perm of permissions) {

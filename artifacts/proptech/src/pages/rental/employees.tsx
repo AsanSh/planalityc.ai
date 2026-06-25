@@ -17,7 +17,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api-error";
-import { RoleSelect, resolveRoleLabel, useCompanyRoles } from "@/lib/user-roles";
+import {
+	RoleAccessPreview,
+	RoleSelect,
+	resolveRoleLabel,
+	useCompanyRoles,
+} from "@/lib/user-roles";
 
 interface Employee {
 	id: number;
@@ -58,7 +63,7 @@ const EMPTY_FORM = {
 	lastName: "",
 	email: "",
 	password: "",
-	role: "staff",
+	role: "rental_department_head",
 };
 
 export default function RentalEmployees() {
@@ -373,6 +378,8 @@ export default function RentalEmployees() {
 									className="mt-1 h-9"
 								/>
 							</div>
+
+							<RoleAccessPreview role={form.role} companyRoles={customRoles} />
 
 							{error && (
 								<p className="text-sm text-rose-600 bg-rose-50 px-3 py-2 rounded-lg">

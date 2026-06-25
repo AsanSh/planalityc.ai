@@ -4,7 +4,7 @@ import {
   db, propertiesTable, tenantsTable, leaseContractsTable,
   accrualsTable, paymentsTable, depositsTable, expensesTable,
   ownerStatementsTable, paymentAllocationsTable, bankAccountsTable,
-  activityLogTable,
+  activityLogTable, moduleSettingsTable,
 } from "../lib/db";
 
 import { requireAuth, requireRole, AuthenticatedRequest } from "../middleware/auth";
@@ -31,6 +31,45 @@ import { resolveRentalPaymentAccountCredit } from "../lib/rental-payment-fx";
 import { resolveCompanyLegalEntityId } from "../lib/settings-catalog-sync";
 
 const RENTAL_ACCOUNTS = BANK_ACCOUNT_MODULE.rental;
+const RENTAL_SETTINGS_MODULE = "rental";
+
+type RentalSettingsPayload = {
+  general?: Record<string, string>;
+  billing?: Record<string, string>;
+  notif?: Record<string, string>;
+};
+
+const RENTAL_GENERAL_KEYS = [
+  "companyName",
+  "currency",
+  "timezone",
+  "lateFeePercent",
+  "lateFeeGraceDays",
+  "taxRegime",
+] as const;
+const RENTAL_BILLING_KEYS = ["accrualDay", "dueDays", "autoAccrual", "roundUp"] as const;
+const RENTAL_NOTIF_KEYS = ["overdueReminder", "upcomingReminder", "channel"] as const;
+
+function parseRentalSettings(raw?: string | null): RentalSettingsPayload {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function pickSettings(input: unknown, keys: readonly string[]): Record<string, string> {
+  if (!input || typeof input !== "object") return {};
+  const record = input as Record<string, unknown>;
+  const output: Record<string, string> = {};
+  for (const key of keys) {
+    if (record[key] === undefined || record[key] === null) continue;
+    output[key] = String(record[key]).slice(0, 500);
+  }
+  return output;
+}
 
 async function contractOutstandingBalance(contractId: number): Promise<number> {
   const rows = await db.select().from(accrualsTable).where(eq(accrualsTable.leaseContractId, contractId));
@@ -73,6 +112,69 @@ const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth, requireTenantCompany, requireEnabledModule("rental"));
 
 // ---------- HELPERS ----------
+
+router.get("/rental/settings", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const companyId = req.scopedCompanyId!;
+  const [existing] = await db
+    .select()
+    .from(moduleSettingsTable)
+    .where(
+      and(
+        eq(moduleSettingsTable.companyId, companyId),
+        eq(moduleSettingsTable.moduleKey, RENTAL_SETTINGS_MODULE),
+      ),
+    );
+
+  res.json(parseRentalSettings(existing?.settings));
+});
+
+router.put("/rental/settings", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const companyId = req.scopedCompanyId!;
+  const [existing] = await db
+    .select()
+    .from(moduleSettingsTable)
+    .where(
+      and(
+        eq(moduleSettingsTable.companyId, companyId),
+        eq(moduleSettingsTable.moduleKey, RENTAL_SETTINGS_MODULE),
+      ),
+    );
+
+  const previous = parseRentalSettings(existing?.settings);
+  const next: RentalSettingsPayload = {
+    ...previous,
+    general: {
+      ...(previous.general ?? {}),
+      ...pickSettings(req.body?.general, RENTAL_GENERAL_KEYS),
+    },
+    billing: {
+      ...(previous.billing ?? {}),
+      ...pickSettings(req.body?.billing, RENTAL_BILLING_KEYS),
+    },
+    notif: {
+      ...(previous.notif ?? {}),
+      ...pickSettings(req.body?.notif, RENTAL_NOTIF_KEYS),
+    },
+  };
+  const settings = JSON.stringify(next);
+
+  if (existing) {
+    await db
+      .update(moduleSettingsTable)
+      .set({ settings })
+      .where(eq(moduleSettingsTable.id, existing.id));
+  } else {
+    await db.insert(moduleSettingsTable).values({
+      companyId,
+      moduleKey: RENTAL_SETTINGS_MODULE,
+      isEnabled: true,
+      enabledAt: new Date(),
+      settings,
+    });
+  }
+
+  res.json(next);
+});
 
 /** Количество дней в месяце */
 function daysInMonth(year: number, month: number): number {

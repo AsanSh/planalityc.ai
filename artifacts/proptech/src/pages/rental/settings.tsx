@@ -185,7 +185,36 @@ type DocumentTemplatesResponse = {
 	uploads: Record<string, TemplateUploadMeta | null>;
 };
 
+const DEFAULT_GENERAL_SETTINGS = {
+	companyName: "",
+	currency: "KGS",
+	timezone: "Asia/Bishkek",
+	lateFeePercent: "0.1",
+	lateFeeGraceDays: "3",
+	taxRegime: "general",
+};
+
+const DEFAULT_BILLING_SETTINGS = {
+	accrualDay: "1",
+	dueDays: "5",
+	autoAccrual: "true",
+	roundUp: "true",
+};
+
+const DEFAULT_NOTIF_SETTINGS = {
+	overdueReminder: "3",
+	upcomingReminder: "5",
+	channel: "email",
+};
+
+type RentalSettingsPayload = {
+	general?: Partial<typeof DEFAULT_GENERAL_SETTINGS>;
+	billing?: Partial<typeof DEFAULT_BILLING_SETTINGS>;
+	notif?: Partial<typeof DEFAULT_NOTIF_SETTINGS>;
+};
+
 const DOC_TEMPLATES_QUERY_KEY = ["rental-document-templates"];
+const RENTAL_SETTINGS_QUERY_KEY = ["rental-settings"];
 
 function fileToBase64(file: File): Promise<string> {
 	return new Promise((resolve, reject) => {
@@ -554,39 +583,55 @@ function DocsTab() {
 export default function RentalSettings() {
 	const { user } = useAuth();
 	const { toast } = useToast();
+	const qc = useQueryClient();
 	const [tab, setTab] = useState("general");
-	const [general, setGeneral] = useState({
-		companyName: "",
-		currency: "KGS",
-		timezone: "Asia/Bishkek",
-		lateFeePercent: "0.1",
-		lateFeeGraceDays: "3",
-		taxRegime: "general",
-	});
-	const [billing, setBilling] = useState({
-		accrualDay: "1",
-		dueDays: "5",
-		autoAccrual: "true",
-		roundUp: "true",
-	});
-	const [notif, setNotif] = useState({
-		overdueReminder: "3",
-		upcomingReminder: "5",
-		channel: "email",
+	const [general, setGeneral] = useState(DEFAULT_GENERAL_SETTINGS);
+	const [billing, setBilling] = useState(DEFAULT_BILLING_SETTINGS);
+	const [notif, setNotif] = useState(DEFAULT_NOTIF_SETTINGS);
+	const [saving, setSaving] = useState(false);
+
+	const { data: savedSettings } = useQuery<RentalSettingsPayload>({
+		queryKey: RENTAL_SETTINGS_QUERY_KEY,
+		queryFn: async () => {
+			const { data } = await api.get<RentalSettingsPayload>("/rental/settings");
+			return data;
+		},
 	});
 
 	useEffect(() => {
-		const companyName = (user as any)?.company?.name || "";
-		if (companyName) {
-			setGeneral((g) => ({ ...g, companyName }));
-		}
-	}, [user]);
-
-	function save() {
-		toast({
-			title: "Настройки сохранены",
-			description: "Изменения применены к модулю аренды",
+		if (!savedSettings) return;
+		const companyName =
+			savedSettings.general?.companyName || (user as any)?.company?.name || "";
+		setGeneral({
+			...DEFAULT_GENERAL_SETTINGS,
+			...(savedSettings.general ?? {}),
+			companyName,
 		});
+		setBilling({ ...DEFAULT_BILLING_SETTINGS, ...(savedSettings.billing ?? {}) });
+		setNotif({ ...DEFAULT_NOTIF_SETTINGS, ...(savedSettings.notif ?? {}) });
+	}, [savedSettings, user]);
+
+	async function save() {
+		setSaving(true);
+		try {
+			const { data } = await api.put<RentalSettingsPayload>("/rental/settings", {
+				general,
+				billing,
+				notif,
+			});
+			qc.setQueryData(RENTAL_SETTINGS_QUERY_KEY, data);
+			toast({
+				title: "Настройки сохранены",
+				description: "Изменения применены к модулю аренды",
+			});
+		} catch (e) {
+			toast({
+				title: getApiErrorMessage(e, "Не удалось сохранить настройки"),
+				variant: "destructive",
+			});
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	const selectedRegime = TAX_REGIMES.find((r) => r.id === general.taxRegime);
@@ -928,8 +973,13 @@ export default function RentalSettings() {
 				{tab === "documents" && <DocsTab />}
 
 				<div className="pt-2">
-					<Button onClick={save} className="gap-2">
-						<Save className="w-4 h-4" /> Сохранить настройки
+					<Button onClick={() => void save()} className="gap-2" disabled={saving}>
+						{saving ? (
+							<Loader2 className="w-4 h-4 animate-spin" />
+						) : (
+							<Save className="w-4 h-4" />
+						)}
+						{saving ? "Сохранение..." : "Сохранить настройки"}
 					</Button>
 				</div>
 			</div>

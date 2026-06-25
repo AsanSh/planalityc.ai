@@ -19,6 +19,8 @@ import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api-error";
 import {
+	MATRIX_JOB_ROLES,
+	RoleAccessPreview,
 	RoleSelect,
 	resolveRoleLabel,
 	useCompanyRoles,
@@ -34,6 +36,7 @@ interface Employee {
 }
 
 const CRM_ROLES = new Set([
+	...MATRIX_JOB_ROLES.map((role) => role.value),
 	"sales_manager",
 	"company_admin",
 	"admin",
@@ -275,6 +278,7 @@ export default function CrmEmployees() {
 								<Label className="leading-tight mb-1.5">Роль *</Label>
 								<RoleSelect value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v }))} className="mt-auto h-9" />
 							</div>
+							<RoleAccessPreview role={form.role} companyRoles={customRoles} />
 							{error && <p className="text-sm text-rose-600 bg-rose-50 px-3 py-2 rounded-lg">{error}</p>}
 						</div>
 						<div className="flex justify-end gap-2 px-5 py-4 border-t">

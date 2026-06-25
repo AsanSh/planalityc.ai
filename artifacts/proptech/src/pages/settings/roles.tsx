@@ -43,6 +43,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { SystemSettingsBar } from "@/components/system-settings-nav";
 import { api } from "@/lib/api";
+import { MATRIX_JOB_ROLES } from "@/lib/user-roles";
 import { cn } from "@/lib/utils";
 
 interface Role {
@@ -160,24 +161,7 @@ interface MatrixRow {
 	full: string[];
 }
 
-const JOB_TITLES = [
-	"Генеральный директор",
-	"Исполнительный и Операционный директор",
-	"Директор по строительству",
-	"Главный бухгалтер",
-	"Руководитель строительного проекта",
-	"Коммерческий директор",
-	"Финансовый директор",
-	"Специалист по финансовым операциям",
-	"Руководитель отдела аренды",
-	"Специалист отдела аренды",
-	"Руководитель отдела продаж",
-	"Менеджер по продажам",
-	"Инженер ПТО",
-	"Специалист по снабжению",
-	"Юрист",
-	"Кассир",
-];
+const JOB_TITLES: string[] = MATRIX_JOB_ROLES.map((role) => role.label);
 
 const MATRIX_ROWS: MatrixRow[] = [
 	{

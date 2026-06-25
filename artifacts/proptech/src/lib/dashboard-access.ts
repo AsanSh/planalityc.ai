@@ -109,7 +109,7 @@ function roleCapTabs(
 	if (system) return system;
 
 	const customId = parseCustomRoleId(role);
-	if (customId) {
+	if (customId || permissions.length > 0) {
 		if (permissions.includes("admin.all")) return "all";
 		const tabs = new Set<DashboardTabId>();
 		for (const perm of permissions) {

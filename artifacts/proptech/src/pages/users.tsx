@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import {
+	RoleAccessPreview,
 	RoleSelect,
 	resolveRoleLabel,
 	useCompanyRoles,
@@ -272,7 +273,7 @@ function UserDialog({
 		lastName: "",
 		email: "",
 		password: "",
-		role: "staff" as CreateUserBodyRole,
+		role: "general_director" as CreateUserBodyRole,
 	});
 
 	useEffect(() => {
@@ -290,7 +291,7 @@ function UserDialog({
 				lastName: "",
 				email: "",
 				password: "",
-				role: "staff" as CreateUserBodyRole,
+				role: "general_director" as CreateUserBodyRole,
 			});
 		}
 	}, [user, open]);
@@ -349,6 +350,7 @@ function UserDialog({
 
 	const isPending = createMutation.isPending || updateMutation.isPending;
 	const [showPassword, setShowPassword] = useState(false);
+	const { data: customRoles = [] } = useCompanyRoles();
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -452,6 +454,8 @@ function UserDialog({
 							}
 						/>
 					</div>
+
+					<RoleAccessPreview role={formData.role} companyRoles={customRoles} />
 
 					<div className="flex justify-end gap-2 pt-2">
 						<Button

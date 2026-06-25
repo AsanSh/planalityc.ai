@@ -152,7 +152,7 @@ export function UnitDialog({
 			} else {
 				await api.post("/construction/units", body);
 			}
-			toast({ title: isEdit ? "Обновлено" : "Квартира добавлена" });
+			toast({ title: isEdit ? "Обновлено" : "Объект добавлен" });
 			onSaved();
 			onClose();
 		} catch {
@@ -167,7 +167,7 @@ export function UnitDialog({
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle>
-						{isEdit ? `Квартира ${init?.unitNumber}` : "Добавить квартиру"}
+						{isEdit ? `Объект ${init?.unitNumber}` : "Добавить объект"}
 					</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-3">

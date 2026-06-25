@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useLegalEntityScope } from "@/hooks/use-legal-entity-scope";
+import { LegalEntityScopeSelect } from "@/components/legal-entity-scope-select";
 import { DataTable } from "@/components/data-table";
 import { defaultPeriod, inPeriod, PeriodPicker, type PeriodValue } from "@/components/period-picker";
 import { KpiCard, KpiRow } from "@/components/kpi-card";
@@ -71,9 +73,10 @@ export default function Accruals() {
 	const [discountAccrual, setDiscountAccrual] = useState<Accrual | null>(null);
 	const [quickPayAccrual, setQuickPayAccrual] = useState<Accrual | null>(null);
 	const [recalcLoading, setRecalcLoading] = useState(false);
+	const scope = useLegalEntityScope();
 	const { data: accruals, isLoading } = useQuery<Accrual[]>({
-		queryKey: getListAccrualsQueryKey(),
-		queryFn: () => api.get("/rental/accruals").then((r) => r.data),
+		queryKey: [...getListAccrualsQueryKey(), scope.queryKeyPart],
+		queryFn: () => api.get("/rental/accruals", { params: scope.apiParam }).then((r) => r.data),
 	});
 
 	const { data: leases } = useQuery<any[]>({
@@ -336,6 +339,7 @@ export default function Accruals() {
 						)}
 					</p>
 				</div>
+				<LegalEntityScopeSelect />
 			</div>
 
 			<DataTable

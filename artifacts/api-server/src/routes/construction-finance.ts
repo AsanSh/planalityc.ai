@@ -1195,13 +1195,12 @@ router.post("/contracts-sales/:id/generate-schedule", async (req: AuthenticatedR
 // ── Accruals ────────────────────────────────────────────────────────────
 router.get("/accruals", async (req: AuthenticatedRequest, res): Promise<void> => {
   const companyId = req.scopedCompanyId!;
-  const { contractId } = req.query;
+  const { contractId, legalEntityId } = req.query;
+  const conds = [eq(constructionAccrualsTable.companyId, companyId)];
+  if (contractId) conds.push(eq(constructionAccrualsTable.contractId, Number(contractId)));
+  if (legalEntityId) conds.push(eq(constructionAccrualsTable.legalEntityId, Number(legalEntityId)));
   const rows = await db.select().from(constructionAccrualsTable)
-    .where(
-      contractId
-        ? and(eq(constructionAccrualsTable.companyId, companyId), eq(constructionAccrualsTable.contractId, Number(contractId)))
-        : eq(constructionAccrualsTable.companyId, companyId)
-    )
+    .where(and(...conds))
     .orderBy(constructionAccrualsTable.dueDate);
   res.json(rows);
 });

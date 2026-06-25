@@ -12,7 +12,10 @@ import {
 	Users,
 	Wrench,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 
 const SEGMENTS = [
@@ -57,7 +60,7 @@ const CAMPAIGNS = [
 ];
 
 type Announcement = {
-	id: string;
+	id: number;
 	title: string;
 	segment: string;
 	channel: string;
@@ -67,23 +70,22 @@ type Announcement = {
 const ANNOUNCEMENTS_KEY = "planalityc-client-announcements";
 
 export default function ClientRelations() {
-	const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+	const qc = useQueryClient();
+	const { toast } = useToast();
+	const { data: announcements = [] } = useQuery<Announcement[]>({
+		queryKey: ["crm-announcements"],
+		queryFn: () => api.get<Announcement[]>("/crm/announcements").then((r) => r.data),
+	});
 	const [title, setTitle] = useState("");
 	const [segment, setSegment] = useState(SEGMENTS[0]?.label ?? "Клиенты ЖК");
 	const [channel, setChannel] = useState("Портал");
 
-	useEffect(() => {
-		try {
-			const raw = window.localStorage.getItem(ANNOUNCEMENTS_KEY);
-			if (raw) setAnnouncements(JSON.parse(raw) as Announcement[]);
-		} catch {
-			setAnnouncements([]);
-		}
-	}, []);
-
-	useEffect(() => {
-		window.localStorage.setItem(ANNOUNCEMENTS_KEY, JSON.stringify(announcements));
-	}, [announcements]);
+	const createMut = useMutation({
+		mutationFn: (payload: { title: string; segment: string; channel: string; status: Announcement["status"] }) =>
+			api.post("/crm/announcements", payload).then((r) => r.data),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ["crm-announcements"] }),
+		onError: () => toast({ title: "Не удалось сохранить объявление", variant: "destructive" }),
+	});
 
 	const publishedCount = useMemo(
 		() => announcements.filter((item) => item.status === "Опубликовано").length,
@@ -93,16 +95,7 @@ export default function ClientRelations() {
 	const createAnnouncement = (status: Announcement["status"]) => {
 		const normalizedTitle = title.trim();
 		if (!normalizedTitle) return;
-		setAnnouncements((items) => [
-			{
-				id: crypto.randomUUID(),
-				title: normalizedTitle,
-				segment,
-				channel,
-				status,
-			},
-			...items,
-		]);
+		createMut.mutate({ title: normalizedTitle, segment, channel, status });
 		setTitle("");
 	};
 

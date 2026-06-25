@@ -1,5 +1,6 @@
 import { Bell, Bot, CheckCircle2, Info, Loader2, Send } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,25 +52,32 @@ const NOTIFICATION_TYPES = [
 ];
 
 export default function TelegramSettings() {
-	const [chatId, setChatId] = useState(
-		localStorage.getItem("tg_chat_id") ?? "",
-	);
+	const { data: settings } = useQuery<{ chatId: string; notifications: Record<string, boolean> }>({
+		queryKey: ["telegram-settings"],
+		queryFn: () => api.get("/ai/telegram/settings").then((r) => r.data),
+	});
+	const [chatId, setChatId] = useState("");
 	const [testMessage, setTestMessage] = useState(
 		"✅ Тест уведомлений Planalityc.ai работает корректно!",
 	);
 	const [sending, setSending] = useState(false);
 	const [tested, setTested] = useState(false);
-	const [enabled, setEnabled] = useState<Record<string, boolean>>(() => {
-		try {
-			return JSON.parse(localStorage.getItem("tg_notifications") ?? "{}");
-		} catch {
-			return {};
-		}
-	});
+	const [enabled, setEnabled] = useState<Record<string, boolean>>({});
 
-	const saveChatId = () => {
-		localStorage.setItem("tg_chat_id", chatId);
-		toast.success("Chat ID сохранён");
+	useEffect(() => {
+		if (settings) {
+			setChatId(settings.chatId ?? "");
+			setEnabled(settings.notifications ?? {});
+		}
+	}, [settings]);
+
+	const saveChatId = async () => {
+		try {
+			await api.put("/ai/telegram/settings", { chatId, notifications: enabled });
+			toast.success("Chat ID сохранён");
+		} catch {
+			toast.error("Не удалось сохранить");
+		}
 	};
 
 	const sendTest = async () => {
@@ -92,7 +100,7 @@ export default function TelegramSettings() {
 	const toggleNotification = (id: string, val: boolean) => {
 		const next = { ...enabled, [id]: val };
 		setEnabled(next);
-		localStorage.setItem("tg_notifications", JSON.stringify(next));
+		void api.put("/ai/telegram/settings", { chatId, notifications: next });
 	};
 
 	const sendManual = async (type: string) => {

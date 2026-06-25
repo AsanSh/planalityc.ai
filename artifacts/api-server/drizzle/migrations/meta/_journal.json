@@ -40,6 +40,7 @@
     { "idx": 35, "version": "7", "when": 1780055000000, "tag": "0035_registration_verifications", "breakpoints": true },
     { "idx": 36, "version": "7", "when": 1780060000000, "tag": "0036_portal_content", "breakpoints": true },
     { "idx": 37, "version": "7", "when": 1780065000000, "tag": "0037_legal_entity_finance", "breakpoints": true },
-    { "idx": 38, "version": "7", "when": 1780070000000, "tag": "0038_properties_columns_heal", "breakpoints": true }
+    { "idx": 38, "version": "7", "when": 1780070000000, "tag": "0038_properties_columns_heal", "breakpoints": true },
+    { "idx": 39, "version": "7", "when": 1780075000000, "tag": "0039_crm_announcements_telegram", "breakpoints": true }
   ]
 }

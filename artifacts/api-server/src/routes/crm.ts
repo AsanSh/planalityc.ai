@@ -13,6 +13,7 @@ import {
   constructionUnitsTable,
   notificationsTable,
   moduleSettingsTable,
+  crmAnnouncementsTable,
 } from "../lib/db";
 
 import { requireAuth, requireRole, AuthenticatedRequest } from "../middleware/auth";
@@ -1225,6 +1226,58 @@ router.get("/crm/dashboard", async (req: AuthenticatedRequest, res): Promise<voi
       registered: registeredContracts.length,
     },
   });
+});
+
+// --- Client announcements / broadcasts (company-scoped) ---
+router.get("/announcements", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(crmAnnouncementsTable)
+    .where(eq(crmAnnouncementsTable.companyId, req.scopedCompanyId!))
+    .orderBy(desc(crmAnnouncementsTable.createdAt));
+  res.json(rows);
+});
+
+router.post("/announcements", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+  const title = String(req.body?.title || "").trim();
+  if (!title) { res.status(400).json({ error: "Укажите заголовок" }); return; }
+  const [row] = await db
+    .insert(crmAnnouncementsTable)
+    .values({
+      companyId: req.scopedCompanyId!,
+      title,
+      segment: String(req.body?.segment || ""),
+      channel: String(req.body?.channel || "Портал"),
+      status: req.body?.status === "Опубликовано" ? "Опубликовано" : "Черновик",
+    })
+    .returning();
+  res.status(201).json(row);
+});
+
+router.put("/announcements/:id", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
+  if (!id) { res.status(400).json({ error: "Некорректный id" }); return; }
+  const [row] = await db
+    .update(crmAnnouncementsTable)
+    .set({
+      title: String(req.body?.title || "").trim(),
+      segment: String(req.body?.segment || ""),
+      channel: String(req.body?.channel || "Портал"),
+      status: req.body?.status === "Опубликовано" ? "Опубликовано" : "Черновик",
+    })
+    .where(and(eq(crmAnnouncementsTable.id, id), eq(crmAnnouncementsTable.companyId, req.scopedCompanyId!)))
+    .returning();
+  if (!row) { res.status(404).json({ error: "Не найдено" }); return; }
+  res.json(row);
+});
+
+router.delete("/announcements/:id", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
+  if (!id) { res.status(400).json({ error: "Некорректный id" }); return; }
+  await db
+    .delete(crmAnnouncementsTable)
+    .where(and(eq(crmAnnouncementsTable.id, id), eq(crmAnnouncementsTable.companyId, req.scopedCompanyId!)));
+  res.json({ ok: true });
 });
 
 export default router;

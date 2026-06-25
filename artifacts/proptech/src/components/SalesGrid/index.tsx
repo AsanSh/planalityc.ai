@@ -705,6 +705,7 @@ export default function SalesGrid() {
 							terminateContractMut.mutate(contractId);
 						}
 					}}
+					onDelete={handleDeleteUnit}
 					onSaved={() => void refreshAll()}
 				/>
 			)}

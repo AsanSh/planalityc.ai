@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { eq, and, desc } from "drizzle-orm";
-import { db, constructionProjectsTable, constructionContractorsTable, constructionExpensesTable } from "../lib/db";
+import { db, constructionProjectsTable, constructionContractorsTable, constructionExpensesTable, telegramSettingsTable } from "../lib/db";
 import { requireAuth, AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
 import {
@@ -290,6 +290,33 @@ router.post("/ai/telegram/webhook", async (req, res): Promise<void> => {
     console.error("Telegram webhook error:", error);
     res.sendStatus(200);
   }
+});
+
+// --- Telegram notification settings (per-user) ---
+router.get("/telegram/settings", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const [row] = await db
+    .select()
+    .from(telegramSettingsTable)
+    .where(eq(telegramSettingsTable.userId, req.userId!));
+  res.json({ chatId: row?.chatId ?? "", notifications: row?.notifications ?? {} });
+});
+
+router.put("/telegram/settings", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const chatId = String(req.body?.chatId ?? "");
+  const notifications = (req.body?.notifications && typeof req.body.notifications === "object") ? req.body.notifications : {};
+  const [existing] = await db
+    .select({ id: telegramSettingsTable.id })
+    .from(telegramSettingsTable)
+    .where(eq(telegramSettingsTable.userId, req.userId!));
+  if (existing) {
+    await db
+      .update(telegramSettingsTable)
+      .set({ chatId, notifications })
+      .where(eq(telegramSettingsTable.userId, req.userId!));
+  } else {
+    await db.insert(telegramSettingsTable).values({ userId: req.userId!, chatId, notifications });
+  }
+  res.json({ chatId, notifications });
 });
 
 export default router;

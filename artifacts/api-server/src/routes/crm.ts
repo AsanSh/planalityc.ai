@@ -1229,7 +1229,7 @@ router.get("/crm/dashboard", async (req: AuthenticatedRequest, res): Promise<voi
 });
 
 // --- Client announcements / broadcasts (company-scoped) ---
-router.get("/announcements", async (req: AuthenticatedRequest, res): Promise<void> => {
+router.get("/crm/announcements", async (req: AuthenticatedRequest, res): Promise<void> => {
   const rows = await db
     .select()
     .from(crmAnnouncementsTable)
@@ -1238,7 +1238,7 @@ router.get("/announcements", async (req: AuthenticatedRequest, res): Promise<voi
   res.json(rows);
 });
 
-router.post("/announcements", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+router.post("/crm/announcements", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
   const title = String(req.body?.title || "").trim();
   if (!title) { res.status(400).json({ error: "Укажите заголовок" }); return; }
   const [row] = await db
@@ -1254,7 +1254,7 @@ router.post("/announcements", requireRole("admin", "company_admin"), async (req:
   res.status(201).json(row);
 });
 
-router.put("/announcements/:id", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+router.put("/crm/announcements/:id", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
   const id = parseInt(req.params.id as string, 10);
   if (!id) { res.status(400).json({ error: "Некорректный id" }); return; }
   const [row] = await db
@@ -1271,7 +1271,7 @@ router.put("/announcements/:id", requireRole("admin", "company_admin"), async (r
   res.json(row);
 });
 
-router.delete("/announcements/:id", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+router.delete("/crm/announcements/:id", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
   const id = parseInt(req.params.id as string, 10);
   if (!id) { res.status(400).json({ error: "Некорректный id" }); return; }
   await db

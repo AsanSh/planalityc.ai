@@ -293,7 +293,7 @@ router.post("/ai/telegram/webhook", async (req, res): Promise<void> => {
 });
 
 // --- Telegram notification settings (per-user) ---
-router.get("/telegram/settings", async (req: AuthenticatedRequest, res): Promise<void> => {
+router.get("/ai/telegram/settings", async (req: AuthenticatedRequest, res): Promise<void> => {
   const [row] = await db
     .select()
     .from(telegramSettingsTable)
@@ -301,7 +301,7 @@ router.get("/telegram/settings", async (req: AuthenticatedRequest, res): Promise
   res.json({ chatId: row?.chatId ?? "", notifications: row?.notifications ?? {} });
 });
 
-router.put("/telegram/settings", async (req: AuthenticatedRequest, res): Promise<void> => {
+router.put("/ai/telegram/settings", async (req: AuthenticatedRequest, res): Promise<void> => {
   const chatId = String(req.body?.chatId ?? "");
   const notifications = (req.body?.notifications && typeof req.body.notifications === "object") ? req.body.notifications : {};
   const [existing] = await db

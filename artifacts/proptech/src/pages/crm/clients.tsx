@@ -1,4 +1,4 @@
-import { Edit2, Plus, Trash2, Users } from "lucide-react";
+import { CalendarDays, CreditCard, Edit2, FileSignature, Mail, Phone, Plus, Target, Trash2, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table";
@@ -29,10 +29,16 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	Sheet,
+	SheetContent,
+	SheetHeader,
+	SheetTitle,
+} from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 interface Client {
 	id: number;
@@ -52,6 +58,33 @@ interface Client {
 	updatedAt: string;
 }
 
+interface ClientDeal {
+	id: number;
+	dealAmount: string | number;
+	currency: string;
+	stage: string;
+	probability?: number | null;
+	expectedCloseDate?: string | null;
+	notes?: string | null;
+	createdAt: string;
+}
+
+interface ClientContract {
+	id: number;
+	contractNumber: string;
+	totalAmount: string | number;
+	currency: string;
+	status: string;
+	signDate?: string | null;
+	registrationDate?: string | null;
+	createdAt: string;
+}
+
+type ClientDetails = Client & {
+	deals?: ClientDeal[];
+	contracts?: ClientContract[];
+};
+
 const TYPE_OPTIONS = [
 	{ value: "individual", label: "Физическое лицо" },
 	{ value: "company", label: "Юридическое лицо" },
@@ -69,6 +102,29 @@ const STATUS_OPTIONS = [
 		color: "bg-gray-100 text-gray-800",
 	},
 ];
+
+const DEAL_STAGE_LABELS: Record<string, string> = {
+	lead: "Лид",
+	viewing: "Показ",
+	negotiation: "Переговоры",
+	contract: "Договор",
+	closed_won: "Успешно",
+	closed_lost: "Отказ",
+};
+
+const CONTRACT_STATUS_LABELS: Record<string, string> = {
+	draft: "Черновик",
+	signed: "Подписан",
+	registered: "Зарегистрирован",
+	cancelled: "Отменён",
+};
+
+function formatDate(value?: string | null) {
+	if (!value) return "—";
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return "—";
+	return date.toLocaleDateString("ru-RU");
+}
 
 interface ClientDialogProps {
 	open: boolean;
@@ -373,12 +429,260 @@ function ClientDialog({ open, onClose, client, onSuccess }: ClientDialogProps) {
 	);
 }
 
+function ClientRecordSheet({
+	client,
+	open,
+	onOpenChange,
+	onEdit,
+	refreshKey,
+}: {
+	client?: Client;
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	onEdit: (client: Client) => void;
+	refreshKey: number;
+}) {
+	const { toast } = useToast();
+	const [details, setDetails] = useState<ClientDetails | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
+
+	useEffect(() => {
+		if (!open || !client?.id) {
+			setDetails(null);
+			return;
+		}
+
+		let cancelled = false;
+		setIsLoading(true);
+		api
+			.get<ClientDetails>(`/crm/clients/${client.id}`)
+			.then((response) => {
+				if (!cancelled) setDetails(response.data);
+			})
+			.catch((err: any) => {
+				if (cancelled) return;
+				toast({
+					title: "Не удалось открыть карточку",
+					description: err.message || "Проверьте данные клиента",
+					variant: "destructive",
+				});
+			})
+			.finally(() => {
+				if (!cancelled) setIsLoading(false);
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [client?.id, open, refreshKey, toast]);
+
+	const record = details ?? client;
+	const deals = details?.deals ?? [];
+	const contracts = details?.contracts ?? [];
+	const events = [
+		...(record?.createdAt
+			? [{ date: record.createdAt, title: "Клиент создан", meta: record.fullName }]
+			: []),
+		...deals.map((deal) => ({
+			date: deal.createdAt,
+			title: `Сделка: ${DEAL_STAGE_LABELS[deal.stage] ?? deal.stage}`,
+			meta: formatCurrency(deal.dealAmount, deal.currency),
+		})),
+		...contracts.map((contract) => ({
+			date: contract.signDate ?? contract.createdAt,
+			title: `Договор ${contract.contractNumber}`,
+			meta: CONTRACT_STATUS_LABELS[contract.status] ?? contract.status,
+		})),
+	].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+	return (
+		<Sheet open={open} onOpenChange={onOpenChange}>
+			<SheetContent side="right" className="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-xl">
+				<SheetHeader className="border-b border-slate-200 p-5">
+					<SheetTitle className="pr-8 text-left">
+						<span className="block text-[11px] font-bold uppercase tracking-[0.18em] text-cyan-700">
+							Карточка клиента 360
+						</span>
+						<span className="mt-1 block text-2xl font-bold text-slate-950">
+							{record?.fullName ?? "Клиент"}
+						</span>
+					</SheetTitle>
+					<p className="text-left text-sm text-slate-500">
+						Связи клиента с контактами, сделками, договорами и историей продаж.
+					</p>
+				</SheetHeader>
+
+				{isLoading ? (
+					<div className="p-5 text-sm text-slate-500">Загрузка карточки...</div>
+				) : record ? (
+					<div className="space-y-5 p-5">
+						<div className="rounded-[22px] border border-cyan-100 bg-cyan-50/60 p-4">
+							<div className="flex items-start justify-between gap-3">
+								<div>
+									<div className="flex flex-wrap items-center gap-2">
+										{TYPE_OPTIONS.find((item) => item.value === record.type)?.label ?? record.type}
+										{getClientStatusBadge(record.status)}
+									</div>
+									<div className="mt-3 grid gap-2 text-sm text-slate-700">
+										<div className="flex items-center gap-2">
+											<Phone className="h-4 w-4 text-cyan-700" />
+											<span>{record.phone || "Телефон не указан"}</span>
+										</div>
+										<div className="flex items-center gap-2">
+											<Mail className="h-4 w-4 text-cyan-700" />
+											<span>{record.email || "Email не указан"}</span>
+										</div>
+									</div>
+								</div>
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									onClick={() => onEdit(record)}
+									className="shrink-0"
+								>
+									<Edit2 className="mr-1.5 h-4 w-4" />
+									Изменить
+								</Button>
+							</div>
+						</div>
+
+						<div className="grid gap-3 sm:grid-cols-2">
+							<div className="rounded-[18px] border border-slate-200 bg-white p-4">
+								<div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
+									<CreditCard className="h-4 w-4 text-emerald-600" />
+									Бюджет
+								</div>
+								<div className="mt-2 text-xl font-bold text-slate-950">
+									{record.budget ? formatCurrency(record.budget, "KGS") : "—"}
+								</div>
+							</div>
+							<div className="rounded-[18px] border border-slate-200 bg-white p-4">
+								<div className="text-sm font-semibold text-slate-500">Кредит</div>
+								<div className={cn("mt-2 text-xl font-bold", record.creditApproved ? "text-emerald-700" : "text-slate-400")}>
+									{record.creditApproved ? "Одобрен" : "Не указан"}
+								</div>
+							</div>
+						</div>
+
+						<section className="rounded-[22px] border border-slate-200 bg-white">
+							<div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+								<div className="flex items-center gap-2 font-semibold text-slate-900">
+									<Target className="h-4 w-4 text-cyan-700" />
+									Сделки
+								</div>
+								<span className="text-xs text-slate-500">{deals.length}</span>
+							</div>
+							<div className="divide-y divide-slate-100">
+								{deals.length ? (
+									deals.map((deal) => (
+										<div key={deal.id} className="px-4 py-3">
+											<div className="flex items-center justify-between gap-3">
+												<div>
+													<div className="font-semibold text-slate-900">
+														{DEAL_STAGE_LABELS[deal.stage] ?? deal.stage}
+													</div>
+													<div className="text-xs text-slate-500">
+														Вероятность {deal.probability ?? 0}% · закрытие {formatDate(deal.expectedCloseDate)}
+													</div>
+												</div>
+												<div className="font-mono text-sm font-bold text-emerald-700">
+													{formatCurrency(deal.dealAmount, deal.currency)}
+												</div>
+											</div>
+										</div>
+									))
+								) : (
+									<div className="px-4 py-8 text-center text-sm text-slate-500">
+										Сделок по клиенту пока нет
+									</div>
+								)}
+							</div>
+						</section>
+
+						<section className="rounded-[22px] border border-slate-200 bg-white">
+							<div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+								<div className="flex items-center gap-2 font-semibold text-slate-900">
+									<FileSignature className="h-4 w-4 text-cyan-700" />
+									Договоры
+								</div>
+								<span className="text-xs text-slate-500">{contracts.length}</span>
+							</div>
+							<div className="divide-y divide-slate-100">
+								{contracts.length ? (
+									contracts.map((contract) => (
+										<div key={contract.id} className="px-4 py-3">
+											<div className="flex items-center justify-between gap-3">
+												<div>
+													<div className="font-semibold text-slate-900">
+														{contract.contractNumber}
+													</div>
+													<div className="text-xs text-slate-500">
+														{CONTRACT_STATUS_LABELS[contract.status] ?? contract.status} · {formatDate(contract.signDate)}
+													</div>
+												</div>
+												<div className="font-mono text-sm font-bold text-slate-950">
+													{formatCurrency(contract.totalAmount, contract.currency)}
+												</div>
+											</div>
+										</div>
+									))
+								) : (
+									<div className="px-4 py-8 text-center text-sm text-slate-500">
+										Договоров по клиенту пока нет
+									</div>
+								)}
+							</div>
+						</section>
+
+						<section className="rounded-[22px] border border-slate-200 bg-white p-4">
+							<div className="mb-3 flex items-center gap-2 font-semibold text-slate-900">
+								<CalendarDays className="h-4 w-4 text-cyan-700" />
+								История
+							</div>
+							<div className="space-y-3">
+								{events.map((event, index) => (
+									<div key={`${event.title}-${index}`} className="flex gap-3">
+										<div className="mt-1 h-2 w-2 rounded-full bg-cyan-600" />
+										<div>
+											<div className="text-sm font-semibold text-slate-900">{event.title}</div>
+											<div className="text-xs text-slate-500">
+												{formatDate(event.date)} · {event.meta}
+											</div>
+										</div>
+									</div>
+								))}
+							</div>
+						</section>
+					</div>
+				) : (
+					<div className="p-5 text-sm text-slate-500">Выберите клиента из списка</div>
+				)}
+			</SheetContent>
+		</Sheet>
+	);
+}
+
+function getClientStatusBadge(status: string) {
+	const opt = STATUS_OPTIONS.find((s) => s.value === status);
+	return (
+		<Badge
+			className={cn("text-xs", opt?.color || "bg-gray-100 text-gray-800")}
+			variant="secondary"
+		>
+			{opt?.label || status}
+		</Badge>
+	);
+}
+
 export default function Clients() {
 	const [clients, setClients] = useState<Client[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [typeFilter, setTypeFilter] = useState<string>("all");
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [selectedClient, setSelectedClient] = useState<Client | undefined>();
+	const [detailsClient, setDetailsClient] = useState<Client | undefined>();
+	const [detailsRefreshKey, setDetailsRefreshKey] = useState(0);
 	const [deleteId, setDeleteId] = useState<number | null>(null);
 	const { toast } = useToast();
 
@@ -411,6 +715,7 @@ export default function Clients() {
 		try {
 			await api.delete(`/crm/clients/${deleteId}`);
 			toast({ title: "Клиент удалён" });
+			if (detailsClient?.id === deleteId) setDetailsClient(undefined);
 			loadClients();
 		} catch (err: any) {
 			toast({
@@ -586,6 +891,10 @@ export default function Clients() {
 				columns={columns}
 				data={clients}
 				isLoading={isLoading}
+				onRowClick={(client) => setDetailsClient(client)}
+				rowClassName={(client) =>
+					detailsClient?.id === client.id ? "bg-cyan-50/80" : ""
+				}
 				enableSearch
 				searchPlaceholder="Поиск по имени, телефону, email..."
 				toolbar={
@@ -615,7 +924,23 @@ export default function Clients() {
 				open={dialogOpen}
 				onClose={() => setDialogOpen(false)}
 				client={selectedClient}
-				onSuccess={loadClients}
+				onSuccess={() => {
+					loadClients();
+					setDetailsRefreshKey((value) => value + 1);
+				}}
+			/>
+
+			<ClientRecordSheet
+				client={detailsClient}
+				open={Boolean(detailsClient)}
+				onOpenChange={(open) => {
+					if (!open) setDetailsClient(undefined);
+				}}
+				onEdit={(client) => {
+					setSelectedClient(client);
+					setDialogOpen(true);
+				}}
+				refreshKey={detailsRefreshKey}
 			/>
 
 			<AlertDialog

@@ -1,9 +1,10 @@
-import { Building2, Download, Grid3X3, Upload, Users } from "lucide-react";
+import { Building2, Download, Grid3X3, Landmark, Upload, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { SalesGridView } from "./types";
 
 const VIEWS: { id: SalesGridView; label: string; icon: typeof Grid3X3 }[] = [
 	{ id: "grid", label: "Шахматка", icon: Grid3X3 },
+	{ id: "financial", label: "Финслой", icon: Landmark },
 	{ id: "list", label: "Список", icon: Building2 },
 	{ id: "agents", label: "Контрагенты", icon: Users },
 ];
@@ -30,7 +31,7 @@ export function ViewSwitcher({
 					<button
 						key={id}
 						type="button"
-						disabled={isMobile && id === "grid"}
+						disabled={isMobile && (id === "grid" || id === "financial")}
 						onClick={() => onChange(id)}
 						className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-colors ${
 							view === id

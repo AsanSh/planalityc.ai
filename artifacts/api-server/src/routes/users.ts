@@ -24,14 +24,20 @@ router.get("/users", async (req: AuthenticatedRequest, res): Promise<void> => {
 // POST /users — добавить сотрудника в свою организацию
 router.post("/users", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
   const { email, password, firstName, lastName, role } = req.body;
-  if (!email || !password || !firstName || !lastName || !role) {
+  if (!email || !firstName || !lastName || !role) {
     res.status(400).json({ error: "Заполните все обязательные поля" });
     return;
   }
-  const passwordValidation = validatePassword(password);
-  if (!passwordValidation.valid) {
-    res.status(400).json({ error: passwordValidation.error });
-    return;
+
+  const hasInitialPassword = typeof password === "string" && password.trim().length > 0;
+  let passwordHash: string | null = null;
+  if (hasInitialPassword) {
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      res.status(400).json({ error: passwordValidation.error });
+      return;
+    }
+    passwordHash = await hashPassword(password);
   }
 
   if (role === "super_admin") {
@@ -55,7 +61,7 @@ router.post("/users", requireRole("admin", "company_admin"), async (req: Authent
 
   const [user] = await db.insert(usersTable).values({
     email,
-    passwordHash: await hashPassword(password),
+    passwordHash,
     firstName,
     lastName,
     role,
@@ -63,7 +69,21 @@ router.post("/users", requireRole("admin", "company_admin"), async (req: Authent
     isActive: true,
   }).returning();
   const { passwordHash: _ph, ...safe } = user;
-  res.status(201).json(safe);
+
+  let invite: { emailSent: boolean; resetLink: string } | null = null;
+  if (!hasInitialPassword) {
+    const result = await initiatePasswordReset(user.id);
+    invite = {
+      emailSent: result.emailSent,
+      resetLink: result.resetLink,
+    };
+  }
+
+  res.status(201).json({
+    ...safe,
+    inviteEmailSent: invite?.emailSent ?? false,
+    inviteLink: invite?.resetLink ?? null,
+  });
 });
 
 // GET /users/:id

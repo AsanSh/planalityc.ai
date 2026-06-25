@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api-error";
 import {
@@ -75,6 +76,7 @@ export default function RentalEmployees() {
 	const [editingId, setEditingId] = useState<number | null>(null);
 	const qc = useQueryClient();
 	const { data: customRoles = [] } = useCompanyRoles();
+	const { toast } = useToast();
 
 	const { data: users = [], isLoading } = useQuery<Employee[]>({
 		queryKey: ["company-users"],
@@ -115,10 +117,6 @@ export default function RentalEmployees() {
 			setError("Укажите email");
 			return;
 		}
-		if (!editingId && (!form.password || form.password.length < 6)) {
-			setError("Пароль — минимум 6 символов");
-			return;
-		}
 		setSaving(true);
 		setError("");
 		try {
@@ -131,7 +129,26 @@ export default function RentalEmployees() {
 				if (form.password.trim()) body.password = form.password;
 				await api.patch(`/users/${editingId}`, body);
 			} else {
-				await api.post("/users", form);
+				const { data } = await api.post<{
+					inviteEmailSent?: boolean;
+					inviteLink?: string | null;
+				}>("/users", {
+					firstName: form.firstName,
+					lastName: form.lastName,
+					email: form.email,
+					role: form.role,
+				});
+				if (data.inviteLink) {
+					await navigator.clipboard.writeText(data.inviteLink).catch(() => {});
+				}
+				toast({
+					title: "Сотрудник создан",
+					description: data.inviteEmailSent
+						? "Ссылка для входа отправлена на email сотрудника."
+						: data.inviteLink
+							? "Письмо не отправлено, ссылка приглашения скопирована."
+							: "Аккаунт создан.",
+				});
 			}
 			qc.invalidateQueries({ queryKey: ["company-users"] });
 			closeModal();
@@ -340,14 +357,15 @@ export default function RentalEmployees() {
 								<Label className="text-xs font-medium text-gray-600">
 									{editingId
 										? "Новый пароль (оставьте пустым чтобы не менять)"
-										: "Пароль *"}
+										: "Пароль сотрудник задаст по ссылке"}
 								</Label>
 								<div className="relative mt-1">
 									<Input
 										className="h-9 pr-10"
 										type={showPassword ? "text" : "password"}
+										disabled={!editingId}
 										placeholder={
-											editingId ? "Введите новый пароль" : "Минимум 6 символов"
+											editingId ? "Введите новый пароль" : "Ссылка уйдёт на email"
 										}
 										value={form.password}
 										onChange={(e) =>

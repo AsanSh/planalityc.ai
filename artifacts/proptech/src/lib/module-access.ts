@@ -27,6 +27,21 @@ const SYSTEM_ROLE_MODULES: Record<string, ModuleId[] | "all"> = {
 	company_admin: "all",
 	admin: "all",
 	super_admin: "all",
+	general_director: "all",
+	executive_operations_director: "all",
+	construction_director: ["construction", "warehouse", "proptech", "reports", "consolidated"],
+	chief_accountant: ["finance", "construction", "rental", "reports", "consolidated"],
+	construction_project_manager: ["construction", "warehouse", "reports", "consolidated"],
+	commercial_director: ["proptech", "rental", "construction", "reports", "consolidated"],
+	financial_director: ["finance", "construction", "rental", "reports", "consolidated"],
+	finance_operations_specialist: ["finance", "reports", "consolidated"],
+	rental_department_head: ["rental", "reports", "consolidated"],
+	rental_specialist: ["rental", "consolidated"],
+	sales_department_head: ["proptech", "construction", "reports", "consolidated"],
+	pto_engineer: ["construction", "consolidated"],
+	supply_specialist: ["warehouse", "construction", "consolidated"],
+	lawyer: ["construction", "rental", "proptech", "reports", "consolidated"],
+	cashier: ["finance", "construction", "rental", "consolidated"],
 	rental_manager: ["rental"],
 	sales_manager: ["proptech"],
 	finance: ["finance"],
@@ -121,6 +136,20 @@ export function canAccessPath(
 	const pathOnly = path.split("?")[0] ?? path;
 	const search = path.includes("?") ? path.slice(path.indexOf("?")) : "";
 
+	if (
+		pathOnly === "/settings" ||
+		pathOnly.startsWith("/settings/") ||
+		pathOnly === "/design-system" ||
+		pathOnly === "/activity" ||
+		pathOnly === "/import"
+	) {
+		return canAccessSystemSettings(role, permissions);
+	}
+
+	if (pathOnly === "/users") {
+		return canManageUsers(role, permissions);
+	}
+
 	if (pathOnly === "/dashboard" || path.startsWith("/dashboard?")) {
 		const tabs = resolveDashboardTabs(role, permissions, allowedModules);
 		if (tabs.length === 0) return false;
@@ -153,4 +182,25 @@ export function canAccessPath(
 
 export function isFullAdmin(role: string): boolean {
 	return role === "company_admin" || role === "admin";
+}
+
+export function canAccessSystemSettings(
+	role: string,
+	permissions: string[] = [],
+): boolean {
+	if (["company_admin", "admin", "super_admin"].includes(role)) return true;
+	if (permissions.includes("admin.all")) return true;
+	return permissions.some((permission) =>
+		["settings.write", "settings.roles", "settings.legal_entities"].includes(permission),
+	);
+}
+
+export function canManageUsers(
+	role: string,
+	permissions: string[] = [],
+): boolean {
+	if (canAccessSystemSettings(role, permissions)) return true;
+	return permissions.some((permission) =>
+		["users.read", "users.write", "users.delete"].includes(permission),
+	);
 }

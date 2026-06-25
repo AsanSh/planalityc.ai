@@ -48,6 +48,7 @@ import {
 	type ChessDialogUnit,
 } from "@/pages/construction/chess-dialogs";
 import { AgentsView } from "./AgentsView";
+import { FinancialLayerView } from "./FinancialLayerView";
 import { FloorGrid } from "./FloorGrid";
 import { KpiRow } from "./KpiRow";
 import { ListView } from "./ListView";
@@ -629,6 +630,13 @@ export default function SalesGrid() {
 										onBulkFloor={toggleBulkFloor}
 									onMoveUnit={handleMoveUnit}
 								/>
+								) : effectiveView === "financial" ? (
+									<FinancialLayerView
+										units={filteredUnits}
+										statusGridMap={statusGridMap}
+										panelUnitId={panelUnitId}
+										onOpenUnit={openUnit}
+									/>
 								) : effectiveView === "list" ? (
 									<ListView
 										units={filteredUnits}

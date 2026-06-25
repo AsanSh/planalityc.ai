@@ -61,6 +61,11 @@ export function useModuleAccess() {
 		const byRole = resolveAllowedModules(role, permissions);
 		const byCompany = settingsKeysToModuleIds(enabledKeys);
 		if (!byCompany) return byRole;
+		if (MATRIX_JOB_LABELS[role]) {
+			for (const moduleId of byRole) {
+				if (!byCompany.includes(moduleId)) byCompany.push(moduleId);
+			}
+		}
 		if (byRole.includes("consolidated") && !byCompany.includes("consolidated")) {
 			byCompany.push("consolidated");
 		}

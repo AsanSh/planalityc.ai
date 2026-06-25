@@ -19,6 +19,8 @@ import { useModuleAccess } from "@/hooks/use-module-access";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { useAuth } from "@/lib/auth";
+import { canAccessSystemSettings } from "@/lib/module-access";
+import { MATRIX_JOB_LABELS } from "@/lib/user-roles";
 
 const AVATAR_COLORS = ["#4F46E5", "#0EA5E9", "#10B981", "#F59E0B", "#8B5CF6"];
 function avatarColor(id: number) {
@@ -36,14 +38,15 @@ const roleLabels: Record<string, string> = {
 	sales_manager: "Менеджер продаж",
 	finance: "Финансист",
 	rental_manager: "Менеджер аренды",
+	...MATRIX_JOB_LABELS,
 };
 
 type Modal = "profile" | "password" | null;
 
 export default function UserProfileDropdown() {
 	const { user, logout } = useAuth();
-	const { canAccess } = useModuleAccess();
-	const showSystemSettings = canAccess("/settings");
+	const { permissions, role } = useModuleAccess();
+	const showSystemSettings = canAccessSystemSettings(role, permissions);
 	const [open, setOpen] = useState(false);
 	const [modal, setModal] = useState<Modal>(null);
 	const [profileForm, setProfileForm] = useState({

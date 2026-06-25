@@ -1,6 +1,6 @@
 import type { UnitContract } from "@/components/chess-views";
 
-export type SalesGridView = "grid" | "list" | "agents";
+export type SalesGridView = "grid" | "financial" | "list" | "agents";
 export type CellViewMode = "crm" | "pto" | "prices";
 export type KpiFilter =
 	| "all"
@@ -95,6 +95,10 @@ export interface SalesGridUnit {
 	areaModified?: boolean;
 	originalArea?: string | null;
 	areaDelta?: string | null;
+	createdAt?: string | null;
+	updatedAt?: string | null;
+	statusChangedAt?: string | null;
+	lastActivityAt?: string | null;
 	contract?: UnitContract | null;
 }
 

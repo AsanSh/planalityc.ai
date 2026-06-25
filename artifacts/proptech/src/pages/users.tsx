@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Edit2, Eye, EyeOff, KeyRound, Plus, Trash2 } from "lucide-react";
+import { Edit2, KeyRound, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table";
@@ -8,7 +8,6 @@ import {
 	type UpdateUserBodyRole,
 	getListUsersQueryKey,
 	type User,
-	useCreateUser,
 	useDeleteUser,
 	useListUsers,
 	useUpdateUser,
@@ -263,16 +262,15 @@ function UserDialog({
 	user: User | null;
 }) {
 	const isEditing = !!user;
-	const createMutation = useCreateUser();
 	const updateMutation = useUpdateUser();
 	const queryClient = useQueryClient();
 	const { toast } = useToast();
+	const [creating, setCreating] = useState(false);
 
 	const [formData, setFormData] = useState({
 		firstName: "",
 		lastName: "",
 		email: "",
-		password: "",
 		role: "general_director" as CreateUserBodyRole,
 	});
 
@@ -282,7 +280,6 @@ function UserDialog({
 				firstName: user.firstName,
 				lastName: user.lastName,
 				email: user.email,
-				password: "", // Leave blank when editing
 				role: user.role as CreateUserBodyRole,
 			});
 		} else if (!user && open) {
@@ -290,13 +287,12 @@ function UserDialog({
 				firstName: "",
 				lastName: "",
 				email: "",
-				password: "",
 				role: "general_director" as CreateUserBodyRole,
 			});
 		}
 	}, [user, open]);
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
 		if (isEditing && user) {
@@ -325,31 +321,43 @@ function UserDialog({
 				},
 			);
 		} else {
-			createMutation.mutate(
-				{ data: formData },
-				{
-					onSuccess: () => {
-						queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
-						toast({
-							title: "Сотрудник создан",
-							description: "Передайте email и пароль сотруднику для входа.",
-						});
-						onOpenChange(false);
-					},
-					onError: (error: any) => {
-						toast({
-							title: "Ошибка",
-							description: error.message,
-							variant: "destructive",
-						});
-					},
-				},
-			);
+			setCreating(true);
+			try {
+				const { data } = await api.post<{
+					inviteEmailSent?: boolean;
+					inviteLink?: string | null;
+				}>("/users", {
+					firstName: formData.firstName,
+					lastName: formData.lastName,
+					email: formData.email,
+					role: formData.role,
+				});
+				queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
+				if (data.inviteLink) {
+					await navigator.clipboard.writeText(data.inviteLink).catch(() => {});
+				}
+				toast({
+					title: "Сотрудник создан",
+					description: data.inviteEmailSent
+						? "Ссылка для входа отправлена на email сотрудника."
+						: data.inviteLink
+							? "Письмо не отправлено, ссылка приглашения скопирована."
+							: "Аккаунт создан.",
+				});
+				onOpenChange(false);
+			} catch (error: any) {
+				toast({
+					title: "Ошибка",
+					description: error.message,
+					variant: "destructive",
+				});
+			} finally {
+				setCreating(false);
+			}
 		}
 	};
 
-	const isPending = createMutation.isPending || updateMutation.isPending;
-	const [showPassword, setShowPassword] = useState(false);
+	const isPending = creating || updateMutation.isPending;
 	const { data: customRoles = [] } = useCompanyRoles();
 
 	return (
@@ -361,7 +369,7 @@ function UserDialog({
 					</DialogTitle>
 					{!isEditing && (
 						<DialogDescription>
-							Сотрудник сможет войти в систему с указанным email и паролем.
+							Сотруднику уйдёт ссылка на email. При первом входе он задаст пароль сам.
 						</DialogDescription>
 					)}
 				</DialogHeader>
@@ -407,44 +415,6 @@ function UserDialog({
 						/>
 					</div>
 
-					{!isEditing && (
-						<div className="space-y-1.5">
-							<Label>
-								Пароль *{" "}
-								<span className="text-xs text-muted-foreground">
-									(минимум 12 символов)
-								</span>
-							</Label>
-							<div className="relative">
-								<Input
-									type={showPassword ? "text" : "password"}
-									required
-									minLength={12}
-									value={formData.password}
-									onChange={(e) =>
-										setFormData({ ...formData, password: e.target.value })
-									}
-									placeholder="••••••••"
-									className="pr-10"
-								/>
-								<button
-									type="button"
-									className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-									onClick={() => setShowPassword(!showPassword)}
-								>
-									{showPassword ? (
-										<EyeOff className="h-4 w-4" />
-									) : (
-										<Eye className="h-4 w-4" />
-									)}
-								</button>
-							</div>
-							<p className="text-xs text-muted-foreground">
-								Запишите или передайте пароль сотруднику после создания.
-							</p>
-						</div>
-					)}
-
 					<div className="space-y-1.5">
 						<Label>Роль *</Label>
 						<RoleSelect
@@ -470,7 +440,7 @@ function UserDialog({
 								? "Сохранение..."
 								: isEditing
 									? "Сохранить"
-									: "Создать сотрудника"}
+									: "Создать и отправить ссылку"}
 						</Button>
 					</div>
 				</form>

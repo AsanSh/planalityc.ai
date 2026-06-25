@@ -71,7 +71,11 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import UserProfileDropdown from "@/components/user-profile-dropdown";
 import { useModuleAccess } from "@/hooks/use-module-access";
 import { useAuth } from "@/lib/auth";
-import { detectModuleFromPath, type ModuleId } from "@/lib/module-access";
+import {
+	canAccessSystemSettings,
+	detectModuleFromPath,
+	type ModuleId,
+} from "@/lib/module-access";
 import { getModuleDefinition } from "@/lib/module-registry";
 import { resolveQuickActions } from "@/lib/quick-create-access";
 import { resolveNavItemHref } from "@/lib/nav-hrefs";
@@ -931,6 +935,7 @@ export function Layout({ children }: { children: ReactNode }) {
 	const ModuleIcon = activeModule.icon;
 	const activeModuleShortLabel =
 		getDashboardTabLabel(pathWithSearch) || activeModule.shortLabel;
+	const canOpenSystemSettings = canAccessSystemSettings(role, permissions);
 	const activeModuleSettingsHref = "/settings";
 	const quickActions = useMemo(
 		() =>
@@ -1494,12 +1499,14 @@ export function Layout({ children }: { children: ReactNode }) {
 						</nav>
 
 						<div className="mt-3 space-y-2 border-t border-slate-200/80 pt-3">
-							<Link href={activeModuleSettingsHref}>
-								<div className="flex h-9 items-center gap-2.5 rounded-[14px] border border-slate-200/80 bg-white/76 px-3 text-sm font-semibold text-slate-700 transition-all hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-800">
-									<Settings className="h-4 w-4 text-slate-500" />
-									<span>Настройки</span>
-								</div>
-							</Link>
+							{canOpenSystemSettings && (
+								<Link href={activeModuleSettingsHref}>
+									<div className="flex h-9 items-center gap-2.5 rounded-[14px] border border-slate-200/80 bg-white/76 px-3 text-sm font-semibold text-slate-700 transition-all hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-800">
+										<Settings className="h-4 w-4 text-slate-500" />
+										<span>Настройки</span>
+									</div>
+								</Link>
+							)}
 							<div className="rounded-[16px] border border-slate-200/80 bg-white/76 p-1 shadow-sm shadow-slate-950/5">
 								<UserProfileDropdown />
 							</div>

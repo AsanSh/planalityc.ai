@@ -29,6 +29,8 @@ import { PageShell } from "@/components/am/PageShell";
 import { Tablo } from "@/components/am/Tablo";
 import { defaultPeriod, inPeriod, PeriodPicker, type PeriodValue } from "@/components/period-picker";
 import { KpiCard, KpiRow } from "@/components/kpi-card";
+import { useLegalEntityScope } from "@/hooks/use-legal-entity-scope";
+import { LegalEntityScopeSelect } from "@/components/legal-entity-scope-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -573,6 +575,7 @@ export default function Payments() {
 	const { toast } = useToast();
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [period, setPeriod] = useState<PeriodValue>(defaultPeriod());
+	const scope = useLegalEntityScope();
 	const handleCancel = async (payment: any) => {
 		if (!confirm(`Отменить платёж ${fmtCurrency(payment.amount)} от ${formatDate(payment.paymentDate)}? Начисление будет восстановлено.`)) return;
 		try {
@@ -591,8 +594,8 @@ export default function Payments() {
 	};
 
 	const { data: payments, isLoading, isError, error, refetch } = useQuery<any[]>({
-		queryKey: getListPaymentsQueryKey(),
-		queryFn: () => api.get("/rental/payments").then((r) => r.data),
+		queryKey: [...getListPaymentsQueryKey(), scope.queryKeyPart],
+		queryFn: () => api.get("/rental/payments", { params: scope.apiParam }).then((r) => r.data),
 	});
 
 	const { data: leases } = useQuery<any[]>({
@@ -741,6 +744,7 @@ export default function Payments() {
 			filters={
 				<>
 					<PeriodPicker value={period} onChange={setPeriod} />
+					<LegalEntityScopeSelect />
 					<p className="text-xs text-am-text-muted ml-auto">{enrichedPayments.length} записей</p>
 				</>
 			}

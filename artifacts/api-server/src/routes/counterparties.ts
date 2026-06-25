@@ -86,11 +86,18 @@ router.get("/counterparties/:id", async (req: AuthenticatedRequest, res): Promis
 
 router.patch("/counterparties/:id", async (req: AuthenticatedRequest, res): Promise<void> => {
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
-  const { type, category, categories, fullName, iin, phone, email, address, additionalContact, comment } = req.body;
+  const { type, category, categories, fullName, iin, phone, email, address, additionalContact, comment, linkedLegalEntityId } = req.body;
   const conditions: SQL[] = [eq(counterpartiesTable.id, id)];
   conditions.push(eq(counterpartiesTable.companyId, req.scopedCompanyId!));
   const updates: Record<string, unknown> = { type, fullName, iin, phone, email, address, additionalContact, comment };
   if (category !== undefined) updates.category = category;
+  // linkedLegalEntityId: помечает контрагента как другое юрлицо группы (intercompany). number | null
+  if (linkedLegalEntityId !== undefined) {
+    updates.linkedLegalEntityId =
+      linkedLegalEntityId === null || linkedLegalEntityId === ""
+        ? null
+        : Number(linkedLegalEntityId);
+  }
   if (categories !== undefined) {
     const cats = normalizeCategories(categories);
     const invalid = cats.filter((c) => !VALID_ROLES.includes(c));

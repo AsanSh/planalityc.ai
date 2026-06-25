@@ -24,6 +24,7 @@ router.get("/dashboard/control-center", async (req: AuthenticatedRequest, res): 
       scope.legalEntityId != null ? String(scope.legalEntityId) : "",
       scope.from ?? "",
       scope.to ?? "",
+      scope.excludeIntercompany ? "1" : "",
     );
     const cached = cache.get<Awaited<ReturnType<typeof buildControlCenter>>>(cacheKey);
     if (cached) {

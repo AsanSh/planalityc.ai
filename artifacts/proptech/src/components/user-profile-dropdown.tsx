@@ -136,8 +136,8 @@ export default function UserProfileDropdown() {
 	}
 
 	async function savePassword() {
-		if (!pwForm.password || pwForm.password.length < 12) {
-			setError("Минимум 12 символов");
+		if (!pwForm.password || pwForm.password.length < 6) {
+			setError("Минимум 6 символов");
 			return;
 		}
 		if (pwForm.password !== pwForm.confirm) {
@@ -368,7 +368,7 @@ export default function UserProfileDropdown() {
 									<Input
 										className="h-9 pr-10"
 										type={showPw ? "text" : "password"}
-										placeholder="Минимум 12 символов"
+										placeholder="Минимум 6 символов"
 										value={pwForm.password}
 										onChange={(e) =>
 											setPwForm((f) => ({ ...f, password: e.target.value }))

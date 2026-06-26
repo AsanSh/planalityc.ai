@@ -283,10 +283,10 @@ export default function Settings() {
 			});
 			return;
 		}
-		if (passwordForm.next.length < 12) {
+		if (passwordForm.next.length < 6) {
 			toast({
 				title: "Ошибка",
-				description: "Пароль должен быть не менее 12 символов",
+				description: "Пароль должен быть не менее 6 символов",
 				variant: "destructive",
 			});
 			return;
@@ -815,7 +815,7 @@ export default function Settings() {
 										onChange={(e) =>
 											setPasswordForm((f) => ({ ...f, next: e.target.value }))
 										}
-										placeholder="Минимум 12 символов"
+										placeholder="Минимум 6 символов"
 										className="h-11 rounded-xl border-gray-200 bg-gray-50 focus:bg-white pr-10"
 									/>
 									<button

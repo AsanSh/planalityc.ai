@@ -222,10 +222,10 @@ export default function Register() {
 		}
 
 		// Валидация пароля
-		if (form.password.length < 12) {
+		if (form.password.length < 6) {
 			toast({
 				title: "Ошибка",
-				description: "Пароль должен быть не менее 12 символов",
+				description: "Пароль должен быть не менее 6 символов",
 				variant: "destructive",
 			});
 			return;
@@ -661,7 +661,7 @@ export default function Register() {
 											type="password"
 											value={form.password}
 											onChange={set("password")}
-											placeholder="Минимум 12 символов"
+											placeholder="Минимум 6 символов"
 											required
 											className="mt-1.5 h-11 rounded-lg border-slate-200 bg-slate-50/80 focus:bg-white focus-visible:ring-cyan-600/20"
 										/>

@@ -653,11 +653,6 @@ const MODULES: Module[] = [
 				items: [
 					{ href: "/dashboard?tab=control", label: "Обзор", icon: LayoutDashboard },
 					{ href: "/properties", label: "Объекты", icon: Building2 },
-					{
-						href: "/properties/chess",
-						label: "Шахматка объектов",
-						icon: Grid3X3,
-					},
 					{ href: "/counterparties", label: "Все контрагенты", icon: Users },
 					{ href: "/companies", label: "Компании", icon: Building },
 					{ href: "/users", label: "Пользователи", icon: UserCircle },

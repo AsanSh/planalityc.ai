@@ -15,6 +15,7 @@ import {
   verifyPassword,
   generateSecureToken,
   validatePassword,
+  hashToken,
 } from "../lib/security";
 import { validateBody } from "../middleware/validation";
 import { sendRegistrationVerificationEmail, sendVerificationEmail } from "../lib/email";
@@ -104,7 +105,7 @@ const registerSchema = z.object({
   address: z.string().max(500).optional(),
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
-  password: z.string().min(12),
+  password: z.string().min(6),
   registrationToken: z.string().min(16),
 });
 
@@ -129,7 +130,7 @@ const forgotPasswordSchema = z.object({
 const updateProfileSchema = z.object({
   firstName: z.string().min(1).max(100).optional(),
   lastName: z.string().min(1).max(100).optional(),
-  password: z.string().min(12).optional(),
+  password: z.string().min(6).optional(),
 });
 
 /**
@@ -140,8 +141,9 @@ async function createSession(userId: number): Promise<string> {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7); // 7 дней
 
+  // В БД храним только хеш токена; сырой токен возвращаем клиенту
   await db.insert(sessionsTable).values({
-    token,
+    token: hashToken(token),
     userId,
     expiresAt,
   });
@@ -200,16 +202,17 @@ async function findVerifiedRegistration(emailInput: string, token: string) {
  * Получение userId по токену с проверкой истечения
  */
 export async function getSessionUserId(token: string): Promise<number | null> {
+  const tokenHash = hashToken(token);
   const [session] = await db
     .select()
     .from(sessionsTable)
-    .where(eq(sessionsTable.token, token));
+    .where(eq(sessionsTable.token, tokenHash));
 
   if (!session) return null;
 
   // Проверка истечения
   if (session.expiresAt && session.expiresAt < new Date()) {
-    await db.delete(sessionsTable).where(eq(sessionsTable.token, token));
+    await db.delete(sessionsTable).where(eq(sessionsTable.token, tokenHash));
     return null;
   }
 
@@ -692,7 +695,7 @@ router.post("/auth/logout", async (req, res): Promise<void> => {
   const authHeader = req.headers.authorization;
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.slice(7);
-    await db.delete(sessionsTable).where(eq(sessionsTable.token, token));
+    await db.delete(sessionsTable).where(eq(sessionsTable.token, hashToken(token)));
   }
   res.json({ message: "Logged out" });
 });

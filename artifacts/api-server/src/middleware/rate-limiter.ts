@@ -1,6 +1,15 @@
 import rateLimit from 'express-rate-limit';
 import { Request, Response } from 'express';
 
+// ВАЖНО про окружение:
+// Лимитеры используют in-memory стор (по умолчанию). На одиночном сервере
+// (Hetzner, один Node-процесс) это работает корректно — счётчики общие.
+// На serverless (текущий Vercel) каждый холодный старт = свежая память,
+// счётчики не шарятся между инстансами, поэтому защита от перебора
+// (authLimiter) деградирует. После переезда на свой сервер проблема уходит
+// сама. Если до переезда нужна строгая защита логина на Vercel — подключить
+// общий стор (напр. rate-limit-redis + Upstash) через опцию `store`.
+
 // Базовый rate limiter для всех endpoints
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 минут

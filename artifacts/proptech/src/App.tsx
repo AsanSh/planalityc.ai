@@ -54,7 +54,6 @@ class PageErrorBoundary extends React.Component<
 }
 
 import ActivityLog from "@/pages/activity-log";
-import ChessBoard from "@/pages/ChessBoard";
 import Companies from "@/pages/companies";
 import ConstructionAccounts from "@/pages/construction/accounts";
 import ConstructionAccruals from "@/pages/construction/accruals";
@@ -344,7 +343,7 @@ function Router() {
 				<ProtectedRoute component={Counterparties} />
 			</Route>
 			<Route path="/properties/chess">
-				<ProtectedRoute component={ChessBoard} />
+				<Redirect to="/rental/properties" />
 			</Route>
 			<Route path="/properties">
 				<ProtectedRoute component={Properties} />

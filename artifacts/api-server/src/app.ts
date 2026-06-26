@@ -79,10 +79,19 @@ app.use(
   })
 );
 
-// CORS with whitelist
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [
-  "http://localhost:5173",
-  "http://localhost:3000",
+// CORS with whitelist.
+// В проде список задаётся через ALLOWED_ORIGINS (CSV), напр.:
+//   ALLOWED_ORIGINS=https://planalitycai.vercel.app,https://app.your-domain.kz
+// При переезде на свой сервер/домен достаточно поменять эту переменную.
+// Локальные dev-origin'ы добавляются всегда — они безвредны вне разработки.
+const devOrigins = ["http://localhost:5173", "http://localhost:3000"];
+// Страховочный дефолт прод-фронта на случай, если ALLOWED_ORIGINS ещё не задан
+// на деплое API (чтобы снятие wildcard не положило текущий прод). После
+// переезда на свой домен — задать ALLOWED_ORIGINS и этот дефолт можно убрать.
+const prodDefaults = ["https://planalitycai.vercel.app"];
+const allowedOrigins = [
+  ...(process.env.ALLOWED_ORIGINS?.split(",").map((o) => o.trim()).filter(Boolean) || prodDefaults),
+  ...devOrigins,
 ];
 
 app.use(
@@ -91,15 +100,7 @@ app.use(
       // Allow requests with no origin (mobile apps, Postman)
       if (!origin) return callback(null, true);
 
-      const vercelHost = (() => {
-        try {
-          return new URL(origin).hostname.endsWith(".vercel.app");
-        } catch {
-          return false;
-        }
-      })();
-
-      if (allowedOrigins.includes(origin) || vercelHost) {
+      if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         logger.warn({ origin, allowedOrigins }, "CORS blocked request");

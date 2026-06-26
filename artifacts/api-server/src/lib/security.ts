@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { randomBytes, timingSafeEqual } from 'crypto';
+import { randomBytes, timingSafeEqual, createHash } from 'crypto';
 
 /**
  * Хеширование пароля с использованием bcrypt
@@ -38,6 +38,18 @@ export function generateSecureToken(): string {
 }
 
 /**
+ * Хеширование сессионного токена для хранения в БД (SHA-256).
+ * Клиенту отдаётся сырой токен, в БД пишется только хеш — утечка
+ * дампа БД не раскрывает живые сессии. Применяется и при выдаче,
+ * и при поиске/удалении сессии.
+ * @param token - Сырой токен (из generateSecureToken)
+ * @returns hex-хеш токена (64 символа)
+ */
+export function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+/**
  * Безопасное сравнение строк (защита от timing attack)
  * @param a - Первая строка
  * @param b - Вторая строка
@@ -73,10 +85,10 @@ export function validatePassword(password: string): {
   valid: boolean;
   error?: string;
 } {
-  if (password.length < 12) {
+  if (password.length < 6) {
     return {
       valid: false,
-      error: 'Пароль должен содержать минимум 12 символов',
+      error: 'Пароль должен содержать минимум 6 символов',
     };
   }
 

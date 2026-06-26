@@ -815,7 +815,7 @@ export default function PlatformAdminMarketplace() {
 							/>
 						</div>
 						<div>
-							<Label>Пароль (опц., мин. 12 символов)</Label>
+							<Label>Пароль (опц., мин. 6 символов)</Label>
 							<Input
 								type="password"
 								value={portalForm.password}

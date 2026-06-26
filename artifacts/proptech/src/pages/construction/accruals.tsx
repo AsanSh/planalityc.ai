@@ -84,7 +84,7 @@ const STATUS_CONFIG: Record<
 		icon: DollarSign,
 	},
 	paid: {
-		label: "Оплачен",
+		label: "Закрыт",
 		color: "bg-emerald-100 text-emerald-700 border-emerald-200",
 		icon: CheckCircle2,
 	},

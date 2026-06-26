@@ -127,7 +127,7 @@ export default function ResetPassword() {
 									minLength={12}
 									value={password}
 									onChange={(e) => setPassword(e.target.value)}
-									placeholder="Минимум 12 символов"
+									placeholder="Минимум 6 символов"
 									className="pr-10"
 								/>
 								<button

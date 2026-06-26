@@ -67,7 +67,7 @@ export const statusLabels: Record<string, string> = {
 	pending: "Ожидает",
 	approved: "Подтверждено",
 	partial: "Частично",
-	paid: "Оплачено",
+	paid: "Закрыто",
 	overdue: "Просрочено",
 	cancelled: "Отменено",
 };

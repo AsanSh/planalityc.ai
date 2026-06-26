@@ -22,7 +22,7 @@ export function useCommandPalette() {
 
 	useEffect(() => {
 		const onKeyDown = (e: KeyboardEvent) => {
-			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "w") {
+			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
 				e.preventDefault();
 				setOpen((prev) => !prev);
 			}

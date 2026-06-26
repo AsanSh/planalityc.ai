@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { eq } from "drizzle-orm";
 import { db, usersTable, sessionsTable } from "../lib/db";
 import { resolvePermissions, PERMISSIONS } from "../lib/permissions";
+import { hashToken } from "../lib/security";
 
 export interface AuthenticatedRequest extends Request {
   userId?: number;
@@ -28,12 +29,13 @@ export async function requireAuth(
   }
 
   const token = authHeader.slice(7);
+  const tokenHash = hashToken(token);
 
-  // Поиск сессии в БД
+  // Поиск сессии в БД (по хешу токена — в БД сырой токен не хранится)
   const [session] = await db
     .select()
     .from(sessionsTable)
-    .where(eq(sessionsTable.token, token));
+    .where(eq(sessionsTable.token, tokenHash));
 
   if (!session) {
     res.status(401).json({ error: "Invalid token" });
@@ -43,7 +45,7 @@ export async function requireAuth(
   // Проверка истечения токена
   if (session.expiresAt && session.expiresAt < new Date()) {
     // Удаляем истекшую сессию
-    await db.delete(sessionsTable).where(eq(sessionsTable.token, token));
+    await db.delete(sessionsTable).where(eq(sessionsTable.token, tokenHash));
     res.status(401).json({ error: "Session expired" });
     return;
   }

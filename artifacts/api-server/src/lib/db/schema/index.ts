@@ -84,3 +84,4 @@ export * from "./user_table_views";
 export * from "./portal_content";
 export * from "./crm_announcements";
 export * from "./telegram_settings";
+export * from "./contract_terminations";

@@ -34,7 +34,7 @@ export async function runMigrations(): Promise<void> {
   // Self-heal: idempotent CREATE ... IF NOT EXISTS migrations are re-applied
   // directly, so a hand-authored journal/ordering quirk can't leave a newer
   // table missing (e.g. 0036_portal_content). Safe to run every cold start.
-  const selfHeal = ["0036_portal_content.sql", "0037_legal_entity_finance.sql", "0038_properties_columns_heal.sql", "0039_crm_announcements_telegram.sql", "0040_rbac_permissions.sql"];
+  const selfHeal = ["0036_portal_content.sql", "0037_legal_entity_finance.sql", "0038_properties_columns_heal.sql", "0039_crm_announcements_telegram.sql", "0040_rbac_permissions.sql", "0041_contract_terminations.sql"];
   for (const file of selfHeal) {
     const sqlPath = path.join(migrationsFolder, file);
     if (!existsSync(sqlPath)) continue;

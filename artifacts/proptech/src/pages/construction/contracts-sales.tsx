@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, Eye, FileText, Plus, UserPlus } from "lucide-react";
+import { ChevronRight, Eye, FileText, Plus, UserPlus, XCircle } from "lucide-react";
+import { ContractTerminationDialog } from "@/components/contract-termination-dialog";
 import { useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Link, useLocation, useSearch } from "wouter";
@@ -341,6 +342,7 @@ export default function ConstructionContractsSales() {
 
 	const [open, setOpen] = useState(false);
 	const [detailId, setDetailId] = useState<number | null>(null);
+	const [terminationContractId, setTerminationContractId] = useState<number | null>(null);
 	const [statusFilter, setStatusFilter] = useState<string>(
 		statusFromUrl || "all",
 	);
@@ -930,7 +932,7 @@ export default function ConstructionContractsSales() {
 						<Dialog open={!!detailId} onOpenChange={() => setDetailId(null)}>
 							<DialogContent className="w-[calc(100vw-24px)] sm:w-[min(calc(100vw-48px),1440px)] lg:w-[min(calc(100vw-64px),1500px)] max-w-none max-h-[92vh] overflow-y-auto">
 								<DialogHeader>
-									<DialogTitle className="flex items-center gap-2">
+									<DialogTitle className="flex items-center gap-2 flex-wrap">
 										<span className="font-mono text-am-brand">
 											{contract.contractNumber}
 										</span>
@@ -942,6 +944,17 @@ export default function ConstructionContractsSales() {
 												)?.label
 											}
 										/>
+										{contract.status !== "terminated" && contract.status !== "cancelled" && (
+											<Button
+												size="sm"
+												variant="outline"
+												className="ml-auto text-rose-600 border-rose-200 hover:bg-rose-50"
+												onClick={() => setTerminationContractId(contract.id)}
+											>
+												<XCircle className="w-3.5 h-3.5 mr-1" />
+												Расторгнуть договор
+											</Button>
+										)}
 									</DialogTitle>
 									<DialogDescription className="sr-only">
 										Карточка договора: сводка, этапы сделки и текст договора
@@ -983,6 +996,27 @@ export default function ConstructionContractsSales() {
 						</Dialog>
 					);
 				})()}
+
+			{/* Contract Termination Dialog */}
+			{terminationContractId && (
+				<ContractTerminationDialog
+					open={!!terminationContractId}
+					onClose={() => setTerminationContractId(null)}
+					contractType="sales"
+					contractId={terminationContractId}
+					contractLabel={
+						contracts.find((c: any) => c.id === terminationContractId)
+							?.contractNumber
+					}
+					onDone={() => {
+						setTerminationContractId(null);
+						setDetailId(null);
+						qc.invalidateQueries({ queryKey: ["construction-contracts-sales"] });
+						qc.invalidateQueries({ queryKey: ["construction-units"] });
+						qc.invalidateQueries({ queryKey: ["construction-units-overview"] });
+					}}
+				/>
+			)}
 		</PageShell.List>
 	);
 }

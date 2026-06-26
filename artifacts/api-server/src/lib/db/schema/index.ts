@@ -82,6 +82,8 @@ export * from "./supply";
 export * from "./global_catalog";
 export * from "./user_table_views";
 export * from "./portal_content";
+export * from "./portal_poll_votes";
+export * from "./portal_content_reads";
 export * from "./crm_announcements";
 export * from "./telegram_settings";
 export * from "./contract_terminations";

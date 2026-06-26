@@ -418,8 +418,8 @@ function PropertyOwnersPanel({ propertyId }: { propertyId: number }) {
 	);
 }
 
-const TH = "relative border border-slate-800 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-white/78 whitespace-nowrap bg-slate-950 sticky top-0 z-20 select-none";
-const TD = "border border-slate-100 px-2 py-1.5 text-gray-700";
+const TH = "relative border-r border-slate-700/80 px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.04em] text-white/72 whitespace-nowrap bg-slate-950 sticky top-0 z-20 select-none";
+const TD = "border-b border-slate-100 px-3 py-2.5 text-sm text-slate-700 align-middle";
 
 function SortTh({
 	label, col, sortKey, sortDir, onToggle, widths, startResize,
@@ -430,7 +430,7 @@ function SortTh({
 }) {
 	const active = sortKey === col;
 	return (
-		<th className={TH + " cursor-pointer hover:bg-slate-800"} style={{ width: widths[col], minWidth: widths[col] }} onClick={() => onToggle(col)}>
+		<th className={TH + " cursor-pointer hover:bg-slate-900"} style={{ width: widths[col], minWidth: widths[col] }} onClick={() => onToggle(col)}>
 			<span className="inline-flex items-center gap-1">
 				{label}
 				{active ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3 text-cyan-300" /> : <ChevronDown className="w-3 h-3 text-cyan-300" />) : <ChevronsUpDown className="w-3 h-3 text-white/35" />}
@@ -448,7 +448,7 @@ function PropTable({ isLoading, sortedProps, propertiesArray, rentedCount, total
 	const { widths, startResize } = useColResize({ projectName: 180, unitNumber: 90, type: 100, area: 100, currentTenantName: 180, currentRentAmount: 130, rentalStatus: 100, actions: 72 });
 	return (
 		<div className="am-table-wrap rounded-[18px] overflow-auto" style={{ maxHeight: "calc(100vh - 300px)" }}>
-			<table className="w-full text-xs border-separate border-spacing-0">
+			<table className="w-full border-separate border-spacing-0 text-sm">
 				<thead>
 					<tr>
 						<SortTh label="Проект" col="projectName" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} widths={widths} startResize={startResize} />
@@ -466,7 +466,7 @@ function PropTable({ isLoading, sortedProps, propertiesArray, rentedCount, total
 						Array.from({ length: 4 }).map((_, i) => (
 							<tr key={i}>
 								{Array.from({ length: 8 }).map((_, j) => (
-									<td key={j} className={TD}><Skeleton className="h-3 w-full" /></td>
+									<td key={j} className={TD}><Skeleton className="h-4 w-full" /></td>
 								))}
 							</tr>
 						))
@@ -479,7 +479,7 @@ function PropTable({ isLoading, sortedProps, propertiesArray, rentedCount, total
 						</tr>
 					) : (
 						sortedProps.map((p, idx) => (
-							<tr key={p.id} className={`${idx % 2 === 0 ? "bg-white" : "bg-slate-50/80"} transition-colors hover:bg-cyan-50/70`}>
+							<tr key={p.id} className={`${idx % 2 === 0 ? "bg-white" : "bg-slate-50/60"} transition-colors hover:bg-cyan-50/70`}>
 								<td className={TD + " font-medium text-gray-900"}>{p.projectName}</td>
 								<td className={TD}>{p.unitNumber}</td>
 								<td className={TD}>{p.type === "apartment" ? "Квартира" : p.type === "office" ? "Офис" : p.type}</td>
@@ -487,7 +487,7 @@ function PropTable({ isLoading, sortedProps, propertiesArray, rentedCount, total
 								<td className={TD}>{p.currentTenantName || "—"}</td>
 								<td className={TD + " tabular-nums text-right font-medium"}>{p.currentRentAmount ? formatCurrency(p.currentRentAmount, p.currency || "KGS") : "—"}</td>
 								<td className={TD}>
-									<span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusColors[p.rentalStatus] || "bg-gray-100 text-gray-600"}`}>
+									<span className={`inline-flex h-6 items-center rounded-full px-2.5 text-xs font-medium ${statusColors[p.rentalStatus] || "bg-gray-100 text-gray-600"}`}>
 										{statusLabels[p.rentalStatus] || p.rentalStatus}
 									</span>
 								</td>

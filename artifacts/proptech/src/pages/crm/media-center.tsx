@@ -49,6 +49,9 @@ import {
 	createPortalContentItem,
 	deletePortalContentItem,
 	getPortalContentItems,
+	isB2BAudience,
+	B2B_HIDDEN_PLACEMENTS,
+	normalizePortalPlacement,
 	PORTAL_CONTENT_QUERY_KEY,
 	type PortalAudience,
 	type PortalContentItem,
@@ -59,15 +62,9 @@ import {
 } from "@/lib/client-portal";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import { Link } from "wouter";
 
-const B2B_AUDIENCES: PortalAudience[] = ["contractors", "suppliers"];
-
-function isB2BAudience(audience: PortalAudience): boolean {
-	return B2B_AUDIENCES.includes(audience);
-}
-
-// Placements not relevant for B2B portals
-const B2B_HIDDEN_PLACEMENTS: PortalPlacement[] = ["services", "club"];
+const TELEGRAM_SETTINGS_QUERY_KEY = ["ai-telegram-settings"] as const;
 
 type DraftContent = Omit<PortalContentItem, "id" | "createdAt" | "updatedAt">;
 
@@ -273,6 +270,30 @@ function PortalPreviewCard({ draft }: { draft: DraftContent }) {
 	);
 }
 
+function MaterialAnalytics({ contentId }: { contentId: string }) {
+	const { data, isLoading } = useQuery({
+		queryKey: ["portal-content-analytics", contentId],
+		queryFn: () =>
+			api
+				.get<{ reads: number; uniqueViewers: number }>(
+					`/portal-content/${contentId}/analytics`,
+				)
+				.then((r) => r.data),
+		enabled: Boolean(contentId),
+		staleTime: 60_000,
+	});
+
+	return (
+		<div className="flex items-center gap-2 rounded-xl border border-am-border bg-white px-3 py-2 text-sm">
+			<Eye className="h-4 w-4 text-cyan-700" />
+			<span className="font-medium text-am-text-strong">Просмотры</span>
+			<span className="ml-auto font-mono tabular-nums text-am-text-muted">
+				{isLoading ? "…" : (data?.reads ?? 0)}
+			</span>
+		</div>
+	);
+}
+
 function MaterialCard({
 	item,
 	active,
@@ -344,6 +365,15 @@ export default function CrmMediaCenter() {
 		queryFn: () => getPortalContentItems(),
 	});
 
+	const { data: telegramSettings } = useQuery({
+		queryKey: TELEGRAM_SETTINGS_QUERY_KEY,
+		queryFn: () =>
+			api.get<{ chatId: string }>("/ai/telegram/settings").then((r) => r.data),
+		staleTime: 120_000,
+	});
+
+	const telegramNotConfigured = telegramSettings !== undefined && !telegramSettings.chatId?.trim();
+
 	const invalidate = () =>
 		queryClient.invalidateQueries({ queryKey: PORTAL_CONTENT_QUERY_KEY });
 
@@ -412,6 +442,7 @@ export default function CrmMediaCenter() {
 			title,
 			body: draft.body.trim(),
 			status: publish ? "published" : draft.status,
+			placement: normalizePortalPlacement(draft.audience, draft.placement),
 			pollOptions: draft.type === "poll" ? (draft.pollOptions || []).filter(Boolean) : [],
 			rewardPoints: Number(draft.rewardPoints || 0),
 		};
@@ -568,6 +599,26 @@ export default function CrmMediaCenter() {
 				<KpiCard label="Услуги" value={kpi.services} icon={Wrench} accent={KPI_ACCENTS.teal} />
 			</div>
 
+			{telegramNotConfigured && (
+				<div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+					<div className="flex items-start gap-3">
+						<Send className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+						<div>
+							<p className="text-sm font-semibold text-amber-900">
+								Telegram-уведомления не настроены
+							</p>
+							<p className="mt-0.5 text-sm text-amber-800/90">
+								После публикации материалов клиенты не получат push в Telegram, пока не
+								подключите chat ID.
+							</p>
+						</div>
+					</div>
+					<Button asChild variant="outline" className="shrink-0 border-amber-300 bg-white">
+						<Link href="/construction/ai/telegram">Настроить Telegram</Link>
+					</Button>
+				</div>
+			)}
+
 			<section className="rounded-2xl border border-am-border bg-white p-4 shadow-sm sm:p-6">
 				<div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 					<div>
@@ -593,7 +644,7 @@ export default function CrmMediaCenter() {
 					</Select>
 				</div>
 				{isB2BAudience(previewAudience) ? (
-					<PortalMediaFeed audience={previewAudience} variant="desktop" />
+					<PortalMediaFeed audience={previewAudience} />
 				) : (
 					<ClientPortalExperience
 						variant="desktop"
@@ -651,6 +702,10 @@ export default function CrmMediaCenter() {
 					<div className="space-y-5 p-5">
 						<PortalPreviewCard draft={draft} />
 
+						{editing?.status === "published" && (
+							<MaterialAnalytics contentId={editing.id} />
+						)}
+
 						<div className="grid grid-cols-2 gap-3">
 							<div>
 								<Label>Тип материала</Label>
@@ -682,7 +737,17 @@ export default function CrmMediaCenter() {
 							</div>
 							<div>
 								<Label>Аудитория</Label>
-								<Select value={draft.audience} onValueChange={(value) => setDraft({ ...draft, audience: value as PortalAudience })}>
+								<Select
+									value={draft.audience}
+									onValueChange={(value) => {
+										const audience = value as PortalAudience;
+										setDraft((prev) => ({
+											...prev,
+											audience,
+											placement: normalizePortalPlacement(audience, prev.placement),
+										}));
+									}}
+								>
 									<SelectTrigger className="mt-1">
 										<SelectValue />
 									</SelectTrigger>

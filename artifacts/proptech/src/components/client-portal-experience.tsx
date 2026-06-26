@@ -190,7 +190,7 @@ export function ClientPortalExperience({
 	includeDrafts?: boolean;
 	activeId?: string | null;
 	onSelectItem?: (item: PortalContentItem) => void;
-	variant?: "mobile" | "desktop" | "feed";
+	variant?: "mobile" | "desktop";
 }) {
 	const { data: items = [] } = useQuery({
 		queryKey: PORTAL_CONTENT_QUERY_KEY,
@@ -228,52 +228,6 @@ export function ClientPortalExperience({
 		...catalogItems.map((i) => i.id),
 	]);
 	const leftovers = editable ? visibleItems.filter((i) => !renderedIds.has(i.id)) : [];
-
-	if (variant === "feed") {
-		const bannerSet = new Set(bannerItems.map((i) => i.id));
-		const feedCards = visibleItems.filter((i) => !bannerSet.has(i.id));
-		if (visibleItems.length === 0) {
-			return (
-				<div className="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center">
-					<p className="text-sm font-medium text-gray-500">Пока нет публикаций</p>
-					<p className="mt-1 text-xs text-gray-400">
-						Новости и предложения появятся здесь, как только их опубликуют.
-					</p>
-				</div>
-			);
-		}
-		return (
-			<div className="space-y-4">
-				{bannerItems.length > 0 && (
-					<div className="grid gap-4 lg:grid-cols-2">
-						{bannerItems.map((item, index) => (
-							<PortalBanner
-								key={item.id}
-								item={item}
-								variant={index % 2 === 1 ? "dark" : "blue"}
-								editable={editable}
-								active={activeId === item.id}
-								onClick={() => pick(item)}
-							/>
-						))}
-					</div>
-				)}
-				{feedCards.length > 0 && (
-					<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-						{feedCards.map((item) => (
-							<MiniItem
-								key={item.id}
-								item={item}
-								editable={editable}
-								active={activeId === item.id}
-								onClick={() => pick(item)}
-							/>
-						))}
-					</div>
-				)}
-			</div>
-		);
-	}
 
 	if (variant === "desktop") {
 		const info = AUDIENCE_PORTAL[audience];

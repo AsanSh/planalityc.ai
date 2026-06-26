@@ -30,6 +30,35 @@ export type PortalPlacement =
 
 export type PortalContentStatus = "draft" | "published" | "archived";
 
+export const B2B_AUDIENCES: PortalAudience[] = ["contractors", "suppliers"];
+
+export const B2B_HIDDEN_PLACEMENTS: PortalPlacement[] = ["services", "club"];
+
+export function isB2BAudience(audience: PortalAudience): boolean {
+	return B2B_AUDIENCES.includes(audience);
+}
+
+export function normalizePortalPlacement(
+	audience: PortalAudience,
+	placement?: PortalPlacement,
+): PortalPlacement {
+	const resolved = placement ?? "home";
+	if (isB2BAudience(audience) && B2B_HIDDEN_PLACEMENTS.includes(resolved)) {
+		return "home";
+	}
+	return resolved;
+}
+
+export function isPlacementVisibleForAudience(
+	placement: PortalPlacement,
+	audience: PortalAudience,
+): boolean {
+	if (isB2BAudience(audience) && B2B_HIDDEN_PLACEMENTS.includes(placement)) {
+		return false;
+	}
+	return true;
+}
+
 export interface PortalAccessRecord {
 	id: string;
 	counterpartyId: number;

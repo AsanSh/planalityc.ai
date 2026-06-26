@@ -8,10 +8,20 @@ export const documentsTable = pgTable("documents", {
   entityType: text("entity_type").notNull(),
   entityId: integer("entity_id").notNull(),
   name: text("name").notNull(),
-  fileUrl: text("file_url").notNull(),
+  /** Nullable for generated documents that have no real file (use payload instead). */
+  fileUrl: text("file_url"),
   fileSize: integer("file_size"),
   mimeType: text("mime_type"),
   uploadedBy: integer("uploaded_by"),
+  /**
+   * Document type discriminator: "invoice" | "tax_invoice" | "act" | "reconciliation" | ...
+   * Free-text string kept consistent by convention.
+   */
+  docType: text("doc_type"),
+  /** Structured JSON payload for generated docs (tax invoices, invoices, etc.). */
+  payload: text("payload"),
+  /** Lifecycle status for generated docs: "draft" | "final". Defaults to "draft". */
+  docStatus: text("doc_status").notNull().default("draft"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -36,6 +36,7 @@ import {
 import { ContractStatusStepper } from "@/components/contract-status-stepper";
 import { ContractTab } from "@/components/contract-tab";
 import { ContractFileUpload } from "@/components/contract-file-upload";
+import { DocumentsSection } from "@/components/documents-section";
 import {
 	AdminReconciliationAct,
 	reconciliationFmtMoney,
@@ -964,6 +965,7 @@ export default function ConstructionContractsSales() {
 									<TabsList>
 										<TabsTrigger value="summary">Сводка</TabsTrigger>
 										<TabsTrigger value="contract">Договор</TabsTrigger>
+										<TabsTrigger value="documents">Документы</TabsTrigger>
 									</TabsList>
 									<TabsContent value="summary">
 										<ContractDetailSummary
@@ -989,6 +991,23 @@ export default function ConstructionContractsSales() {
 										<ContractTab
 											salesContractId={contract.id}
 											projectId={contract.projectId}
+										/>
+									</TabsContent>
+									<TabsContent value="documents" className="mt-4">
+										<DocumentsSection
+											entityType="construction_sales_contract"
+											entityId={contract.id}
+											showTaxInvoiceButton={true}
+											taxInvoiceParams={{
+												contractType: "construction_sales",
+												contractId: contract.id,
+												grossAmount: contract.totalAmount
+													? parseFloat(String(contract.totalAmount))
+													: undefined,
+												currency: contract.currency ?? "KGS",
+												buyerName: contract.buyerName ?? undefined,
+												contractNumber: contract.contractNumber ?? undefined,
+											}}
 										/>
 									</TabsContent>
 								</Tabs>

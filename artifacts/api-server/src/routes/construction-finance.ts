@@ -41,6 +41,7 @@ import {
   companyModuleAccountByIdWhere,
   companyModuleAccountWhere,
 } from "../lib/bank-account-module";
+import { ensureContractInvoice, ensurePaymentTaxInvoice } from "../lib/document-generators";
 
 const router = Router();
 
@@ -1043,6 +1044,25 @@ router.patch("/contracts-sales/:id", async (req: AuthenticatedRequest, res): Pro
     .set({ ...body, updatedAt: new Date() })
     .where(and(eq(constructionSalesContractsTable.id, id), eq(constructionSalesContractsTable.companyId, companyId)))
     .returning();
+
+  // Auto-trigger: create draft invoice when construction sales contract is signed
+  // (construction-finance.ts:1043 — PATCH /construction/contracts-sales/:id)
+  if (
+    body.status === "signed" &&
+    contract.status !== "signed" &&
+    contract.status !== "completed"
+  ) {
+    void ensureContractInvoice({
+      companyId,
+      contractType: "construction_sales",
+      contractId: row.id,
+      contractNumber: row.contractNumber ?? null,
+      buyerName: row.buyerName ?? null,
+      amount: row.totalAmount ? parseFloat(String(row.totalAmount)) : null,
+      currency: String(row.currency || "KGS"),
+    });
+  }
+
   res.json(row);
 });
 
@@ -1336,6 +1356,24 @@ router.post("/cashier/payment", requirePermission("cashier:write", "finance:writ
     if (idemKey) {
       await saveIdempotencyResult(idemKey, companyId, req.userId ?? null, "/cashier/payment", 200, payload);
     }
+
+    // Auto-trigger: create draft tax_invoice when a construction cashier payment is recorded
+    // (construction-finance.ts:1351 — POST /construction/cashier/payment)
+    if (result.operation?.id && contractId) {
+      void ensurePaymentTaxInvoice({
+        companyId,
+        paymentId: result.operation.id,
+        contractType: "construction_sales",
+        contractId: Number(contractId),
+        contractNumber: null,
+        buyerName: null,
+        sellerName: null,
+        grossAmount: parseFloat(String(amount || 0)),
+        currency: String(currency || "KGS"),
+        serviceDescription: "Реализация недвижимости по ДКП",
+      });
+    }
+
     res.json(payload);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Ошибка проведения платежа";

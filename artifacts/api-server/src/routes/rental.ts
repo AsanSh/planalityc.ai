@@ -29,6 +29,7 @@ import { investmentsTable } from "../lib/db";
 import { ensureCounterpartyWithRole } from "../lib/counterparty-sync";
 import { resolveRentalPaymentAccountCredit } from "../lib/rental-payment-fx";
 import { resolveCompanyLegalEntityId } from "../lib/settings-catalog-sync";
+import { ensureContractInvoice, ensurePaymentTaxInvoice } from "../lib/document-generators";
 
 const RENTAL_ACCOUNTS = BANK_ACCOUNT_MODULE.rental;
 const RENTAL_SETTINGS_MODULE = "rental";
@@ -548,6 +549,21 @@ router.post("/rental/contracts", async (req: AuthenticatedRequest, res): Promise
 
   const [t] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, tenantId));
   const [p] = await db.select().from(propertiesTable).where(eq(propertiesTable.id, propertyId));
+
+  // Auto-trigger: create draft invoice when lease contract is created as active
+  // (rental.ts:549 — POST /rental/contracts)
+  if (status === "active") {
+    void ensureContractInvoice({
+      companyId: req.scopedCompanyId!,
+      contractType: "lease",
+      contractId: row.id,
+      contractNumber: contractNumber ?? null,
+      buyerName: t?.fullName ?? null,
+      amount: rentAmount ? parseFloat(String(rentAmount)) : null,
+      currency: String(currency),
+    });
+  }
+
   res.status(201).json({ ...row, tenantName: t?.fullName ?? null, propertyUnitNumber: p?.unitNumber ?? null });
 });
 
@@ -567,6 +583,11 @@ router.patch("/rental/contracts/:id", async (req: AuthenticatedRequest, res): Pr
   const { signDate, startDate, endDate, rentAmount, currency, depositAmount, accrualDay, status, comment } = req.body;
   const conditions: SQL[] = [eq(leaseContractsTable.id, id)];
   conditions.push(eq(leaseContractsTable.companyId, req.scopedCompanyId!));
+
+  // Read current status before update to detect activation transition
+  const [beforePatch] = await db.select({ status: leaseContractsTable.status, contractNumber: leaseContractsTable.contractNumber })
+    .from(leaseContractsTable).where(and(...conditions));
+
   const [row] = await db.update(leaseContractsTable)
     .set({ signDate: signDate ?? null, startDate, endDate, rentAmount, currency, depositAmount, accrualDay, status, comment })
     .where(and(...conditions)).returning();
@@ -574,6 +595,21 @@ router.patch("/rental/contracts/:id", async (req: AuthenticatedRequest, res): Pr
   // Обогащаем ответ именами
   const [t] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, row.tenantId));
   const [p] = await db.select().from(propertiesTable).where(eq(propertiesTable.id, row.propertyId));
+
+  // Auto-trigger: create draft invoice when lease contract transitions to active
+  // (rental.ts:584 — PATCH /rental/contracts/:id)
+  if (status === "active" && beforePatch?.status !== "active") {
+    void ensureContractInvoice({
+      companyId: req.scopedCompanyId!,
+      contractType: "lease",
+      contractId: row.id,
+      contractNumber: row.contractNumber ?? null,
+      buyerName: t?.fullName ?? null,
+      amount: row.rentAmount ? parseFloat(String(row.rentAmount)) : null,
+      currency: String(row.currency),
+    });
+  }
+
   res.json({ ...row, tenantName: t?.fullName ?? null, propertyUnitNumber: p?.unitNumber ?? null });
 });
 
@@ -1030,6 +1066,22 @@ router.post("/rental/payments", async (req: AuthenticatedRequest, res): Promise<
 
   await logOp(req.scopedCompanyId!, req.userId, "payment", payment.id, "create",
       `Добавлен платёж ${paymentAmount} ${paymentCurrency} → ${accountCredit} ${accountCurrency} на счёт (договор #${leaseContractId})`, payment);
+
+  // Auto-trigger: create draft tax_invoice when a rental payment is recorded
+  // (rental.ts:1067 — POST /rental/payments)
+  void ensurePaymentTaxInvoice({
+    companyId: req.scopedCompanyId!,
+    paymentId: payment.id,
+    contractType: "lease",
+    contractId: leaseContractId,
+    contractNumber: null, // contract number resolved async if needed
+    buyerName: null, // tenant name not readily available here; populated later
+    sellerName: null,
+    grossAmount: paymentAmount,
+    currency: paymentCurrency,
+    serviceDescription: "Арендная плата",
+  });
+
   res.status(201).json({
     ...payment,
     allocations: createdAllocations,

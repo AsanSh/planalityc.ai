@@ -50,9 +50,9 @@ export type TableDensity = "compact" | "normal" | "comfortable";
 type Persisted = TableViewLayout;
 
 const DENSITY_PADDING: Record<TableDensity, string> = {
-	compact: "py-1",
-	normal: "py-2",
-	comfortable: "py-3",
+	compact: "py-1.5",
+	normal: "py-2.5",
+	comfortable: "py-4",
 };
 
 export type DataTableColumnMeta = {
@@ -99,6 +99,8 @@ export interface DataTableProps<T> {
 	showRowIndex?: boolean;
 	/** Скрыть тулбар (плотный excel внутри отчёта) */
 	hideToolbar?: boolean;
+	/** Плотность по умолчанию, если у пользователя нет сохранённой раскладки */
+	defaultDensity?: TableDensity;
 	getRowId?: (row: T, index: number) => string;
 }
 
@@ -120,6 +122,7 @@ export function DataTable<T>({
 	maxHeight,
 	showRowIndex = false,
 	hideToolbar = false,
+	defaultDensity = "normal",
 	getRowId,
 }: DataTableProps<T>) {
 	const isExcel = variant === "excel";
@@ -140,7 +143,7 @@ export function DataTable<T>({
 	const [order, setOrder] = useState<ColumnOrderState>(saved?.order ?? []);
 	const [sizing, setSizing] = useState<ColumnSizingState>(saved?.sizing ?? {});
 	const [density, setDensity] = useState<TableDensity>(
-		isExcel ? "compact" : (saved?.density ?? "normal"),
+		isExcel ? "compact" : (saved?.density ?? defaultDensity),
 	);
 	const [globalFilter, setGlobalFilter] = useState("");
 
@@ -422,7 +425,7 @@ export function DataTable<T>({
 								className={
 									isExcel
 										? "border-b border-slate-800/40 bg-slate-950 text-white"
-										: "am-table-head border-b border-slate-200/70"
+										: "am-table-head border-b border-border/80"
 								}
 							>
 								{showRowIndex && (
@@ -452,7 +455,7 @@ export function DataTable<T>({
 												"relative select-none group/col",
 												isExcel
 													? "border border-slate-800/70 bg-slate-950 px-2 py-1.5 font-bold text-white/72 whitespace-nowrap text-[10px] uppercase tracking-[0.12em] sticky top-0 z-20"
-													: "px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-white/78 whitespace-nowrap sticky top-0 z-20",
+													: "px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.04em] text-muted-foreground whitespace-nowrap sticky top-0 z-20 bg-muted/40",
 												align === "right"
 													? "text-right"
 													: align === "center"
@@ -467,7 +470,7 @@ export function DataTable<T>({
 													onClick={header.column.getToggleSortingHandler()}
 													className={cn(
 														"inline-flex items-center gap-1 uppercase tracking-wide",
-														canSort && "cursor-pointer hover:text-white",
+														canSort && "cursor-pointer hover:text-foreground",
 														align === "right" && "flex-row-reverse",
 													)}
 												>

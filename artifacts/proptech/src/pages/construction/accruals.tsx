@@ -119,6 +119,22 @@ function fmt(n: any) {
 	return new Intl.NumberFormat("ru-RU").format(v);
 }
 
+function fmtDueDate(dueDate: string) {
+	if (!dueDate) return "—";
+	const d = new Date(dueDate);
+	if (Number.isNaN(d.getTime())) return dueDate;
+	return d.toLocaleDateString("ru-KG", {
+		day: "2-digit",
+		month: "2-digit",
+		year: "numeric",
+	});
+}
+
+function accrualPeriodLabel(period?: PaymentPeriod) {
+	if (!period || !(period in PERIOD_LABELS)) return "—";
+	return PERIOD_LABELS[period as keyof typeof PERIOD_LABELS];
+}
+
 function isOverdue(dueDate: string, status: string) {
 	return status !== "paid" && new Date(dueDate) < new Date();
 }
@@ -167,31 +183,21 @@ function PaymentRow({
 				</div>
 				<div className="text-xs text-gray-600">{a.buyerName || contract?.buyerName}</div>
 			</td>
-			<td className="px-4 py-3">
+			<td className="px-4 py-3.5">
 				<div
 					className={
 						a.isOverdue && a.status !== "paid"
-							? "text-rose-600 font-medium"
-							: "text-gray-600"
+							? "text-rose-600 font-medium tabular-nums"
+							: "text-gray-700 tabular-nums"
 					}
 				>
-					{a.dueDate}
+					{fmtDueDate(a.dueDate)}
 				</div>
-								{a.paymentPeriod && a.paymentPeriod in PERIOD_LABELS && (
-									<div className="text-xs text-blue-600">
-										{PERIOD_LABELS[a.paymentPeriod as keyof typeof PERIOD_LABELS]}
-									</div>
-								)}
-				{a.isOverdue && a.status !== "paid" && (
-					<div className="text-xs text-rose-600">
-						{Math.ceil(
-							(Date.now() - new Date(a.dueDate).getTime()) / 86400000,
-						)}{" "}
-						дн. просрочки
-					</div>
-				)}
 			</td>
-			<td className="px-4 py-3">
+			<td className="px-4 py-3.5 text-xs text-muted-foreground">
+				{accrualPeriodLabel(a.paymentPeriod)}
+			</td>
+			<td className="px-4 py-3.5">
 				<Badge variant="outline" className={`${sc.color} text-xs`}>
 					<Icon className="w-3 h-3 mr-1" />
 					{sc.label}
@@ -218,10 +224,11 @@ function PaymentRow({
 						<Button
 							size="sm"
 							variant="outline"
-							className="h-7 text-xs"
+							className="h-7 text-xs gap-1"
 							onClick={() => onPay(a)}
 						>
-							Оплачен
+							<Banknote className="w-3 h-3" />
+							Принять оплату
 						</Button>
 					)}
 					{hasPayment && (
@@ -707,37 +714,36 @@ export default function ConstructionAccruals() {
 			},
 			{
 				accessorKey: "dueDate",
-				header: "Срок / период",
-				size: 160,
-				meta: { exportLabel: "Срок / период" },
+				header: "Срок",
+				size: 110,
+				meta: { exportLabel: "Срок" },
 				cell: ({ row }) => {
 					const a = row.original;
 					const overdue = a.isOverdue && a.status !== "paid";
 					return (
-						<div>
-							<div
-								className={
-									overdue ? "text-rose-600 font-medium" : "text-gray-600"
-								}
-							>
-								{a.dueDate}
-							</div>
-								{a.paymentPeriod && a.paymentPeriod in PERIOD_LABELS && (
-									<div className="text-xs text-blue-600">
-										{PERIOD_LABELS[a.paymentPeriod as keyof typeof PERIOD_LABELS]}
-									</div>
-								)}
-							{overdue && (
-								<div className="text-xs text-rose-600">
-									{Math.ceil(
-										(Date.now() - new Date(a.dueDate).getTime()) / 86400000,
-									)}{" "}
-									дн. просрочки
-								</div>
-							)}
-						</div>
+						<span
+							className={
+								overdue
+									? "text-rose-600 font-medium tabular-nums"
+									: "text-gray-700 tabular-nums"
+							}
+						>
+							{fmtDueDate(a.dueDate)}
+						</span>
 					);
 				},
+			},
+			{
+				id: "paymentPeriod",
+				header: "Период",
+				size: 120,
+				accessorFn: (row: AccrualRow) => accrualPeriodLabel(row.paymentPeriod),
+				meta: { exportLabel: "Период" },
+				cell: ({ row }) => (
+					<span className="text-xs text-muted-foreground">
+						{accrualPeriodLabel(row.original.paymentPeriod)}
+					</span>
+				),
 			},
 			{
 				id: "status",
@@ -819,7 +825,7 @@ export default function ConstructionAccruals() {
 			{
 				id: "__actions",
 				header: "",
-				size: 120,
+				size: 148,
 				enableSorting: false,
 				cell: ({ row }) => {
 					const a = row.original;
@@ -831,10 +837,11 @@ export default function ConstructionAccruals() {
 								<Button
 									size="sm"
 									variant="outline"
-									className="h-7 text-xs"
+									className="h-7 text-xs gap-1"
 									onClick={() => setPayTarget(a)}
 								>
-									Оплачен
+									<Banknote className="w-3 h-3" />
+									Принять оплату
 								</Button>
 							)}
 							{hasPayment && (
@@ -910,7 +917,7 @@ export default function ConstructionAccruals() {
 									: s === "partial"
 										? "Частично"
 										: s === "paid"
-											? "Оплачен"
+											? "Оплачено"
 											: "Просрочен"}
 						</button>
 					))}
@@ -1130,6 +1137,9 @@ export default function ConstructionAccruals() {
 																		Срок
 																	</th>
 																	<th className="text-left px-4 py-2 text-xs text-gray-500">
+																		Период
+																	</th>
+																	<th className="text-left px-4 py-2 text-xs text-gray-500">
 																		Статус
 																	</th>
 																	<th className="text-right px-4 py-2 text-xs text-gray-500">
@@ -1174,6 +1184,7 @@ export default function ConstructionAccruals() {
 					columns={listColumns}
 					data={filtered}
 					isLoading={isLoading}
+					defaultDensity="comfortable"
 					initialSorting={[{ id: "dueDate", desc: true }]}
 					rowClassName={(a: any) =>
 						a.isOverdue && a.status !== "paid" ? "bg-rose-50/30" : ""

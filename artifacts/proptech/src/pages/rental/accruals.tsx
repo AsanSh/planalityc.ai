@@ -347,6 +347,7 @@ export default function Accruals() {
 					columns={tableColumns}
 					data={enrichedAccruals}
 					isLoading={isLoading}
+					defaultDensity="comfortable"
 					enableSearch
 					searchPlaceholder="Поиск по объекту, договору…"
 					toolbar={

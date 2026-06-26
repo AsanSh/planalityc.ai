@@ -855,8 +855,8 @@
 }
 
 .am-table-head {
-  background: hsl(var(--am-text-strong));
-  color: rgb(255 255 255 / 0.78);
+  background: hsl(var(--muted) / 0.65);
+  color: hsl(var(--muted-foreground));
 }
 
 .am-table-row {

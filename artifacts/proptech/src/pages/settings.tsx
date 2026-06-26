@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { SystemSettingsHub } from "@/components/system-settings-nav";
+import { getGetMeQueryKey } from "@/api-client/api";
 import { getApiBase } from "@/lib/api-base";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -157,9 +158,12 @@ export default function Settings() {
 		"org",
 	);
 	const [activeArea, setActiveArea] = useState<SettingsArea>(initialArea);
-	const userRole = user?.role;
+	const userRole = user?.role as string | undefined;
 	const isAdmin =
-		userRole === "super_admin" || userRole === "company_admin";
+		userRole === "super_admin" ||
+		userRole === "company_admin" ||
+		userRole === "admin" ||
+		userRole === "owner";
 
 	const [org, setOrg] = useState<Company | null>(null);
 	const [form, setForm] = useState({
@@ -244,14 +248,19 @@ export default function Settings() {
 		}
 		setSavingProfile(true);
 		try {
-			await apiFetch("/auth/me", {
+			const updated = await apiFetch("/auth/me", {
 				method: "PATCH",
 				body: JSON.stringify({
-					firstName: profileForm.firstName,
-					lastName: profileForm.lastName,
+					firstName: profileForm.firstName.trim(),
+					lastName: profileForm.lastName.trim(),
 				}),
 			});
-			await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+			queryClient.setQueryData(getGetMeQueryKey(), (prev: unknown) =>
+				prev && typeof prev === "object"
+					? { ...prev, ...updated }
+					: updated,
+			);
+			await queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
 			toast({ title: "Сохранено", description: "Данные профиля обновлены" });
 		} catch (err: any) {
 			toast({
@@ -274,10 +283,10 @@ export default function Settings() {
 			});
 			return;
 		}
-		if (passwordForm.next.length < 6) {
+		if (passwordForm.next.length < 12) {
 			toast({
 				title: "Ошибка",
-				description: "Пароль должен быть не менее 6 символов",
+				description: "Пароль должен быть не менее 12 символов",
 				variant: "destructive",
 			});
 			return;
@@ -324,11 +333,20 @@ export default function Settings() {
 		}
 		setSaving(true);
 		try {
-			await apiFetch("/companies/my", {
+			const updated = (await apiFetch("/companies/my", {
 				method: "PATCH",
 				body: JSON.stringify(form),
+			})) as Company;
+			setOrg(updated);
+			setForm({
+				name: updated.name || "",
+				legalName: updated.legalName || "",
+				bin: updated.bin || "",
+				phone: updated.phone || "",
+				email: updated.email || "",
+				address: updated.address || "",
+				defaultCurrency: updated.defaultCurrency || "KGS",
 			});
-			queryClient.invalidateQueries({ queryKey: ["company-my"] });
 			toast({
 				title: "Сохранено",
 				description: "Данные организации обновлены",
@@ -797,7 +815,7 @@ export default function Settings() {
 										onChange={(e) =>
 											setPasswordForm((f) => ({ ...f, next: e.target.value }))
 										}
-										placeholder="Минимум 6 символов"
+										placeholder="Минимум 12 символов"
 										className="h-11 rounded-xl border-gray-200 bg-gray-50 focus:bg-white pr-10"
 									/>
 									<button

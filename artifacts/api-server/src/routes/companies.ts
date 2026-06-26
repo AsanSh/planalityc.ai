@@ -38,7 +38,7 @@ router.get("/companies/my", requireAuth, async (req: AuthenticatedRequest, res):
 });
 
 // PATCH /companies/my — обновление данных своей организации
-router.patch("/companies/my", requireAuth, requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+router.patch("/companies/my", requireAuth, requireRole("admin", "company_admin", "owner"), async (req: AuthenticatedRequest, res): Promise<void> => {
   if (!req.companyId) {
     res.status(400).json({ error: "Нет привязки к организации" });
     return;

@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useModuleAccess } from "@/hooks/use-module-access";
+import { getGetMeQueryKey } from "@/api-client/api";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { useAuth } from "@/lib/auth";
@@ -124,7 +125,7 @@ export default function UserProfileDropdown() {
 				firstName: profileForm.firstName.trim(),
 				lastName: profileForm.lastName.trim(),
 			});
-			qc.invalidateQueries({ queryKey: ["me"] });
+			qc.invalidateQueries({ queryKey: getGetMeQueryKey() });
 			setSuccess("Профиль обновлён");
 			setTimeout(closeModal, 1200);
 		} catch (e: any) {

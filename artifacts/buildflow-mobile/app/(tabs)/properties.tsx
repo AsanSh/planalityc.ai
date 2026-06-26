@@ -14,19 +14,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { apiFetch, formatCurrency } from "@/lib/api";
+import { mapProperty, type PropertyRow } from "@/lib/api-adapters";
 import { useColors } from "@/hooks/useColors";
 
-interface Property {
-  id: number;
-  name: string;
-  type: string;
-  status: string;
-  projectName?: string;
-  floor?: number;
-  area?: string;
-  price?: string;
-  block?: string;
-}
+interface Property extends PropertyRow {}
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
   available: { label: "Свободна", color: "#16a34a", bg: "#f0fdf4", dot: "#22c55e" },
@@ -58,7 +49,10 @@ export default function PropertiesScreen() {
 
   const { data: properties, isLoading, refetch } = useQuery({
     queryKey: ["properties"],
-    queryFn: () => apiFetch<Property[]>("/properties"),
+    queryFn: async () => {
+      const rows = await apiFetch<Record<string, unknown>[]>("/properties");
+      return rows.map(mapProperty);
+    },
   });
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;

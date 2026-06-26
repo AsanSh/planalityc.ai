@@ -29,7 +29,7 @@ import { logTaskActivity, taskFieldChanges } from "../lib/construction-task-work
 import { constructionSalesContractsTable } from "../lib/db";
 import { ensureCounterpartyWithRole } from "../lib/counterparty-sync";
 import { uploadFile } from "../lib/file-storage";
-import { requireAuth, AuthenticatedRequest } from "../middleware/auth";
+import { requireAuth, requirePermission, AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
 import { isModuleEnabledForCompany, requireEnabledModule } from "../middleware/modules";
 import { sendServerError } from "../lib/http-errors";
@@ -2079,13 +2079,8 @@ router.patch("/units/:id", async (req: AuthenticatedRequest, res): Promise<void>
   res.json(row);
 });
 
-router.patch("/units/:id/pricing", async (req: AuthenticatedRequest, res): Promise<void> => {
+router.patch("/units/:id/pricing", requirePermission("pricing:write"), async (req: AuthenticatedRequest, res): Promise<void> => {
   try {
-    if (!canApproveUnitPricing(req.userRole)) {
-      res.status(403).json({ error: "Утверждать цены может только коммерческий директор или администратор" });
-      return;
-    }
-
     const id = parseInt(req.params.id as string, 10);
     const basePricePerSqm = parseDecimalInput(req.body?.basePricePerSqm);
     const saleCoefficient = parseDecimalInput(req.body?.saleCoefficient);
@@ -2150,13 +2145,8 @@ router.patch("/units/:id/pricing", async (req: AuthenticatedRequest, res): Promi
 });
 
 /** Сохранение коммерческой цены из диалога шахматки (база + коэффициент + публикация для продажи). */
-router.put("/units/:id/commercial-price", async (req: AuthenticatedRequest, res): Promise<void> => {
+router.put("/units/:id/commercial-price", requirePermission("pricing:write"), async (req: AuthenticatedRequest, res): Promise<void> => {
   try {
-    if (!canApproveUnitPricing(req.userRole)) {
-      res.status(403).json({ error: "Коммерческая цена доступна коммерческому директору" });
-      return;
-    }
-
     const id = parseInt(req.params.id as string, 10);
     const [existing] = await db
       .select()
@@ -2251,13 +2241,8 @@ router.put("/units/:id/commercial-price", async (req: AuthenticatedRequest, res)
   }
 });
 
-router.post("/units/bulk-pricing", async (req: AuthenticatedRequest, res): Promise<void> => {
+router.post("/units/bulk-pricing", requirePermission("pricing:write"), async (req: AuthenticatedRequest, res): Promise<void> => {
   try {
-    if (!canApproveUnitPricing(req.userRole)) {
-      res.status(403).json({ error: "Утверждать цены может только коммерческий директор или администратор" });
-      return;
-    }
-
     const projectId = parsePositiveIntInput(req.body?.projectId);
     const unitIds = Array.isArray(req.body?.unitIds)
       ? req.body.unitIds.map((id: unknown) => parsePositiveIntInput(id)).filter((id: number) => id > 0)

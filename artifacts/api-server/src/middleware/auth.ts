@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { eq } from "drizzle-orm";
 import { db, usersTable, sessionsTable } from "../lib/db";
+import { resolvePermissions, PERMISSIONS } from "../lib/permissions";
 
 export interface AuthenticatedRequest extends Request {
   userId?: number;
@@ -75,6 +76,24 @@ export function requireRole(...roles: string[]) {
       return;
     }
     next();
+  };
+}
+
+/**
+ * Middleware для проверки разрешений (permission-based RBAC).
+ * Пропускает, если пользователь имеет ЛЮБОЕ из перечисленных разрешений,
+ * или если у него admin:all.
+ * @param perms - одно или несколько разрешений; достаточно любого одного.
+ */
+export function requirePermission(...perms: string[]) {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+    const userPerms = resolvePermissions({ role: req.userRole });
+    const hasAdminAll = userPerms.includes(PERMISSIONS.ADMIN_ALL);
+    if (hasAdminAll || perms.some((p) => userPerms.includes(p))) {
+      next();
+      return;
+    }
+    res.status(403).json({ error: "Forbidden: insufficient permissions" });
   };
 }
 

@@ -36,6 +36,7 @@ import { api } from "@/lib/api";
 import { unwrapList } from "@/lib/unwrap-list";
 import { useLegalEntityScope } from "@/hooks/use-legal-entity-scope";
 import { LegalEntityScopeSelect } from "@/components/legal-entity-scope-select";
+import { usePermissions } from "@/hooks/use-permissions";
 
 const RATE_SOURCES = ["НБКР", "Optima", "RSB", "Bakai", "DoBank", "MBank"];
 /** Панель z-[210] — контент Select должен быть выше backdrop и панели */
@@ -102,6 +103,8 @@ function relDate(d: string) {
 
 export default function ConstructionOperations() {
 	const qc = useQueryClient();
+	const { has: hasPermission } = usePermissions();
+	const canWriteFinance = hasPermission("finance:write");
 	const [panelType, setPanelType] = useState<
 		"income" | "expense" | "transfer" | null
 	>(null);
@@ -549,33 +552,41 @@ export default function ConstructionOperations() {
 				{/* Action buttons */}
 				<div className="flex items-center gap-2 mb-4 flex-wrap">
 					<LegalEntityScopeSelect />
-					<Button
-						onClick={() => setQuickWizardOpen(true)}
-						className="h-9 px-4 text-sm font-medium rounded-xl bg-amber-500 hover:bg-amber-600 text-white"
-					>
-						<Zap className="w-4 h-4 mr-2" /> Быстрая операция
-					</Button>
-					<Button
-						onClick={() => openPanel("income")}
-						variant="outline"
-						className="h-9 px-4 text-sm font-medium rounded-xl border-emerald-200 text-gray-700 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-all"
-					>
-						<TrendingUp className="w-4 h-4 mr-2 text-emerald-600" /> Приход
-					</Button>
-					<Button
-						onClick={() => openPanel("expense")}
-						variant="outline"
-						className="h-9 px-4 text-sm font-medium rounded-xl border-rose-200 text-gray-700 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-700 transition-all"
-					>
-						<TrendingDown className="w-4 h-4 mr-2 text-rose-600" /> Расход
-					</Button>
-					<Button
-						onClick={() => openPanel("transfer")}
-						variant="outline"
-						className="h-9 px-4 text-sm font-medium rounded-xl border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
-					>
-						<ArrowLeftRight className="w-4 h-4 mr-2 text-gray-500" /> Перевод
-					</Button>
+					{canWriteFinance && (
+						<Button
+							onClick={() => setQuickWizardOpen(true)}
+							className="h-9 px-4 text-sm font-medium rounded-xl bg-amber-500 hover:bg-amber-600 text-white"
+						>
+							<Zap className="w-4 h-4 mr-2" /> Быстрая операция
+						</Button>
+					)}
+					{canWriteFinance && (
+						<Button
+							onClick={() => openPanel("income")}
+							variant="outline"
+							className="h-9 px-4 text-sm font-medium rounded-xl border-emerald-200 text-gray-700 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-all"
+						>
+							<TrendingUp className="w-4 h-4 mr-2 text-emerald-600" /> Приход
+						</Button>
+					)}
+					{canWriteFinance && (
+						<Button
+							onClick={() => openPanel("expense")}
+							variant="outline"
+							className="h-9 px-4 text-sm font-medium rounded-xl border-rose-200 text-gray-700 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-700 transition-all"
+						>
+							<TrendingDown className="w-4 h-4 mr-2 text-rose-600" /> Расход
+						</Button>
+					)}
+					{canWriteFinance && (
+						<Button
+							onClick={() => openPanel("transfer")}
+							variant="outline"
+							className="h-9 px-4 text-sm font-medium rounded-xl border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
+						>
+							<ArrowLeftRight className="w-4 h-4 mr-2 text-gray-500" /> Перевод
+						</Button>
+					)}
 					<div className="flex-1" />
 					<Button
 						variant="outline"

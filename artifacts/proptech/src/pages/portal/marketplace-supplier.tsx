@@ -26,6 +26,7 @@ import { getApiErrorMessage } from "@/lib/api-error";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { downloadMarketplacePriceTemplate } from "@/lib/marketplace-price-template";
+import { PortalMediaFeed } from "@/components/portal-media-feed";
 
 type PreviewRow = {
 	rowNumber: number;
@@ -240,6 +241,11 @@ export default function MarketplaceSupplierPortal({
 						В каталоге: {data?.stats.productsActive ?? 0} активных позиций
 					</p>
 				</div>
+
+				<section className="space-y-3">
+					<h2 className="text-lg font-bold text-gray-900">Новости и предложения</h2>
+					<PortalMediaFeed audience="suppliers" trackRead={!isPreview} />
+				</section>
 
 				{!isPreview && (
 					<Card className="p-4 space-y-4">

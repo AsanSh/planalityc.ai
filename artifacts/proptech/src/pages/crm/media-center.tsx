@@ -5,6 +5,7 @@ import {
 	Clock3,
 	Eye,
 	Gift,
+	ImagePlus,
 	LayoutGrid,
 	Megaphone,
 	Newspaper,
@@ -21,9 +22,10 @@ import {
 	Wrench,
 } from "lucide-react";
 import type { ElementType } from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClientPortalExperience } from "@/components/client-portal-experience";
+import { PortalMediaFeed } from "@/components/portal-media-feed";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +58,16 @@ import {
 	updatePortalContentItem,
 } from "@/lib/client-portal";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
+
+const B2B_AUDIENCES: PortalAudience[] = ["contractors", "suppliers"];
+
+function isB2BAudience(audience: PortalAudience): boolean {
+	return B2B_AUDIENCES.includes(audience);
+}
+
+// Placements not relevant for B2B portals
+const B2B_HIDDEN_PLACEMENTS: PortalPlacement[] = ["services", "club"];
 
 type DraftContent = Omit<PortalContentItem, "id" | "createdAt" | "updatedAt">;
 
@@ -324,6 +336,8 @@ export default function CrmMediaCenter() {
 	const [draft, setDraft] = useState<DraftContent>(emptyDraft);
 	const [editorOpen, setEditorOpen] = useState(false);
 	const [previewAudience, setPreviewAudience] = useState<PortalAudience>("buyers");
+	const imageInputRef = useRef<HTMLInputElement>(null);
+	const [imageUploading, setImageUploading] = useState(false);
 
 	const { data: items = [] } = useQuery({
 		queryKey: PORTAL_CONTENT_QUERY_KEY,
@@ -412,6 +426,31 @@ export default function CrmMediaCenter() {
 		if (!editing) return;
 		if (!confirm(`Удалить «${editing.title}»?`)) return;
 		deleteMutation.mutate(editing.id);
+	};
+
+	const handleImageFile = (file: File) => {
+		const reader = new FileReader();
+		reader.onload = async () => {
+			const dataUrl = String(reader.result || "");
+			// dataUrl = "data:<mime>;base64,<data>"
+			const commaIdx = dataUrl.indexOf(",");
+			const dataBase64 = dataUrl.slice(commaIdx + 1);
+			const contentType = file.type || undefined;
+			setImageUploading(true);
+			try {
+				const { data } = await api.post<{ url: string }>(
+					"/portal-content/upload",
+					{ filename: file.name, dataBase64, contentType },
+				);
+				setDraft((prev) => ({ ...prev, imageUrl: data.url }));
+				toast({ title: "Изображение загружено" });
+			} catch {
+				toast({ title: "Не удалось загрузить изображение", variant: "destructive" });
+			} finally {
+				setImageUploading(false);
+			}
+		};
+		reader.readAsDataURL(file);
 	};
 
 	const applyTemplate = (type: PortalContentType) => {
@@ -553,18 +592,22 @@ export default function CrmMediaCenter() {
 						</SelectContent>
 					</Select>
 				</div>
-				<ClientPortalExperience
-					variant="desktop"
-					audience={previewAudience}
-					editable
-					includeDrafts
-					activeId={editing?.id ?? null}
-					onSelectItem={openEditor}
-					userName="Клиент"
-					projectName="ОсОО Смарт Эстейт"
-					unitLabel="Квартира №264"
-					managerName="Менеджер объекта"
-				/>
+				{isB2BAudience(previewAudience) ? (
+					<PortalMediaFeed audience={previewAudience} variant="desktop" />
+				) : (
+					<ClientPortalExperience
+						variant="desktop"
+						audience={previewAudience}
+						editable
+						includeDrafts
+						activeId={editing?.id ?? null}
+						onSelectItem={openEditor}
+						userName="Клиент"
+						projectName="ОсОО Смарт Эстейт"
+						unitLabel="Квартира №264"
+						managerName="Менеджер объекта"
+					/>
+				)}
 			</section>
 
 			<div className="pointer-events-none sticky bottom-4 z-30 flex justify-center">
@@ -659,11 +702,16 @@ export default function CrmMediaCenter() {
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
-										{Object.entries(PLACEMENT_LABELS).map(([value, label]) => (
-											<SelectItem key={value} value={value}>
-												{label}
-											</SelectItem>
-										))}
+										{Object.entries(PLACEMENT_LABELS)
+											.filter(([value]) =>
+												!isB2BAudience(draft.audience) ||
+												!B2B_HIDDEN_PLACEMENTS.includes(value as PortalPlacement),
+											)
+											.map(([value, label]) => (
+												<SelectItem key={value} value={value}>
+													{label}
+												</SelectItem>
+											))}
 									</SelectContent>
 								</Select>
 							</div>
@@ -728,12 +776,36 @@ export default function CrmMediaCenter() {
 							</div>
 							<div>
 								<Label>Баннер URL</Label>
-								<Input
-									className="mt-1"
-									value={draft.imageUrl || ""}
-									onChange={(event) => setDraft({ ...draft, imageUrl: event.target.value })}
-									placeholder="https://..."
-								/>
+								<div className="mt-1 flex gap-2">
+									<Input
+										className="min-w-0 flex-1"
+										value={draft.imageUrl || ""}
+										onChange={(event) => setDraft({ ...draft, imageUrl: event.target.value })}
+										placeholder="https://..."
+									/>
+									<input
+										ref={imageInputRef}
+										type="file"
+										accept="image/*"
+										className="hidden"
+										onChange={(e) => {
+											const f = e.target.files?.[0];
+											if (f) handleImageFile(f);
+											e.target.value = "";
+										}}
+									/>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										disabled={imageUploading}
+										onClick={() => imageInputRef.current?.click()}
+										className="shrink-0 gap-1.5"
+									>
+										<ImagePlus className="h-4 w-4" />
+										{imageUploading ? "…" : "Загрузить"}
+									</Button>
+								</div>
 							</div>
 							<div>
 								<Label>Дата публикации</Label>

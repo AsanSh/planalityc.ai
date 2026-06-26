@@ -67,22 +67,56 @@ export interface PortalContentItem {
 	updatedAt: string;
 }
 
-const ACCESS_KEY = "planalityc.clientPortal.access.v1";
+// ── DB-row type as returned by /portal-access ────────────────────────────────
+interface PortalAccessDbRow {
+	id: number;
+	companyId: number;
+	counterpartyId: number;
+	portalKind: string;
+	accessCode: string | null;
+	isActive: boolean;
+	meta: Record<string, unknown>;
+	createdAt: string;
+	updatedAt: string;
+}
 
-function readJson<T>(key: string, fallback: T): T {
-	if (typeof window === "undefined") return fallback;
+// ── Portal Access — authoritative store is the DB ────────────────────────────
+// localStorage is used only as an ephemeral cache for the current session
+// (so that callers that need a synchronous first-render value can get one).
+
+const CACHE_KEY = "planalityc.clientPortal.accessCache.v2";
+
+function readCache(): PortalAccessRecord[] {
+	if (typeof window === "undefined") return [];
 	try {
-		const raw = window.localStorage.getItem(key);
-		return raw ? (JSON.parse(raw) as T) : fallback;
+		const raw = window.localStorage.getItem(CACHE_KEY);
+		return raw ? (JSON.parse(raw) as PortalAccessRecord[]) : [];
 	} catch {
-		return fallback;
+		return [];
 	}
 }
 
-function writeJson<T>(key: string, value: T) {
+function writeCache(records: PortalAccessRecord[]) {
 	if (typeof window === "undefined") return;
-	window.localStorage.setItem(key, JSON.stringify(value));
-	window.dispatchEvent(new CustomEvent("planalityc:portal-storage", { detail: { key } }));
+	window.localStorage.setItem(CACHE_KEY, JSON.stringify(records));
+}
+
+function dbRowToRecord(row: PortalAccessDbRow): PortalAccessRecord {
+	const kind = row.portalKind as PortalAccessRecord["portalKind"];
+	return {
+		id: String(row.id),
+		counterpartyId: row.counterpartyId,
+		counterpartyName: (row.meta as Record<string, unknown>)?.counterpartyName as string ?? "",
+		roles: ((row.meta as Record<string, unknown>)?.roles as string[]) ?? [],
+		phone: (row.meta as Record<string, unknown>)?.phone as string | null ?? null,
+		email: (row.meta as Record<string, unknown>)?.email as string | null ?? null,
+		enabled: row.isActive,
+		portalKind: kind,
+		portalPath: getPortalPath(kind),
+		login: (row.meta as Record<string, unknown>)?.login as string ?? `client-${row.counterpartyId}`,
+		enabledAt: (row.meta as Record<string, unknown>)?.enabledAt as string | undefined,
+		updatedAt: row.updatedAt,
+	};
 }
 
 export function resolvePortalKind(roles: string[] = []): PortalAccessRecord["portalKind"] {
@@ -104,49 +138,70 @@ export function getPortalPath(kind: PortalAccessRecord["portalKind"]) {
 	return paths[kind];
 }
 
-export function getPortalAccessRecords() {
-	return readJson<PortalAccessRecord[]>(ACCESS_KEY, []);
+/** Fetch all portal access records from the DB. Updates cache. */
+export async function getPortalAccessRecords(): Promise<PortalAccessRecord[]> {
+	try {
+		const { data } = await api.get<PortalAccessDbRow[]>("/portal-access");
+		const records = (Array.isArray(data) ? data : []).map(dbRowToRecord);
+		writeCache(records);
+		return records;
+	} catch {
+		// Fallback to cache if API unavailable (e.g. unauthenticated portal view)
+		return readCache();
+	}
 }
 
-export function savePortalAccessRecords(records: PortalAccessRecord[]) {
-	writeJson(ACCESS_KEY, records);
+/** Get a single portal access record from the DB (or cache). Async. */
+export async function getPortalAccess(counterpartyId: number): Promise<PortalAccessRecord | undefined> {
+	const records = await getPortalAccessRecords();
+	return records.find((r) => r.counterpartyId === counterpartyId);
 }
 
-export function getPortalAccess(counterpartyId: number) {
-	return getPortalAccessRecords().find((record) => record.counterpartyId === counterpartyId);
-}
-
-export function upsertPortalAccess(input: {
+/** Upsert a portal access record in the DB. Keeps cache in sync. */
+export async function upsertPortalAccess(input: {
 	counterpartyId: number;
 	counterpartyName: string;
 	roles: string[];
 	phone?: string | null;
 	email?: string | null;
 	enabled: boolean;
-}) {
-	const now = new Date().toISOString();
-	const records = getPortalAccessRecords();
-	const current = records.find((record) => record.counterpartyId === input.counterpartyId);
+}): Promise<PortalAccessRecord> {
 	const portalKind = resolvePortalKind(input.roles);
-	const next: PortalAccessRecord = {
-		id: current?.id ?? `portal-access-${input.counterpartyId}`,
+	const login = input.email || input.phone || `client-${input.counterpartyId}`;
+	const now = new Date().toISOString();
+
+	// Carry over enabledAt from cache if it already existed
+	const cached = readCache().find((r) => r.counterpartyId === input.counterpartyId);
+
+	const { data } = await api.post<PortalAccessDbRow>("/portal-access", {
 		counterpartyId: input.counterpartyId,
-		counterpartyName: input.counterpartyName,
-		roles: input.roles,
-		phone: input.phone,
-		email: input.email,
-		enabled: input.enabled,
 		portalKind,
-		portalPath: getPortalPath(portalKind),
-		login: input.email || input.phone || `client-${input.counterpartyId}`,
-		enabledAt: input.enabled ? (current?.enabledAt ?? now) : current?.enabledAt,
-		updatedAt: now,
-	};
-	savePortalAccessRecords([
-		next,
-		...records.filter((record) => record.counterpartyId !== input.counterpartyId),
+		isActive: input.enabled,
+		meta: {
+			counterpartyName: input.counterpartyName,
+			roles: input.roles,
+			phone: input.phone ?? null,
+			email: input.email ?? null,
+			login,
+			enabledAt: input.enabled ? (cached?.enabledAt ?? now) : cached?.enabledAt,
+		},
+	});
+
+	const record = dbRowToRecord(data);
+
+	// Update the local cache
+	const existing = readCache();
+	writeCache([
+		record,
+		...existing.filter((r) => r.counterpartyId !== input.counterpartyId),
 	]);
-	return next;
+
+	return record;
+}
+
+/** Synchronous read from cache only — for initial render before async data arrives. */
+export function getPortalAccessSync(counterpartyId: number): PortalAccessRecord | undefined {
+	return readCache().find((r) => r.counterpartyId === counterpartyId);
 }
 
 // ── Portal content (медиацентр) — backed by API ──────────────────────────────

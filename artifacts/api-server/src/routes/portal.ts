@@ -8,7 +8,7 @@ import {
   warehouseSupplierPaymentsTable,
   counterpartiesTable, constructionSalesContractsTable, constructionAccrualsTable,
   constructionOperationsTable, constructionUnitsTable, constructionProjectsTable,
-  companiesTable, portalContentTable,
+  companiesTable, portalContentTable, portalAccessTable,
 } from "../lib/db";
 import { requireAuth, requireRole, AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
@@ -878,10 +878,19 @@ function normalizePortalContent(body: PortalContentBody) {
 }
 
 // GET /portal-content — список материалов компании (для админа и порталов клиентов)
+// SECURITY RULE: non-privileged callers (portal clients, regular employees) always see
+// only published content regardless of any ?status= they pass.
+// Only admin / company_admin / owner may request other statuses or see all when omitted.
 router.get("/portal-content", async (req: AuthenticatedRequest, res): Promise<void> => {
   const companyId = req.scopedCompanyId!;
   const audience = typeof req.query.audience === "string" ? req.query.audience : undefined;
-  const status = typeof req.query.status === "string" ? req.query.status : undefined;
+
+  const PRIVILEGED_ROLES = ["admin", "company_admin", "owner"];
+  const isPrivileged = PRIVILEGED_ROLES.includes(req.userRole ?? "");
+  // Privileged users: honour the ?status= param (or see all when omitted).
+  // Everyone else: forcibly restrict to published — never expose drafts.
+  const requestedStatus = typeof req.query.status === "string" ? req.query.status : undefined;
+  const status: string | undefined = isPrivileged ? requestedStatus : "published";
 
   const filters = [eq(portalContentTable.companyId, companyId)];
   if (audience) filters.push(eq(portalContentTable.audience, audience));
@@ -937,6 +946,80 @@ router.delete("/portal-content/:id", requireRole("admin", "company_admin"), asyn
       eq(portalContentTable.id, id),
       eq(portalContentTable.companyId, req.scopedCompanyId!),
     ));
+  res.json({ ok: true });
+});
+
+// ── Portal Access (source of truth in DB, replaces localStorage) ─────────────
+
+// GET /portal-access — list all portal access records for the scoped company
+router.get("/portal-access", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const companyId = req.scopedCompanyId!;
+  const rows = await db
+    .select()
+    .from(portalAccessTable)
+    .where(eq(portalAccessTable.companyId, companyId));
+  res.json(rows);
+});
+
+// POST /portal-access — upsert by (companyId, counterpartyId)
+// Body: { counterpartyId, portalKind, accessCode?, isActive? }
+router.post("/portal-access", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+  const companyId = req.scopedCompanyId!;
+  const body = req.body ?? {};
+  const counterpartyId = Number(body.counterpartyId);
+  if (!counterpartyId) { res.status(400).json({ error: "counterpartyId required" }); return; }
+  const portalKind = typeof body.portalKind === "string" ? body.portalKind : null;
+  if (!portalKind) { res.status(400).json({ error: "portalKind required" }); return; }
+
+  const [existing] = await db
+    .select()
+    .from(portalAccessTable)
+    .where(and(
+      eq(portalAccessTable.companyId, companyId),
+      eq(portalAccessTable.counterpartyId, counterpartyId),
+    ));
+
+  if (existing) {
+    const [updated] = await db
+      .update(portalAccessTable)
+      .set({
+        portalKind,
+        accessCode: typeof body.accessCode === "string" ? body.accessCode : existing.accessCode,
+        isActive: body.isActive !== undefined ? Boolean(body.isActive) : existing.isActive,
+        updatedAt: new Date(),
+      })
+      .where(eq(portalAccessTable.id, existing.id))
+      .returning();
+    res.json(updated);
+  } else {
+    const [inserted] = await db
+      .insert(portalAccessTable)
+      .values({
+        companyId,
+        counterpartyId,
+        portalKind,
+        accessCode: typeof body.accessCode === "string" ? body.accessCode : null,
+        isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
+      })
+      .returning();
+    res.status(201).json(inserted);
+  }
+});
+
+// DELETE /portal-access/:counterpartyId — soft-delete (set isActive=false)
+router.delete("/portal-access/:counterpartyId", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+  const companyId = req.scopedCompanyId!;
+  const counterpartyId = parseInt(req.params.counterpartyId as string, 10);
+  if (!counterpartyId) { res.status(400).json({ error: "Некорректный counterpartyId" }); return; }
+  const [row] = await db
+    .update(portalAccessTable)
+    .set({ isActive: false, updatedAt: new Date() })
+    .where(and(
+      eq(portalAccessTable.companyId, companyId),
+      eq(portalAccessTable.counterpartyId, counterpartyId),
+    ))
+    .returning();
+  if (!row) { res.status(404).json({ error: "Portal access not found" }); return; }
   res.json({ ok: true });
 });
 

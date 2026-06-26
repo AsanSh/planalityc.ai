@@ -16,8 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api-error";
 import {
-	getPortalAccess,
 	getPortalPath,
+	getPortalAccessSync,
 	resolvePortalKind,
 	type PortalAccessRecord,
 	upsertPortalAccess,
@@ -78,7 +78,8 @@ export function PortalAccessCell({
 	const { toast } = useToast();
 	const qc = useQueryClient();
 	const portalKind = useMemo(() => resolvePortalKind(roles), [roles]);
-	const cached = useMemo(() => getPortalAccess(counterpartyId), [counterpartyId]);
+	// Synchronous cache read for first render — refreshed by full list query elsewhere.
+	const cached = useMemo(() => getPortalAccessSync(counterpartyId), [counterpartyId]);
 
 	const [previewOpen, setPreviewOpen] = useState(false);
 	const [formOpen, setFormOpen] = useState(false);
@@ -129,8 +130,8 @@ export function PortalAccessCell({
 		},
 		onSuccess: (data) => {
 			const serverLogin = data?.user?.phone || data?.user?.email || form.phone;
-			// localStorage остаётся только UI-кэшем, отражающим состояние сервера.
-			upsertPortalAccess({
+			// Persist to DB and update local cache.
+			void upsertPortalAccess({
 				counterpartyId,
 				counterpartyName,
 				roles,

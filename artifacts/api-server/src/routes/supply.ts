@@ -10,7 +10,7 @@ import {
   globalProductsTable,
   usersTable,
 } from "../lib/db";
-import { requireAuth, requireRole, type AuthenticatedRequest } from "../middleware/auth";
+import { requireAuth, requireRole, requirePermission, type AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
 import { requireEnabledModule } from "../middleware/modules";
 
@@ -176,7 +176,7 @@ router.get("/supply/requests/:id", async (req: AuthenticatedRequest, res): Promi
 // POST /supply/requests/:id/approvals
 router.post(
   "/supply/requests/:id/approvals",
-  requireRole("owner", "admin", "company_admin", "finance"),
+  requirePermission("procurement:approve"),
   async (req: AuthenticatedRequest, res): Promise<void> => {
     const companyId = req.scopedCompanyId!;
     const id = Number(req.params.id);

@@ -34,7 +34,8 @@ import {
 	downloadUnitsTemplate,
 	exportUnitsToExcel,
 } from "@/lib/chess-units-xlsx";
-import { canManageUnitPricing, isUnitPublishedForSale } from "@/lib/unit-pricing";
+import { isUnitPublishedForSale } from "@/lib/unit-pricing";
+import { usePermissions } from "@/hooks/use-permissions";
 import {
 	badgeCfgFor,
 	buildStatusBadgeCfg,
@@ -105,6 +106,7 @@ export default function SalesGrid() {
 	const { toast } = useToast();
 	const { user } = useAuth();
 	const userRole = (user as { role?: string })?.role ?? "";
+	const { has: hasPermission } = usePermissions();
 
 	const state = useSalesGridState(userRole);
 	const {
@@ -136,7 +138,7 @@ export default function SalesGrid() {
 		isMobile,
 	} = state;
 
-	const canEditPrices = canManageUnitPricing(userRole);
+	const canEditPrices = hasPermission("pricing:write");
 	const canEditArea = canEditPrices || isPTO || (isAdmin && adminMode === "pto");
 	const canBulkFloor = canEditPrices;
 

@@ -26,6 +26,7 @@ import {
 } from "../lib/password-reset";
 import { issueOtp, verifyOtp, normalizePhone } from "../lib/otp";
 import { ensureLegalEntitiesFromCompany } from "../lib/settings-catalog-sync";
+import { resolvePermissions } from "../lib/permissions";
 
 function generateCode(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
@@ -726,7 +727,8 @@ router.get("/auth/me", async (req, res): Promise<void> => {
     }
 
     const { passwordHash: _ph, ...safeUser } = user;
-    res.json({ ...safeUser, company });
+    const permissions = resolvePermissions(user);
+    res.json({ ...safeUser, company, permissions });
   } catch (error) {
     console.error('Get me error:', error);
     res.status(500).json({ error: 'Failed to get user' });

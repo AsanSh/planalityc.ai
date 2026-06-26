@@ -10,7 +10,7 @@ import {
   counterpartiesTable,
 } from "../lib/db";
 import { eq, and, desc, sql, ilike, getTableColumns } from "drizzle-orm";
-import { requireAuth, AuthenticatedRequest } from "../middleware/auth";
+import { requireAuth, requirePermission, AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
 import { requireEnabledModule } from "../middleware/modules";
 import { sendServerError } from "../lib/http-errors";
@@ -412,7 +412,7 @@ function normalizeOpDate(raw: unknown): string {
   return s.slice(0, 10);
 }
 
-router.post("/operations", async (req: AuthenticatedRequest, res): Promise<void> => {
+router.post("/operations", requirePermission("finance:write"), async (req: AuthenticatedRequest, res): Promise<void> => {
   const companyId = req.scopedCompanyId!;
   const body = req.body ?? {};
 
@@ -532,7 +532,7 @@ router.post("/operations", async (req: AuthenticatedRequest, res): Promise<void>
   }
 });
 
-router.patch("/operations/:id", async (req: AuthenticatedRequest, res): Promise<void> => {
+router.patch("/operations/:id", requirePermission("finance:write"), async (req: AuthenticatedRequest, res): Promise<void> => {
   const companyId = req.scopedCompanyId!;
   const id = Number(req.params.id);
   const body = req.body ?? {};
@@ -1289,7 +1289,7 @@ router.post(
 );
 
 // ── Cashier — accept payment ────────────────────────────────────────────
-router.post("/cashier/payment", async (req: AuthenticatedRequest, res): Promise<void> => {
+router.post("/cashier/payment", requirePermission("cashier:write", "finance:write"), async (req: AuthenticatedRequest, res): Promise<void> => {
   const companyId = req.scopedCompanyId!;
   const {
     contractId,

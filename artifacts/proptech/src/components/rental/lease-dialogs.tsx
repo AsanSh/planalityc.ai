@@ -945,11 +945,11 @@ function LeaseSortTh({ label, col, sortKey, sortDir, onToggle, widths, startResi
 	);
 }
 
-export function LeaseTable({ isLoading, leasesArray, sortedLeases, sortKey, sortDir, toggle, activeCount, totalRent, setEditLease, setRecalcLease, setTerminateLease, onDeleteLease }: {
+export function LeaseTable({ isLoading, leasesArray, sortedLeases, sortKey, sortDir, toggle, activeCount, totalRent, setEditLease, setRecalcLease, setTerminateLease, setStructuredTerminateLease, onDeleteLease }: {
 	isLoading: boolean; leasesArray: any[]; sortedLeases: any[]; sortKey: string; sortDir: "asc" | "desc";
 	toggle: (k: string) => void; activeCount: number; totalRent: number;
 	setEditLease: (l: any) => void; setRecalcLease: (l: any) => void;
-	setTerminateLease: (l: any) => void; onDeleteLease: (l: LeaseContract) => void;
+	setTerminateLease: (l: any) => void; setStructuredTerminateLease?: (l: any) => void; onDeleteLease: (l: LeaseContract) => void;
 }) {
 	const { widths, startResize } = useColResize({ contractNumber: 130, propertyUnitNumber: 140, tenantName: 180, signDate: 110, startDate: 120, endDate: 110, rentAmount: 120, status: 110, actions: 56 });
 	return (
@@ -1005,6 +1005,11 @@ export function LeaseTable({ isLoading, leasesArray, sortedLeases, sortKey, sort
 											{(lease.status === "active" || lease.status === "expired") && (
 												<DropdownMenuItem onClick={() => setTerminateLease(lease)}>
 													<FileX className="w-4 h-4 mr-2" />Расторгнуть
+												</DropdownMenuItem>
+											)}
+											{(lease.status === "active" || lease.status === "expired") && setStructuredTerminateLease && (
+												<DropdownMenuItem onClick={() => setStructuredTerminateLease(lease)}>
+													<FileX className="w-4 h-4 mr-2" />Расторгнуть договор (детально)
 												</DropdownMenuItem>
 											)}
 											<DropdownMenuSeparator />

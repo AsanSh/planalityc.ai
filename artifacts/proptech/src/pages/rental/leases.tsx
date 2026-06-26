@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSortable } from "@/lib/use-sortable";
 import { CalendarClock, CheckCircle2, FileText, Plus, Wallet } from "lucide-react";
 import { useState } from "react";
+import { ContractTerminationDialog } from "@/components/contract-termination-dialog";
 import {
 	getListAccrualsQueryKey,
 	getListLeaseContractsQueryKey,
@@ -50,6 +51,7 @@ export default function RentalContracts() {
 	const [editLease, setEditLease] = useState<LeaseContract | null>(null);
 	const [recalcLease, setRecalcLease] = useState<LeaseContract | null>(null);
 	const [terminateLease, setTerminateLease] = useState<LeaseContract | null>(null);
+	const [structuredTerminateLease, setStructuredTerminateLease] = useState<LeaseContract | null>(null);
 
 	const invalidateLeases = () => {
 		queryClient.invalidateQueries({ queryKey: getListLeaseContractsQueryKey() });
@@ -116,6 +118,7 @@ export default function RentalContracts() {
 				setEditLease={setEditLease}
 				setRecalcLease={setRecalcLease}
 				setTerminateLease={setTerminateLease}
+				setStructuredTerminateLease={setStructuredTerminateLease}
 				onDeleteLease={handleDeleteLease}
 			/>
 			</RentalQueryState>
@@ -147,6 +150,20 @@ export default function RentalContracts() {
 				onClose={() => setTerminateLease(null)}
 				onDone={invalidateLeases}
 			/>
+
+			{structuredTerminateLease && (
+				<ContractTerminationDialog
+					open={!!structuredTerminateLease}
+					onClose={() => setStructuredTerminateLease(null)}
+					contractType="lease"
+					contractId={structuredTerminateLease.id}
+					contractLabel={structuredTerminateLease.contractNumber}
+					onDone={() => {
+						setStructuredTerminateLease(null);
+						invalidateLeases();
+					}}
+				/>
+			)}
 		</div>
 	);
 }

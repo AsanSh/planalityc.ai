@@ -173,15 +173,15 @@ export default function Accruals() {
 			{
 				id: "projectName",
 				header: "Объект",
-				size: 130,
+				size: 120,
 				accessorFn: (row) => row.projectName,
-				meta: { exportLabel: "Объект", pinned: "left" },
+				meta: { exportLabel: "Объект" },
 				cell: ({ row }) => row.original.projectName,
 			},
 			{
 				id: "contractLabel",
 				header: "Договор",
-				size: 280,
+				size: 240,
 				minSize: 140,
 				maxSize: 720,
 				accessorFn: (row) => row.contractLabel,
@@ -191,14 +191,14 @@ export default function Accruals() {
 			{
 				accessorKey: "period",
 				header: "Период",
-				size: 90,
+				size: 82,
 				meta: { exportLabel: "Период" },
 				cell: ({ row }) => row.original.period,
 			},
 			{
 				id: "amount",
 				header: "Сумма",
-				size: 110,
+				size: 104,
 				accessorFn: (row) => parseFloat(row.amount || "0"),
 				meta: { exportLabel: "Сумма", align: "right" },
 				cell: ({ row }) => (
@@ -208,7 +208,7 @@ export default function Accruals() {
 			{
 				id: "discountAmount",
 				header: "Скидка",
-				size: 100,
+				size: 84,
 				accessorFn: (row) => parseFloat(row.discountAmount || "0"),
 				meta: { exportLabel: "Скидка", align: "right" },
 				cell: ({ row }) =>
@@ -219,7 +219,7 @@ export default function Accruals() {
 			{
 				id: "paidAmount",
 				header: "Оплачено",
-				size: 110,
+				size: 104,
 				accessorFn: (row) => parseFloat(row.paidAmount || "0"),
 				meta: { exportLabel: "Оплачено", align: "right" },
 				cell: ({ row }) => (
@@ -231,7 +231,7 @@ export default function Accruals() {
 			{
 				id: "balance",
 				header: "Остаток",
-				size: 110,
+				size: 104,
 				accessorFn: (row) => parseFloat(row.balance || "0"),
 				meta: { exportLabel: "Остаток", align: "right" },
 				cell: ({ row }) => (
@@ -245,15 +245,15 @@ export default function Accruals() {
 			{
 				id: "dueDate",
 				header: "Срок",
-				size: 100,
+				size: 96,
 				accessorFn: (row) => row.dueDate,
-				meta: { exportLabel: "Срок", pinned: "left" },
+				meta: { exportLabel: "Срок" },
 				cell: ({ row }) => formatDate(row.original.dueDate),
 			},
 			{
 				id: "status",
 				header: "Статус",
-				size: 120,
+				size: 104,
 				accessorKey: "status",
 				meta: { exportLabel: "Статус" },
 				cell: ({ row }) => (
@@ -265,10 +265,10 @@ export default function Accruals() {
 			{
 				id: "actions",
 				header: "",
-				size: 50,
+				size: 76,
 				enableSorting: false,
 				enableResizing: false,
-				meta: { align: "center" },
+				meta: { align: "center", pinned: "right" },
 				cell: ({ row }) => (
 					<AccrualActionButtons
 						accrual={row.original}

@@ -775,25 +775,28 @@
   width: 100%;
 }
 
-.am-toolbar > *,
-.am-table-toolbar > * {
+.am-toolbar > * {
   flex-shrink: 0;
+}
+
+.am-table-toolbar > * {
+  min-width: 0;
 }
 
 .am-table-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  white-space: nowrap;
+  overflow: visible;
+  white-space: normal;
   max-width: 100%;
-  scrollbar-width: thin;
 }
 
 .am-search-field {
   position: relative;
-  flex-shrink: 0;
+  flex: 1 1 240px;
+  min-width: 180px;
 }
 
 .am-search-field svg {

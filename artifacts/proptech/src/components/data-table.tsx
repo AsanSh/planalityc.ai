@@ -294,6 +294,20 @@ export function DataTable<T>({
 		URL.revokeObjectURL(url);
 	};
 
+	const pinnedCellClass = (meta?: DataTableColumnMeta) =>
+		meta?.pinned === "right"
+			? "sticky right-0 z-20 bg-white shadow-[-12px_0_18px_-18px_rgba(15,23,42,0.65)]"
+			: meta?.pinned === "left"
+				? "sticky left-0 z-20 bg-white shadow-[12px_0_18px_-18px_rgba(15,23,42,0.65)]"
+				: "";
+
+	const pinnedHeaderClass = (meta?: DataTableColumnMeta) =>
+		meta?.pinned === "right"
+			? "sticky right-0 z-30 shadow-[-12px_0_18px_-18px_rgba(15,23,42,0.7)]"
+			: meta?.pinned === "left"
+				? "sticky left-0 z-30 shadow-[12px_0_18px_-18px_rgba(15,23,42,0.7)]"
+				: "";
+
 	const densityBtn = (
 		d: TableDensity,
 		Icon: typeof Rows2,
@@ -461,6 +475,7 @@ export function DataTable<T>({
 													: align === "center"
 														? "text-center"
 														: "text-left",
+												pinnedHeaderClass(colMeta),
 											)}
 										>
 											{header.isPlaceholder ? null : (
@@ -605,6 +620,7 @@ export function DataTable<T>({
 													isExcel &&
 														meta?.financeAmount &&
 														"tabular-nums font-mono text-[11px] text-emerald-700",
+													pinnedCellClass(meta),
 												)}
 											>
 												{content}

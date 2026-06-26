@@ -6,7 +6,6 @@ import {
 	CheckCircle,
 	ChevronsUpDown,
 	Search,
-	Settings,
 	Tag,
 	XCircle,
 } from "lucide-react";
@@ -696,10 +695,10 @@ export function AccrualActionButtons({
 				<button
 					type="button"
 					disabled={isBusy}
-					className="inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-600 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50"
+					className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition-colors hover:border-emerald-300 hover:bg-emerald-100 disabled:opacity-50"
 					title="Действия"
 				>
-					<Settings className="w-4 h-4" />
+					<Banknote className="h-4 w-4" />
 				</button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-40">

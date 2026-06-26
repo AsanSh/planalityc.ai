@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, and, inArray, desc } from "drizzle-orm";
+import { eq, and, inArray, desc, sql } from "drizzle-orm";
 import {
   db, usersTable, investorsTable, investmentsTable, distributionsTable,
   propertiesTable, tenantsTable, leaseContractsTable, paymentsTable, accrualsTable,
@@ -8,7 +8,7 @@ import {
   warehouseSupplierPaymentsTable,
   counterpartiesTable, constructionSalesContractsTable, constructionAccrualsTable,
   constructionOperationsTable, constructionUnitsTable, constructionProjectsTable,
-  companiesTable, portalContentTable, portalAccessTable,
+  companiesTable, portalContentTable, portalAccessTable, portalPollVotesTable, portalContentReadsTable,
 } from "../lib/db";
 import { requireAuth, requireRole, AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
@@ -17,6 +17,8 @@ import { sendPortalAccessEmail } from "../lib/email";
 import { createPortalUser, findUserByLinkedEntity } from "../lib/portal-account";
 import { parseContractDocumentMeta, summarizeContractDocument } from "../lib/contract-document";
 import { buildBuyerReconciliation, buildSupplierReconciliation } from "../lib/portal-reconciliation";
+import { uploadFile, isBlobEnabled } from "../lib/file-storage";
+import { notifyPortalPublish } from "../lib/portal-notify";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -915,6 +917,9 @@ router.post("/portal-content", requireRole("admin", "company_admin"), async (req
     companyId: req.scopedCompanyId!,
     ...values,
   }).returning();
+  if (row.status === "published") {
+    notifyPortalPublish(row).catch(() => {});
+  }
   res.status(201).json(row);
 });
 
@@ -922,6 +927,13 @@ router.post("/portal-content", requireRole("admin", "company_admin"), async (req
 router.put("/portal-content/:id", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
   const id = parseInt(req.params.id as string, 10);
   if (!id) { res.status(400).json({ error: "Некорректный id" }); return; }
+
+  // Fetch old status to detect publish transition (idempotent-ish)
+  const [existing] = await db.select({ status: portalContentTable.status })
+    .from(portalContentTable)
+    .where(and(eq(portalContentTable.id, id), eq(portalContentTable.companyId, req.scopedCompanyId!)));
+  const wasPublished = existing?.status === "published";
+
   const values = normalizePortalContent(req.body ?? {});
   if (!values.title) {
     res.status(400).json({ error: "Укажите заголовок" }); return;
@@ -934,6 +946,12 @@ router.put("/portal-content/:id", requireRole("admin", "company_admin"), async (
     ))
     .returning();
   if (!row) { res.status(404).json({ error: "Материал не найден" }); return; }
+
+  // Notify on transition draft→published (not if already was published)
+  if (!wasPublished && row.status === "published") {
+    notifyPortalPublish(row).catch(() => {});
+  }
+
   res.json(row);
 });
 
@@ -1021,6 +1039,136 @@ router.delete("/portal-access/:counterpartyId", requireRole("admin", "company_ad
     .returning();
   if (!row) { res.status(404).json({ error: "Portal access not found" }); return; }
   res.json({ ok: true });
+});
+
+// ── PORTAL ENGAGEMENT ────────────────────────────────────────────────────────
+
+// POST /portal-content/upload — загрузить изображение (только admin/company_admin)
+router.post("/portal-content/upload", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+  if (!isBlobEnabled()) {
+    res.status(400).json({ error: "Хранилище файлов не настроено" }); return;
+  }
+  const { filename, dataBase64, contentType } = req.body ?? {};
+  if (!filename || !dataBase64) {
+    res.status(400).json({ error: "filename и dataBase64 обязательны" }); return;
+  }
+  const mimeType = contentType || "application/octet-stream";
+  const result = await uploadFile({
+    fileName: filename,
+    mimeType,
+    base64: dataBase64,
+    pathname: "portal-images",
+  });
+  res.json({ url: result.url });
+});
+
+// POST /portal-content/:id/vote — проголосовать в опросе
+router.post("/portal-content/:id/vote", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const contentId = parseInt(req.params.id as string, 10);
+  if (!contentId) { res.status(400).json({ error: "Некорректный id" }); return; }
+  const companyId = req.scopedCompanyId!;
+  const userId = req.userId!;
+
+  const [content] = await db.select()
+    .from(portalContentTable)
+    .where(and(eq(portalContentTable.id, contentId), eq(portalContentTable.companyId, companyId)));
+  if (!content) { res.status(404).json({ error: "Материал не найден" }); return; }
+  if (content.type !== "poll") { res.status(400).json({ error: "Материал не является опросом" }); return; }
+
+  const options = Array.isArray(content.pollOptions) ? content.pollOptions as string[] : [];
+  const { optionIndex } = req.body ?? {};
+  if (typeof optionIndex !== "number" || optionIndex < 0 || optionIndex >= options.length) {
+    res.status(400).json({ error: "optionIndex вне допустимого диапазона" }); return;
+  }
+
+  // Upsert: insert or update if vote changed
+  await db.insert(portalPollVotesTable).values({
+    companyId,
+    contentId,
+    voterUserId: userId,
+    optionIndex,
+  }).onConflictDoUpdate({
+    target: [portalPollVotesTable.contentId, portalPollVotesTable.voterUserId],
+    set: { optionIndex },
+  });
+
+  // Compute counts
+  const votes = await db.select()
+    .from(portalPollVotesTable)
+    .where(eq(portalPollVotesTable.contentId, contentId));
+
+  const counts = options.map((_: string, i: number) =>
+    votes.filter((v) => v.optionIndex === i).length
+  );
+  const total = votes.length;
+
+  res.json({ counts, total, myVote: optionIndex });
+});
+
+// GET /portal-content/:id/poll — получить статус опроса
+router.get("/portal-content/:id/poll", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const contentId = parseInt(req.params.id as string, 10);
+  if (!contentId) { res.status(400).json({ error: "Некорректный id" }); return; }
+  const companyId = req.scopedCompanyId!;
+  const userId = req.userId!;
+
+  const [content] = await db.select()
+    .from(portalContentTable)
+    .where(and(eq(portalContentTable.id, contentId), eq(portalContentTable.companyId, companyId)));
+  if (!content) { res.status(404).json({ error: "Материал не найден" }); return; }
+  if (content.type !== "poll") { res.status(400).json({ error: "Материал не является опросом" }); return; }
+
+  const options = Array.isArray(content.pollOptions) ? content.pollOptions as string[] : [];
+
+  const votes = await db.select()
+    .from(portalPollVotesTable)
+    .where(eq(portalPollVotesTable.contentId, contentId));
+
+  const counts = options.map((_: string, i: number) =>
+    votes.filter((v) => v.optionIndex === i).length
+  );
+  const total = votes.length;
+
+  const myVoteRow = votes.find((v) => v.voterUserId === userId);
+  const myVote = myVoteRow != null ? myVoteRow.optionIndex : null;
+
+  res.json({ options, counts, total, myVote });
+});
+
+// POST /portal-content/:id/read — зафиксировать прочтение
+router.post("/portal-content/:id/read", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const contentId = parseInt(req.params.id as string, 10);
+  if (!contentId) { res.status(400).json({ error: "Некорректный id" }); return; }
+  const companyId = req.scopedCompanyId!;
+  const userId = req.userId!;
+
+  // Idempotent: DO NOTHING on conflict
+  await db.insert(portalContentReadsTable).values({
+    companyId,
+    contentId,
+    viewerUserId: userId,
+  }).onConflictDoNothing();
+
+  res.json({ ok: true });
+});
+
+// GET /portal-content/:id/analytics — аналитика прочтений (только admin/company_admin)
+router.get("/portal-content/:id/analytics", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+  const contentId = parseInt(req.params.id as string, 10);
+  if (!contentId) { res.status(400).json({ error: "Некорректный id" }); return; }
+  const companyId = req.scopedCompanyId!;
+
+  const reads = await db.select()
+    .from(portalContentReadsTable)
+    .where(and(
+      eq(portalContentReadsTable.contentId, contentId),
+      eq(portalContentReadsTable.companyId, companyId),
+    ));
+
+  res.json({
+    reads: reads.length,
+    uniqueViewers: reads.length, // Each row is unique per (contentId, viewerUserId) by design
+  });
 });
 
 export default router;

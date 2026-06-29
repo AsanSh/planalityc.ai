@@ -155,6 +155,45 @@ export default function BuyerPortal({ previewBuyerId }: { previewBuyerId?: numbe
 		? data?.buyer?.fullName || "Покупатель"
 		: [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Покупатель";
 
+	// Аккаунт покупателя ещё не привязан к договору (linkedBuyerId не задан)
+	if (!isPreview && !buyer) {
+		return (
+			<div className="min-h-screen bg-gray-50">
+				<header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+					<div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+						<div className="flex items-center gap-3">
+							<div className="w-9 h-9 bg-sky-600 rounded-xl flex items-center justify-center">
+								<Home className="w-5 h-5 text-white" />
+							</div>
+							<div>
+								<p className="text-sm font-bold text-gray-900">Planalityc.ai</p>
+								<p className="text-[10px] text-gray-600 -mt-0.5">Портал покупателя</p>
+							</div>
+						</div>
+						<Button variant="ghost" size="sm" onClick={logout} className="text-gray-500 gap-1.5">
+							<LogOut className="w-4 h-4" /> Выйти
+						</Button>
+					</div>
+				</header>
+				<div className="max-w-lg mx-auto px-4 py-16 text-center">
+					<div className="w-14 h-14 rounded-2xl bg-sky-50 flex items-center justify-center mx-auto mb-5">
+						<Home className="w-7 h-7 text-sky-600" />
+					</div>
+					<h1 className="text-xl font-bold text-gray-900 mb-2">Здравствуйте, {userName}</h1>
+					<p className="text-gray-600 leading-relaxed">
+						Ваш аккаунт ещё не привязан к договору купли-продажи. Как только менеджер
+						отдела продаж откроет доступ, здесь появятся ваш договор, график платежей,
+						начисления и акт сверки.
+					</p>
+					<p className="text-sm text-gray-400 mt-4">
+						Обратитесь к вашему менеджеру, чтобы получить доступ к личному кабинету.
+					</p>
+				</div>
+			</div>
+		);
+	}
+
+
 	return (
 		<div className="min-h-screen bg-gray-50">
 			<header className="bg-white border-b border-gray-200 sticky top-0 z-40">

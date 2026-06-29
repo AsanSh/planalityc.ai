@@ -491,6 +491,7 @@ export default function ConstructionContractsSales() {
 	const [form, setForm] = useState({
 		projectId: "",
 		unitId: "",
+		unitIds: [] as string[],
 		buyerName: "",
 		buyerPhone: "",
 		totalAmount: "",
@@ -560,6 +561,7 @@ export default function ConstructionContractsSales() {
 		setForm({
 			projectId: "",
 			unitId: "",
+			unitIds: [],
 			buyerName: "",
 			buyerPhone: "",
 			totalAmount: "",
@@ -586,6 +588,16 @@ export default function ConstructionContractsSales() {
 					u.projectId === Number(form.projectId) && u.status === "available",
 			)
 		: [];
+	const selectedFormUnits = form.unitIds
+		.map((id) => units.find((u: any) => String(u.id) === id))
+		.filter(Boolean);
+	const selectedUnitsTotal = selectedFormUnits.reduce((sum: number, u: any) => {
+		const explicit = parseFloat(String(u.approvedTotalPrice || u.totalPrice || "0"));
+		if (explicit > 0) return sum + explicit;
+		const area = parseFloat(String(u.area || "0"));
+		const pps = parseFloat(String(u.approvedSalePricePerSqm || u.pricePerSqm || "0"));
+		return sum + (area > 0 && pps > 0 ? area * pps : 0);
+	}, 0);
 	useEffect(() => {
 		if (highlightFromUrl) {
 			setDetailId(Number(highlightFromUrl));
@@ -875,7 +887,7 @@ export default function ConstructionContractsSales() {
 								<Select
 									value={form.projectId}
 									onValueChange={(v) =>
-										setForm((f) => ({ ...f, projectId: v, unitId: "" }))
+										setForm((f) => ({ ...f, projectId: v, unitId: "", unitIds: [] }))
 									}
 								>
 									<SelectTrigger className="am-control w-full">
@@ -893,7 +905,28 @@ export default function ConstructionContractsSales() {
 							<Field label="Квартира / помещение" className="col-span-6">
 								<Select
 									value={form.unitId}
-									onValueChange={(v) => setForm((f) => ({ ...f, unitId: v }))}
+									onValueChange={(v) =>
+										setForm((f) => {
+											if (v === "none") return { ...f, unitId: "", unitIds: [] };
+											const nextIds = f.unitIds.includes(v) ? f.unitIds : [...f.unitIds, v];
+											const nextUnits = nextIds
+												.map((id) => units.find((u: any) => String(u.id) === id))
+												.filter(Boolean);
+											const nextTotal = nextUnits.reduce((sum: number, u: any) => {
+												const explicit = parseFloat(String(u.approvedTotalPrice || u.totalPrice || "0"));
+												if (explicit > 0) return sum + explicit;
+												const area = parseFloat(String(u.area || "0"));
+												const pps = parseFloat(String(u.approvedSalePricePerSqm || u.pricePerSqm || "0"));
+												return sum + (area > 0 && pps > 0 ? area * pps : 0);
+											}, 0);
+											return {
+												...f,
+												unitId: v,
+												unitIds: nextIds,
+												totalAmount: nextTotal > 0 ? String(Math.round(nextTotal)) : f.totalAmount,
+											};
+										})
+									}
 								>
 									<SelectTrigger className="am-control w-full">
 										<SelectValue placeholder="Из шахматки" />
@@ -907,6 +940,41 @@ export default function ConstructionContractsSales() {
 										))}
 									</SelectContent>
 								</Select>
+								{selectedFormUnits.length > 0 && (
+									<div className="mt-2 space-y-1.5">
+										{selectedFormUnits.map((u: any, idx: number) => (
+											<div
+												key={u.id}
+												className="flex items-center justify-between gap-2 rounded-lg border border-am-border bg-am-bg-subtle px-3 py-2 text-xs"
+											>
+												<span>
+													{idx + 1}. Блок {u.block || "—"} · эт.{u.floor || "—"} · №{u.unitNumber} · {u.area || "—"} м²
+												</span>
+												<button
+													type="button"
+													className="text-rose-600 hover:text-rose-700"
+													onClick={() =>
+														setForm((f) => {
+															const nextIds = f.unitIds.filter((id) => id !== String(u.id));
+															return {
+																...f,
+																unitIds: nextIds,
+																unitId: nextIds[nextIds.length - 1] || "",
+															};
+														})
+													}
+												>
+													Убрать
+												</button>
+											</div>
+										))}
+										{selectedUnitsTotal > 0 && (
+											<p className="text-xs text-am-text-muted">
+												Итого по выбранным помещениям: {fmt(selectedUnitsTotal)} {form.currency === "KGS" ? "сом" : form.currency}
+											</p>
+										)}
+									</div>
+								)}
 							</Field>
 						</FormSection>
 
@@ -1065,10 +1133,12 @@ export default function ConstructionContractsSales() {
 									createMut.mutate({
 										...form,
 										projectId: Number(form.projectId),
-										unitId:
-											form.unitId && form.unitId !== "none"
+										unitId: form.unitIds[0]
+											? Number(form.unitIds[0])
+											: form.unitId && form.unitId !== "none"
 												? Number(form.unitId)
 												: null,
+										unitIds: form.unitIds.map((id) => Number(id)),
 									})
 								}
 							>

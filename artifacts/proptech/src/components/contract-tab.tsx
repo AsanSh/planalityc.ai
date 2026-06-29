@@ -1,4 +1,4 @@
-import { Download, FileText, Loader2, RefreshCw } from "lucide-react";
+import { Download, FileText, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,9 +72,41 @@ type Props = {
 	initialPayload?: {
 		buyer: ContractBuyer;
 		office: ContractOffice;
+		offices?: ContractOffice[];
 		contractDate: ContractDate;
 	};
 };
+
+const emptyOffice = (): ContractOffice => ({
+	address: "",
+	cadastralCode: "",
+	area: "",
+	floor: "",
+	block: "",
+	number: "",
+	priceUsd: "",
+	priceUsdWords: "",
+	initialPayment: "",
+	initialPaymentWords: "",
+});
+
+function aggregateOffices(rows: ContractOffice[]): ContractOffice {
+	const list = rows.length ? rows : [emptyOffice()];
+	if (list.length === 1) return list[0];
+	const unique = (values: string[]) =>
+		Array.from(new Set(values.map((v) => String(v || "").trim()).filter(Boolean))).join(", ");
+	const areaTotal = list.reduce((sum, row) => {
+		const parsed = parseFloat(String(row.area || "").replace(",", "."));
+		return sum + (Number.isFinite(parsed) ? parsed : 0);
+	}, 0);
+	return {
+		...list[0],
+		area: areaTotal > 0 ? areaTotal.toFixed(2) : unique(list.map((row) => row.area)),
+		floor: unique(list.map((row) => row.floor)),
+		block: unique(list.map((row) => row.block)),
+		number: unique(list.map((row) => row.number)),
+	};
+}
 
 function parseIsoToParts(iso: string): ContractDate {
 	const d = new Date(iso);
@@ -127,18 +159,12 @@ export function ContractTab({ salesContractId, projectId, initialPayload }: Prop
 		},
 	);
 	const [office, setOffice] = useState<ContractOffice>(
-		initialPayload?.office || {
-			address: "",
-			cadastralCode: "",
-			area: "",
-			floor: "",
-			block: "",
-			number: "",
-			priceUsd: "",
-			priceUsdWords: "",
-			initialPayment: "",
-			initialPaymentWords: "",
-		},
+		initialPayload?.office || emptyOffice(),
+	);
+	const [offices, setOffices] = useState<ContractOffice[]>(
+		initialPayload?.offices?.length
+			? initialPayload.offices
+			: [initialPayload?.office || emptyOffice()],
 	);
 
 	const loadContractData = useCallback(async () => {
@@ -161,7 +187,11 @@ export function ContractTab({ salesContractId, projectId, initialPayload }: Prop
 					address: b.address || "",
 					innPin: b.innPin || "",
 				});
-				setOffice(data.payload.office);
+				const loadedOffices = Array.isArray(data.payload.offices) && data.payload.offices.length
+					? data.payload.offices
+					: [data.payload.office];
+				setOffices(loadedOffices);
+				setOffice(data.payload.office || loadedOffices[0] || emptyOffice());
 				if (data.contractDate) setContractDateIso(data.contractDate);
 			}
 			if (data.buyerId != null) setBuyerId(Number(data.buyerId) || null);
@@ -197,7 +227,40 @@ export function ContractTab({ salesContractId, projectId, initialPayload }: Prop
 	const setBuyerField = (k: keyof ContractBuyer, v: string) =>
 		setBuyer((p) => ({ ...p, [k]: v }));
 	const setOfficeField = (k: keyof ContractOffice, v: string) =>
-		setOffice((p) => ({ ...p, [k]: v }));
+		setOffices((rows) => {
+			const next = rows.length ? [...rows] : [emptyOffice()];
+			next[0] = { ...next[0], [k]: v };
+			setOffice(next[0]);
+			return next;
+		});
+	const setOfficeRowField = (idx: number, k: keyof ContractOffice, v: string) =>
+		setOffices((rows) => {
+			const next = rows.length ? [...rows] : [emptyOffice()];
+			next[idx] = { ...next[idx], [k]: v };
+			setOffice(next[0]);
+			return next;
+		});
+	const addOffice = () =>
+		setOffices((rows) => {
+			const source = rows[0] || office || emptyOffice();
+			return [
+				...rows,
+				{
+					...emptyOffice(),
+					address: source.address,
+					cadastralCode: source.cadastralCode,
+					priceUsdWords: source.priceUsdWords,
+					initialPaymentWords: source.initialPaymentWords,
+				},
+			];
+		});
+	const removeOffice = (idx: number) =>
+		setOffices((rows) => {
+			const next = rows.filter((_, i) => i !== idx);
+			const normalized = next.length ? next : [emptyOffice()];
+			setOffice(normalized[0]);
+			return normalized;
+		});
 
 	const fmtMoney = (n: number) =>
 		new Intl.NumberFormat("ru-RU").format(Math.round(n));
@@ -258,6 +321,7 @@ export function ContractTab({ salesContractId, projectId, initialPayload }: Prop
 	}, [salesContractId, buyer, buyerId, toast]);
 
 	const annexTotal = displaySchedule.reduce((s, r) => s + r.amount, 0);
+	const aggregateOffice = aggregateOffices(offices);
 
 	const handleGenerateSchedule = async () => {
 		if (!salesContractId) return;
@@ -355,7 +419,13 @@ export function ContractTab({ salesContractId, projectId, initialPayload }: Prop
 						"Content-Type": "application/json",
 						...(token ? { Authorization: `Bearer ${token}` } : {}),
 					},
-					body: JSON.stringify({ buyer, office, contractDate, projectId }),
+					body: JSON.stringify({
+						buyer,
+						office: aggregateOffices(offices),
+						offices,
+						contractDate,
+						projectId,
+					}),
 				},
 			);
 			if (!response.ok) {
@@ -583,100 +653,132 @@ export function ContractTab({ salesContractId, projectId, initialPayload }: Prop
 					</div>
 				</div>
 
-				<div className="min-w-0 space-y-4 border rounded-xl p-4 bg-gray-50/50">
-					<p className="text-xs font-semibold text-gray-500 uppercase">
-						Помещение
-					</p>
-					<div className="grid gap-2 sm:grid-cols-2">
-						<div className="sm:col-span-2">
-							<Label className="text-xs">Адрес объекта</Label>
-							<Input
-								className="mt-1 h-8 text-sm"
-								value={office.address}
-								onChange={(e) => setOfficeField("address", e.target.value)}
-							/>
-						</div>
+				<div className="min-w-0 space-y-3 border rounded-xl p-4 bg-gray-50/50">
+					<div className="flex items-center justify-between gap-3">
 						<div>
-							<Label className="text-xs">Кадастровый код</Label>
-							<Input
-								className="mt-1 h-8 text-sm"
-								value={office.cadastralCode}
-								onChange={(e) =>
-									setOfficeField("cadastralCode", e.target.value)
-								}
-							/>
+							<p className="text-xs font-semibold text-gray-500 uppercase">
+								Помещения
+							</p>
+							<p className="text-xs text-muted-foreground">
+								Можно включить несколько объектов в один договор
+							</p>
 						</div>
-						<div>
-							<Label className="text-xs">Площадь (м²)</Label>
-							<Input
-								className="mt-1 h-8 text-sm"
-								value={office.area}
-								onChange={(e) => setOfficeField("area", e.target.value)}
-							/>
-						</div>
-						<div>
-							<Label className="text-xs">Этаж</Label>
-							<Input
-								className="mt-1 h-8 text-sm"
-								value={office.floor}
-								onChange={(e) => setOfficeField("floor", e.target.value)}
-							/>
-						</div>
-						<div>
-							<Label className="text-xs">Блок</Label>
-							<Input
-								className="mt-1 h-8 text-sm"
-								value={office.block}
-								onChange={(e) => setOfficeField("block", e.target.value)}
-							/>
-						</div>
-						<div>
-							<Label className="text-xs">№ кабинета</Label>
-							<Input
-								className="mt-1 h-8 text-sm"
-								value={office.number}
-								onChange={(e) => setOfficeField("number", e.target.value)}
-							/>
-						</div>
-						<div>
-							<Label className="text-xs">Цена (USD)</Label>
-							<Input
-								className="mt-1 h-8 text-sm"
-								value={office.priceUsd}
-								onChange={(e) => setOfficeField("priceUsd", e.target.value)}
-							/>
-						</div>
-						<div>
-							<Label className="text-xs">Цена прописью</Label>
-							<Input
-								className="mt-1 h-8 text-sm"
-								value={office.priceUsdWords}
-								onChange={(e) =>
-									setOfficeField("priceUsdWords", e.target.value)
-								}
-							/>
-						</div>
-						<div>
-							<Label className="text-xs">Первый взнос</Label>
-							<Input
-								className="mt-1 h-8 text-sm"
-								value={office.initialPayment}
-								onChange={(e) =>
-									setOfficeField("initialPayment", e.target.value)
-								}
-							/>
-						</div>
-						<div>
-							<Label className="text-xs">Взнос прописью</Label>
-							<Input
-								className="mt-1 h-8 text-sm"
-								value={office.initialPaymentWords}
-								onChange={(e) =>
-									setOfficeField("initialPaymentWords", e.target.value)
-								}
-							/>
-						</div>
+						<Button
+							type="button"
+							size="sm"
+							variant="outline"
+							className="gap-1.5"
+							onClick={addOffice}
+						>
+							<Plus className="h-3.5 w-3.5" />
+							Добавить помещение
+						</Button>
 					</div>
+					{offices.map((row, idx) => (
+						<div
+							key={idx}
+							className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
+						>
+							<div className="mb-2 flex items-center justify-between gap-3">
+								<p className="text-xs font-semibold uppercase text-slate-500">
+									Помещение {idx + 1}
+								</p>
+								{offices.length > 1 && (
+									<Button
+										type="button"
+										size="icon"
+										variant="ghost"
+										className="h-7 w-7 text-rose-500 hover:bg-rose-50 hover:text-rose-600"
+										onClick={() => removeOffice(idx)}
+									>
+										<Trash2 className="h-3.5 w-3.5" />
+									</Button>
+								)}
+							</div>
+							<div className="grid gap-2 sm:grid-cols-2">
+								<div className="sm:col-span-2">
+									<Label className="text-xs">Адрес объекта</Label>
+									<Input
+										className="mt-1 h-8 text-sm"
+										value={row.address}
+										onChange={(e) => setOfficeRowField(idx, "address", e.target.value)}
+									/>
+								</div>
+								<div>
+									<Label className="text-xs">Кадастровый код</Label>
+									<Input
+										className="mt-1 h-8 text-sm"
+										value={row.cadastralCode}
+										onChange={(e) => setOfficeRowField(idx, "cadastralCode", e.target.value)}
+									/>
+								</div>
+								<div>
+									<Label className="text-xs">Площадь (м²)</Label>
+									<Input
+										className="mt-1 h-8 text-sm"
+										value={row.area}
+										onChange={(e) => setOfficeRowField(idx, "area", e.target.value)}
+									/>
+								</div>
+								<div>
+									<Label className="text-xs">Этаж</Label>
+									<Input
+										className="mt-1 h-8 text-sm"
+										value={row.floor}
+										onChange={(e) => setOfficeRowField(idx, "floor", e.target.value)}
+									/>
+								</div>
+								<div>
+									<Label className="text-xs">Блок</Label>
+									<Input
+										className="mt-1 h-8 text-sm"
+										value={row.block}
+										onChange={(e) => setOfficeRowField(idx, "block", e.target.value)}
+									/>
+								</div>
+								<div>
+									<Label className="text-xs">№ кабинета</Label>
+									<Input
+										className="mt-1 h-8 text-sm"
+										value={row.number}
+										onChange={(e) => setOfficeRowField(idx, "number", e.target.value)}
+									/>
+								</div>
+								<div>
+									<Label className="text-xs">Цена (USD)</Label>
+									<Input
+										className="mt-1 h-8 text-sm"
+										value={row.priceUsd}
+										onChange={(e) => setOfficeRowField(idx, "priceUsd", e.target.value)}
+									/>
+								</div>
+								<div>
+									<Label className="text-xs">Цена прописью</Label>
+									<Input
+										className="mt-1 h-8 text-sm"
+										value={row.priceUsdWords}
+										onChange={(e) => setOfficeRowField(idx, "priceUsdWords", e.target.value)}
+									/>
+								</div>
+								<div>
+									<Label className="text-xs">Первый взнос</Label>
+									<Input
+										className="mt-1 h-8 text-sm"
+										value={row.initialPayment}
+										onChange={(e) => setOfficeRowField(idx, "initialPayment", e.target.value)}
+									/>
+								</div>
+								<div>
+									<Label className="text-xs">Взнос прописью</Label>
+									<Input
+										className="mt-1 h-8 text-sm"
+										value={row.initialPaymentWords}
+										onChange={(e) => setOfficeRowField(idx, "initialPaymentWords", e.target.value)}
+									/>
+								</div>
+							</div>
+						</div>
+					))}
 				</div>
 			</div>
 
@@ -695,7 +797,8 @@ export function ContractTab({ salesContractId, projectId, initialPayload }: Prop
 				>
 					<ContractPreviewDocument
 						buyer={buyer}
-						office={office}
+						office={aggregateOffice}
+						offices={offices}
 						contractDate={contractDate}
 						citizenship={citizenship}
 						pronoun={pronoun}

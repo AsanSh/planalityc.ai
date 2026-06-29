@@ -39,6 +39,7 @@ export type ContractOfficeData = {
 export type ContractGeneratePayload = {
   buyer: ContractBuyerData;
   office: ContractOfficeData;
+  offices?: ContractOfficeData[];
   contractDate: ContractDateParts;
 };
 

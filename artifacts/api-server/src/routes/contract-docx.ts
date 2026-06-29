@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, inArray } from "drizzle-orm";
 import {
   db,
   constructionSalesContractsTable,
@@ -31,6 +31,62 @@ const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth, requireTenantCompany);
 
+function readContractUnitIds(contract: Pick<typeof constructionSalesContractsTable.$inferSelect, "unitId" | "notes">): number[] {
+  const ids = new Set<number>();
+  if (contract.unitId) ids.add(Number(contract.unitId));
+  const match = (contract.notes || "").match(/\[PLANALITYC_CONTRACT_UNITS\]([\s\S]*?)\[\/PLANALITYC_CONTRACT_UNITS\]/);
+  if (match?.[1]) {
+    try {
+      const parsed = JSON.parse(match[1]) as { unitIds?: unknown[] };
+      for (const id of parsed.unitIds || []) {
+        const n = Number(id);
+        if (Number.isFinite(n) && n > 0) ids.add(n);
+      }
+    } catch {
+      /* ignore malformed legacy notes */
+    }
+  }
+  return Array.from(ids);
+}
+
+function officeFromUnit(
+  unit: typeof constructionUnitsTable.$inferSelect | null | undefined,
+  project: typeof constructionProjectsTable.$inferSelect | null | undefined,
+  price: string,
+  priceWords: string,
+  initial: string,
+  initialWords: string,
+) {
+  return {
+    address: project?.address || "г. Бишкек",
+    cadastralCode: "",
+    area: unit?.area?.toString() || "",
+    floor: unit?.floor?.toString() || "",
+    block: unit?.block || "",
+    number: unit?.unitNumber || "",
+    priceUsd: price,
+    priceUsdWords: priceWords,
+    initialPayment: initial,
+    initialPaymentWords: initialWords,
+  };
+}
+
+function aggregateOffices(offices: ReturnType<typeof officeFromUnit>[]) {
+  if (offices.length <= 1) return offices[0];
+  const unique = (values: string[]) => Array.from(new Set(values.filter(Boolean))).join(", ");
+  const areaTotal = offices.reduce((sum, office) => {
+    const n = parseFloat(String(office.area).replace(",", "."));
+    return sum + (Number.isFinite(n) ? n : 0);
+  }, 0);
+  return {
+    ...offices[0],
+    area: areaTotal > 0 ? areaTotal.toFixed(2) : unique(offices.map((o) => o.area)),
+    floor: unique(offices.map((o) => o.floor)),
+    block: unique(offices.map((o) => o.block)),
+    number: unique(offices.map((o) => o.number)),
+  };
+}
+
 /** Данные для вкладки «Договор» по ID договора продажи */
 router.get("/construction/contracts-sales/:id/docx-data",
   async (req: AuthenticatedRequest, res): Promise<void> => {
@@ -52,14 +108,17 @@ router.get("/construction/contracts-sales/:id/docx-data",
       return;
     }
 
-    let unit = null;
-    if (contract.unitId) {
-      const [u] = await db
+    const unitIds = readContractUnitIds(contract);
+    const units = unitIds.length > 0
+      ? await db
         .select()
         .from(constructionUnitsTable)
-        .where(eq(constructionUnitsTable.id, contract.unitId));
-      unit = u || null;
-    }
+        .where(and(
+          eq(constructionUnitsTable.companyId, companyId),
+          inArray(constructionUnitsTable.id, unitIds),
+        ))
+      : [];
+    const unit = units.find((u) => u.id === contract.unitId) || units[0] || null;
 
     const [project] = await db
       .select()
@@ -103,23 +162,17 @@ router.get("/construction/contracts-sales/:id/docx-data",
         ? formatMoneyDisplay(down)
         : formatMoneyDisplay(down);
 
+    const offices = (units.length > 0 ? units : [unit]).filter(Boolean).map((u) =>
+      officeFromUnit(u, project, priceUsd, formatMoneyWords(total), initial, formatMoneyWords(down)),
+    );
+
     const payload: ContractGeneratePayload = {
       contractDate: parseContractDate(
         contract.contractDate || new Date().toISOString().slice(0, 10),
       ),
       buyer,
-      office: {
-        address: project?.address || "г. Бишкек",
-        cadastralCode: "",
-        area: unit?.area?.toString() || "",
-        floor: unit?.floor?.toString() || "",
-        block: unit?.block || "",
-        number: unit?.unitNumber || "",
-        priceUsd,
-        priceUsdWords: formatMoneyWords(total),
-        initialPayment: initial,
-        initialPaymentWords: formatMoneyWords(down),
-      },
+      office: aggregateOffices(offices),
+      offices,
     };
 
     const accruals = await db

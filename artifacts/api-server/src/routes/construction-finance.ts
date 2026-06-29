@@ -9,7 +9,7 @@ import {
   constructionBudgetItemsTable,
   counterpartiesTable,
 } from "../lib/db";
-import { eq, and, desc, sql, ilike, getTableColumns } from "drizzle-orm";
+import { eq, and, desc, sql, ilike, getTableColumns, inArray } from "drizzle-orm";
 import { requireAuth, requirePermission, AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
 import { requireEnabledModule } from "../middleware/modules";
@@ -57,10 +57,51 @@ function unitIsSellable(unit: typeof constructionUnitsTable.$inferSelect): boole
 
 function mapSalesContractResponse(row: typeof constructionSalesContractsTable.$inferSelect) {
   const { contractDocumentMeta, ...rest } = row;
+  const linkedUnitIds = readContractUnitIds(row);
   return {
     ...rest,
+    unitIds: linkedUnitIds.length > 0 ? linkedUnitIds : row.unitId ? [row.unitId] : [],
     contractDocument: summarizeContractDocument(contractDocumentMeta),
   };
+}
+
+const CONTRACT_UNITS_MARKER = "PLANALITYC_CONTRACT_UNITS";
+
+function readContractUnitIds(row: Pick<typeof constructionSalesContractsTable.$inferSelect, "unitId" | "notes">): number[] {
+  const ids = new Set<number>();
+  if (row.unitId) ids.add(Number(row.unitId));
+  const notes = row.notes || "";
+  const match = notes.match(/\[PLANALITYC_CONTRACT_UNITS\]([\s\S]*?)\[\/PLANALITYC_CONTRACT_UNITS\]/);
+  if (match?.[1]) {
+    try {
+      const parsed = JSON.parse(match[1]) as { unitIds?: unknown[] };
+      for (const id of parsed.unitIds || []) {
+        const n = Number(id);
+        if (Number.isFinite(n) && n > 0) ids.add(n);
+      }
+    } catch {
+      /* ignore malformed legacy notes */
+    }
+  }
+  return Array.from(ids);
+}
+
+function writeContractUnitsNotes(notes: unknown, unitIds: number[]): string | null {
+  const cleaned = String(notes || "")
+    .replace(/\n?\[PLANALITYC_CONTRACT_UNITS\][\s\S]*?\[\/PLANALITYC_CONTRACT_UNITS\]\n?/g, "")
+    .trim();
+  const unique = Array.from(new Set(unitIds.filter((id) => Number.isFinite(id) && id > 0)));
+  if (unique.length <= 1) return cleaned || null;
+  const marker = `[${CONTRACT_UNITS_MARKER}]${JSON.stringify({ unitIds: unique })}[/${CONTRACT_UNITS_MARKER}]`;
+  return [cleaned, marker].filter(Boolean).join("\n\n");
+}
+
+function approvedUnitTotal(unit: typeof constructionUnitsTable.$inferSelect): number {
+  const explicit = parseFloat(String(unit.approvedTotalPrice || unit.totalPrice || "0"));
+  if (explicit > 0) return explicit;
+  const area = parseFloat(String(unit.area || "0"));
+  const pps = parseFloat(String(unit.approvedSalePricePerSqm || unit.pricePerSqm || "0"));
+  return area > 0 && pps > 0 ? area * pps : 0;
 }
 
 const CONSTRUCTION_ACCOUNTS = BANK_ACCOUNT_MODULE.construction;
@@ -773,26 +814,62 @@ async function insertAccrualsFromSchedule(
 router.post("/contracts-sales", async (req: AuthenticatedRequest, res): Promise<void> => {
   const companyId = req.scopedCompanyId!;
   const body = req.body;
+  const insertBody = { ...body };
+  delete insertBody.unitIds;
+  delete insertBody.unitId;
+  const unitIds: number[] = Array.from(
+    new Set(
+      (Array.isArray(body.unitIds) ? body.unitIds : [body.unitId])
+        .map((id: unknown) => Number(id))
+        .filter((id: number) => Number.isFinite(id) && id > 0),
+    ),
+  );
 
   // Auto-calculate total amount from unit area × pricePerSqm if not provided
   let total = parseFloat(body.totalAmount || "0");
-  if (total <= 0 && body.unitId) {
-    const [unit] = await db.select()
+  let selectedUnits: Array<typeof constructionUnitsTable.$inferSelect> = [];
+  if (unitIds.length > 0) {
+    selectedUnits = await db.select()
       .from(constructionUnitsTable)
-      .where(and(eq(constructionUnitsTable.id, Number(body.unitId)), eq(constructionUnitsTable.companyId, companyId)));
-    if (unit) {
+      .where(and(
+        eq(constructionUnitsTable.companyId, companyId),
+        inArray(constructionUnitsTable.id, unitIds),
+      ));
+    if (selectedUnits.length !== unitIds.length) {
+      res.status(404).json({ error: "Одно из выбранных помещений не найдено" });
+      return;
+    }
+    if (body.projectId && selectedUnits.some((unit) => unit.projectId !== Number(body.projectId))) {
+      res.status(400).json({ error: "Все помещения договора должны относиться к выбранному проекту" });
+      return;
+    }
+    for (const unit of selectedUnits) {
       if (!unitIsSellable(unit)) {
         res.status(403).json({ error: "Объект не опубликован коммерческим директором для продажи" });
         return;
       }
-      const area = parseFloat(String(unit.area || "0"));
-      const pps = parseFloat(String(unit.approvedSalePricePerSqm || unit.pricePerSqm || "0"));
-      if (area > 0 && pps > 0) total = area * pps;
-      const approvedTotal = parseFloat(String(unit.approvedTotalPrice || "0"));
-      if (approvedTotal > 0 && total > 0 && Math.abs(total - approvedTotal) > 1) {
-        res.status(400).json({ error: "Сумма договора должна совпадать с утверждённой коммерческой ценой" });
-        return;
-      }
+    }
+    const approvedTotal = selectedUnits.reduce((sum, unit) => sum + approvedUnitTotal(unit), 0);
+    if (total <= 0 && approvedTotal > 0) total = approvedTotal;
+    if (approvedTotal > 0 && total > 0 && Math.abs(total - approvedTotal) > Math.max(1, unitIds.length)) {
+      res.status(400).json({ error: "Сумма договора должна совпадать с утверждённой коммерческой ценой выбранных помещений" });
+      return;
+    }
+    const activeContracts = await db.select().from(constructionSalesContractsTable).where(
+      and(
+        eq(constructionSalesContractsTable.companyId, companyId),
+        sql`status IN ('draft', 'review', 'signed')`,
+      ),
+    );
+    const activeLinked = activeContracts.find((contract) =>
+      readContractUnitIds(contract).some((linkedUnitId) => unitIds.includes(linkedUnitId)),
+    );
+    if (activeLinked) {
+      res.status(409).json({
+        error: "По одному из выбранных помещений уже есть активный договор",
+        contractId: activeLinked.id,
+      });
+      return;
     }
   }
 
@@ -807,8 +884,10 @@ router.post("/contracts-sales", async (req: AuthenticatedRequest, res): Promise<
 
   const [row] = await db.insert(constructionSalesContractsTable)
     .values({
-      ...body,
+      ...insertBody,
       companyId,
+      unitId: unitIds[0] || null,
+      notes: writeContractUnitsNotes(body.notes, unitIds),
       remainingAmount,
       contractNumber,
       status: body.status || "draft",
@@ -819,22 +898,32 @@ router.post("/contracts-sales", async (req: AuthenticatedRequest, res): Promise<
     .returning();
 
   const unitStatus = body.unitStatus || "reserved";
-  if (body.unitId) {
-    const unitPatch: Record<string, unknown> = { status: unitStatus };
-    if (total > 0) unitPatch.totalPrice = String(total);
-    await db.update(constructionUnitsTable)
-      .set(unitPatch)
-      .where(and(eq(constructionUnitsTable.id, Number(body.unitId)), eq(constructionUnitsTable.companyId, companyId)));
+  if (unitIds.length > 0) {
+    await Promise.all(selectedUnits.map((unit) => {
+      const unitPatch: Record<string, unknown> = { status: unitStatus };
+      const unitTotal = approvedUnitTotal(unit);
+      if (unitTotal > 0) unitPatch.totalPrice = String(unitTotal);
+      return db.update(constructionUnitsTable)
+        .set(unitPatch)
+        .where(and(eq(constructionUnitsTable.id, unit.id), eq(constructionUnitsTable.companyId, companyId)));
+    }));
   }
 
-  res.json(row);
+  res.json(mapSalesContractResponse(row));
 });
 
 /** Оформление брони/продажи из шахматки: договор на утверждение + график */
 router.post("/contracts-sales/from-unit", async (req: AuthenticatedRequest, res): Promise<void> => {
   const companyId = req.scopedCompanyId!;
   const body = req.body;
-  const unitId = Number(body.unitId);
+  const unitIds: number[] = Array.from(
+    new Set(
+      (Array.isArray(body.unitIds) ? body.unitIds : [body.unitId])
+        .map((id: unknown) => Number(id))
+        .filter((id: number) => Number.isFinite(id) && id > 0),
+    ),
+  );
+  const unitId = unitIds[0];
   const projectId = Number(body.projectId);
 
   if (!unitId || !projectId) {
@@ -842,20 +931,27 @@ router.post("/contracts-sales/from-unit", async (req: AuthenticatedRequest, res)
     return;
   }
 
-  const [unit] = await db.select().from(constructionUnitsTable).where(
+  const units = await db.select().from(constructionUnitsTable).where(
     and(
-      eq(constructionUnitsTable.id, unitId),
+      inArray(constructionUnitsTable.id, unitIds),
       eq(constructionUnitsTable.companyId, companyId),
       eq(constructionUnitsTable.projectId, projectId),
     ),
   );
+  const unit = units.find((u) => u.id === unitId);
   if (!unit) {
     res.status(404).json({ error: "Квартира не найдена" });
     return;
   }
-  if (!unitIsSellable(unit)) {
-    res.status(403).json({ error: "Объект не опубликован коммерческим директором для продажи" });
+  if (units.length !== unitIds.length) {
+    res.status(404).json({ error: "Одно из выбранных помещений не найдено" });
     return;
+  }
+  for (const selectedUnit of units) {
+    if (!unitIsSellable(selectedUnit)) {
+      res.status(403).json({ error: "Объект не опубликован коммерческим директором для продажи" });
+      return;
+    }
   }
 
   const buyerName = String(body.buyerName || "").trim();
@@ -869,9 +965,9 @@ router.post("/contracts-sales/from-unit", async (req: AuthenticatedRequest, res)
     res.status(400).json({ error: "Укажите сумму договора" });
     return;
   }
-  const approvedTotal = parseFloat(String(unit.approvedTotalPrice || "0"));
-  if (approvedTotal > 0 && Math.abs(totalAmount - approvedTotal) > 1) {
-    res.status(400).json({ error: "Сумма договора должна совпадать с утверждённой коммерческой ценой" });
+  const approvedTotal = units.reduce((sum, selectedUnit) => sum + approvedUnitTotal(selectedUnit), 0);
+  if (approvedTotal > 0 && Math.abs(totalAmount - approvedTotal) > Math.max(1, unitIds.length)) {
+    res.status(400).json({ error: "Сумма договора должна совпадать с утверждённой коммерческой ценой выбранных помещений" });
     return;
   }
 
@@ -883,14 +979,16 @@ router.post("/contracts-sales/from-unit", async (req: AuthenticatedRequest, res)
   const existing = await db.select().from(constructionSalesContractsTable).where(
     and(
       eq(constructionSalesContractsTable.companyId, companyId),
-      eq(constructionSalesContractsTable.unitId, unitId),
       sql`status IN ('draft', 'review', 'signed')`,
     ),
   );
-  if (existing.length > 0) {
+  const existingLinked = existing.find((contract) =>
+    readContractUnitIds(contract).some((linkedUnitId) => unitIds.includes(linkedUnitId)),
+  );
+  if (existingLinked) {
     res.status(409).json({
-      error: "По этой квартире уже есть активный договор",
-      contractId: existing[0].id,
+      error: "По одному из выбранных помещений уже есть активный договор",
+      contractId: existingLinked.id,
     });
     return;
   }
@@ -979,7 +1077,7 @@ router.post("/contracts-sales/from-unit", async (req: AuthenticatedRequest, res)
           exchangeRate: body.exchangeRate ? String(body.exchangeRate) : "1",
           contractDate,
           status: "review",
-          notes: body.notes || null,
+          notes: writeContractUnitsNotes(body.notes, unitIds),
           contractNumber,
         })
         .returning();
@@ -987,11 +1085,17 @@ router.post("/contracts-sales/from-unit", async (req: AuthenticatedRequest, res)
       await tx.update(constructionUnitsTable)
         .set({
           status: unitStatus,
-          totalPrice: String(totalAmount),
-          buyerId: buyerId || body.buyerId || null,
+          buyerId: buyerId ?? null,
           contractDate,
         })
-        .where(and(eq(constructionUnitsTable.id, unitId), eq(constructionUnitsTable.companyId, companyId)));
+        .where(and(inArray(constructionUnitsTable.id, unitIds), eq(constructionUnitsTable.companyId, companyId)));
+      await Promise.all(units.map((selectedUnit) => {
+        const unitTotal = approvedUnitTotal(selectedUnit);
+        if (unitTotal <= 0) return Promise.resolve();
+        return tx.update(constructionUnitsTable)
+          .set({ totalPrice: String(unitTotal) })
+          .where(and(eq(constructionUnitsTable.id, selectedUnit.id), eq(constructionUnitsTable.companyId, companyId)));
+      }));
 
       const accrualsInserted = await insertAccrualsFromSchedule(companyId, contractInserted, schedule, tx);
       return { contract: contractInserted, accruals: accrualsInserted };

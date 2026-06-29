@@ -6,6 +6,7 @@ type ContractDate = { day: string; month: string; year: string };
 type Props = {
 	buyer: ContractBuyer;
 	office: ContractOffice;
+	offices?: ContractOffice[];
 	contractDate: ContractDate;
 	citizenship: string;
 	pronoun: string;
@@ -25,12 +26,15 @@ function H({ children }: { children: ReactNode }) {
 export function ContractPreviewDocument({
 	buyer,
 	office,
+	offices = [office],
 	contractDate,
 	citizenship,
 	pronoun,
 }: Props) {
 	const floorLabel = office.floor ? `${office.floor}` : "—";
 	const blockLabel = office.block ? `Блок ${office.block}` : "Блок";
+	const visibleOffices = offices.length ? offices : [office];
+	const multipleOffices = visibleOffices.length > 1;
 
 	return (
 		<>
@@ -91,6 +95,20 @@ export function ContractPreviewDocument({
 				строящегося здания, в котором расположен Офис, в эксплуатацию и
 				оформления на Офис всех необходимых правоустанавливающих документов.
 			</p>
+			{multipleOffices && (
+				<>
+					<p style={p({ fontWeight: "bold" })}>
+						1.3. Перечень помещений, входящих в предмет настоящего Договора:
+					</p>
+					{visibleOffices.map((item, idx) => (
+						<p key={`${item.number}-${idx}`} style={p({ marginLeft: "1rem" })}>
+							{idx + 1}. кабинет № <H>{item.number || "—"}</H>,{" "}
+							{item.floor || "—"} этаж, {item.block ? `Блок ${item.block}` : "Блок —"},{" "}
+							площадь <H>{item.area || "—"}</H> кв.м.
+						</p>
+					))}
+				</>
+			)}
 
 			<p style={p({ fontWeight: "bold" })}>2. ЦЕНА И ПОРЯДОК РАСЧЁТОВ:</p>
 			<p style={p()}>

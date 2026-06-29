@@ -106,6 +106,24 @@ const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth, requireTenantCompany, requireEnabledModule("construction"));
 
+function readSalesContractUnitIds(row: Pick<typeof constructionSalesContractsTable.$inferSelect, "unitId" | "notes">): number[] {
+  const ids = new Set<number>();
+  if (row.unitId) ids.add(Number(row.unitId));
+  const match = (row.notes || "").match(/\[PLANALITYC_CONTRACT_UNITS\]([\s\S]*?)\[\/PLANALITYC_CONTRACT_UNITS\]/);
+  if (match?.[1]) {
+    try {
+      const parsed = JSON.parse(match[1]) as { unitIds?: unknown[] };
+      for (const id of parsed.unitIds || []) {
+        const n = Number(id);
+        if (Number.isFinite(n) && n > 0) ids.add(n);
+      }
+    } catch {
+      /* ignore malformed legacy notes */
+    }
+  }
+  return Array.from(ids);
+}
+
 function canApproveUnitPricing(role: string | undefined): boolean {
   return ["super_admin", "admin", "company_admin", "owner", "commercial_director"].includes(role || "");
 }
@@ -425,7 +443,9 @@ router.get("/projects/:id/units", async (req: AuthenticatedRequest, res): Promis
   const contractByUnit = new Map<number, typeof contracts[0]>();
   for (const c of contracts) {
     if (!c.unitId || c.status === "cancelled") continue;
-    if (!contractByUnit.has(c.unitId)) contractByUnit.set(c.unitId, c);
+    for (const linkedUnitId of readSalesContractUnitIds(c)) {
+      if (!contractByUnit.has(linkedUnitId)) contractByUnit.set(linkedUnitId, c);
+    }
   }
 
   let result = units.map((u) => {
@@ -2466,7 +2486,9 @@ router.get("/units/overview", async (req: AuthenticatedRequest, res): Promise<vo
   const contractByUnit = new Map<number, typeof contracts[0]>();
   for (const c of contracts) {
     if (!c.unitId || c.status === "cancelled") continue;
-    if (!contractByUnit.has(c.unitId)) contractByUnit.set(c.unitId, c);
+    for (const linkedUnitId of readSalesContractUnitIds(c)) {
+      if (!contractByUnit.has(linkedUnitId)) contractByUnit.set(linkedUnitId, c);
+    }
   }
 
   res.json(

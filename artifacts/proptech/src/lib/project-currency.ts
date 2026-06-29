@@ -42,10 +42,26 @@ export function convertProjectAmount(
 	return amount;
 }
 
+/**
+ * Эффективный курс «1 USD = N сом».
+ * Если в проекте сохранён некорректный курс (≤1 при USD), используем fallback (НБКР).
+ */
+export function resolveProjectUsdRate(
+	projectExchangeRate?: string | number | null,
+	fallbackUsdRate = 0,
+): number {
+	const stored = parseFloat(String(projectExchangeRate || "0"));
+	if (Number.isFinite(stored) && stored > 1) return stored;
+	if (fallbackUsdRate > 1) return fallbackUsdRate;
+	return Number.isFinite(stored) && stored > 0 ? stored : 1;
+}
+
 /** Сколько KGS в 1 USD для хранимых в проекте USD-сумм. */
-function projectUsdToKgsRate(exchangeRate?: string | number | null) {
-	const rate = parseFloat(String(exchangeRate || "0"));
-	return Number.isFinite(rate) && rate > 0 ? rate : 0;
+function projectUsdToKgsRate(
+	exchangeRate?: string | number | null,
+	fallbackUsdRate = 0,
+) {
+	return resolveProjectUsdRate(exchangeRate, fallbackUsdRate);
 }
 
 /** Приводит сумму в валюте проекта к KGS. */
@@ -53,12 +69,27 @@ export function projectAmountToKgs(
 	amount: number,
 	fromCurrency = "KGS",
 	projectExchangeRate?: string | number | null,
+	fallbackUsdRate = 0,
 ) {
 	if (!Number.isFinite(amount)) return 0;
 	const from = fromCurrency || "KGS";
 	if (from === "KGS") return amount;
-	const rate = projectUsdToKgsRate(projectExchangeRate);
+	const rate = projectUsdToKgsRate(projectExchangeRate, fallbackUsdRate);
 	return rate > 0 ? amount * rate : amount;
+}
+
+/** KGS → валюта проекта (для фактических расходов, хранимых в сомах). */
+export function kgsToProjectCurrency(
+	kgs: number,
+	projectCurrency = "KGS",
+	projectExchangeRate?: string | number | null,
+	fallbackUsdRate = 0,
+) {
+	if (!Number.isFinite(kgs)) return 0;
+	const currency = projectCurrency || "KGS";
+	if (currency === "KGS") return kgs;
+	const rate = projectUsdToKgsRate(projectExchangeRate, fallbackUsdRate);
+	return rate > 0 ? kgs / rate : kgs;
 }
 
 /** KGS → валюта отображения (курс НБКР или ручной override). */
@@ -87,7 +118,8 @@ export function convertProjectAmountForDisplay(
 	if (!Number.isFinite(amount)) return 0;
 	const from = fromCurrency || "KGS";
 	if (from === displayCurrency) return amount;
-	const kgs = projectAmountToKgs(amount, from, projectExchangeRate);
+	const fallback = displayUsdRate > 0 ? displayUsdRate : 0;
+	const kgs = projectAmountToKgs(amount, from, projectExchangeRate, fallback);
 	return kgsToProjectDisplay(kgs, displayCurrency, displayUsdRate);
 }
 

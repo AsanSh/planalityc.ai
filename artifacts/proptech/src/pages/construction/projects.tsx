@@ -13,7 +13,7 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ProjectDisplayCurrencyControls } from "@/components/project-display-currency-controls";
@@ -47,11 +47,14 @@ import {
 	convertProjectAmountForDisplay,
 	currencySymbol,
 	fmtProjectAmount,
+	kgsToProjectCurrency,
 	projectCostBreakdown,
 	projectCostInCurrency,
 	projectCostLabel,
+	resolveProjectUsdRate,
 } from "@/lib/project-currency";
 import { useProjectDisplayCurrency } from "@/hooks/use-project-display-currency";
+import { type NbkrResponse, unitInKgs } from "@/lib/nbkr-currency";
 import { unwrapList } from "@/lib/unwrap-list";
 
 const BUILD_TYPES = [
@@ -195,8 +198,18 @@ function ProjectDialog({
 		queryFn: () => api.get("/legal-entities").then((r) => r.data),
 	});
 	const legalEntities = legalEntitiesRaw.filter((entity) => entity.isActive !== false);
+	const { data: nbkr } = useQuery<NbkrResponse>({
+		queryKey: ["nbkr-rates"],
+		queryFn: () => api.get("/nbkr/rates").then((r) => r.data),
+		staleTime: 60 * 60 * 1000,
+	});
+	const nbkrUsdRate = useMemo(
+		() => unitInKgs("USD", nbkr?.rates || {}),
+		[nbkr?.rates],
+	);
 	const isEdit = project && project !== "new";
 	const init = isEdit ? (project as Project) : null;
+	const [exchangeRateManual, setExchangeRateManual] = useState(false);
 	const [form, setForm] = useState(() => {
 		if (prefill) {
 			const { documentMeta: _dm, ...rest } = prefill;
@@ -249,6 +262,17 @@ function ProjectDialog({
 	}, [prefill]);
 
 	useEffect(() => {
+		if (form.currency !== "USD" || exchangeRateManual) return;
+		if (form.exchangeRateSource === "manual") return;
+		if (form.exchangeRateSource !== "nbkr" || nbkrUsdRate <= 0) return;
+		setForm((prev) => {
+			const current = parseFloat(prev.exchangeRate || "0");
+			if (current > 1 && Math.abs(current - nbkrUsdRate) < 0.0001) return prev;
+			return { ...prev, exchangeRate: String(nbkrUsdRate) };
+		});
+	}, [form.currency, form.exchangeRateSource, nbkrUsdRate, exchangeRateManual]);
+
+	useEffect(() => {
 		if (form.legalEntityId || !legalEntities[0]) return;
 		set("legalEntityId", String(legalEntities[0].id));
 	}, [form.legalEntityId, legalEntities]);
@@ -264,7 +288,7 @@ function ProjectDialog({
 	const areaStr = form.totalConstructionArea || form.totalArea || "0";
 	const area = parseFloat(areaStr);
 	const cps = parseFloat(form.costPerSqm || "0");
-	const rate = parseFloat(form.exchangeRate || "1");
+	const rate = resolveProjectUsdRate(form.exchangeRate, nbkrUsdRate);
 	const estimatedLocal = area * cps;
 	const estimatedKgs =
 		form.currency === "KGS" ? estimatedLocal : estimatedLocal * rate;
@@ -286,6 +310,8 @@ function ProjectDialog({
 		setLoading(true);
 		try {
 			// Подготовка данных - конвертация строк в числа
+			const saveRate =
+				form.currency === "KGS" ? 1 : resolveProjectUsdRate(form.exchangeRate, nbkrUsdRate);
 			const payload = {
 				...form,
 				totalFloors: form.totalFloors ? parseInt(form.totalFloors, 10) : null,
@@ -294,8 +320,8 @@ function ProjectDialog({
 				totalConstructionArea: form.totalConstructionArea ? parseFloat(form.totalConstructionArea) : null,
 				totalSaleableArea: form.totalSaleableArea ? parseFloat(form.totalSaleableArea) : null,
 				costPerSqm: form.costPerSqm ? parseFloat(form.costPerSqm) : null,
-				exchangeRate: form.exchangeRate ? parseFloat(form.exchangeRate) : 1,
-				totalBudget: estimatedKgs,
+				exchangeRate: saveRate,
+				totalBudget: form.currency === "KGS" ? estimatedLocal : estimatedLocal * saveRate,
 				documentMeta: documentMeta || undefined,
 			};
 
@@ -564,7 +590,15 @@ function ProjectDialog({
 										}
 										onClick={() => {
 											set("currency", currency);
-											if (currency === "KGS") set("exchangeRate", "1");
+											if (currency === "KGS") {
+												set("exchangeRate", "1");
+												setExchangeRateManual(false);
+											} else {
+												setExchangeRateManual(false);
+												if (nbkrUsdRate > 0) {
+													set("exchangeRate", String(nbkrUsdRate));
+												}
+											}
 										}}
 									>
 										{currency === "KGS" ? "Сом (KGS)" : "Доллар (USD)"}
@@ -593,7 +627,10 @@ function ProjectDialog({
 										<Label>Источник курса</Label>
 										<Select
 											value={form.exchangeRateSource}
-											onValueChange={(v) => set("exchangeRateSource", v)}
+											onValueChange={(v) => {
+												set("exchangeRateSource", v);
+												setExchangeRateManual(false);
+											}}
 										>
 											<SelectTrigger className="mt-1">
 												<SelectValue />
@@ -615,7 +652,10 @@ function ProjectDialog({
 											min="0"
 											step="0.0001"
 											value={form.exchangeRate}
-											onChange={(e) => set("exchangeRate", e.target.value)}
+											onChange={(e) => {
+												setExchangeRateManual(true);
+												set("exchangeRate", e.target.value);
+											}}
 											placeholder="88.5"
 										/>
 									</div>
@@ -1029,25 +1069,9 @@ export default function ConstructionProjects() {
 			) : (
 				<div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
 					{filtered.map((p) => {
-						const projectCurrency = p.currency || "KGS";
-						const cost = projectCostInCurrency(p);
-						const displayCostTotal = convertProjectAmountForDisplay(
-							cost.total,
-							projectCurrency,
-							displayCurrency,
-							p.exchangeRate,
-							displayUsdRate,
-						);
-						const sym = currencySymbol(displayCurrency);
-						const rateLabel =
-							displayCurrency !== projectCurrency && displayUsdRate > 0
-								? ` · курс ${displayRateLabel}`
-								: "";
 						const meta = parseDocumentMeta(p.documentMeta);
 						const templateMeta = parseContractTemplateMeta(p.contractTemplateMeta);
-
 						const summary = summariesMap.get(p.id);
-						// Ручные значения из проекта имеют приоритет над вычисленными из юнитов
 						const manualConstructionArea = parseFloat(p.totalConstructionArea || "0");
 						const manualSaleableArea = parseFloat(p.totalSaleableArea || "0");
 						const totalConstructionArea =
@@ -1059,25 +1083,47 @@ export default function ConstructionProjects() {
 								? manualSaleableArea
 								: (summary?.totalSaleableArea ?? totalConstructionArea);
 						const totalSpent = summary?.totalSpent ?? 0;
+
+						const projectCurrency = p.currency || "KGS";
+						const cost = projectCostInCurrency(p);
+						const usdRate = resolveProjectUsdRate(p.exchangeRate, displayUsdRate);
+						const cardSym = currencySymbol(projectCurrency);
+						const cardCostTotal = cost.total;
 						const plannedCostPerSqmRaw = parseFloat(p.costPerSqm || "0");
-						const plannedCostPerSqm = convertProjectAmountForDisplay(
-							plannedCostPerSqmRaw,
-							projectCurrency,
-							displayCurrency,
-							p.exchangeRate,
-							displayUsdRate,
-						);
-						const actualCostPerSqmRaw =
+						const plannedCostPerSqm = plannedCostPerSqmRaw;
+						const actualCostPerSqmKgs =
 							totalConstructionArea > 0
 								? totalSpent / totalConstructionArea
 								: summary?.actualCostPerSqm ?? 0;
-						const actualCostPerSqm = convertProjectAmountForDisplay(
-							actualCostPerSqmRaw,
-							"KGS",
-							displayCurrency,
+						const actualCostPerSqm = kgsToProjectCurrency(
+							actualCostPerSqmKgs,
+							projectCurrency,
 							p.exchangeRate,
 							displayUsdRate,
 						);
+						const totalSpentInProjectCurrency = kgsToProjectCurrency(
+							totalSpent,
+							projectCurrency,
+							p.exchangeRate,
+							displayUsdRate,
+						);
+						const altCostTotal =
+							displayCurrency !== projectCurrency
+								? convertProjectAmountForDisplay(
+										cost.total,
+										projectCurrency,
+										displayCurrency,
+										p.exchangeRate,
+										displayUsdRate,
+									)
+								: null;
+						const altSym = currencySymbol(displayCurrency);
+						const rateHint =
+							projectCurrency === "USD" && usdRate > 1
+								? ` · курс 1 USD = ${new Intl.NumberFormat("ru-RU", {
+										maximumFractionDigits: 2,
+									}).format(usdRate)} сом`
+								: "";
 						const fmtArea = (value: number) =>
 							value > 0
 								? value.toLocaleString("ru-KG", {
@@ -1217,19 +1263,27 @@ export default function ConstructionProjects() {
 									</div>
 
 									<div className="space-y-3 p-4">
-									{displayCostTotal > 0 && (
+									{cardCostTotal > 0 && (
 											<div className="rounded-[24px] border border-amber-200/90 bg-gradient-to-br from-amber-50 via-white to-cyan-50 p-4 shadow-inner">
 												<p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">
-												{projectCostLabel(displayCurrency)}
+												{projectCostLabel(projectCurrency)}
 											</p>
 												<p className="mt-2 text-2xl font-black text-slate-950">
-												{fmtProjectAmount(displayCostTotal)} {sym}
+												{fmtProjectAmount(cardCostTotal)} {cardSym}
 											</p>
 											{totalConstructionArea > 0 && plannedCostPerSqm > 0 && (
 												<p className="mt-1 text-sm text-orange-600">
 													{fmtProjectAmount(totalConstructionArea)} м² ×{" "}
-													{fmtProjectAmount(plannedCostPerSqm)} {sym}
-													{rateLabel}
+													{fmtProjectAmount(plannedCostPerSqm)} {cardSym}
+													{rateHint}
+												</p>
+											)}
+											{altCostTotal != null && altCostTotal > 0 && (
+												<p className="mt-1 text-xs text-slate-500">
+													≈ {fmtProjectAmount(altCostTotal)} {altSym}
+													{displayCurrency !== projectCurrency &&
+														displayUsdRate > 0 &&
+														` · ${displayRateLabel}`}
 												</p>
 											)}
 										</div>
@@ -1247,7 +1301,7 @@ export default function ConstructionProjects() {
 														</span>
 														<span className="text-base font-black text-slate-900">
 															{plannedCostPerSqm > 0
-																? `${fmtProjectAmount(plannedCostPerSqm)} ${sym}/м²`
+																? `${fmtProjectAmount(plannedCostPerSqm)} ${cardSym}/м²`
 																: "—"}
 														</span>
 													</div>
@@ -1257,23 +1311,15 @@ export default function ConstructionProjects() {
 														</span>
 														<span className={`text-base font-black ${actualCostPerSqm > 0 ? "text-orange-600" : "text-slate-400"}`}>
 															{actualCostPerSqm > 0
-																? `${fmtProjectAmount(actualCostPerSqm)} ${sym}/м²`
+																? `${fmtProjectAmount(actualCostPerSqm)} ${cardSym}/м²`
 																: "—"}
 														</span>
 													</div>
 													{totalSpent > 0 && (
 														<p className="text-xs text-slate-400">
 															Потрачено:{" "}
-															{fmtProjectAmount(
-																convertProjectAmountForDisplay(
-																	totalSpent,
-																	"KGS",
-																	displayCurrency,
-																	p.exchangeRate,
-																	displayUsdRate,
-																),
-															)}{" "}
-															{sym}
+															{fmtProjectAmount(totalSpentInProjectCurrency)}{" "}
+															{cardSym}
 															{totalConstructionArea > 0 &&
 																` · ${fmtArea(totalConstructionArea)} м²`}
 														</p>

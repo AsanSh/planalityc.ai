@@ -114,6 +114,27 @@ function canImportUnits(role: string | undefined): boolean {
   return ["super_admin", "admin", "company_admin", "pto", "engineer", "commercial_director"].includes(role || "");
 }
 
+/** Площадь для расчёта себестоимости: строительная площадь приоритетнее totalArea. */
+function projectCostArea(body: { totalConstructionArea?: unknown; totalArea?: unknown }): number {
+  const construction = parseFloat(String(body.totalConstructionArea ?? "0"));
+  if (construction > 0) return construction;
+  return parseFloat(String(body.totalArea ?? "0"));
+}
+
+function estimatedProjectCostKgs(body: {
+  totalConstructionArea?: unknown;
+  totalArea?: unknown;
+  costPerSqm?: unknown;
+  currency?: string;
+  exchangeRate?: unknown;
+}): number {
+  const area = projectCostArea(body);
+  const costPerSqm = parseFloat(String(body.costPerSqm ?? "0"));
+  const exchangeRate = parseFloat(String(body.exchangeRate ?? "1")) || 1;
+  if (area <= 0 || costPerSqm <= 0) return 0;
+  return area * costPerSqm * (body.currency === "KGS" ? 1 : exchangeRate);
+}
+
 /** Карта русских названий типов → коды в БД */
 const UNIT_TYPE_RU_MAP: Record<string, string> = {
   квартира: "apartment",
@@ -218,7 +239,7 @@ router.post("/projects", async (req: AuthenticatedRequest, res): Promise<void> =
   const totalArea = parseFloat(body.totalArea || "0");
   const costPerSqm = parseFloat(body.costPerSqm || "0");
   const exchangeRate = parseFloat(body.exchangeRate || "1");
-  const estimatedCostKgs = totalArea * costPerSqm * (body.currency === "KGS" ? 1 : exchangeRate);
+  const estimatedCostKgs = estimatedProjectCostKgs(body);
   let legalEntityId: number | null;
   try {
     legalEntityId = await resolveCompanyLegalEntityId(req.scopedCompanyId!, body.legalEntityId);
@@ -455,7 +476,7 @@ router.patch("/projects/:id", async (req: AuthenticatedRequest, res): Promise<vo
   const totalArea = parseFloat(body.totalArea || "0");
   const costPerSqm = parseFloat(body.costPerSqm || "0");
   const exchangeRate = parseFloat(body.exchangeRate || "1");
-  const estimatedCostKgs = totalArea * costPerSqm * (body.currency === "KGS" ? 1 : exchangeRate);
+  const estimatedCostKgs = estimatedProjectCostKgs(body);
   let legalEntityPatch: { legalEntityId?: number | null } = {};
   if (body.legalEntityId !== undefined) {
     try {

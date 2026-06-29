@@ -691,8 +691,8 @@ function getModuleEntryHref(mod: Module): string {
 	return mod.sections[0]?.items[0]?.href || "/dashboard";
 }
 
-function isPinnedOpenSection(moduleId: ModuleId, sectionTitle: string): boolean {
-	return moduleId === "rental" && ["Аренда", "Финансы", "Аналитика"].includes(sectionTitle);
+function defaultOpenSections(moduleId: ModuleId): string[] {
+	return moduleId === "rental" ? ["Аренда", "Финансы", "Аналитика"] : [];
 }
 
 function detectModule(path: string): ModuleId {
@@ -868,7 +868,14 @@ export function Layout({ children }: { children: ReactNode }) {
 	const [createOpen, setCreateOpen] = useState(false);
 	const [mobileModuleOpen, setMobileModuleOpen] = useState(false);
 	const [mobileNavOpen, setMobileNavOpen] = useState(false);
-	const [openSectionTitle, setOpenSectionTitle] = useState<string | null>(null);
+	const [openSections, setOpenSections] = useState<Set<string>>(new Set());
+	const toggleSection = (title: string) =>
+		setOpenSections((prev) => {
+			const next = new Set(prev);
+			if (next.has(title)) next.delete(title);
+			else next.add(title);
+			return next;
+		});
 	const { open: commandOpen, setOpen: setCommandOpen } = useCommandPalette();
 	useFinanceHotkeys(!!user);
 	const createRef = useRef<HTMLDivElement>(null);
@@ -990,6 +997,11 @@ export function Layout({ children }: { children: ReactNode }) {
 			.filter((section) => section.items.length > 0);
 	}, [activeModule, user, isAdminUser]);
 
+	// On module switch, reset to that module's default-open sections.
+	useEffect(() => {
+		setOpenSections(new Set(defaultOpenSections(activeModule.id)));
+	}, [activeModule.id]);
+
 	useEffect(() => {
 		const activeSection = navSections.find((section) =>
 			section.items.some((item) => {
@@ -1003,7 +1015,9 @@ export function Layout({ children }: { children: ReactNode }) {
 				return navItemMatches(pathWithSearch, href);
 			}),
 		);
-		setOpenSectionTitle(activeSection?.title ?? navSections[0]?.title ?? null);
+		// Ensure the section for the current page is open; keep manual toggles.
+		const t = activeSection?.title ?? navSections[0]?.title;
+		if (t) setOpenSections((prev) => (prev.has(t) ? prev : new Set(prev).add(t)));
 		// Sync the sidebar only when navigation context changes. Manual section
 		// toggles should not be immediately overwritten by array identity changes.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1117,12 +1131,10 @@ export function Layout({ children }: { children: ReactNode }) {
 							role={role}
 							permissions={permissions}
 							allowedModules={allowedModules}
-							open={isPinnedOpenSection(activeModule.id, section.title) || openSectionTitle === section.title}
+							open={openSections.has(section.title)}
 							collapsed={sidebarCollapsed}
 							onToggle={() =>
-								setOpenSectionTitle((current) =>
-									current === section.title ? null : section.title,
-								)
+								toggleSection(section.title)
 							}
 						/>
 					))}
@@ -1433,8 +1445,7 @@ export function Layout({ children }: { children: ReactNode }) {
 								const bestMatch = matchingItems.sort(
 									(a, b) => b.href.length - a.href.length,
 								)[0];
-								const pinnedOpen = isPinnedOpenSection(activeModule.id, section.title);
-								const open = pinnedOpen || openSectionTitle === section.title;
+								const open = openSections.has(section.title);
 
 								return (
 									<div
@@ -1448,9 +1459,7 @@ export function Layout({ children }: { children: ReactNode }) {
 									>
 										<button
 											type="button"
-											onClick={() => {
-												if (!pinnedOpen) setOpenSectionTitle(section.title);
-											}}
+											onClick={() => toggleSection(section.title)}
 											className={cn(
 												"am-nav-section-button flex w-full items-center justify-between gap-3 text-left uppercase transition-colors",
 												open || bestMatch

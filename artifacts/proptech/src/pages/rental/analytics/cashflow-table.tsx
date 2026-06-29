@@ -96,7 +96,7 @@ export function CashflowMonthTable({
 	);
 
 	return (
-		<DataTable
+		<DataTable maxHeight="calc(100vh - 320px)"
 			tableId="rental-cashflow-months"
 			columns={columns}
 			data={rows}

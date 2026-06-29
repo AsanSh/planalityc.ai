@@ -690,7 +690,7 @@ export default function Leads() {
 				</div>
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="crm-leads"
 				columns={columns}
 				data={filteredLeads}

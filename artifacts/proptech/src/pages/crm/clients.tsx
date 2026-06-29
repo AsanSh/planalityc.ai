@@ -894,7 +894,7 @@ export default function Clients() {
 				договорами, контактами и историей.
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="crm-clients"
 				columns={columns}
 				data={clients}

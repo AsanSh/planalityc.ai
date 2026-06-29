@@ -205,7 +205,7 @@ export default function SalesProperties() {
 				</Button>
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="crm-sales-properties"
 				columns={columns}
 				data={salesPropertiesArray}

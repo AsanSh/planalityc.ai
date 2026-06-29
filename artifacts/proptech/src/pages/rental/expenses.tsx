@@ -468,7 +468,7 @@ export default function Expenses() {
 			</div>
 
 			<RentalQueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 					tableId="rental-expenses"
 					columns={tableColumns}
 					data={enriched}

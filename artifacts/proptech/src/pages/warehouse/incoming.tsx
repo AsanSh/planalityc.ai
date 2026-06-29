@@ -447,7 +447,7 @@ export default function IncomingOperations() {
 				</div>
 			)}
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="warehouse-incoming"
 				columns={columns}
 				data={filteredOperations}

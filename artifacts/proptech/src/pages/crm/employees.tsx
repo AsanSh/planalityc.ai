@@ -235,7 +235,7 @@ export default function CrmEmployees() {
 				</div>
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="crm-employees"
 				columns={columns}
 				data={crmUsers}

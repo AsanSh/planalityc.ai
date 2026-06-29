@@ -253,7 +253,7 @@ export default function RentalHistory() {
 				</span>
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="rental-payment-history"
 				columns={columns}
 				data={filtered}

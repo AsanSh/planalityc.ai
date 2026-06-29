@@ -607,7 +607,7 @@ export default function SalesContracts() {
 				</Button>
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="crm-sales-contracts"
 				columns={columns}
 				data={filteredContracts}

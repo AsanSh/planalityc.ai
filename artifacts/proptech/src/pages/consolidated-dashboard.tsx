@@ -574,7 +574,7 @@ export default function ConsolidatedDashboard() {
 						</span>
 					</Link>
 				</div>
-				<DataTable
+				<DataTable maxHeight="calc(100vh - 320px)"
 					tableId="consolidated-dashboard-projects"
 					columns={projectColumns}
 					data={projectRows}

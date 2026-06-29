@@ -414,7 +414,7 @@ export default function Investors() {
 				))}
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="rental-investors"
 				columns={columns}
 				data={investorsArray}

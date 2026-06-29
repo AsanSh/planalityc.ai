@@ -471,7 +471,7 @@ export default function OutgoingOperations() {
 				</div>
 			)}
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="warehouse-outgoing"
 				columns={columns}
 				data={filteredOperations}

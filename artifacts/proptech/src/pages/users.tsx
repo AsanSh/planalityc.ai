@@ -230,7 +230,7 @@ export default function Users() {
 				</Button>
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="directory-users"
 				columns={columns}
 				data={rows}

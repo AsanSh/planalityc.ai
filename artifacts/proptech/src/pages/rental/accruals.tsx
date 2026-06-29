@@ -342,7 +342,7 @@ export default function Accruals() {
 				<LegalEntityScopeSelect />
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 					tableId="rental-accruals"
 					columns={tableColumns}
 					data={enrichedAccruals}

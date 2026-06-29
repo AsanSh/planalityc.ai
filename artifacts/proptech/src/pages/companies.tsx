@@ -121,7 +121,7 @@ export default function Companies() {
 				</Button>
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="directory-companies"
 				columns={columns}
 				data={rows}

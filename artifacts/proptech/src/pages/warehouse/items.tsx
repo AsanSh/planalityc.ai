@@ -547,7 +547,7 @@ export default function WarehouseItems() {
 				</Button>
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="warehouse-items"
 				columns={columns}
 				data={filteredItems}

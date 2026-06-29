@@ -615,7 +615,7 @@ export default function DirectionReportsPage() {
 						Загрузка…
 					</div>
 				) : (
-					<DataTable
+					<DataTable maxHeight="calc(100vh - 320px)"
 						tableId="counterparty-dashboard"
 						data={rows}
 						columns={ROW_COLUMNS}

@@ -930,7 +930,7 @@ export default function Suppliers() {
 				</div>
 			)}
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="warehouse-suppliers"
 				columns={columns}
 				data={filteredSuppliers}

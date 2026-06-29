@@ -381,7 +381,7 @@ export default function Deposits() {
 				</div>
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 					tableId="rental-deposits"
 					columns={tableColumns}
 					data={enriched}

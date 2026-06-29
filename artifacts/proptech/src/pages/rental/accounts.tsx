@@ -418,7 +418,7 @@ export default function RentalAccounts() {
 				</div>
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 					tableId="rental-accounts"
 					columns={tableColumns}
 					data={accounts}

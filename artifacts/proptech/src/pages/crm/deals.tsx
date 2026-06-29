@@ -622,7 +622,7 @@ export default function Deals() {
 			</div>
 
 			{viewMode === "table" && (
-				<DataTable
+				<DataTable maxHeight="calc(100vh - 320px)"
 					tableId="crm-deals"
 					columns={columns}
 					data={filteredDeals}

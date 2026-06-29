@@ -370,7 +370,7 @@ export default function OwnerStatements() {
 				)}
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 					tableId="rental-statements"
 					columns={tableColumns}
 					data={enrichedStatements}

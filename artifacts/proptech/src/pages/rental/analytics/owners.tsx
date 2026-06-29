@@ -205,7 +205,7 @@ export default function RentalOwners() {
 					</p>
 				</div>
 			) : (
-				<DataTable
+				<DataTable maxHeight="calc(100vh - 320px)"
 					tableId="rental-owners-report"
 					columns={ownerColumns}
 					data={showOwners}

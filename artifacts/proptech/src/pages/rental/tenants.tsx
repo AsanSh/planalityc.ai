@@ -408,7 +408,7 @@ export default function RentalTenants() {
 			</div>
 
 			<RentalQueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
-				<DataTable
+				<DataTable maxHeight="calc(100vh - 320px)"
 					tableId="rental-tenants"
 					columns={columns}
 					data={tenantsArray}

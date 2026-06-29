@@ -184,7 +184,7 @@ export default function Properties() {
 				</Button>
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="directory-properties"
 				columns={columns}
 				data={propertiesArray}

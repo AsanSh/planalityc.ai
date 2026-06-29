@@ -567,7 +567,7 @@ export default function Counterparties() {
 				</Button>
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="counterparties"
 				columns={columns}
 				data={filtered}

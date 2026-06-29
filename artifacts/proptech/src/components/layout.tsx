@@ -870,6 +870,49 @@ export function Layout({ children }: { children: ReactNode }) {
 				};
 			});
 		}
+		// Роль-фильтры: юрист и финансы видят только свой срез «Стройки» (Фаза 2)
+		const FIN_WL = [
+			"/dashboard?tab=construction",
+			"/construction/projects",
+			"/construction/accounts",
+			"/construction/operations",
+			"/construction/accruals",
+			"/construction/cashier",
+			"/construction/reconciliation",
+			"/construction/payroll",
+			"/construction/planning/approvals",
+			"/construction/analytics/cashflow",
+			"/construction/analytics/pnl",
+			"/construction/analytics/expenses",
+			"/construction/analytics/debt",
+			"/construction/planning/overdue",
+			"/construction/planning/forecast",
+			"/construction/budget",
+			"/construction/counterparties",
+		];
+		const ROLE_WL: Record<string, string[]> = {
+			lawyer: [
+				"/dashboard?tab=construction",
+				"/construction/projects",
+				"/construction/chess",
+				"/construction/contracts-sales",
+				"/construction/contractors",
+				"/construction/planning/approvals",
+				"/construction/counterparties",
+			],
+			finance: FIN_WL,
+			finance_director: FIN_WL,
+			financial_director: FIN_WL,
+			accountant: FIN_WL,
+			chief_accountant: FIN_WL,
+		};
+		const roleWl = userRole ? ROLE_WL[userRole] : undefined;
+		if (roleWl && activeModule.id === "construction" && !isAdminUser) {
+			sections = sections.map((s) => ({
+				...s,
+				items: s.items.filter((item) => roleWl.includes(item.href)),
+			}));
+		}
 		if (!isAdminUser) {
 			sections = sections.filter(
 				(s) =>

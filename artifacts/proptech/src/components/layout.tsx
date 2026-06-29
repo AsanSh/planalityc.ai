@@ -131,6 +131,7 @@ const MODULES: Module[] = [
 						{ href: "/construction/materials", label: "Материалы", icon: Package },
 						{ href: "/construction/contractors", label: "Подрядчики", icon: Briefcase },
 						{ href: "/construction/workers", label: "Бригады", icon: Hammer },
+						{ href: "/construction/planning/approvals", label: "Согласование", icon: CheckSquare },
 					],
 				},
 				{
@@ -142,7 +143,6 @@ const MODULES: Module[] = [
 						{ href: "/construction/cashier", label: "Приём платежей", icon: DollarSign },
 						{ href: "/construction/reconciliation", label: "Акт сверки", icon: Scale },
 						{ href: "/construction/payroll", label: "Зарплатная ведомость", icon: Banknote },
-						{ href: "/construction/planning/approvals", label: "Согласование", icon: CheckSquare },
 					],
 				},
 				{

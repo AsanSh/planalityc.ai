@@ -8,6 +8,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 export interface CashAccount {
@@ -19,6 +20,16 @@ export interface CashAccount {
 }
 
 type LegalEntity = { id: number; name: string };
+
+const EXCLUDED_KEY = "cashExcludedAccounts";
+
+function loadExcluded(): Set<string> {
+	try {
+		return new Set(JSON.parse(localStorage.getItem(EXCLUDED_KEY) || "[]"));
+	} catch {
+		return new Set();
+	}
+}
 
 function fmtMoney(n: number, currency: string): string {
 	const formatted = new Intl.NumberFormat("ru-RU", {
@@ -32,10 +43,12 @@ function fmtMoney(n: number, currency: string): string {
  * Сводный виджет «Деньги бизнеса»: общий итог в валюте по умолчанию,
  * по клику раскрывается панель со счетами, сгруппированными по ОсОО
  * (юр. лицам) с подытогами. Переключатель «По юр. лицам / Все счета».
- * Курсы валют — с НБКР (/nbkr/rates).
+ * Тумблер у каждого счёта включает/исключает его из итога (хранится
+ * локально). Курсы валют — с НБКР (/nbkr/rates).
  */
 export function CashSummary({ accounts }: { accounts: CashAccount[] }) {
 	const [byEntity, setByEntity] = useState(true);
+	const [excluded, setExcluded] = useState<Set<string>>(loadExcluded);
 
 	const { data: company } = useQuery({
 		queryKey: ["company-my"],
@@ -60,6 +73,23 @@ export function CashSummary({ accounts }: { accounts: CashAccount[] }) {
 		[accounts],
 	);
 
+	const isExcluded = (a: CashAccount) => excluded.has(String(a.id));
+
+	function toggle(a: CashAccount) {
+		setExcluded((prev) => {
+			const next = new Set(prev);
+			const k = String(a.id);
+			if (next.has(k)) next.delete(k);
+			else next.add(k);
+			try {
+				localStorage.setItem(EXCLUDED_KEY, JSON.stringify([...next]));
+			} catch {
+				/* ignore */
+			}
+			return next;
+		});
+	}
+
 	const toDefault = (a: CashAccount) =>
 		convertViaKgs(
 			parseFloat(String(a.currentBalance || "0")) || 0,
@@ -68,7 +98,10 @@ export function CashSummary({ accounts }: { accounts: CashAccount[] }) {
 			rates,
 		);
 
-	const total = list.reduce((sum, a) => sum + toDefault(a), 0);
+	const total = list.reduce(
+		(sum, a) => sum + (isExcluded(a) ? 0 : toDefault(a)),
+		0,
+	);
 
 	const groups = useMemo(() => {
 		const names = new Map<number, string>();
@@ -87,25 +120,44 @@ export function CashSummary({ accounts }: { accounts: CashAccount[] }) {
 				: "Без ОсОО";
 			const g = map.get(key) ?? { key, name, accounts: [], subtotal: 0 };
 			g.accounts.push(a);
-			g.subtotal += toDefault(a);
+			if (!excluded.has(String(a.id))) g.subtotal += toDefault(a);
 			map.set(key, g);
 		}
 		return Array.from(map.values()).sort((x, y) => y.subtotal - x.subtotal);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [list, legalRaw, rates, defaultCurrency]);
+	}, [list, legalRaw, rates, defaultCurrency, excluded]);
 
 	const renderAccount = (a: CashAccount) => {
+		const off = isExcluded(a);
 		const bal = parseFloat(String(a.currentBalance || "0")) || 0;
 		const showConverted = (a.currency || "KGS") !== defaultCurrency;
 		return (
 			<div
 				key={a.id}
-				className="flex items-center justify-between px-4 py-1.5 hover:bg-gray-50"
+				className="flex items-center gap-2.5 px-4 py-1.5 hover:bg-gray-50"
 			>
-				<span className="mr-2 truncate text-[13px] text-gray-600">{a.name}</span>
-				<span className="whitespace-nowrap text-right font-mono text-[13px] text-gray-900">
+				<Switch
+					checked={!off}
+					onCheckedChange={() => toggle(a)}
+					className="scale-90 data-[state=checked]:bg-emerald-500"
+					aria-label={off ? "Включить в итог" : "Исключить из итога"}
+				/>
+				<span
+					className={cn(
+						"mr-2 flex-1 truncate text-[13px]",
+						off ? "text-gray-400 line-through" : "text-gray-600",
+					)}
+				>
+					{a.name}
+				</span>
+				<span
+					className={cn(
+						"whitespace-nowrap text-right font-mono text-[13px]",
+						off ? "text-gray-400" : "text-gray-900",
+					)}
+				>
 					{fmtMoney(bal, a.currency || "KGS")}
-					{showConverted && (
+					{showConverted && !off && (
 						<span className="block text-[11px] text-gray-500">
 							≈ {fmtMoney(toDefault(a), defaultCurrency)}
 						</span>

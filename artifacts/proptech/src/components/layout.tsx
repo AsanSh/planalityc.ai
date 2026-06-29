@@ -69,6 +69,9 @@ import {
 import { PlanalitycLogo } from "@/components/brand/PlanalitycLogo";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import UserProfileDropdown from "@/components/user-profile-dropdown";
+import { CashSummary, type CashAccount } from "@/components/cash-summary";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { useModuleAccess } from "@/hooks/use-module-access";
 import { useAuth } from "@/lib/auth";
 import {
@@ -878,6 +881,12 @@ export function Layout({ children }: { children: ReactNode }) {
 		});
 	const { open: commandOpen, setOpen: setCommandOpen } = useCommandPalette();
 	useFinanceHotkeys(!!user);
+	const { data: allBankAccounts = [] } = useQuery<CashAccount[]>({
+		queryKey: ["bank-accounts-all"],
+		queryFn: () => api.get("/bank-accounts").then((r) => r.data),
+		enabled: !!user,
+		staleTime: 60 * 1000,
+	});
 	const createRef = useRef<HTMLDivElement>(null);
 	const moduleSwitcherRef = useRef<HTMLDivElement>(null);
 
@@ -1401,6 +1410,7 @@ export function Layout({ children }: { children: ReactNode }) {
 					)}
 
 					{/* Notifications */}
+					<div className="hidden lg:block"><CashSummary accounts={allBankAccounts} /></div>
 					<NotificationBell />
 					{/* <NotificationsPanel /> */}
 

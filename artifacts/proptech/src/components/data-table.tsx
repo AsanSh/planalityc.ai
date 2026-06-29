@@ -445,8 +445,10 @@ export function DataTable<T>({
 								{showRowIndex && (
 									<th
 										className={cn(
-											"border border-gray-300 text-center text-gray-500 font-semibold py-1.5 px-2 select-none sticky top-0 left-0 z-30 text-[11px] w-10",
-											isExcel && "border-slate-800 bg-slate-950 text-white/70 shadow-none",
+											"select-none sticky top-0 left-0 z-30 w-10 text-center text-[11px] font-semibold",
+											isExcel
+												? "border border-slate-800 bg-slate-950 px-2 py-1.5 text-white/70 shadow-none"
+												: "border-r border-slate-700/80 bg-slate-950 px-3 py-3 text-white/72 shadow-[12px_0_18px_-18px_rgba(15,23,42,0.7)]",
 										)}
 										style={{ width: 40 }}
 									>
@@ -469,7 +471,7 @@ export function DataTable<T>({
 												"relative select-none group/col",
 												isExcel
 													? "border border-slate-800/70 bg-slate-950 px-2 py-1.5 font-bold text-white/72 whitespace-nowrap text-[10px] uppercase tracking-[0.12em] sticky top-0 z-20"
-													: "px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.04em] text-muted-foreground whitespace-nowrap sticky top-0 z-20 bg-muted/40",
+													: "border-r border-slate-700/80 bg-slate-950 px-3 py-3 text-xs font-semibold uppercase tracking-[0.04em] text-white/72 whitespace-nowrap sticky top-0 z-20 last:border-r-0",
 												align === "right"
 													? "text-right"
 													: align === "center"

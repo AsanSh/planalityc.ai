@@ -1,8 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit2, Package, Plus, Trash2 } from "lucide-react";
+import { Banknote, CheckCircle2, Edit2, Package, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table";
+import { KpiCard, KpiRow } from "@/components/kpi-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -464,26 +465,29 @@ export default function ConstructionMaterials() {
 				</Button>
 			</div>
 
-			<div className="am-kpi-grid">
-				<div className="am-kpi-card">
-					<p className="text-xs text-gray-500 mb-1">Позиций</p>
-					<p className="text-2xl font-bold text-amber-600">
-						{materials.length}
-					</p>
-				</div>
-				<div className="am-kpi-card">
-					<p className="text-xs text-gray-500 mb-1">Доставлено</p>
-					<p className="text-2xl font-bold text-emerald-600">
-						{materials.filter((m) => m.status === "delivered").length}
-					</p>
-				</div>
-				<div className="am-kpi-card">
-					<p className="text-xs text-gray-500 mb-1">Общая сумма</p>
-					<p className="text-xl font-bold text-blue-600">
-						{fmtNum(totalCost)} сом
-					</p>
-				</div>
-			</div>
+			<KpiRow cols={3}>
+				<KpiCard
+					variant="strip"
+					label="Позиций"
+					value={materials.length}
+					icon={Package}
+					color="blue"
+				/>
+				<KpiCard
+					variant="strip"
+					label="Доставлено"
+					value={materials.filter((m) => m.status === "delivered").length}
+					icon={CheckCircle2}
+					color="green"
+				/>
+				<KpiCard
+					variant="strip"
+					label="Общая сумма"
+					value={`${fmtNum(totalCost)} сом`}
+					icon={Banknote}
+					color="purple"
+				/>
+			</KpiRow>
 
 			<div className="flex gap-2 flex-wrap">
 				<button

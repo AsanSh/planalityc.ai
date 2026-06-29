@@ -1,20 +1,44 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
 	AlertCircle,
+	Bell,
 	Building2,
 	CheckCircle,
+	ChevronRight,
+	Clock,
 	CreditCard,
 	Download,
 	FileText,
 	Home,
 	LogOut,
+	Megaphone,
+	MessageCircle,
+	Phone,
 	Printer,
+	Send,
+	Settings,
 	Share2,
 	Wallet,
+	Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { ClientPortalExperience } from "@/components/client-portal-experience";
+import {
+	getPortalContentItems,
+	isContentVisibleForAudience,
+	PORTAL_CONTENT_QUERY_KEY,
+} from "@/lib/client-portal";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -74,6 +98,23 @@ const STATUS_LABELS: Record<string, string> = {
 	completed: "Завершён",
 };
 
+const SCHEDULE_STATUS: Record<string, { label: string; cls: string; row: string }> = {
+	paid: { label: "Оплачено", cls: "bg-emerald-100 text-emerald-700 border-emerald-200", row: "bg-emerald-50/40" },
+	partial: { label: "Частично", cls: "bg-amber-100 text-amber-700 border-amber-200", row: "bg-amber-50/30" },
+	overdue: { label: "Просрочено", cls: "bg-rose-100 text-rose-700 border-rose-200", row: "bg-rose-50/40" },
+	pending: { label: "Ожидается", cls: "bg-gray-100 text-gray-600 border-gray-200", row: "" },
+};
+
+// Эффективный статус строки графика: оплачено / частично / просрочено / ожидается
+function scheduleStatusOf(a: { status?: string; amount?: unknown; paidAmount?: unknown; dueDate?: string }) {
+	const amount = parseFloat(String(a.amount ?? 0));
+	const paid = parseFloat(String(a.paidAmount ?? 0));
+	if (a.status === "paid" || (amount > 0 && paid >= amount)) return "paid";
+	if (paid > 0) return "partial";
+	if (a.dueDate && new Date(a.dueDate).getTime() < Date.now()) return "overdue";
+	return "pending";
+}
+
 export default function BuyerPortal({ previewBuyerId }: { previewBuyerId?: number } = {}) {
 	const { user, logout } = useAuth();
 	const { toast } = useToast();
@@ -91,6 +132,63 @@ export default function BuyerPortal({ previewBuyerId }: { previewBuyerId?: numbe
 		refetchOnWindowFocus: false,
 		retry: 1,
 	});
+
+	// Объявления/уведомления портала
+	const { data: announcements = [] } = useQuery({
+		queryKey: PORTAL_CONTENT_QUERY_KEY,
+		queryFn: () => getPortalContentItems(),
+	});
+	const buyerNews = useMemo(
+		() => announcements.filter((i) => isContentVisibleForAudience(i, "buyers")),
+		[announcements],
+	);
+
+	// Модалки портала
+	const [modal, setModal] = useState<
+		null | "pay" | "requests" | "documents" | "notifications" | "settings" | "manager" | "chat"
+	>(null);
+
+	// Заявки покупателя (пока хранятся локально; серверная доставка — следующий этап)
+	const REQ_KEY = "buyerPortalRequests";
+	const [myRequests, setMyRequests] = useState<
+		Array<{ id: number; subject: string; body: string; createdAt: string }>
+	>(() => {
+		try {
+			return JSON.parse(localStorage.getItem(REQ_KEY) || "[]");
+		} catch {
+			return [];
+		}
+	});
+	const [reqSubject, setReqSubject] = useState("Сантехника / коммуникации");
+	const [reqBody, setReqBody] = useState("");
+	const [chatBody, setChatBody] = useState("");
+
+	const submitRequest = () => {
+		if (!reqBody.trim()) {
+			toast({ title: "Опишите заявку", variant: "destructive" });
+			return;
+		}
+		const next = [
+			{ id: Date.now(), subject: reqSubject, body: reqBody.trim(), createdAt: new Date().toISOString() },
+			...myRequests,
+		];
+		setMyRequests(next);
+		try {
+			localStorage.setItem(REQ_KEY, JSON.stringify(next));
+		} catch {
+			/* ignore */
+		}
+		setReqBody("");
+		toast({ title: "Заявка зарегистрирована", description: "Менеджер свяжется с вами." });
+	};
+
+	const handleQuickAction = (key: string) => {
+		if (key === "soon") {
+			toast({ title: "Раздел скоро появится" });
+			return;
+		}
+		if (key === "pay" || key === "requests" || key === "documents") setModal(key);
+	};
 
 	const handleDownloadContract = async (contractId: number) => {
 		try {
@@ -154,6 +252,181 @@ export default function BuyerPortal({ previewBuyerId }: { previewBuyerId?: numbe
 	const userName = isPreview
 		? data?.buyer?.fullName || "Покупатель"
 		: [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Покупатель";
+
+	const renderPortalModals = () => (
+		<>
+			<Dialog open={modal === "pay"} onOpenChange={(open) => !open && setModal(null)}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Оплата</DialogTitle>
+						<DialogDescription>
+							Сводка по договору и ближайшим платежам покупателя.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="grid gap-3 sm:grid-cols-3">
+						<KPI
+							icon={<Wallet className="w-5 h-5 text-emerald-600" />}
+							label="Оплачено"
+							value={`${fmt(summary.totalPaid)} ${currency}`}
+							color="bg-emerald-50"
+						/>
+						<KPI
+							icon={<CreditCard className="w-5 h-5 text-amber-600" />}
+							label="По графику"
+							value={`${fmt(summary.totalCharged)} ${currency}`}
+							color="bg-amber-50"
+						/>
+						<KPI
+							icon={<AlertCircle className="w-5 h-5 text-rose-600" />}
+							label="Остаток"
+							value={`${fmt(outstanding)} ${currency}`}
+							color="bg-rose-50"
+						/>
+					</div>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={modal === "requests"}
+				onOpenChange={(open) => !open && setModal(null)}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Заявка менеджеру</DialogTitle>
+						<DialogDescription>
+							Покупатель может оставить обращение по объекту или договору.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-3">
+						<Input value={reqSubject} onChange={(e) => setReqSubject(e.target.value)} />
+						<Textarea
+							value={reqBody}
+							onChange={(e) => setReqBody(e.target.value)}
+							placeholder="Опишите вопрос..."
+						/>
+						<Button onClick={submitRequest} className="w-full gap-2">
+							<Send className="h-4 w-4" /> Отправить заявку
+						</Button>
+						{myRequests.length ? (
+							<div className="space-y-2">
+								{myRequests.slice(0, 3).map((request) => (
+									<div key={request.id} className="rounded-xl border p-3 text-sm">
+										<div className="font-semibold">{request.subject}</div>
+										<div className="text-gray-500">{request.body}</div>
+									</div>
+								))}
+							</div>
+						) : null}
+					</div>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={modal === "documents"}
+				onOpenChange={(open) => !open && setModal(null)}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Документы</DialogTitle>
+						<DialogDescription>
+							Договоры, акты и файлы, доступные покупателю.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-2">
+						{contracts.map((contract: any) => (
+							<div
+								key={contract.id}
+								className="flex items-center justify-between rounded-xl border p-3 text-sm"
+							>
+								<span>№{contract.contractNumber}</span>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => void handleDownloadContract(contract.id)}
+								>
+									Скачать
+								</Button>
+							</div>
+						))}
+						{!contracts.length ? (
+							<div className="rounded-xl border border-dashed p-6 text-center text-sm text-gray-500">
+								Документов пока нет
+							</div>
+						) : null}
+					</div>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={modal === "notifications"}
+				onOpenChange={(open) => !open && setModal(null)}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Уведомления</DialogTitle>
+						<DialogDescription>Новости и объявления от компании.</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-2">
+						{buyerNews.slice(0, 5).map((item: any) => (
+							<div key={item.id} className="rounded-xl border p-3 text-sm">
+								<div className="font-semibold">{item.title}</div>
+								<div className="line-clamp-2 text-gray-500">{item.body}</div>
+							</div>
+						))}
+						{!buyerNews.length ? (
+							<div className="rounded-xl border border-dashed p-6 text-center text-sm text-gray-500">
+								Уведомлений пока нет
+							</div>
+						) : null}
+					</div>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={modal === "manager" || modal === "chat" || modal === "settings"}
+				onOpenChange={(open) => !open && setModal(null)}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>
+							{modal === "manager"
+								? "Менеджер объекта"
+								: modal === "chat"
+									? "Чат с менеджером"
+									: "Настройки портала"}
+						</DialogTitle>
+						<DialogDescription>
+							{modal === "chat"
+								? "Отправьте сообщение менеджеру."
+								: "Раздел портала покупателя."}
+						</DialogDescription>
+					</DialogHeader>
+					{modal === "chat" ? (
+						<div className="space-y-3">
+							<Textarea
+								value={chatBody}
+								onChange={(e) => setChatBody(e.target.value)}
+								placeholder="Введите сообщение..."
+							/>
+							<Button
+								className="w-full"
+								onClick={() => {
+									setChatBody("");
+									toast({ title: "Сообщение отправлено" });
+								}}
+							>
+								Отправить
+							</Button>
+						</div>
+					) : (
+						<div className="rounded-xl border border-dashed p-6 text-center text-sm text-gray-500">
+							Раздел готовится к подключению.
+						</div>
+					)}
+				</DialogContent>
+			</Dialog>
+		</>
+	);
 
 	// Аккаунт покупателя ещё не привязан к договору (linkedBuyerId не задан)
 	if (!isPreview && !buyer) {
@@ -241,7 +514,16 @@ export default function BuyerPortal({ previewBuyerId }: { previewBuyerId?: numbe
 					projectName={contracts[0]?.projectName || "Ваш ЖК"}
 					unitLabel={contracts[0]?.unitNumber ? `Квартира №${contracts[0].unitNumber}` : "Мой объект"}
 					managerName="Менеджер объекта"
+					unitBadge={contracts[0]?.unitNumber ? `№ ${contracts[0].unitNumber}` : undefined}
+					notificationCount={buyerNews.length}
+					onAction={handleQuickAction}
+					onOpenNotifications={() => setModal("notifications")}
+					onOpenSettings={() => setModal("settings")}
+					onCallManager={() => setModal("manager")}
+					onOpenChat={() => setModal("chat")}
 				/>
+
+				{renderPortalModals()}
 
 				<div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))]">
 					<KPI

@@ -11,7 +11,6 @@ import {
 	MessageCircle,
 	Pencil,
 	Phone,
-	QrCode,
 	ReceiptText,
 	Settings,
 	Vote,
@@ -30,15 +29,14 @@ import {
 } from "@/lib/client-portal";
 import { cn } from "@/lib/utils";
 
-const quickActions: Array<{ label: string; icon: ElementType; accent?: string }> = [
-	{ label: "Оплата", icon: CreditCard },
-	{ label: "Заявки", icon: Wrench },
-	{ label: "Документы", icon: FileText },
-	{ label: "Счётчики", icon: ReceiptText, accent: "NEW" },
-	{ label: "Опросы", icon: Vote },
-	{ label: "Отчёты", icon: BookOpen },
-	{ label: "Камеры ЖК", icon: Camera },
-	{ label: "Ещё", icon: QrCode },
+const quickActions: Array<{ label: string; icon: ElementType; accent?: string; key?: string; soon?: boolean }> = [
+	{ label: "Оплата", icon: CreditCard, key: "pay" },
+	{ label: "Заявки", icon: Wrench, key: "requests" },
+	{ label: "Документы", icon: FileText, key: "documents" },
+	{ label: "Счётчики", icon: ReceiptText, soon: true },
+	{ label: "Опросы", icon: Vote, soon: true },
+	{ label: "Отчёты", icon: BookOpen, soon: true },
+	{ label: "Камеры ЖК", icon: Camera, soon: true },
 ];
 
 function byPlacement(items: PortalContentItem[], placement: PortalPlacement) {
@@ -180,6 +178,13 @@ export function ClientPortalExperience({
 	activeId = null,
 	onSelectItem,
 	variant = "mobile",
+	onAction,
+	onOpenNotifications,
+	onOpenSettings,
+	onCallManager,
+	onOpenChat,
+	unitBadge,
+	notificationCount = 0,
 }: {
 	audience: PortalAudience;
 	userName?: string;
@@ -191,6 +196,13 @@ export function ClientPortalExperience({
 	activeId?: string | null;
 	onSelectItem?: (item: PortalContentItem) => void;
 	variant?: "mobile" | "desktop";
+	onAction?: (key: string) => void;
+	onOpenNotifications?: () => void;
+	onOpenSettings?: () => void;
+	onCallManager?: () => void;
+	onOpenChat?: () => void;
+	unitBadge?: string;
+	notificationCount?: number;
 }) {
 	const { data: items = [] } = useQuery({
 		queryKey: PORTAL_CONTENT_QUERY_KEY,
@@ -378,11 +390,20 @@ export function ClientPortalExperience({
 					</div>
 					<div className="flex items-center gap-2">
 						<span className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-gray-800 shadow-sm">
-							№ 264
+							{unitBadge ?? "№ 264"}
 						</span>
-						<span className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-sm">
+						<button
+							type="button"
+							onClick={onOpenNotifications}
+							className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-sm transition hover:bg-gray-50"
+						>
 							<Bell className="h-4 w-4 text-gray-600" />
-						</span>
+							{notificationCount > 0 && (
+								<span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white">
+									{notificationCount > 9 ? "9+" : notificationCount}
+								</span>
+							)}
+						</button>
 					</div>
 				</div>
 
@@ -396,9 +417,13 @@ export function ClientPortalExperience({
 							<p className="truncate text-sm font-bold text-gray-950">{unitLabel}</p>
 						</div>
 					</div>
-					<div className="flex items-center justify-center rounded-2xl bg-white shadow-sm">
+					<button
+						type="button"
+						onClick={onOpenSettings}
+						className="flex items-center justify-center rounded-2xl bg-white shadow-sm transition hover:bg-gray-50"
+					>
 						<Settings className="h-6 w-6 text-sky-700" />
-					</div>
+					</button>
 				</div>
 
 				<div className="grid grid-cols-4 overflow-hidden rounded-2xl bg-white shadow-sm">
@@ -408,15 +433,20 @@ export function ClientPortalExperience({
 							<button
 								key={action.label}
 								type="button"
-								className="relative flex min-h-[82px] flex-col items-center justify-center gap-2 border-b border-r border-gray-100 p-2 text-center last:border-r-0"
+								onClick={() => onAction?.(action.soon ? "soon" : action.key ?? "")}
+								className="relative flex min-h-[82px] flex-col items-center justify-center gap-2 border-b border-r border-gray-100 p-2 text-center transition last:border-r-0 hover:bg-sky-50/60 active:bg-sky-100/60"
 							>
-								<Icon className="h-6 w-6 text-sky-700" />
-								<span className="text-xs font-semibold text-gray-800">{action.label}</span>
-								{action.accent && (
+								<Icon className={cn("h-6 w-6", action.soon ? "text-gray-400" : "text-sky-700")} />
+								<span className={cn("text-xs font-semibold", action.soon ? "text-gray-400" : "text-gray-800")}>{action.label}</span>
+								{action.soon ? (
+									<span className="absolute right-1.5 top-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">
+										Скоро
+									</span>
+								) : action.accent ? (
 									<span className="absolute right-1.5 top-1.5 rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] font-bold text-white">
 										{action.accent}
 									</span>
-								)}
+								) : null}
 							</button>
 						);
 					})}
@@ -455,7 +485,11 @@ export function ClientPortalExperience({
 			)}
 
 			<div className="grid gap-3 md:grid-cols-2">
-				<div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+				<button
+					type="button"
+					onClick={onCallManager}
+					className="flex w-full items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/40"
+				>
 					<div className="flex items-center gap-3">
 						<div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
 							<Headphones className="h-5 w-5 text-emerald-700" />
@@ -466,8 +500,12 @@ export function ClientPortalExperience({
 						</div>
 					</div>
 					<ButtonCircle icon={Phone} tone="green" />
-				</div>
-				<div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+				</button>
+				<button
+					type="button"
+					onClick={onOpenChat}
+					className="flex w-full items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40"
+				>
 					<div className="flex items-center gap-3">
 						<div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50">
 							<MessageCircle className="h-5 w-5 text-blue-700" />
@@ -478,7 +516,7 @@ export function ClientPortalExperience({
 						</div>
 					</div>
 					<ButtonCircle icon={MessageCircle} tone="blue" />
-				</div>
+				</button>
 			</div>
 
 			{serviceItems.length > 0 && (

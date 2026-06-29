@@ -454,7 +454,7 @@ function MetricTile({
 	tone?: "positive" | "negative" | "neutral" | "warning";
 }) {
 	return (
-		<div className="group/tile flex h-[72px] min-w-0 flex-col justify-between rounded-md border border-am-border bg-white px-3 py-2.5 shadow-xs transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-am-border-strong hover:shadow-md">
+		<div className="group/tile flex min-h-[58px] min-w-0 flex-col justify-between rounded-md px-2 py-1.5 transition-colors duration-200 hover:bg-slate-50">
 			<p
 				className="truncate text-[10px] font-medium uppercase leading-snug text-am-text-muted"
 				title={label}

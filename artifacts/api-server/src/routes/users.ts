@@ -55,7 +55,45 @@ router.post("/users", requireRole("admin", "company_admin"), async (req: Authent
 
   const [existing] = await db.select().from(usersTable).where(eq(usersTable.email, email));
   if (existing) {
-    res.status(409).json({ error: "Пользователь с таким email уже существует" });
+    const sameCompany = existing.companyId === req.scopedCompanyId;
+    const isPortal = !!(
+      existing.linkedTenantId ||
+      existing.linkedContractorId ||
+      existing.linkedInvestorId ||
+      existing.linkedSupplierId ||
+      existing.linkedMarketplaceSupplierId ||
+      existing.linkedBuyerId
+    );
+    if (sameCompany && existing.isActive === false) {
+      res.status(409).json({
+        code: "inactive_in_company",
+        userId: existing.id,
+        error:
+          "Сотрудник с таким email деактивирован в вашей компании. Включите «Показать неактивных» в списке и восстановите его.",
+      });
+      return;
+    }
+    if (sameCompany && isPortal) {
+      res.status(409).json({
+        code: "portal_in_company",
+        userId: existing.id,
+        error:
+          "Этот email уже у портального пользователя (арендатор/подрядчик и т.п.) вашей компании. Выдайте доступ сотрудника на существующем аккаунте.",
+      });
+      return;
+    }
+    if (sameCompany) {
+      res.status(409).json({
+        code: "exists_in_company",
+        error: "Сотрудник с таким email уже есть в вашей компании.",
+      });
+      return;
+    }
+    res.status(409).json({
+      code: "exists_other_company",
+      error:
+        "Этот email уже зарегистрирован в системе (в другой компании). Один email = один аккаунт — используйте другой email.",
+    });
     return;
   }
 

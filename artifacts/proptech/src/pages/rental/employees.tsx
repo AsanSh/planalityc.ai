@@ -85,6 +85,20 @@ export default function RentalEmployees() {
 
 	const active = users.filter((u) => u.isActive !== false);
 
+	async function restore(u: Employee) {
+		try {
+			await api.patch(`/users/${u.id}`, { isActive: true });
+			qc.invalidateQueries({ queryKey: ["company-users"] });
+			toast({ title: "Восстановлен", description: `${u.firstName} ${u.lastName}` });
+		} catch {
+			toast({
+				title: "Ошибка",
+				description: "Не удалось восстановить сотрудника",
+				variant: "destructive",
+			});
+		}
+	}
+
 	function openCreate() {
 		setForm(EMPTY_FORM);
 		setEditingId(null);
@@ -271,10 +285,16 @@ export default function RentalEmployees() {
 									</div>
 								)}
 								{!u.isActive && (
-									<div className="mt-2">
+									<div className="mt-2 flex items-center gap-2">
 										<Badge className="bg-rose-100 text-rose-700 text-[10px]">
 											Неактивный
 										</Badge>
+										<button
+											onClick={() => restore(u)}
+											className="text-[11px] font-medium text-cyan-700 hover:underline"
+										>
+											Восстановить
+										</button>
 									</div>
 								)}
 							</div>

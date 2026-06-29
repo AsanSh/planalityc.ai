@@ -1,11 +1,21 @@
 import { Router } from "express";
 import { and, count, desc, eq, ne, sql } from "drizzle-orm";
-import { db, companiesTable, usersTable, marketplaceProductsTable, marketplaceOrdersTable } from "../lib/db";
+import {
+  db,
+  bankAccountsTable,
+  companiesTable,
+  legalEntitiesTable,
+  marketplaceOrdersTable,
+  marketplaceProductsTable,
+  moduleSettingsTable,
+  usersTable,
+} from "../lib/db";
 import {
   requireAuth,
   requireSuperAdmin,
   AuthenticatedRequest,
 } from "../middleware/auth";
+import { AVAILABLE_MODULES } from "../lib/module-registry";
 import { initiatePasswordReset } from "../lib/password-reset";
 import { hashPassword, validatePassword } from "../lib/security";
 
@@ -120,23 +130,66 @@ router.get(
       return;
     }
 
-    const users = await db
-      .select({
-        id: usersTable.id,
-        email: usersTable.email,
-        firstName: usersTable.firstName,
-        lastName: usersTable.lastName,
-        role: usersTable.role,
-        isActive: usersTable.isActive,
-        createdAt: usersTable.createdAt,
-      })
-      .from(usersTable)
-      .where(
-        and(eq(usersTable.companyId, id), ne(usersTable.role, "super_admin"))
-      )
-      .orderBy(usersTable.createdAt);
+    const [users, moduleRows, legalEntities, bankAccounts] = await Promise.all([
+      db
+        .select({
+          id: usersTable.id,
+          email: usersTable.email,
+          phone: usersTable.phone,
+          firstName: usersTable.firstName,
+          lastName: usersTable.lastName,
+          role: usersTable.role,
+          isActive: usersTable.isActive,
+          createdAt: usersTable.createdAt,
+        })
+        .from(usersTable)
+        .where(
+          and(eq(usersTable.companyId, id), ne(usersTable.role, "super_admin"))
+        )
+        .orderBy(usersTable.createdAt),
+      db
+        .select()
+        .from(moduleSettingsTable)
+        .where(eq(moduleSettingsTable.companyId, id)),
+      db
+        .select()
+        .from(legalEntitiesTable)
+        .where(eq(legalEntitiesTable.companyId, id))
+        .orderBy(desc(legalEntitiesTable.createdAt)),
+      db
+        .select()
+        .from(bankAccountsTable)
+        .where(eq(bankAccountsTable.companyId, id))
+        .orderBy(desc(bankAccountsTable.createdAt)),
+    ]);
 
-    res.json({ company, users });
+    const moduleByKey = new Map(moduleRows.map((row) => [row.moduleKey, row]));
+    const modules = AVAILABLE_MODULES.map((module) => {
+      const row = moduleByKey.get(module.key);
+      return {
+        ...module,
+        rowId: row?.id ?? null,
+        isEnabled: row?.isEnabled ?? false,
+        enabledAt: row?.enabledAt ?? null,
+        settings: row?.settings ?? null,
+      };
+    });
+
+    res.json({
+      company,
+      users,
+      modules,
+      legalEntities,
+      bankAccounts,
+      summary: {
+        usersTotal: users.length,
+        usersActive: users.filter((user) => user.isActive).length,
+        usersInactive: users.filter((user) => !user.isActive).length,
+        modulesEnabled: modules.filter((module) => module.isEnabled).length,
+        legalEntities: legalEntities.length,
+        bankAccounts: bankAccounts.length,
+      },
+    });
   }
 );
 
@@ -175,6 +228,185 @@ router.patch(
   }
 );
 
+// PATCH /platform-admin/companies/:id/modules/:key — включить / отключить модуль компании
+router.patch(
+  "/platform-admin/companies/:id/modules/:key",
+  requireAuth,
+  requireSuperAdmin,
+  async (req: AuthenticatedRequest, res): Promise<void> => {
+    const companyId = parseInt(
+      Array.isArray(req.params.id) ? req.params.id[0] : req.params.id,
+      10
+    );
+    const moduleKey = Array.isArray(req.params.key)
+      ? req.params.key[0]
+      : req.params.key;
+    const moduleMeta = AVAILABLE_MODULES.find((module) => module.key === moduleKey);
+    if (!moduleMeta) {
+      res.status(400).json({ error: "Неизвестный модуль" });
+      return;
+    }
+
+    const [company] = await db
+      .select({ id: companiesTable.id })
+      .from(companiesTable)
+      .where(eq(companiesTable.id, companyId));
+    if (!company) {
+      res.status(404).json({ error: "Компания не найдена" });
+      return;
+    }
+
+    const isEnabled = Boolean(req.body.isEnabled);
+    const settings =
+      req.body.settings === undefined
+        ? undefined
+        : typeof req.body.settings === "string"
+          ? req.body.settings
+          : JSON.stringify(req.body.settings ?? {});
+
+    const [existing] = await db
+      .select()
+      .from(moduleSettingsTable)
+      .where(
+        and(
+          eq(moduleSettingsTable.companyId, companyId),
+          eq(moduleSettingsTable.moduleKey, moduleKey)
+        )
+      );
+
+    const [row] = existing
+      ? await db
+          .update(moduleSettingsTable)
+          .set({
+            isEnabled,
+            enabledAt: isEnabled ? existing.enabledAt ?? new Date() : null,
+            ...(settings !== undefined && { settings }),
+            updatedAt: new Date(),
+          })
+          .where(eq(moduleSettingsTable.id, existing.id))
+          .returning()
+      : await db
+          .insert(moduleSettingsTable)
+          .values({
+            companyId,
+            moduleKey,
+            isEnabled,
+            enabledAt: isEnabled ? new Date() : null,
+            settings: settings ?? null,
+          })
+          .returning();
+
+    res.json({
+      ...moduleMeta,
+      rowId: row.id,
+      isEnabled: row.isEnabled,
+      enabledAt: row.enabledAt,
+      settings: row.settings,
+    });
+  }
+);
+
+// PATCH /platform-admin/legal-entities/:id — управление юрлицами компании
+router.patch(
+  "/platform-admin/legal-entities/:id",
+  requireAuth,
+  requireSuperAdmin,
+  async (req: AuthenticatedRequest, res): Promise<void> => {
+    const id = parseInt(
+      Array.isArray(req.params.id) ? req.params.id[0] : req.params.id,
+      10
+    );
+    const {
+      name,
+      fullLegalName,
+      inn,
+      address,
+      phone,
+      email,
+      directorName,
+      accountant,
+      isActive,
+    } = req.body;
+
+    const [row] = await db
+      .update(legalEntitiesTable)
+      .set({
+        ...(name !== undefined && { name }),
+        ...(fullLegalName !== undefined && { fullLegalName }),
+        ...(inn !== undefined && { inn }),
+        ...(address !== undefined && { address }),
+        ...(phone !== undefined && { phone }),
+        ...(email !== undefined && { email }),
+        ...(directorName !== undefined && { directorName }),
+        ...(accountant !== undefined && { accountant }),
+        ...(isActive !== undefined && { isActive }),
+        updatedAt: new Date(),
+      })
+      .where(eq(legalEntitiesTable.id, id))
+      .returning();
+
+    if (!row) {
+      res.status(404).json({ error: "Юрлицо не найдено" });
+      return;
+    }
+    res.json(row);
+  }
+);
+
+// PATCH /platform-admin/bank-accounts/:id — управление счетами компании
+router.patch(
+  "/platform-admin/bank-accounts/:id",
+  requireAuth,
+  requireSuperAdmin,
+  async (req: AuthenticatedRequest, res): Promise<void> => {
+    const id = parseInt(
+      Array.isArray(req.params.id) ? req.params.id[0] : req.params.id,
+      10
+    );
+    const {
+      legalEntityId,
+      module,
+      name,
+      type,
+      bank,
+      bik,
+      accountNumber,
+      currency,
+      openingBalance,
+      currentBalance,
+      isActive,
+      notes,
+    } = req.body;
+
+    const [row] = await db
+      .update(bankAccountsTable)
+      .set({
+        ...(legalEntityId !== undefined && {
+          legalEntityId: legalEntityId ? Number(legalEntityId) : null,
+        }),
+        ...(module !== undefined && { module }),
+        ...(name !== undefined && { name }),
+        ...(type !== undefined && { type }),
+        ...(bank !== undefined && { bank }),
+        ...(bik !== undefined && { bik }),
+        ...(accountNumber !== undefined && { accountNumber }),
+        ...(currency !== undefined && { currency }),
+        ...(openingBalance !== undefined && { openingBalance: String(openingBalance) }),
+        ...(currentBalance !== undefined && { currentBalance: String(currentBalance) }),
+        ...(isActive !== undefined && { isActive }),
+        ...(notes !== undefined && { notes }),
+      })
+      .where(eq(bankAccountsTable.id, id))
+      .returning();
+
+    if (!row) {
+      res.status(404).json({ error: "Счёт не найден" });
+      return;
+    }
+    res.json(row);
+  }
+);
+
 // PATCH /platform-admin/users/:id — блокировка / роль (кроме super_admin)
 router.patch(
   "/platform-admin/users/:id",
@@ -185,7 +417,7 @@ router.patch(
       Array.isArray(req.params.id) ? req.params.id[0] : req.params.id,
       10
     );
-    const { isActive, role } = req.body;
+    const { isActive, role, firstName, lastName, email, phone } = req.body;
 
     if (role === "super_admin") {
       res.status(403).json({
@@ -212,6 +444,10 @@ router.patch(
       .set({
         ...(isActive !== undefined && { isActive }),
         ...(role !== undefined && { role }),
+        ...(firstName !== undefined && { firstName }),
+        ...(lastName !== undefined && { lastName }),
+        ...(email !== undefined && { email }),
+        ...(phone !== undefined && { phone }),
         updatedAt: new Date(),
       })
       .where(eq(usersTable.id, id))

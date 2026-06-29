@@ -598,6 +598,11 @@ export default function ConstructionContractsSales() {
 		const pps = parseFloat(String(u.approvedSalePricePerSqm || u.pricePerSqm || "0"));
 		return sum + (area > 0 && pps > 0 ? area * pps : 0);
 	}, 0);
+	const primaryContractProjectId = selectedFormUnits[0]?.projectId
+		? Number(selectedFormUnits[0].projectId)
+		: form.projectId
+			? Number(form.projectId)
+			: null;
 	useEffect(() => {
 		if (highlightFromUrl) {
 			setDetailId(Number(highlightFromUrl));
@@ -882,12 +887,15 @@ export default function ConstructionContractsSales() {
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-5 mt-2">
-						<FormSection title="Объект">
-							<Field label="Проект" required className="col-span-6">
+						<FormSection
+							title="Помещения"
+							description="Можно добавить несколько помещений из разных проектов. Каждое помещение проверяется по шахматке и должно быть доступно к продаже."
+						>
+							<Field label="Проект для выбора помещения" required className="col-span-6">
 								<Select
 									value={form.projectId}
 									onValueChange={(v) =>
-										setForm((f) => ({ ...f, projectId: v, unitId: "", unitIds: [] }))
+										setForm((f) => ({ ...f, projectId: v, unitId: "" }))
 									}
 								>
 									<SelectTrigger className="am-control w-full">
@@ -902,12 +910,12 @@ export default function ConstructionContractsSales() {
 									</SelectContent>
 								</Select>
 							</Field>
-							<Field label="Квартира / помещение" className="col-span-6">
+							<Field label="Добавить помещение из шахматки" className="col-span-6">
 								<Select
 									value={form.unitId}
 									onValueChange={(v) =>
 										setForm((f) => {
-											if (v === "none") return { ...f, unitId: "", unitIds: [] };
+											if (v === "none") return { ...f, unitId: "" };
 											const nextIds = f.unitIds.includes(v) ? f.unitIds : [...f.unitIds, v];
 											const nextUnits = nextIds
 												.map((id) => units.find((u: any) => String(u.id) === id))
@@ -932,7 +940,7 @@ export default function ConstructionContractsSales() {
 										<SelectValue placeholder="Из шахматки" />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="none">Без привязки</SelectItem>
+										<SelectItem value="none">Не выбрано</SelectItem>
 										{filteredUnits.map((u: any) => (
 											<SelectItem key={u.id} value={String(u.id)}>
 												Эт.{u.floor} №{u.unitNumber} ({u.area} м²)
@@ -948,7 +956,7 @@ export default function ConstructionContractsSales() {
 												className="flex items-center justify-between gap-2 rounded-lg border border-am-border bg-am-bg-subtle px-3 py-2 text-xs"
 											>
 												<span>
-													{idx + 1}. Блок {u.block || "—"} · эт.{u.floor || "—"} · №{u.unitNumber} · {u.area || "—"} м²
+													{idx + 1}. {projects.find((p: any) => p.id === u.projectId)?.name || "Проект"} · блок {u.block || "—"} · эт.{u.floor || "—"} · №{u.unitNumber} · {u.area || "—"} м²
 												</span>
 												<button
 													type="button"
@@ -1125,20 +1133,22 @@ export default function ConstructionContractsSales() {
 								className="flex-1 h-10 bg-am-brand hover:bg-am-brand-hover text-white"
 								disabled={
 									createMut.isPending ||
-									!form.projectId ||
+									!primaryContractProjectId ||
+									selectedFormUnits.length === 0 ||
 									!form.buyerName ||
 									!form.totalAmount
 								}
 								onClick={() =>
 									createMut.mutate({
 										...form,
-										projectId: Number(form.projectId),
+										projectId: primaryContractProjectId,
 										unitId: form.unitIds[0]
 											? Number(form.unitIds[0])
 											: form.unitId && form.unitId !== "none"
 												? Number(form.unitId)
 												: null,
 										unitIds: form.unitIds.map((id) => Number(id)),
+										unitStatus: ["signed", "completed"].includes(form.status) ? "sold" : "reserved",
 									})
 								}
 							>

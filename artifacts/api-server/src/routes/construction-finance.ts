@@ -817,6 +817,7 @@ router.post("/contracts-sales", async (req: AuthenticatedRequest, res): Promise<
   const insertBody = { ...body };
   delete insertBody.unitIds;
   delete insertBody.unitId;
+  delete insertBody.unitStatus;
   const unitIds: number[] = Array.from(
     new Set(
       (Array.isArray(body.unitIds) ? body.unitIds : [body.unitId])
@@ -824,53 +825,54 @@ router.post("/contracts-sales", async (req: AuthenticatedRequest, res): Promise<
         .filter((id: number) => Number.isFinite(id) && id > 0),
     ),
   );
+  if (unitIds.length === 0) {
+    res.status(400).json({ error: "Выберите помещение из шахматки для продажи" });
+    return;
+  }
 
   // Auto-calculate total amount from unit area × pricePerSqm if not provided
   let total = parseFloat(body.totalAmount || "0");
   let selectedUnits: Array<typeof constructionUnitsTable.$inferSelect> = [];
-  if (unitIds.length > 0) {
-    selectedUnits = await db.select()
-      .from(constructionUnitsTable)
-      .where(and(
-        eq(constructionUnitsTable.companyId, companyId),
-        inArray(constructionUnitsTable.id, unitIds),
-      ));
-    if (selectedUnits.length !== unitIds.length) {
-      res.status(404).json({ error: "Одно из выбранных помещений не найдено" });
+  selectedUnits = await db.select()
+    .from(constructionUnitsTable)
+    .where(and(
+      eq(constructionUnitsTable.companyId, companyId),
+      inArray(constructionUnitsTable.id, unitIds),
+    ));
+  if (selectedUnits.length !== unitIds.length) {
+    res.status(404).json({ error: "Одно из выбранных помещений не найдено" });
+    return;
+  }
+  for (const unit of selectedUnits) {
+    if (!unitIsSellable(unit)) {
+      res.status(403).json({ error: "Объект не опубликован коммерческим директором для продажи" });
       return;
     }
-    if (body.projectId && selectedUnits.some((unit) => unit.projectId !== Number(body.projectId))) {
-      res.status(400).json({ error: "Все помещения договора должны относиться к выбранному проекту" });
-      return;
-    }
-    for (const unit of selectedUnits) {
-      if (!unitIsSellable(unit)) {
-        res.status(403).json({ error: "Объект не опубликован коммерческим директором для продажи" });
-        return;
-      }
-    }
-    const approvedTotal = selectedUnits.reduce((sum, unit) => sum + approvedUnitTotal(unit), 0);
-    if (total <= 0 && approvedTotal > 0) total = approvedTotal;
-    if (approvedTotal > 0 && total > 0 && Math.abs(total - approvedTotal) > Math.max(1, unitIds.length)) {
-      res.status(400).json({ error: "Сумма договора должна совпадать с утверждённой коммерческой ценой выбранных помещений" });
-      return;
-    }
-    const activeContracts = await db.select().from(constructionSalesContractsTable).where(
-      and(
-        eq(constructionSalesContractsTable.companyId, companyId),
-        sql`status IN ('draft', 'review', 'signed')`,
-      ),
-    );
-    const activeLinked = activeContracts.find((contract) =>
-      readContractUnitIds(contract).some((linkedUnitId) => unitIds.includes(linkedUnitId)),
-    );
-    if (activeLinked) {
-      res.status(409).json({
-        error: "По одному из выбранных помещений уже есть активный договор",
-        contractId: activeLinked.id,
-      });
-      return;
-    }
+  }
+  if (!insertBody.projectId) {
+    insertBody.projectId = selectedUnits[0].projectId;
+  }
+  const approvedTotal = selectedUnits.reduce((sum, unit) => sum + approvedUnitTotal(unit), 0);
+  if (total <= 0 && approvedTotal > 0) total = approvedTotal;
+  if (approvedTotal > 0 && total > 0 && Math.abs(total - approvedTotal) > Math.max(1, unitIds.length)) {
+    res.status(400).json({ error: "Сумма договора должна совпадать с утверждённой коммерческой ценой выбранных помещений" });
+    return;
+  }
+  const activeContracts = await db.select().from(constructionSalesContractsTable).where(
+    and(
+      eq(constructionSalesContractsTable.companyId, companyId),
+      sql`status IN ('draft', 'review', 'signed')`,
+    ),
+  );
+  const activeLinked = activeContracts.find((contract) =>
+    readContractUnitIds(contract).some((linkedUnitId) => unitIds.includes(linkedUnitId)),
+  );
+  if (activeLinked) {
+    res.status(409).json({
+      error: "По одному из выбранных помещений уже есть активный договор",
+      contractId: activeLinked.id,
+    });
+    return;
   }
 
   const down = parseFloat(body.downPayment || "0");
@@ -897,7 +899,7 @@ router.post("/contracts-sales", async (req: AuthenticatedRequest, res): Promise<
     })
     .returning();
 
-  const unitStatus = body.unitStatus || "reserved";
+  const unitStatus = body.unitStatus || (["signed", "completed"].includes(String(body.status || "")) ? "sold" : "reserved");
   if (unitIds.length > 0) {
     await Promise.all(selectedUnits.map((unit) => {
       const unitPatch: Record<string, unknown> = { status: unitStatus };
@@ -935,7 +937,6 @@ router.post("/contracts-sales/from-unit", async (req: AuthenticatedRequest, res)
     and(
       inArray(constructionUnitsTable.id, unitIds),
       eq(constructionUnitsTable.companyId, companyId),
-      eq(constructionUnitsTable.projectId, projectId),
     ),
   );
   const unit = units.find((u) => u.id === unitId);
@@ -945,6 +946,10 @@ router.post("/contracts-sales/from-unit", async (req: AuthenticatedRequest, res)
   }
   if (units.length !== unitIds.length) {
     res.status(404).json({ error: "Одно из выбранных помещений не найдено" });
+    return;
+  }
+  if (unit.projectId !== projectId) {
+    res.status(400).json({ error: "Основное помещение не относится к выбранному проекту" });
     return;
   }
   for (const selectedUnit of units) {
@@ -1124,11 +1129,12 @@ router.patch("/contracts-sales/:id", async (req: AuthenticatedRequest, res): Pro
     return;
   }
 
-  if (body.status && contract.unitId) {
+  const linkedUnitIds = readContractUnitIds(contract);
+  if (body.status && linkedUnitIds.length > 0) {
     if (body.status === "signed" || body.status === "completed") {
       await db.update(constructionUnitsTable)
         .set({ status: "sold" })
-        .where(and(eq(constructionUnitsTable.id, contract.unitId), eq(constructionUnitsTable.companyId, companyId)));
+        .where(and(inArray(constructionUnitsTable.id, linkedUnitIds), eq(constructionUnitsTable.companyId, companyId)));
     } else if (body.status === "cancelled") {
       await db.update(constructionUnitsTable)
         .set({
@@ -1136,11 +1142,11 @@ router.patch("/contracts-sales/:id", async (req: AuthenticatedRequest, res): Pro
           buyerId: null,
           contractDate: null,
         })
-        .where(and(eq(constructionUnitsTable.id, contract.unitId), eq(constructionUnitsTable.companyId, companyId)));
+        .where(and(inArray(constructionUnitsTable.id, linkedUnitIds), eq(constructionUnitsTable.companyId, companyId)));
     } else if (body.status === "draft" && contract.status === "cancelled") {
       await db.update(constructionUnitsTable)
         .set({ status: "reserved" })
-        .where(and(eq(constructionUnitsTable.id, contract.unitId), eq(constructionUnitsTable.companyId, companyId)));
+        .where(and(inArray(constructionUnitsTable.id, linkedUnitIds), eq(constructionUnitsTable.companyId, companyId)));
     }
   }
 
@@ -1180,14 +1186,15 @@ router.delete("/contracts-sales/:id", async (req: AuthenticatedRequest, res): Pr
   await db.delete(constructionSalesContractsTable)
     .where(and(eq(constructionSalesContractsTable.id, id), eq(constructionSalesContractsTable.companyId, companyId)));
 
-  if (contract?.unitId) {
+  const linkedUnitIds = contract ? readContractUnitIds(contract) : [];
+  if (linkedUnitIds.length > 0) {
     await db.update(constructionUnitsTable)
       .set({
         status: "available",
         buyerId: null,
         contractDate: null,
       })
-      .where(and(eq(constructionUnitsTable.id, contract.unitId), eq(constructionUnitsTable.companyId, companyId)));
+      .where(and(inArray(constructionUnitsTable.id, linkedUnitIds), eq(constructionUnitsTable.companyId, companyId)));
   }
 
   res.json({ ok: true });

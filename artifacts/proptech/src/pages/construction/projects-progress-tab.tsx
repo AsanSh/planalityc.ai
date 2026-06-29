@@ -15,8 +15,7 @@ import {
 	TrendingUp,
 	Wallet,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { CurrencyToggle } from "@/components/currency-toggle";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Collapsible,
@@ -52,21 +51,13 @@ import {
 	type ProgressGroupId,
 } from "@/lib/progress-projects-column-config";
 import {
-	nbkrUsdRateLabel,
-	unitInKgs,
-	type DisplayCurrency,
-	type NbkrRate,
-	type NbkrResponse,
-} from "@/lib/nbkr-currency";
+	kgsToProjectDisplay,
+} from "@/lib/project-currency";
+import type { DisplayCurrency } from "@/lib/nbkr-currency";
+import type { useProjectDisplayCurrency } from "@/hooks/use-project-display-currency";
 import { cn } from "@/lib/utils";
 
-const PROGRESS_CURRENCY_KEY = "progress-currency";
-
-type ProjectMeta = {
-	id: number;
-	currency?: string | null;
-	exchangeRate?: string | null;
-};
+type DisplayCurrencyState = ReturnType<typeof useProjectDisplayCurrency>;
 
 type ProgressDataSources = {
 	projects?: number;
@@ -75,19 +66,6 @@ type ProgressDataSources = {
 	operations?: number;
 	expenses?: number;
 };
-
-function loadProgressCurrency(): DisplayCurrency {
-	try {
-		const v = localStorage.getItem(PROGRESS_CURRENCY_KEY);
-		return v === "USD" ? "USD" : "KGS";
-	} catch {
-		return "KGS";
-	}
-}
-
-function saveProgressCurrency(v: DisplayCurrency) {
-	localStorage.setItem(PROGRESS_CURRENCY_KEY, v);
-}
 
 export type ProgressSummaryRow = {
 	projectId: number;
@@ -334,25 +312,14 @@ type ProgressFormatters = {
 
 function createProgressFormatters(
 	displayCurrency: DisplayCurrency,
-	rates: Record<string, NbkrRate>,
-	projectMetaById: Record<number, ProjectMeta>,
+	displayUsdRate: number,
 ): ProgressFormatters {
-	const usdRateGlobal = unitInKgs("USD", rates) || 1;
+	const kgsToDisplayAmount = (kgs: number) =>
+		kgsToProjectDisplay(kgs, displayCurrency, displayUsdRate);
 
-	const kgsToDisplayAmount = (kgs: number, projectId?: number) => {
-		if (displayCurrency === "KGS") return kgs;
-		const meta = projectId != null ? projectMetaById[projectId] : undefined;
-		const projectRate =
-			meta?.currency && meta.currency !== "KGS"
-				? parseFloat(meta.exchangeRate || "0") || 0
-				: 0;
-		if (projectRate > 0) return kgs / projectRate;
-		return kgs / usdRateGlobal;
-	};
-
-	const fmtMoney = (kgs: number, projectId?: number) => {
+	const fmtMoney = (kgs: number, _projectId?: number) => {
 		if (Math.abs(kgs) <= 0) return "—";
-		const amount = kgsToDisplayAmount(kgs, projectId);
+		const amount = kgsToDisplayAmount(kgs);
 		if (displayCurrency === "USD") {
 			return new Intl.NumberFormat("en-US", {
 				style: "currency",
@@ -363,9 +330,9 @@ function createProgressFormatters(
 		return `${amount.toLocaleString("ru-KG", { maximumFractionDigits: 0 })} сом`;
 	};
 
-	const fmtMoneyPerSqm = (kgs: number, projectId?: number) => {
+	const fmtMoneyPerSqm = (kgs: number, _projectId?: number) => {
 		if (kgs <= 0) return "—";
-		const amount = kgsToDisplayAmount(kgs, projectId);
+		const amount = kgsToDisplayAmount(kgs);
 		if (displayCurrency === "USD") {
 			const formatted = new Intl.NumberFormat("en-US", {
 				maximumFractionDigits: 0,
@@ -1184,16 +1151,16 @@ async function exportProgressXlsx(
 	XLSX.writeFile(workbook, `progress-projects-${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
-export function ProjectsProgressTab() {
+export function ProjectsProgressTab({
+	displayCurrencyState,
+}: {
+	displayCurrencyState: DisplayCurrencyState;
+}) {
+	const { displayCurrency, displayUsdRate } = displayCurrencyState;
 	const [columnConfig, setColumnConfig] = useState(loadProgressColumnConfig);
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [search, setSearch] = useState("");
 	const [projectFilter, setProjectFilter] = useState("all");
-	const [displayCurrency, setDisplayCurrency] = useState<DisplayCurrency>(loadProgressCurrency);
-
-	useEffect(() => {
-		saveProgressCurrency(displayCurrency);
-	}, [displayCurrency]);
 
 	const { data, isLoading, isError } = useQuery({
 		queryKey: ["construction-projects-progress"],
@@ -1201,18 +1168,6 @@ export function ProjectsProgressTab() {
 			api
 				.get<ProgressSummaryRow[]>("/construction/projects/progress-summary")
 				.then((r) => r.data),
-	});
-
-	const { data: projects = [] } = useQuery<ProjectMeta[]>({
-		queryKey: ["construction-projects"],
-		queryFn: () => api.get("/construction/projects/all").then((r) => r.data),
-		staleTime: 5 * 60 * 1000,
-	});
-
-	const { data: nbkr } = useQuery<NbkrResponse>({
-		queryKey: ["nbkr-rates"],
-		queryFn: () => api.get("/nbkr/rates").then((r) => r.data),
-		staleTime: 60 * 60 * 1000,
 	});
 
 	const projectRows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
@@ -1235,32 +1190,10 @@ export function ProjectsProgressTab() {
 		[columnConfig.labelOverrides],
 	);
 
-	const projectMetaById = useMemo(
-		() =>
-			Object.fromEntries(
-				projects.map((p) => [
-					Number(p.id),
-					{
-						id: Number(p.id),
-						currency: p.currency,
-						exchangeRate: p.exchangeRate,
-					},
-				]),
-			),
-		[projects],
-	);
-
 	const { fmtMoney, formatCell } = useMemo(
-		() =>
-			createProgressFormatters(
-				displayCurrency,
-				nbkr?.rates || {},
-				projectMetaById,
-			),
-		[displayCurrency, nbkr?.rates, projectMetaById],
+		() => createProgressFormatters(displayCurrency, displayUsdRate),
+		[displayCurrency, displayUsdRate],
 	);
-
-	const rateLabel = nbkr?.rates ? nbkrUsdRateLabel(nbkr.rates) : null;
 
 	const setCustomValue = useCallback(
 		(columnId: string, projectId: number, raw: string) => {
@@ -1341,14 +1274,6 @@ export function ProjectsProgressTab() {
 							</SelectContent>
 						</Select>
 						<div className="flex min-w-0 flex-wrap items-start gap-2 lg:flex-nowrap lg:justify-end">
-							<CurrencyToggle
-								value={displayCurrency}
-								onChange={setDisplayCurrency}
-								rateLabel={rateLabel}
-								nbkrDate={nbkr?.date}
-								compact
-								showRate={false}
-							/>
 							<Button
 								variant="outline"
 								size="sm"

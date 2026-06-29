@@ -16,6 +16,7 @@ import {
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ProjectDisplayCurrencyControls } from "@/components/project-display-currency-controls";
 import {
 	Dialog,
 	DialogContent,
@@ -43,13 +44,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
 import { ProjectsProgressTab } from "@/pages/construction/projects-progress-tab";
 import {
-	convertProjectAmount,
+	convertProjectAmountForDisplay,
 	currencySymbol,
 	fmtProjectAmount,
 	projectCostBreakdown,
 	projectCostInCurrency,
 	projectCostLabel,
 } from "@/lib/project-currency";
+import { useProjectDisplayCurrency } from "@/hooks/use-project-display-currency";
 import { unwrapList } from "@/lib/unwrap-list";
 
 const BUILD_TYPES = [
@@ -878,7 +880,12 @@ export default function ConstructionProjects() {
 	> | null>(null);
 	const [search, setSearch] = useState("");
 	const [pageTab, setPageTab] = useState("cards");
-	const [displayCurrency, setDisplayCurrency] = useState<"KGS" | "USD">("KGS");
+	const displayCurrencyState = useProjectDisplayCurrency();
+	const {
+		displayCurrency,
+		displayUsdRate,
+		rateLabel: displayRateLabel,
+	} = displayCurrencyState;
 
 	useEffect(() => {
 		const params = new URLSearchParams(window.location.search);
@@ -965,22 +972,7 @@ export default function ConstructionProjects() {
 					</p>
 				</div>
 				<div className="flex flex-wrap items-center gap-2">
-					<div className="flex h-9 rounded-md border border-am-border bg-white p-1 shadow-sm">
-						{(["KGS", "USD"] as const).map((currency) => (
-							<button
-								key={currency}
-								type="button"
-								onClick={() => setDisplayCurrency(currency)}
-								className={`rounded px-3 text-sm font-bold transition ${
-									displayCurrency === currency
-										? "bg-slate-950 text-white shadow-sm"
-										: "text-slate-500 hover:text-slate-900"
-								}`}
-							>
-								{currency === "KGS" ? "Сом" : "USD"}
-							</button>
-						))}
-					</div>
+					<ProjectDisplayCurrencyControls {...displayCurrencyState} compact />
 					<Button
 						variant="outline"
 						onClick={() => setDocUploadOpen(true)}
@@ -1007,7 +999,7 @@ export default function ConstructionProjects() {
 				</TabsList>
 
 				<TabsContent value="progress" className="mt-0">
-					<ProjectsProgressTab />
+					<ProjectsProgressTab displayCurrencyState={displayCurrencyState} />
 				</TabsContent>
 
 				<TabsContent value="cards" className="mt-0 space-y-4">
@@ -1039,16 +1031,17 @@ export default function ConstructionProjects() {
 					{filtered.map((p) => {
 						const projectCurrency = p.currency || "KGS";
 						const cost = projectCostInCurrency(p);
-						const displayCostTotal = convertProjectAmount(
+						const displayCostTotal = convertProjectAmountForDisplay(
 							cost.total,
 							projectCurrency,
 							displayCurrency,
 							p.exchangeRate,
+							displayUsdRate,
 						);
 						const sym = currencySymbol(displayCurrency);
 						const rateLabel =
-							projectCurrency !== displayCurrency && p.exchangeRate
-								? ` · курс 1 USD = ${p.exchangeRate} сом`
+							displayCurrency !== projectCurrency && displayUsdRate > 0
+								? ` · курс ${displayRateLabel}`
 								: "";
 						const meta = parseDocumentMeta(p.documentMeta);
 						const templateMeta = parseContractTemplateMeta(p.contractTemplateMeta);
@@ -1067,21 +1060,23 @@ export default function ConstructionProjects() {
 								: (summary?.totalSaleableArea ?? totalConstructionArea);
 						const totalSpent = summary?.totalSpent ?? 0;
 						const plannedCostPerSqmRaw = parseFloat(p.costPerSqm || "0");
-						const plannedCostPerSqm = convertProjectAmount(
+						const plannedCostPerSqm = convertProjectAmountForDisplay(
 							plannedCostPerSqmRaw,
 							projectCurrency,
 							displayCurrency,
 							p.exchangeRate,
+							displayUsdRate,
 						);
 						const actualCostPerSqmRaw =
 							totalConstructionArea > 0
 								? totalSpent / totalConstructionArea
 								: summary?.actualCostPerSqm ?? 0;
-						const actualCostPerSqm = convertProjectAmount(
+						const actualCostPerSqm = convertProjectAmountForDisplay(
 							actualCostPerSqmRaw,
 							"KGS",
 							displayCurrency,
 							p.exchangeRate,
+							displayUsdRate,
 						);
 						const fmtArea = (value: number) =>
 							value > 0
@@ -1268,7 +1263,17 @@ export default function ConstructionProjects() {
 													</div>
 													{totalSpent > 0 && (
 														<p className="text-xs text-slate-400">
-															Потрачено: {fmtProjectAmount(totalSpent)} сом
+															Потрачено:{" "}
+															{fmtProjectAmount(
+																convertProjectAmountForDisplay(
+																	totalSpent,
+																	"KGS",
+																	displayCurrency,
+																	p.exchangeRate,
+																	displayUsdRate,
+																),
+															)}{" "}
+															{sym}
 															{totalConstructionArea > 0 &&
 																` · ${fmtArea(totalConstructionArea)} м²`}
 														</p>

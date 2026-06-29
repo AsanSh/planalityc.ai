@@ -42,6 +42,55 @@ export function convertProjectAmount(
 	return amount;
 }
 
+/** Сколько KGS в 1 USD для хранимых в проекте USD-сумм. */
+function projectUsdToKgsRate(exchangeRate?: string | number | null) {
+	const rate = parseFloat(String(exchangeRate || "0"));
+	return Number.isFinite(rate) && rate > 0 ? rate : 0;
+}
+
+/** Приводит сумму в валюте проекта к KGS. */
+export function projectAmountToKgs(
+	amount: number,
+	fromCurrency = "KGS",
+	projectExchangeRate?: string | number | null,
+) {
+	if (!Number.isFinite(amount)) return 0;
+	const from = fromCurrency || "KGS";
+	if (from === "KGS") return amount;
+	const rate = projectUsdToKgsRate(projectExchangeRate);
+	return rate > 0 ? amount * rate : amount;
+}
+
+/** KGS → валюта отображения (курс НБКР или ручной override). */
+export function kgsToProjectDisplay(
+	kgs: number,
+	displayCurrency = "KGS",
+	displayUsdRate = 1,
+) {
+	if (!Number.isFinite(kgs)) return 0;
+	if (displayCurrency === "KGS") return kgs;
+	const rate = displayUsdRate > 0 ? displayUsdRate : 1;
+	return kgs / rate;
+}
+
+/**
+ * Конвертация для переключателя Сом/USD на экране проектов.
+ * displayUsdRate — «1 USD = N сом» (НБКР или ручной).
+ */
+export function convertProjectAmountForDisplay(
+	amount: number,
+	fromCurrency = "KGS",
+	displayCurrency = "KGS",
+	projectExchangeRate?: string | number | null,
+	displayUsdRate = 1,
+) {
+	if (!Number.isFinite(amount)) return 0;
+	const from = fromCurrency || "KGS";
+	if (from === displayCurrency) return amount;
+	const kgs = projectAmountToKgs(amount, from, projectExchangeRate);
+	return kgsToProjectDisplay(kgs, displayCurrency, displayUsdRate);
+}
+
 /** Себестоимость в валюте проекта (то, что видит пользователь) */
 export function projectCostInCurrency(p: ProjectCurrencyFields) {
 	// totalConstructionArea имеет приоритет над устаревшим totalArea

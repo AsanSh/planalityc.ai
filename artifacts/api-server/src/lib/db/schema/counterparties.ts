@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { jsonb, pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -16,6 +16,7 @@ export const counterpartiesTable = pgTable("counterparties", {
   fullName: text("full_name").notNull(),
   iin: text("iin"),
   phone: text("phone"),
+  phones: jsonb("phones").$type<Array<{ number: string; owner?: string | null }>>(),
   email: text("email"),
   address: text("address"),
   additionalContact: text("additional_contact"),

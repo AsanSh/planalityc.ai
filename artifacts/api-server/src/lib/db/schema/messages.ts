@@ -8,6 +8,10 @@ export const messagesTable = pgTable("messages", {
   fromUserId: integer("from_user_id").notNull(),
   toUserId: integer("to_user_id"),
   content: text("content").notNull(),
+  attachmentName: text("attachment_name"),
+  attachmentMime: text("attachment_mime"),
+  attachmentData: text("attachment_data"),
+  attachmentSize: integer("attachment_size"),
   isRead: boolean("is_read").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

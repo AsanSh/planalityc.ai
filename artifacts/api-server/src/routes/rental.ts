@@ -110,6 +110,23 @@ async function logOp(
 
 const router: ReturnType<typeof Router> = Router();
 
+function normalizePhones(input: unknown, fallbackPhone?: unknown): Array<{ number: string; owner: string | null }> {
+  const raw = Array.isArray(input) ? input : [];
+  const phones = raw
+    .map((entry) => {
+      const p = entry && typeof entry === "object" ? entry as { number?: unknown; owner?: unknown } : {};
+      return {
+        number: typeof p.number === "string" ? p.number.trim() : "",
+        owner: typeof p.owner === "string" && p.owner.trim() ? p.owner.trim() : null,
+      };
+    })
+    .filter((p) => p.number);
+  if (phones.length === 0 && typeof fallbackPhone === "string" && fallbackPhone.trim()) {
+    phones.push({ number: fallbackPhone.trim(), owner: null });
+  }
+  return phones;
+}
+
 router.use(requireAuth, requireTenantCompany, requireEnabledModule("rental"));
 
 // ---------- HELPERS ----------
@@ -396,9 +413,11 @@ router.get("/rental/tenants", async (req: AuthenticatedRequest, res): Promise<vo
 });
 
 router.post("/rental/tenants", async (req: AuthenticatedRequest, res): Promise<void> => {
-  const { fullName, phone, email, iin, type, status, comment, counterpartyId } = req.body;
+  const { fullName, phone, phones, email, iin, type, status, comment, counterpartyId } = req.body;
   if (!fullName) { res.status(400).json({ error: "fullName required" }); return; }
   const companyId = req.scopedCompanyId!;
+  const normalizedPhones = normalizePhones(phones, phone);
+  const primaryPhone = normalizedPhones[0]?.number || phone || null;
 
   // Создаём/находим контрагента с ролью tenant
   const cpId = await ensureCounterpartyWithRole({
@@ -407,14 +426,14 @@ router.post("/rental/tenants", async (req: AuthenticatedRequest, res): Promise<v
     fullName,
     type: (type as "individual" | "company") || "individual",
     iin,
-    phone,
+    phone: primaryPhone,
     email,
     existingId: counterpartyId ?? null,
   });
 
   const [row] = await db.insert(tenantsTable).values({
     companyId, counterpartyId: cpId,
-    fullName, phone, email, iin,
+    fullName, phone: primaryPhone, phones: normalizedPhones, email, iin,
     type: type || "individual",
     status: status || "active",
     comment,
@@ -433,11 +452,21 @@ router.get("/rental/tenants/:id", async (req: AuthenticatedRequest, res): Promis
 
 router.patch("/rental/tenants/:id", async (req: AuthenticatedRequest, res): Promise<void> => {
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
-  const { fullName, phone, email, iin, type, status, comment } = req.body;
+  const { fullName, phone, phones, email, iin, type, status, comment } = req.body;
+  const normalizedPhones = phones !== undefined ? normalizePhones(phones, phone) : undefined;
   const conditions: SQL[] = [eq(tenantsTable.id, id)];
   conditions.push(eq(tenantsTable.companyId, req.scopedCompanyId!));
   const [row] = await db.update(tenantsTable)
-    .set({ fullName, phone, email, iin, type, status, comment })
+    .set({
+      fullName,
+      phone: normalizedPhones ? normalizedPhones[0]?.number || null : phone,
+      phones: normalizedPhones,
+      email,
+      iin,
+      type,
+      status,
+      comment,
+    })
     .where(and(...conditions)).returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
   res.json(row);

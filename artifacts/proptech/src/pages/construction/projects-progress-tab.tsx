@@ -7,6 +7,8 @@ import {
 	FileSpreadsheet,
 	Landmark,
 	Layers,
+	LayoutGrid,
+	List as ListIcon,
 	Plus,
 	Search,
 	Settings2,
@@ -15,7 +17,17 @@ import {
 	TrendingUp,
 	Wallet,
 } from "lucide-react";
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import {
+	createContext,
+	useCallback,
+	useContext,
+	useMemo,
+	useState,
+	type ReactNode,
+} from "react";
+
+type MetricView = "grid" | "rows";
+const MetricViewCtx = createContext<MetricView>("grid");
 import { Button } from "@/components/ui/button";
 import {
 	Collapsible,
@@ -429,7 +441,15 @@ function MetricStrip({
 	children: ReactNode;
 	className?: string;
 }) {
+	const view = useContext(MetricViewCtx);
 	const cellMin = itemCount >= 6 ? 128 : 148;
+	if (view === "rows") {
+		return (
+			<div className={cn("min-w-0 divide-y divide-am-border/50", className)}>
+				{children}
+			</div>
+		);
+	}
 	return (
 		<div className={cn("min-w-0", className)}>
 			<div
@@ -453,6 +473,29 @@ function MetricTile({
 	value: string;
 	tone?: "positive" | "negative" | "neutral" | "warning";
 }) {
+	const view = useContext(MetricViewCtx);
+	const valueTone = cn(
+		"tabular-nums transition-colors",
+		tone === "positive" && "text-emerald-700",
+		tone === "negative" && "text-rose-700",
+		tone === "warning" && "text-amber-700",
+		tone === "neutral" && "text-am-text-strong",
+	);
+	if (view === "rows") {
+		return (
+			<div className="group/tile flex min-w-0 items-center justify-between gap-3 px-1 py-2 transition-colors duration-200 hover:bg-slate-50">
+				<span className="truncate text-[13px] text-am-text-muted" title={label}>
+					{label}
+				</span>
+				<span
+					className={cn("shrink-0 text-[13px] font-semibold", valueTone)}
+					title={value}
+				>
+					{value}
+				</span>
+			</div>
+		);
+	}
 	return (
 		<div className="group/tile flex min-h-[58px] min-w-0 flex-col justify-between rounded-md px-2 py-1.5 transition-colors duration-200 hover:bg-slate-50">
 			<p
@@ -463,11 +506,8 @@ function MetricTile({
 			</p>
 			<p
 				className={cn(
-					"truncate text-sm font-semibold leading-tight tabular-nums transition-colors sm:text-base",
-					tone === "positive" && "text-emerald-700",
-					tone === "negative" && "text-rose-700",
-					tone === "warning" && "text-amber-700",
-					tone === "neutral" && "text-am-text-strong",
+					"truncate text-sm font-semibold leading-tight sm:text-base",
+					valueTone,
 				)}
 				title={value}
 			>
@@ -1161,6 +1201,7 @@ export function ProjectsProgressTab({
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [search, setSearch] = useState("");
 	const [projectFilter, setProjectFilter] = useState("all");
+	const [metricView, setMetricView] = useState<MetricView>("grid");
 
 	const { data, isLoading, isError } = useQuery({
 		queryKey: ["construction-projects-progress"],
@@ -1306,6 +1347,14 @@ export function ProjectsProgressTab({
 							>
 								<Download className="w-4 h-4" /> CSV
 							</Button>
+							<div className="flex items-center gap-0.5 rounded-md border border-am-border bg-white p-0.5">
+								<button type="button" onClick={() => setMetricView("grid")} title="Сетка" className={cn("flex h-8 w-8 items-center justify-center rounded transition-colors", metricView === "grid" ? "bg-am-brand text-white" : "text-am-text-muted hover:bg-slate-100")}>
+									<LayoutGrid className="h-4 w-4" />
+								</button>
+								<button type="button" onClick={() => setMetricView("rows")} title="Строки (фин-отчёт)" className={cn("flex h-8 w-8 items-center justify-center rounded transition-colors", metricView === "rows" ? "bg-am-brand text-white" : "text-am-text-muted hover:bg-slate-100")}>
+									<ListIcon className="h-4 w-4" />
+								</button>
+							</div>
 							<Button
 								variant="outline"
 								size="sm"
@@ -1329,20 +1378,22 @@ export function ProjectsProgressTab({
 						: "Нет данных по проектам"}
 				</div>
 			) : (
-				<div className="grid gap-3 2xl:grid-cols-2">
-					{filteredRows.map((row, index) => (
-						<ProjectProgressCard
-							key={row.projectId}
-							row={row}
-							index={index}
-							config={columnConfig}
-							labelFor={labelFor}
-							onCustomValue={setCustomValue}
-							formatCell={formatCell}
-							fmtMoney={fmtMoney}
-						/>
-					))}
-				</div>
+				<MetricViewCtx.Provider value={metricView}>
+					<div className="grid gap-3">
+						{filteredRows.map((row, index) => (
+							<ProjectProgressCard
+								key={row.projectId}
+								row={row}
+								index={index}
+								config={columnConfig}
+								labelFor={labelFor}
+								onCustomValue={setCustomValue}
+								formatCell={formatCell}
+								fmtMoney={fmtMoney}
+							/>
+						))}
+					</div>
+				</MetricViewCtx.Provider>
 			)}
 
 			<SettingsSheet

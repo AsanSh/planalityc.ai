@@ -161,13 +161,31 @@ router.get("/messages/:partnerId", requireAuth, async (req: AuthenticatedRequest
 });
 
 router.post("/messages", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
-  const { toUserId, content } = req.body;
-  if (!toUserId || !content?.trim()) { res.status(400).json({ error: "toUserId and content required" }); return; }
+  const { toUserId, content, attachment } = req.body;
+  const text = typeof content === "string" ? content.trim() : "";
+  const hasAttachment =
+    attachment &&
+    typeof attachment.fileName === "string" &&
+    typeof attachment.dataBase64 === "string" &&
+    typeof attachment.mimeType === "string";
+  if (!toUserId || (!text && !hasAttachment)) {
+    res.status(400).json({ error: "toUserId and content or attachment required" });
+    return;
+  }
+  const dataBase64 = hasAttachment ? String(attachment.dataBase64) : null;
+  if (dataBase64 && dataBase64.length > 8_000_000) {
+    res.status(413).json({ error: "Файл слишком большой. Максимум около 6 МБ." });
+    return;
+  }
   const [row] = await db.insert(messagesTable).values({
     companyId: req.companyId!,
     fromUserId: req.userId!,
     toUserId,
-    content: content.trim(),
+    content: text,
+    attachmentName: hasAttachment ? String(attachment.fileName).slice(0, 240) : null,
+    attachmentMime: hasAttachment ? String(attachment.mimeType).slice(0, 120) : null,
+    attachmentData: dataBase64,
+    attachmentSize: hasAttachment && typeof attachment.size === "number" ? attachment.size : null,
   }).returning();
   res.status(201).json(row);
 });

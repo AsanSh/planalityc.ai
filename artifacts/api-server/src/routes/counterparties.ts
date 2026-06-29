@@ -24,6 +24,23 @@ function normalizeCategories(input: unknown): string[] {
   return [];
 }
 
+function normalizePhones(input: unknown, fallbackPhone?: unknown): Array<{ number: string; owner: string | null }> {
+  const raw = Array.isArray(input) ? input : [];
+  const phones = raw
+    .map((entry) => {
+      const p = entry && typeof entry === "object" ? entry as { number?: unknown; owner?: unknown } : {};
+      return {
+        number: typeof p.number === "string" ? p.number.trim() : "",
+        owner: typeof p.owner === "string" && p.owner.trim() ? p.owner.trim() : null,
+      };
+    })
+    .filter((p) => p.number);
+  if (phones.length === 0 && typeof fallbackPhone === "string" && fallbackPhone.trim()) {
+    phones.push({ number: fallbackPhone.trim(), owner: null });
+  }
+  return phones;
+}
+
 router.get("/counterparties", async (req: AuthenticatedRequest, res): Promise<void> => {
   const { type, search, role, roles } = req.query as { type?: string; search?: string; role?: string; roles?: string };
   const conditions: SQL[] = [];
@@ -50,7 +67,7 @@ router.get("/counterparties", async (req: AuthenticatedRequest, res): Promise<vo
 });
 
 router.post("/counterparties", async (req: AuthenticatedRequest, res): Promise<void> => {
-  const { type, category, categories, fullName, iin, phone, email, address, additionalContact, comment, externalId } = req.body;
+  const { type, category, categories, fullName, iin, phone, phones, email, address, additionalContact, comment, externalId } = req.body;
   if (!type || !fullName) { res.status(400).json({ error: "type and fullName are required" }); return; }
 
   // Принимаем категории как массив, fallback на одиночное category
@@ -65,12 +82,15 @@ router.post("/counterparties", async (req: AuthenticatedRequest, res): Promise<v
     return;
   }
 
+  const normalizedPhones = normalizePhones(phones, phone);
+  const primaryPhone = normalizedPhones[0]?.number || phone || null;
+
   const [row] = await db.insert(counterpartiesTable).values({
     companyId: req.scopedCompanyId!,
     type,
     category: cats[0], // legacy field
     categories: cats,
-    fullName, iin, phone, email, address, additionalContact, comment, externalId,
+    fullName, iin, phone: primaryPhone, phones: normalizedPhones, email, address, additionalContact, comment, externalId,
   }).returning();
   res.status(201).json(row);
 });
@@ -86,10 +106,21 @@ router.get("/counterparties/:id", async (req: AuthenticatedRequest, res): Promis
 
 router.patch("/counterparties/:id", async (req: AuthenticatedRequest, res): Promise<void> => {
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
-  const { type, category, categories, fullName, iin, phone, email, address, additionalContact, comment, linkedLegalEntityId } = req.body;
+  const { type, category, categories, fullName, iin, phone, phones, email, address, additionalContact, comment, linkedLegalEntityId } = req.body;
   const conditions: SQL[] = [eq(counterpartiesTable.id, id)];
   conditions.push(eq(counterpartiesTable.companyId, req.scopedCompanyId!));
-  const updates: Record<string, unknown> = { type, fullName, iin, phone, email, address, additionalContact, comment };
+  const normalizedPhones = phones !== undefined ? normalizePhones(phones, phone) : undefined;
+  const updates: Record<string, unknown> = {
+    type,
+    fullName,
+    iin,
+    phone: normalizedPhones ? normalizedPhones[0]?.number || null : phone,
+    email,
+    address,
+    additionalContact,
+    comment,
+  };
+  if (normalizedPhones) updates.phones = normalizedPhones;
   if (category !== undefined) updates.category = category;
   // linkedLegalEntityId: помечает контрагента как другое юрлицо группы (intercompany). number | null
   if (linkedLegalEntityId !== undefined) {

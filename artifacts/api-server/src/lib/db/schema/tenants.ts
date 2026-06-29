@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { jsonb, pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -8,6 +8,7 @@ export const tenantsTable = pgTable("tenants", {
   counterpartyId: integer("counterparty_id"),
   fullName: text("full_name").notNull(),
   phone: text("phone"),
+  phones: jsonb("phones").$type<Array<{ number: string; owner?: string | null }>>(),
   email: text("email"),
   iin: text("iin"),
   type: text("type").notNull().default("individual"),

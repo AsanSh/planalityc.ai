@@ -47,6 +47,23 @@ const statusLabels: Record<string, string> = {
 	blacklisted: "Черный список",
 };
 
+type ContactPhone = { number: string; owner: string };
+
+function normalizeContactPhones(value: unknown, fallbackPhone?: string | null): ContactPhone[] {
+	const raw = Array.isArray(value) ? value : [];
+	const phones = raw
+		.map((entry) => {
+			const p = entry && typeof entry === "object" ? (entry as { number?: unknown; owner?: unknown }) : {};
+			return {
+				number: typeof p.number === "string" ? p.number : "",
+				owner: typeof p.owner === "string" ? p.owner : "",
+			};
+		})
+		.filter((p) => p.number.trim() || p.owner.trim());
+	if (phones.length === 0) phones.push({ number: fallbackPhone || "", owner: "" });
+	return phones;
+}
+
 interface TenantDialogProps {
 	open: boolean;
 	onClose: () => void;
@@ -62,6 +79,7 @@ function TenantDialog({ open, onClose, tenant }: TenantDialogProps) {
 	const [formData, setFormData] = useState({
 		fullName: "",
 		phone: "",
+		phones: [{ number: "", owner: "" }] as ContactPhone[],
 		email: "",
 		iin: "",
 		status: "active" as CreateTenantBodyStatus,
@@ -73,6 +91,7 @@ function TenantDialog({ open, onClose, tenant }: TenantDialogProps) {
 			setFormData({
 				fullName: tenant.fullName,
 				phone: tenant.phone || "",
+				phones: normalizeContactPhones((tenant as any).phones, tenant.phone),
 				email: tenant.email || "",
 				iin: tenant.iin || "",
 				status: tenant.status as CreateTenantBodyStatus,
@@ -82,6 +101,7 @@ function TenantDialog({ open, onClose, tenant }: TenantDialogProps) {
 			setFormData({
 				fullName: "",
 				phone: "",
+				phones: [{ number: "", owner: "" }],
 				email: "",
 				iin: "",
 				status: "active",
@@ -95,7 +115,10 @@ function TenantDialog({ open, onClose, tenant }: TenantDialogProps) {
 		try {
 			const payload = {
 				fullName: formData.fullName,
-				phone: formData.phone || null,
+				phone: formData.phones[0]?.number || formData.phone || null,
+				phones: formData.phones
+					.map((p) => ({ number: p.number.trim(), owner: p.owner.trim() || null }))
+					.filter((p) => p.number),
 				email: formData.email || null,
 				iin: formData.iin || null,
 				status: formData.status,
@@ -125,7 +148,7 @@ function TenantDialog({ open, onClose, tenant }: TenantDialogProps) {
 
 	return (
 		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-			<DialogContent className="sm:max-w-md">
+			<DialogContent className="sm:max-w-2xl">
 				<DialogHeader>
 					<DialogTitle>
 						{tenant ? "Редактировать арендатора" : "Добавить арендатора"}
@@ -154,16 +177,72 @@ function TenantDialog({ open, onClose, tenant }: TenantDialogProps) {
 							placeholder="880101300122"
 						/>
 					</div>
-					<div>
-						<Label htmlFor="phone">Телефон</Label>
-						<Input
-							id="phone"
-							value={formData.phone}
-							onChange={(e) =>
-								setFormData({ ...formData, phone: e.target.value })
-							}
-							placeholder="+7 700 000 0000"
-						/>
+					<div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+						<div className="mb-2 flex items-center justify-between gap-3">
+							<div>
+								<Label className="text-sm font-semibold">Телефоны</Label>
+								<p className="text-xs text-slate-500">
+									Добавляйте номера директора, бухгалтера или ответственного.
+								</p>
+							</div>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() =>
+									setFormData({
+										...formData,
+										phones: [...formData.phones, { number: "", owner: "" }],
+									})
+								}
+							>
+								<Plus className="mr-1 h-3.5 w-3.5" />
+								Номер
+							</Button>
+						</div>
+						<div className="space-y-2">
+							{formData.phones.map((phoneRow, index) => (
+								<div key={index} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+									<Input
+										value={phoneRow.number}
+										onChange={(e) => {
+											const phones = [...formData.phones];
+											phones[index] = { ...phones[index], number: e.target.value };
+											setFormData({
+												...formData,
+												phones,
+												phone: index === 0 ? e.target.value : formData.phone,
+											});
+										}}
+										placeholder="+996 700 000 000"
+									/>
+									<Input
+										value={phoneRow.owner}
+										onChange={(e) => {
+											const phones = [...formData.phones];
+											phones[index] = { ...phones[index], owner: e.target.value };
+											setFormData({ ...formData, phones });
+										}}
+										placeholder="Владелец номера: директор, бухгалтер..."
+									/>
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon"
+										className="text-slate-400 hover:text-rose-600"
+										disabled={formData.phones.length === 1}
+										onClick={() =>
+											setFormData({
+												...formData,
+												phones: formData.phones.filter((_, i) => i !== index),
+											})
+										}
+									>
+										<Trash2 className="h-4 w-4" />
+									</Button>
+								</div>
+							))}
+						</div>
 					</div>
 					<div>
 						<Label htmlFor="email">Email</Label>
@@ -325,7 +404,18 @@ export default function RentalTenants() {
 				header: "Телефон",
 				size: 140,
 				meta: { exportLabel: "Телефон" },
-				cell: ({ row }) => row.original.phone || "—",
+				cell: ({ row }) => {
+					const phones = normalizeContactPhones((row.original as any).phones, row.original.phone)
+						.filter((p) => p.number.trim());
+					if (!phones.length) return "—";
+					return (
+						<div className="space-y-0.5">
+							<div className="text-sm font-medium text-slate-700">{phones[0].number}</div>
+							{phones[0].owner && <div className="text-[11px] text-slate-500">{phones[0].owner}</div>}
+							{phones.length > 1 && <div className="text-[11px] text-cyan-700">+{phones.length - 1} еще</div>}
+						</div>
+					);
+				},
 			},
 			{
 				accessorKey: "email",

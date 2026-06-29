@@ -849,7 +849,11 @@ export function Layout({ children }: { children: ReactNode }) {
 
 	const navSections = useMemo(() => {
 		const userRole = (user as { role?: string })?.role;
-		const isPtoRole = userRole === "pto" || userRole === "engineer";
+		const isPtoRole =
+			userRole === "pto" ||
+			userRole === "engineer" ||
+			userRole === "pto_engineer" ||
+			userRole === "construction_project_manager";
 		let sections = activeModule.sections;
 		if (isPtoRole && activeModule.id === "construction") {
 			sections = sections.filter((s) =>

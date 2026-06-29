@@ -210,7 +210,7 @@ export default function ConstructionExpenseAnalysis() {
 
 			<div className="mt-6 space-y-2">
 				<p className="text-sm font-semibold text-gray-700 px-1">Детализация расходов</p>
-				<DataTable
+				<DataTable maxHeight="calc(100vh - 320px)"
 					tableId="construction-expense-detail"
 					columns={expenseColumns}
 					data={expenses}

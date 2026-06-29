@@ -671,7 +671,7 @@ export default function ConstructionOperations() {
 
 				{/* Operations list */}
 				<div className="flex-1">
-					<DataTable
+					<DataTable maxHeight="calc(100vh - 320px)"
 						tableId="construction-operations"
 						columns={opColumns}
 						data={filteredArray}

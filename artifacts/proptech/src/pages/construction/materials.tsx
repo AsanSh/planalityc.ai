@@ -503,7 +503,7 @@ export default function ConstructionMaterials() {
 				))}
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="construction-materials"
 				columns={columns}
 				data={materials}

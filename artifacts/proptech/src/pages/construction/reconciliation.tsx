@@ -427,7 +427,7 @@ function InboxDataTable({
 	);
 
 	return (
-		<DataTable
+		<DataTable maxHeight="calc(100vh - 320px)"
 			tableId="construction-reconciliation-inbox"
 			columns={columns}
 			data={lines}
@@ -512,7 +512,7 @@ function HistoryTable({ lines }: { lines: ReconLine[] }) {
 	);
 
 	return (
-		<DataTable
+		<DataTable maxHeight="calc(100vh - 320px)"
 			tableId="construction-reconciliation-history"
 			columns={columns}
 			data={lines}

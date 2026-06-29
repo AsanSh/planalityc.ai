@@ -211,7 +211,7 @@ export default function ConstructionOverdue() {
 				</div>
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="construction-overdue"
 				columns={columns}
 				data={overdue}

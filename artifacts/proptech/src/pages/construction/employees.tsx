@@ -232,7 +232,7 @@ export default function ConstructionEmployees() {
 				</div>
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="construction-employees"
 				columns={columns}
 				data={users}

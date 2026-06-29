@@ -939,7 +939,7 @@ export default function ConstructionContractors() {
 				</Button>
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="construction-contractors"
 				columns={columns}
 				data={contractors}

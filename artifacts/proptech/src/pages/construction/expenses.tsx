@@ -832,7 +832,7 @@ export default function ConstructionExpenses() {
 				</div>
 			)}
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="construction-expenses"
 				columns={columns}
 				data={filteredExpenses}

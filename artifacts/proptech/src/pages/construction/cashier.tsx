@@ -547,7 +547,7 @@ export default function ConstructionCashier() {
 
 				{tableMode === "history" ? (
 					<div className="p-4">
-						<DataTable
+						<DataTable maxHeight="calc(100vh - 320px)"
 							tableId="construction-cashier"
 							columns={paymentColumns}
 							data={contractPayments}

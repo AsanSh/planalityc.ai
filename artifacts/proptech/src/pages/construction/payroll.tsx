@@ -685,7 +685,7 @@ function LedgerTab({
 	}
 
 	return (
-		<DataTable
+		<DataTable maxHeight="calc(100vh - 320px)"
 			tableId="construction-payroll-ledger"
 			columns={columns}
 			data={employees}
@@ -1120,7 +1120,7 @@ function RequestsTab({
 					</Button>
 				</div>
 			)}
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="construction-payroll-requests"
 				columns={columns}
 				data={requests}
@@ -1227,7 +1227,7 @@ function HistoryTab() {
 	);
 
 	return (
-		<DataTable
+		<DataTable maxHeight="calc(100vh - 320px)"
 			tableId="construction-payroll-history"
 			columns={columns}
 			data={changes}

@@ -285,7 +285,7 @@ export default function ConstructionForecast() {
 				)}
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				key={sortBy}
 				tableId="construction-forecast"
 				columns={columns}

@@ -995,7 +995,7 @@ function TasksTable({
 	);
 
 	return (
-		<DataTable
+		<DataTable maxHeight="calc(100vh - 320px)"
 			tableId="construction-tasks"
 			columns={columns}
 			data={tasks}

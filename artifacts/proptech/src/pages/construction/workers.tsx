@@ -441,7 +441,7 @@ export default function ConstructionWorkers() {
 				))}
 			</div>
 
-			<DataTable
+			<DataTable maxHeight="calc(100vh - 320px)"
 				tableId="construction-workers"
 				columns={columns}
 				data={workers}

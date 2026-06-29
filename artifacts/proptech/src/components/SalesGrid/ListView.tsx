@@ -138,7 +138,7 @@ export function ListView({
 	);
 
 	return (
-		<Tablo
+		<Tablo maxHeight="calc(100vh - 320px)"
 			tableId="sales-grid-list"
 			title="Список квартир"
 			meta={`${units.length} записей`}

@@ -487,18 +487,18 @@ export default function InvestorDetail() {
 						Нет связанных объектов
 					</div>
 				) : (
-					<div className="overflow-x-auto">
+					<div className="overflow-auto max-h-[420px]">
 						<table className="w-full text-sm">
 							<thead>
 								<tr className="text-xs text-gray-500 border-b bg-gray-50/50">
-									<th className="text-left px-5 py-2.5 font-medium">Объект</th>
-									<th className="text-right px-5 py-2.5 font-medium">
+									<th className="text-left px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">Объект</th>
+									<th className="text-right px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">
 										Доля, %
 									</th>
-									<th className="text-right px-5 py-2.5 font-medium">
+									<th className="text-right px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">
 										Инвестировано
 									</th>
-									<th className="text-right px-5 py-2.5 font-medium">Дата</th>
+									<th className="text-right px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">Дата</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -576,15 +576,15 @@ export default function InvestorDetail() {
 						Нет выплат
 					</div>
 				) : (
-					<div className="overflow-x-auto">
+					<div className="overflow-auto max-h-[420px]">
 						<table className="w-full text-sm">
 							<thead>
 								<tr className="text-xs text-gray-500 border-b bg-gray-50/50">
-									<th className="text-left px-5 py-2.5 font-medium">Дата</th>
-									<th className="text-left px-5 py-2.5 font-medium">Объект</th>
-									<th className="text-left px-5 py-2.5 font-medium">Тип</th>
-									<th className="text-right px-5 py-2.5 font-medium">Сумма</th>
-									<th className="text-left px-5 py-2.5 font-medium">Статус</th>
+									<th className="text-left px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">Дата</th>
+									<th className="text-left px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">Объект</th>
+									<th className="text-left px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">Тип</th>
+									<th className="text-right px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">Сумма</th>
+									<th className="text-left px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">Статус</th>
 								</tr>
 							</thead>
 							<tbody>

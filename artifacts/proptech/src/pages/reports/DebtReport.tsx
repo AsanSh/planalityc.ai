@@ -101,26 +101,26 @@ export default function DebtReport() {
 						<p className="text-sm mt-1">Все арендаторы оплачивают вовремя</p>
 					</div>
 				) : (
-					<div className="overflow-x-auto">
+					<div className="overflow-auto max-h-[calc(100vh-260px)]">
 						<table className="w-full text-sm">
 							<thead className="bg-gray-50 border-b border-gray-100">
 								<tr>
-									<th className="text-left px-6 py-3 font-medium text-gray-500">
+									<th className="text-left px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 										Арендатор
 									</th>
-									<th className="text-left px-6 py-3 font-medium text-gray-500">
+									<th className="text-left px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 										Объект
 									</th>
-									<th className="text-right px-6 py-3 font-medium text-gray-500">
+									<th className="text-right px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 										Общий долг
 									</th>
-									<th className="text-right px-6 py-3 font-medium text-gray-500">
+									<th className="text-right px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 										Просрочено
 									</th>
-									<th className="text-left px-6 py-3 font-medium text-gray-500">
+									<th className="text-left px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 										Периоды
 									</th>
-									<th className="text-left px-6 py-3 font-medium text-gray-500">
+									<th className="text-left px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 										Статус
 									</th>
 								</tr>

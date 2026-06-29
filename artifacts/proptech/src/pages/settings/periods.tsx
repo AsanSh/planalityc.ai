@@ -472,26 +472,26 @@ export default function SettingsPeriods() {
 					</p>
 				</div>
 			) : (
-				<div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+				<div className="bg-white border border-gray-200 rounded-xl overflow-auto max-h-[calc(100vh-300px)]">
 					<table className="w-full text-sm">
 						<thead>
 							<tr className="border-b border-gray-100 bg-gray-50">
-								<th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+								<th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-10 bg-gray-50">
 									Период
 								</th>
-								<th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+								<th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-10 bg-gray-50">
 									Модуль
 								</th>
-								<th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+								<th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-10 bg-gray-50">
 									Дата начала
 								</th>
-								<th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+								<th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-10 bg-gray-50">
 									Дата окончания
 								</th>
-								<th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+								<th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-10 bg-gray-50">
 									Статус
 								</th>
-								<th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+								<th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-10 bg-gray-50">
 									Действия
 								</th>
 							</tr>

@@ -476,16 +476,16 @@ export default function TenantDetail() {
 						Нет договоров
 					</div>
 				) : (
-					<div className="overflow-x-auto">
+					<div className="overflow-auto max-h-[420px]">
 						<table className="w-full text-sm">
 							<thead>
 								<tr className="text-xs text-gray-500 border-b bg-gray-50/50">
-									<th className="text-left px-5 py-2.5 font-medium">Объект</th>
-									<th className="text-right px-5 py-2.5 font-medium">
+									<th className="text-left px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">Объект</th>
+									<th className="text-right px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">
 										Аренда / мес
 									</th>
-									<th className="text-left px-5 py-2.5 font-medium">Период</th>
-									<th className="text-left px-5 py-2.5 font-medium">Статус</th>
+									<th className="text-left px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">Период</th>
+									<th className="text-left px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">Статус</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -566,22 +566,22 @@ export default function TenantDetail() {
 						Нет платежей
 					</div>
 				) : (
-					<div className="overflow-x-auto">
+					<div className="overflow-auto max-h-[420px]">
 						<table className="w-full text-sm">
 							<thead>
 								<tr className="text-xs text-gray-500 border-b bg-gray-50/50">
-									<th className="text-left px-5 py-2.5 font-medium">Дата</th>
-									<th className="text-left px-5 py-2.5 font-medium">
+									<th className="text-left px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">Дата</th>
+									<th className="text-left px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">
 										Назначение
 									</th>
-									<th className="text-left px-5 py-2.5 font-medium">Способ</th>
-									<th className="text-right px-5 py-2.5 font-medium">
+									<th className="text-left px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">Способ</th>
+									<th className="text-right px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">
 										Начислено
 									</th>
-									<th className="text-right px-5 py-2.5 font-medium">
+									<th className="text-right px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">
 										Оплачено
 									</th>
-									<th className="text-right px-5 py-2.5 font-medium">Баланс</th>
+									<th className="text-right px-5 py-2.5 font-medium sticky top-0 z-10 bg-gray-50">Баланс</th>
 								</tr>
 							</thead>
 							<tbody>

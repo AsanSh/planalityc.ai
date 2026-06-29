@@ -238,23 +238,23 @@ export default function RentalSummaryReport() {
 						Детализация по периодам
 					</h2>
 				</div>
-				<div className="overflow-x-auto">
+				<div className="overflow-auto max-h-[calc(100vh-260px)]">
 					<table className="w-full text-sm">
 						<thead className="bg-gray-50 border-b border-gray-100">
 							<tr>
-								<th className="text-left px-6 py-3 font-medium text-gray-500">
+								<th className="text-left px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 									Период
 								</th>
-								<th className="text-right px-6 py-3 font-medium text-gray-500">
+								<th className="text-right px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 									Начислено
 								</th>
-								<th className="text-right px-6 py-3 font-medium text-gray-500">
+								<th className="text-right px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 									Оплачено
 								</th>
-								<th className="text-right px-6 py-3 font-medium text-gray-500">
+								<th className="text-right px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 									Долг
 								</th>
-								<th className="text-right px-6 py-3 font-medium text-gray-500">
+								<th className="text-right px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 									Договоров
 								</th>
 							</tr>

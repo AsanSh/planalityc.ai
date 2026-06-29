@@ -556,10 +556,10 @@ export default function ConstructionCashier() {
 						/>
 					</div>
 				) : (
-					<div className="am-table-wrap">
+					<div className="am-table-wrap" style={{ maxHeight: "calc(100vh - 320px)" }}>
 						<table className="w-full min-w-[980px] text-sm">
 							<thead className="am-table-head text-left text-xs uppercase tracking-wide">
-								<tr>
+								<tr className="[&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:bg-[hsl(226_52%_9%)]">
 									<th className="px-3 py-2">Срок</th>
 									<th className="px-3 py-2">Договор / покупатель</th>
 									<th className="px-3 py-2">Платёж</th>

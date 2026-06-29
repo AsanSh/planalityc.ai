@@ -750,7 +750,7 @@ export default function Payments() {
 			}
 		>
 			<RentalQueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
-				<Tablo
+				<Tablo maxHeight="calc(100vh - 320px)"
 					tableId="rental-payments"
 					columns={tableColumns}
 					data={enrichedPayments}

@@ -106,29 +106,29 @@ export default function PaymentsReport() {
 						<p>Нет платежей за выбранный период</p>
 					</div>
 				) : (
-					<div className="overflow-x-auto">
+					<div className="overflow-auto max-h-[calc(100vh-260px)]">
 						<table className="w-full text-sm">
 							<thead className="bg-gray-50 border-b border-gray-100">
 								<tr>
-									<th className="text-left px-6 py-3 font-medium text-gray-500">
+									<th className="text-left px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 										Дата
 									</th>
-									<th className="text-left px-6 py-3 font-medium text-gray-500">
+									<th className="text-left px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 										Арендатор
 									</th>
-									<th className="text-left px-6 py-3 font-medium text-gray-500">
+									<th className="text-left px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 										Объект
 									</th>
-									<th className="text-left px-6 py-3 font-medium text-gray-500">
+									<th className="text-left px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 										Договор №
 									</th>
-									<th className="text-left px-6 py-3 font-medium text-gray-500">
+									<th className="text-left px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 										Метод
 									</th>
-									<th className="text-right px-6 py-3 font-medium text-gray-500">
+									<th className="text-right px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 										Сумма
 									</th>
-									<th className="text-left px-6 py-3 font-medium text-gray-500">
+									<th className="text-left px-6 py-3 font-medium text-gray-500 sticky top-0 z-10 bg-gray-50">
 										Аллокации
 									</th>
 								</tr>

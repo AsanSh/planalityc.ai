@@ -678,7 +678,7 @@ export default function ConstructionContractsSales() {
 				</div>
 			}
 		>
-			<Tablo
+			<Tablo maxHeight="calc(100vh - 320px)"
 				title="Договоры ДКП"
 				meta={`${filtered.length} записей`}
 				tableId="construction-contracts-sales"

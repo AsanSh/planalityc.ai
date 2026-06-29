@@ -50,6 +50,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { SystemSettingsBar } from "@/components/system-settings-nav";
 import { api } from "@/lib/api";
+import { LegalEntityField } from "@/components/legal-entity-field";
 import { cn } from "@/lib/utils";
 
 type AccountType = "bank" | "cash" | "card";
@@ -67,6 +68,7 @@ interface SystemAccount {
 	currentBalance: number;
 	isActive: boolean;
 	notes?: string;
+	legalEntityId?: number | null;
 	createdAt?: string;
 	updatedAt?: string;
 }
@@ -98,6 +100,7 @@ type BankAccountRow = {
 	isActive: boolean;
 	notes?: string | null;
 	module?: string;
+	legalEntityId?: number | null;
 	createdAt?: string;
 	updatedAt?: string;
 };
@@ -115,6 +118,7 @@ function mapBankAccount(row: BankAccountRow): SystemAccount {
 		currentBalance: parseFloat(String(row.currentBalance ?? 0)),
 		isActive: row.isActive,
 		notes: row.notes ?? undefined,
+		legalEntityId: row.legalEntityId ?? null,
 		createdAt: row.createdAt,
 		updatedAt: row.updatedAt,
 	};
@@ -130,6 +134,7 @@ function toBankAccountCreatePayload(formData: {
 	openingBalance: string;
 	isActive: boolean;
 	notes: string;
+	legalEntityId: number | null;
 }) {
 	const opening = parseFloat(formData.openingBalance) || 0;
 	return {
@@ -144,6 +149,7 @@ function toBankAccountCreatePayload(formData: {
 		module: "consolidated",
 		isActive: formData.isActive,
 		notes: formData.notes || null,
+		legalEntityId: formData.legalEntityId,
 	};
 }
 
@@ -157,6 +163,7 @@ function toBankAccountUpdatePayload(formData: {
 	openingBalance: string;
 	isActive: boolean;
 	notes: string;
+	legalEntityId: number | null;
 }) {
 	const opening = parseFloat(formData.openingBalance) || 0;
 	return {
@@ -169,6 +176,7 @@ function toBankAccountUpdatePayload(formData: {
 		openingBalance: String(opening),
 		isActive: formData.isActive,
 		notes: formData.notes || null,
+		legalEntityId: formData.legalEntityId,
 	};
 }
 
@@ -204,6 +212,7 @@ function AccountDialog({ open, onClose, account }: AccountDialogProps) {
 		openingBalance: "",
 		isActive: true,
 		notes: "",
+		legalEntityId: null as number | null,
 	});
 
 	useEffect(() => {
@@ -218,6 +227,7 @@ function AccountDialog({ open, onClose, account }: AccountDialogProps) {
 				openingBalance: account.openingBalance.toString(),
 				isActive: account.isActive,
 				notes: account.notes || "",
+				legalEntityId: account.legalEntityId ?? null,
 			});
 		} else if (!account && open) {
 			setFormData({
@@ -230,6 +240,7 @@ function AccountDialog({ open, onClose, account }: AccountDialogProps) {
 				openingBalance: "0",
 				isActive: true,
 				notes: "",
+				legalEntityId: null,
 			});
 		}
 	}, [account, open]);
@@ -289,6 +300,7 @@ function AccountDialog({ open, onClose, account }: AccountDialogProps) {
 					</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-4">
+						<LegalEntityField required label="ÐÑÐÐ (Ð²Ð»Ð°Ð´ÐµÐ»ÐµÑ ÑÑÑÑÐ°)" value={formData.legalEntityId} onChange={(id) => setFormData({ ...formData, legalEntityId: id })} />
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Название счета *</Label>

@@ -217,6 +217,8 @@ export default function ConstructionAccounts() {
 							/>
 						</div>
 						<LegalEntityField
+							required
+							label="ОсОО (владелец счёта)"
 							value={form.legalEntityId}
 							onChange={(id) => setForm((f) => ({ ...f, legalEntityId: id }))}
 						/>

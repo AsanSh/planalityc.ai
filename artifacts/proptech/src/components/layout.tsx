@@ -903,6 +903,7 @@ export function Layout({ children }: { children: ReactNode }) {
 			finance: FIN_WL,
 			finance_director: FIN_WL,
 			financial_director: FIN_WL,
+			finance_operations_specialist: FIN_WL,
 			accountant: FIN_WL,
 			chief_accountant: FIN_WL,
 		};

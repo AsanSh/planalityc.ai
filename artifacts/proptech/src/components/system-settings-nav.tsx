@@ -4,6 +4,7 @@ import {
 	Calculator,
 	CalendarDays,
 	CheckSquare,
+	ChevronRight,
 	Coins,
 	Landmark,
 	Layers,
@@ -13,14 +14,14 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 
 export const SYSTEM_SETTINGS_LINKS = [
-	{ href: "/settings/legal", label: "Юр. лица", icon: Building },
-	{ href: "/settings/accounts", label: "Счета", icon: Landmark },
-	{ href: "/settings/roles", label: "Роли", icon: CheckSquare },
-	{ href: "/settings/categories", label: "Статьи операций", icon: Coins },
-	{ href: "/settings/periods", label: "Периоды учёта", icon: CalendarDays },
-	{ href: "/import", label: "Импорт данных", icon: Calculator },
-	{ href: "/activity", label: "Лог действий", icon: Activity },
-	{ href: "/design-system", label: "Дизайн-система", icon: Layers },
+	{ href: "/settings/legal", label: "Юр. лица", icon: Building, desc: "компании холдинга" },
+	{ href: "/settings/accounts", label: "Счета", icon: Landmark, desc: "расчётные и кассы" },
+	{ href: "/settings/roles", label: "Роли", icon: CheckSquare, desc: "доступы и права" },
+	{ href: "/settings/categories", label: "Статьи операций", icon: Coins, desc: "категории доходов и расходов" },
+	{ href: "/settings/periods", label: "Периоды учёта", icon: CalendarDays, desc: "открытие и закрытие" },
+	{ href: "/import", label: "Импорт данных", icon: Calculator, desc: "загрузка из Excel" },
+	{ href: "/activity", label: "Лог действий", icon: Activity, desc: "история изменений" },
+	{ href: "/design-system", label: "Дизайн-система", icon: Layers, desc: "компоненты интерфейса" },
 ] as const;
 
 export function SystemSettingsBar() {
@@ -61,16 +62,19 @@ export function SystemSettingsBar() {
 
 export function SystemSettingsHub() {
 	return (
-		<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-			{SYSTEM_SETTINGS_LINKS.map((item) => (
+		<div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+			{SYSTEM_SETTINGS_LINKS.map((item, i) => (
 				<Link key={item.href} href={item.href}>
-					<div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:border-blue-200 hover:bg-blue-50/30 transition-colors cursor-pointer group">
-						<div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors">
-							<item.icon className="w-5 h-5 text-blue-600" />
-						</div>
-						<div className="min-w-0">
-							<p className="text-sm font-semibold text-gray-900">{item.label}</p>
-						</div>
+					<div
+						className={cn(
+							"flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors hover:bg-gray-50",
+							i > 0 && "border-t border-gray-50",
+						)}
+					>
+						<item.icon className="w-4 h-4 flex-shrink-0 text-cyan-600" />
+						<span className="text-sm font-medium text-gray-900">{item.label}</span>
+						<span className="truncate text-xs text-gray-400">{item.desc}</span>
+						<ChevronRight className="ml-auto h-4 w-4 flex-shrink-0 text-gray-300" />
 					</div>
 				</Link>
 			))}

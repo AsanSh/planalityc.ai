@@ -424,7 +424,7 @@ export default function Settings() {
 				</p>
 			</div>
 
-			<div className="grid gap-2 md:grid-cols-5">
+			<div className="flex flex-wrap gap-1.5">
 				{SETTINGS_AREAS.map((area) => {
 					const Icon = area.icon;
 					const active = activeArea === area.id;
@@ -433,29 +433,16 @@ export default function Settings() {
 							key={area.id}
 							type="button"
 							onClick={() => setActiveArea(area.id)}
+							title={area.description}
 							className={cn(
-								"min-h-[92px] rounded-lg border bg-white p-3 text-left transition-colors",
+								"inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
 								active
-									? "border-cyan-300 bg-cyan-50 shadow-sm"
-									: "border-gray-100 hover:border-gray-200 hover:bg-gray-50",
+									? "bg-cyan-600 text-white"
+									: "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900",
 							)}
 						>
-							<div className="flex items-center gap-2">
-								<div
-									className={cn(
-										"flex h-8 w-8 items-center justify-center rounded-lg",
-										active ? "bg-cyan-600 text-white" : "bg-gray-100 text-gray-600",
-									)}
-								>
-									<Icon className="h-4 w-4" />
-								</div>
-								<span className="text-sm font-semibold text-gray-900">
-									{area.label}
-								</span>
-							</div>
-							<p className="mt-2 text-xs leading-4 text-gray-500">
-								{area.description}
-							</p>
+							<Icon className="h-4 w-4" />
+							{area.label}
 						</button>
 					);
 				})}

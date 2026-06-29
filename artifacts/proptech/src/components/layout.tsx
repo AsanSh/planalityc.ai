@@ -114,189 +114,71 @@ const MODULES: Module[] = [
 		color: "#0ea5e9",
 		urlPrefix: moduleMeta("construction").routePrefixes,
 		sections: [
-			{
-				title: "Главный поток",
-				items: [
-					{
-						href: "/dashboard?tab=construction",
-						label: "Обзор",
-						icon: LayoutDashboard,
-					},
-					{
-						href: "/construction/projects",
-						label: "Проект / ЖК",
-						icon: Building2,
-					},
-					{ href: "/construction/chess", label: "Шахматка", icon: Grid3X3 },
-					{
-						href: "/construction/contracts-sales",
-						label: "Договоры продаж",
-						icon: FileText,
-					},
-				],
-			},
-			{
-				title: "Финансы",
-				items: [
-					{ href: "/construction/accounts", label: "Счета", icon: Landmark },
-					{
-						href: "/construction/operations",
-						label: "Операции",
-						icon: ArrowRightLeft,
-					},
-					{
-						href: "/construction/accruals",
-						label: "Начисления",
-						icon: ListOrdered,
-					},
-					{
-						href: "/construction/cashier",
-						label: "Приём платежей",
-						icon: DollarSign,
-					},
-					{
-						href: "/construction/reconciliation",
-						label: "Акт сверки",
-						icon: Scale,
-					},
-					{ href: "/construction/budget", label: "Бюджет и план/факт", icon: Wallet },
-					{
-						href: "/construction/payroll",
-						label: "Зарплатная ведомость",
-						icon: Banknote,
-					},
-					{
-						href: "/construction/planning/forecast",
-						label: "Будущие поступления",
-						icon: Calendar,
-					},
-					{
-						href: "/construction/planning/overdue",
-						label: "Просрочки",
-						icon: AlertTriangle,
-					},
-					{
-						href: "/construction/planning/approvals",
-						label: "Согласование",
-						icon: CheckSquare,
-					},
-				],
-			},
-			{
-				title: "Себестоимость",
-				items: [
-					{ href: "/construction/stages", label: "Этапы WBS", icon: Flag },
-					{ href: "/construction/tasks", label: "Задачи", icon: ClipboardList },
-					{
-						href: "/construction/materials",
-						label: "Материалы",
-						icon: Package,
-					},
-					{
-						href: "/construction/contractors",
-						label: "Подрядчики",
-						icon: Briefcase,
-					},
-				],
-			},
-			{
-				title: "Производство",
-				items: [
-					{ href: "/construction/workers", label: "Бригады", icon: Hammer },
-					{
-						href: "/construction/planning/broadcast",
-						label: "Рассылка",
-						icon: Send,
-					},
-				],
-			},
-			{
-				title: "Финансовые отчёты",
-				items: [
-					{
-						href: "/construction/analytics/cashflow",
-						label: "ОДДС",
-						icon: BarChart3,
-					},
-					{
-						href: "/construction/analytics/pnl",
-						label: "ОПУ",
-						icon: LineChart,
-					},
-					{
-						href: "/construction/analytics/expenses",
-						label: "Анализ расходов",
-						icon: PieChart,
-					},
-					{
-						href: "/construction/analytics/debt",
-						label: "Задолженности",
-						icon: AlertTriangle,
-					},
-				],
-			},
-			{
-				title: "В разработке",
-				items: [
-					{
-						href: "/construction/ai/chat",
-						label: "AI · Чат по ТЗ",
-						icon: MessageCircle,
-					},
-					{
-						href: "/construction/ai/snip-check",
-						label: "AI · Проверка СНиП",
-						icon: ShieldCheck,
-					},
-					{
-						href: "/construction/ai/tools",
-						label: "AI · Документы",
-						icon: Zap,
-					},
-					{
-						href: "/construction/ai/photo-report",
-						label: "AI · Анализ фото",
-						icon: Search,
-					},
-					{
-						href: "/construction/ai/contractor-analytics",
-						label: "AI · Подрядчики",
-						icon: BarChart3,
-					},
-					{ href: "/construction/ai/telegram", label: "Telegram", icon: Send },
-					{
-						href: "/construction/ai/estimates",
-						label: "AI Смета",
-						icon: BarChart3,
-					},
-				],
-			},
-			{
-				title: "Справочники",
-				items: [
-					{
-						href: "/construction/counterparties",
-						label: "Контрагенты",
-						icon: Users,
-					},
-					{
-						href: "/construction/employees",
-						label: "Сотрудники",
-						icon: UserCircle,
-					},
-					{
-						href: "/construction/settings",
-						label: "Настройки",
-						icon: Settings,
-					},
-					{
-						href: "/construction/help",
-						label: "Помощь",
-						icon: CircleHelp,
-					},
-				],
-			},
-		],
+				{
+					title: "Проект",
+					items: [
+						{ href: "/dashboard?tab=construction", label: "Обзор", icon: LayoutDashboard },
+						{ href: "/construction/projects", label: "Проект / ЖК", icon: Building2 },
+						{ href: "/construction/chess", label: "Шахматка", icon: Grid3X3 },
+						{ href: "/construction/contracts-sales", label: "Договоры продаж", icon: FileText },
+					],
+				},
+				{
+					title: "План и контроль",
+					items: [
+						{ href: "/construction/stages", label: "Этапы WBS", icon: Flag },
+						{ href: "/construction/tasks", label: "Задачи", icon: ClipboardList },
+						{ href: "/construction/materials", label: "Материалы", icon: Package },
+						{ href: "/construction/contractors", label: "Подрядчики", icon: Briefcase },
+						{ href: "/construction/workers", label: "Бригады", icon: Hammer },
+					],
+				},
+				{
+					title: "Транзакции",
+					items: [
+						{ href: "/construction/accounts", label: "Счета", icon: Landmark },
+						{ href: "/construction/operations", label: "Операции", icon: ArrowRightLeft },
+						{ href: "/construction/accruals", label: "Начисления", icon: ListOrdered },
+						{ href: "/construction/cashier", label: "Приём платежей", icon: DollarSign },
+						{ href: "/construction/reconciliation", label: "Акт сверки", icon: Scale },
+						{ href: "/construction/payroll", label: "Зарплатная ведомость", icon: Banknote },
+						{ href: "/construction/planning/approvals", label: "Согласование", icon: CheckSquare },
+					],
+				},
+				{
+					title: "Аналитика",
+					items: [
+						{ href: "/construction/analytics/cashflow", label: "ОДДС", icon: BarChart3 },
+						{ href: "/construction/analytics/pnl", label: "ОПУ", icon: LineChart },
+						{ href: "/construction/analytics/expenses", label: "Анализ расходов", icon: PieChart },
+						{ href: "/construction/analytics/debt", label: "Задолженности", icon: AlertTriangle },
+						{ href: "/construction/planning/overdue", label: "Просрочки", icon: AlertTriangle },
+						{ href: "/construction/planning/forecast", label: "Будущие поступления", icon: Calendar },
+						{ href: "/construction/budget", label: "Бюджет и план/факт", icon: Wallet },
+					],
+				},
+				{
+					title: "Справочники",
+					items: [
+						{ href: "/construction/counterparties", label: "Контрагенты", icon: Users },
+						{ href: "/construction/employees", label: "Сотрудники", icon: UserCircle },
+						{ href: "/construction/settings", label: "Настройки", icon: Settings },
+						{ href: "/construction/help", label: "Помощь", icon: CircleHelp },
+					],
+				},
+				{
+					title: "Инструменты",
+					items: [
+						{ href: "/construction/ai/chat", label: "AI · Чат по ТЗ", icon: MessageCircle },
+						{ href: "/construction/ai/snip-check", label: "AI · Проверка СНиП", icon: ShieldCheck },
+						{ href: "/construction/ai/tools", label: "AI · Документы", icon: Zap },
+						{ href: "/construction/ai/photo-report", label: "AI · Анализ фото", icon: Search },
+						{ href: "/construction/ai/contractor-analytics", label: "AI · Подрядчики", icon: BarChart3 },
+						{ href: "/construction/ai/telegram", label: "Telegram", icon: Send },
+						{ href: "/construction/ai/estimates", label: "AI Смета", icon: BarChart3 },
+					],
+				},
+			],
 	},
 	{
 		id: "finance",
@@ -970,11 +852,11 @@ export function Layout({ children }: { children: ReactNode }) {
 		let sections = activeModule.sections;
 		if (isPtoRole && activeModule.id === "construction") {
 			sections = sections.filter((s) =>
-				["Главный поток", "Себестоимость", "Производство"].includes(s.title),
+				["Проект", "План и контроль"].includes(s.title),
 			);
 			// ПТО не видит коммерческие пункты — только обзор, ЖК и шахматка
 			sections = sections.map((s) => {
-				if (s.title !== "Главный поток") return s;
+				if (s.title !== "Проект") return s;
 				return {
 					...s,
 					items: s.items.filter((item) =>

@@ -1400,7 +1400,7 @@ export function Layout({ children }: { children: ReactNode }) {
 				<div className="flex min-h-0 flex-1">
 					{/* ── VERTICAL MODULE MENU ── */}
 					<aside className="hidden w-[280px] flex-shrink-0 flex-col border-r border-white/70 bg-white/72 px-3 py-3 shadow-[18px_0_42px_-34px_rgba(15,23,42,0.55)] backdrop-blur-2xl lg:flex">
-						<div className="mb-3 rounded-[20px] border border-white/80 bg-white/76 p-3 shadow-lg shadow-slate-950/5">
+						<div className="mb-3 px-1.5 pt-1">
 							<div className="flex items-center gap-3">
 								<div
 									className="flex h-9 w-9 items-center justify-center rounded-[16px] text-white shadow-lg shadow-cyan-950/15"
@@ -1476,11 +1476,11 @@ export function Layout({ children }: { children: ReactNode }) {
 																className={cn(
 																	"am-nav-item flex items-center gap-2.5 transition-all",
 																	active
-																		? "bg-cyan-50 text-cyan-800 ring-1 ring-cyan-200"
-																		: "text-slate-600 hover:bg-white hover:text-slate-950",
+																		? "bg-cyan-600 text-white"
+																		: "text-slate-600 hover:bg-slate-100 hover:text-slate-950",
 																)}
 															>
-																<Icon className={cn("h-3.5 w-3.5 flex-shrink-0", active ? "text-cyan-700" : "text-slate-400")} />
+																<Icon className={cn("h-3.5 w-3.5 flex-shrink-0", active ? "text-white" : "text-slate-400")} />
 																<span className="truncate">{item.label}</span>
 															</div>
 														</Link>
@@ -1496,7 +1496,7 @@ export function Layout({ children }: { children: ReactNode }) {
 						<div className="mt-3 space-y-2 border-t border-slate-200/80 pt-3">
 							{canOpenSystemSettings && (
 								<Link href={activeModuleSettingsHref}>
-									<div className="flex h-9 items-center gap-2.5 rounded-[14px] border border-slate-200/80 bg-white/76 px-3 text-sm font-semibold text-slate-700 transition-all hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-800">
+									<div className="flex h-9 items-center gap-2.5 rounded-full px-3 text-sm font-medium text-slate-700 transition-all hover:bg-slate-100 hover:text-slate-950">
 										<Settings className="h-4 w-4 text-slate-500" />
 										<span>Настройки</span>
 									</div>

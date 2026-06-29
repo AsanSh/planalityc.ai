@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Planalityc.ai - 4 варианта меню</title>
+  <style>
+    :root {
+      --bg: #f4f7fa;
+      --card: #fff;
+      --ink: #111827;
+      --muted: #64748b;
+      --soft: #8aa0b4;
+      --line: #dbe7ee;
+      --brand: #088da0;
+      --brand-soft: #dff5f7;
+      --brand-text: #006e80;
+      --shadow: 0 16px 38px rgba(15, 23, 42, .08);
+      --sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #fbfdfe, var(--bg));
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 14px;
+    }
+
+    .page {
+      width: min(1220px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 18px 0 42px;
+    }
+
+    .topline {
+      color: #555;
+      font-size: 14px;
+      margin: 0 0 8px;
+    }
+
+    .topline strong {
+      color: #111827;
+      font-weight: 500;
+    }
+
+    .topline span {
+      color: #8a94a3;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(360px, 1fr));
+      gap: 18px 20px;
+    }
+
+    .option-title {
+      height: 26px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #111827;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .badge {
+      width: 20px;
+      height: 20px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--brand);
+      color: white;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .option-title small {
+      color: #555;
+      font-size: 12px;
+      font-weight: 400;
+    }
+
+    .mock {
+      height: 420px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .78);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .sidebar {
+      height: 100%;
+      padding: 20px 12px;
+      background: #fff;
+    }
+
+    .module {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .module-icon {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--brand);
+      color: white;
+      flex: 0 0 auto;
+    }
+
+    .module-icon svg,
+    .item svg,
+    .settings svg,
+    .rail-icon svg {
+      width: 16px;
+      height: 16px;
+      stroke-width: 1.85;
+    }
+
+    .module-name {
+      font-size: 15px;
+      font-weight: 500;
+      line-height: 1.15;
+    }
+
+    .module-sub {
+      margin-top: 2px;
+      color: #7d91a5;
+      font-size: 11px;
+    }
+
+    .section-label {
+      margin: 18px 12px 6px;
+      color: #8499ae;
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .item {
+      width: 100%;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 0;
+      background: transparent;
+      color: #334155;
+      padding: 0 12px;
+      font: 500 14px/1 var(--sans);
+      text-align: left;
+    }
+
+    .item svg { color: #8a9fb3; flex: 0 0 auto; }
+
+    .item.active {
+      background: var(--brand-soft);
+      color: var(--brand-text);
+    }
+
+    .item.active svg { color: var(--brand); }
+
+    .settings {
+      width: 100%;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 0;
+      background: transparent;
+      color: #334155;
+      padding: 0 12px;
+      font: 500 14px/1 var(--sans);
+      text-align: left;
+    }
+
+    .divider {
+      height: 1px;
+      background: #e7eef3;
+      margin: 16px 0 8px;
+    }
+
+    .chevron {
+      width: 14px;
+      height: 14px;
+      color: #8ca1b6;
+      margin-left: auto;
+    }
+
+    /* 1 flat */
+    .flat .item.active {
+      border-left: 3px solid var(--brand);
+      padding-left: 9px;
+      border-radius: 0;
+    }
+
+    /* 2 accordion */
+    .accordion .group-head {
+      width: 100%;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      border: 0;
+      background: transparent;
+      padding: 0 12px;
+      color: #1f2937;
+      font: 500 13px/1 var(--sans);
+      text-align: left;
+    }
+
+    .accordion .items {
+      margin-left: 18px;
+      padding-left: 12px;
+      border-left: 1px solid #e4edf3;
+    }
+
+    .accordion .item {
+      height: 32px;
+      border-radius: 7px;
+    }
+
+    .accordion .divider { margin-top: 10px; }
+
+    /* 3 minimal */
+    .minimal .sidebar {
+      padding: 16px 12px 0;
+      position: relative;
+    }
+
+    .minimal .module {
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .minimal .module-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+    }
+
+    .minimal .module-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .minimal .module-sub {
+      font-size: 11px;
+      line-height: 1.15;
+    }
+
+    .minimal .item {
+      height: 32px;
+      border-radius: 999px;
+      padding: 0 12px;
+      gap: 9px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .minimal .item.active {
+      background: var(--brand);
+      color: white;
+    }
+
+    .minimal .item.active svg { color: white; }
+
+    .minimal .divider { margin: 13px 10px 8px; }
+
+    .minimal .settings {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 10px;
+      width: calc(100% - 24px);
+      color: #a8b6c5;
+      height: 34px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* 4 rail */
+    .rail .mock {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+    }
+
+    .rail-left {
+      height: 100%;
+      padding: 14px 10px;
+      border-right: 1px solid #e7eef3;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .rail-icon {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      background: transparent;
+      color: #71869c;
+      font-size: 11px;
+      line-height: 1.1;
+      text-align: center;
+    }
+
+    .rail-icon svg {
+      display: block;
+      margin: 0 auto 4px;
+    }
+
+    .rail-icon.active {
+      border-radius: 10px;
+      background: var(--brand-soft);
+      color: var(--brand-text);
+    }
+
+    .rail-icon.logo {
+      height: 42px;
+      border-radius: 10px;
+      background: var(--brand);
+      color: white;
+      margin-bottom: 8px;
+    }
+
+    .rail-panel {
+      padding: 20px 14px;
+      background: #fff;
+    }
+
+    .rail-panel h3 {
+      margin: 0 0 14px;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .rail-panel .sub {
+      height: 32px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #334155;
+      font-size: 14px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border: 1px solid #94a3b8;
+      border-radius: 50%;
+    }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="topline">Widget from visualize <strong>show_widget</strong> <span>⌄</span></p>
+
+    <section class="grid">
+      <article>
+        <div class="option-title"><span class="badge">1</span> Плоские секции <small>· без рамок, левая полоса</small></div>
+        <div class="mock flat">
+          <aside class="sidebar">
+            <div class="module">
+              <div class="module-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 21V9l8-5 8 5v12"/><path d="M9 21v-8h6v8"/><path d="M8 10h.01M16 10h.01"/></svg></div>
+              <div><div class="module-name">Строительство</div><div class="module-sub">Меню модуля</div></div>
+            </div>
+            <div class="section-label">Главный поток</div>
+            <button class="item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg>Обзор</button>
+            <button class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20V8l8-4 8 4v12"/><path d="M8 20v-6h8v6"/></svg>Проект / ЖК</button>
+            <button class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="4" width="16" height="16"/><path d="M4 10h16M10 4v16"/></svg>Шахматка</button>
+            <button class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>Договоры продаж</button>
+            <div class="section-label">Финансы</div>
+            <button class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 11h4"/></svg>Счета</button>
+            <button class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>Начисления</button>
+            <div class="section-label">Справочники</div>
+            <button class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"/></svg>Каталоги</button>
+            <div class="divider"></div>
+            <button class="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6V21h-4v-1a1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1H3v-4h1a1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6V3h4v1a1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 .6 1h1v4h-1a1.7 1.7 0 0 0-.6 1z"/></svg>Настройки</button>
+          </aside>
+        </div>
+      </article>
+
+      <article>
+        <div class="option-title"><span class="badge">2</span> Аккордеон без рамок <small>· свернуть/развернуть</small></div>
+        <div class="mock accordion">
+          <aside class="sidebar">
+            <div class="module">
+              <div class="module-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 21V9l8-5 8 5v12"/><path d="M9 21v-8h6v8"/></svg></div>
+              <div><div class="module-name">Строительство</div><div class="module-sub">Меню модуля</div></div>
+            </div>
+            <button class="group-head">Главный поток <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m6 9 6 6 6-6"/></svg></button>
+            <div class="items">
+              <button class="item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg>Обзор</button>
+              <button class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="4" width="16" height="16"/><path d="M4 10h16M10 4v16"/></svg>Шахматка</button>
+              <button class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5M9 13h6"/></svg>Договоры</button>
+            </div>
+            <button class="group-head">Финансы <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m9 18 6-6-6-6"/></svg></button>
+            <button class="group-head">Производство <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m9 18 6-6-6-6"/></svg></button>
+            <button class="group-head">Справочники <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m9 18 6-6-6-6"/></svg></button>
+            <div class="divider"></div>
+            <button class="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 1-.1 1.1l2 1.5-2 3.4-2.4-1a7 7 0 0 1-1.9 1.1L14 21h-4l-.5-2.9A7 7 0 0 1 7.6 17l-2.4 1-2-3.4 2-1.5A7 7 0 0 1 5 12c0-.4 0-.8.1-1.1l-2-1.5 2-3.4 2.4 1a7 7 0 0 1 1.9-1.1L10 3h4l.5 2.9A7 7 0 0 1 16.4 7l2.4-1 2 3.4-2 1.5c.1.3.2.7.2 1.1z"/></svg>Настройки</button>
+          </aside>
+        </div>
+      </article>
+
+      <article>
+        <div class="option-title"><span class="badge">3</span> Минимал <small>· пилюля на активном</small></div>
+        <div class="mock minimal">
+          <aside class="sidebar">
+            <div class="module">
+              <div class="module-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 21V9l8-5 8 5v12"/><path d="M9 21v-8h6v8"/></svg></div>
+              <div><div class="module-name">Строительство</div><div class="module-sub">Меню модуля</div></div>
+            </div>
+            <button class="item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg>Обзор</button>
+            <button class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20V8l8-4 8 4v12"/><path d="M8 20v-6h8v6"/></svg>Проект / ЖК</button>
+            <button class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="4" width="16" height="16"/><path d="M4 10h16M10 4v16"/></svg>Шахматка</button>
+            <button class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5M9 13h6"/></svg>Договоры продаж</button>
+            <div class="divider"></div>
+            <button class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="7" width="18" height="12" rx="2"/></svg>Финансы</button>
+            <button class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19v-8M10 19V5M16 19v-5M22 19H2"/></svg>Отчёты</button>
+            <button class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"/></svg>Справочники</button>
+            <button class="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 1-.1 1.1l2 1.5-2 3.4-2.4-1a7 7 0 0 1-1.9 1.1L14 21h-4l-.5-2.9A7 7 0 0 1 7.6 17l-2.4 1-2-3.4 2-1.5A7 7 0 0 1 5 12c0-.4 0-.8.1-1.1l-2-1.5 2-3.4 2.4 1a7 7 0 0 1 1.9-1.1L10 3h4l.5 2.9A7 7 0 0 1 16.4 7l2.4-1 2 3.4-2 1.5c.1.3.2.7.2 1.1z"/></svg>Настройки</button>
+          </aside>
+        </div>
+      </article>
+
+      <article>
+        <div class="option-title"><span class="badge">4</span> Иконный рейл <small>· компактно, ярлыки</small></div>
+        <div class="mock rail">
+          <div class="rail-left">
+            <button class="rail-icon logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 21V9l8-5 8 5v12"/><path d="M9 21v-8h6v8"/></svg></button>
+            <button class="rail-icon active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg>Обзор</button>
+            <button class="rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="4" width="16" height="16"/><path d="M4 10h16M10 4v16"/></svg>Шахм.</button>
+            <button class="rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="7" width="18" height="12" rx="2"/></svg>Финансы</button>
+            <button class="rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19v-8M10 19V5M16 19v-5M22 19H2"/></svg>Отчёты</button>
+            <button class="rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 1-.1 1.1l2 1.5-2 3.4-2.4-1a7 7 0 0 1-1.9 1.1L14 21h-4l-.5-2.9A7 7 0 0 1 7.6 17l-2.4 1-2-3.4 2-1.5A7 7 0 0 1 5 12c0-.4 0-.8.1-1.1l-2-1.5 2-3.4 2.4 1a7 7 0 0 1 1.9-1.1L10 3h4l.5 2.9A7 7 0 0 1 16.4 7l2.4-1 2 3.4-2 1.5c.1.3.2.7.2 1.1z"/></svg>Настр.</button>
+          </div>
+          <div class="rail-panel">
+            <h3>Обзор</h3>
+            <div class="sub"><span class="dot"></span>Сводка</div>
+            <div class="sub"><span class="dot"></span>Проект / ЖК</div>
+            <div class="sub"><span class="dot"></span>Договоры</div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

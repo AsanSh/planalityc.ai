@@ -1122,30 +1122,31 @@
   }
 }
 
+/* Минимал: группы без рамок-коробок, активный пункт — пилюля */
 .am-nav-section {
-  border-radius: 18px;
-  border: 1px solid hsl(var(--am-border) / 0.75);
-  background: rgb(255 255 255 / 0.64);
+  border-radius: 0;
+  border: none;
+  background: transparent;
 }
 
 .am-nav-section-active {
-  border-color: hsl(var(--am-brand) / 0.26);
-  box-shadow: 0 14px 32px -28px hsl(var(--am-brand) / 0.7);
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .am-nav-section-button {
-  min-height: 36px;
-  border-radius: 18px;
-  padding: 9px 12px;
+  min-height: 30px;
+  border-radius: 8px;
+  padding: 5px 10px;
   font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
 .am-nav-item {
-  min-height: 36px;
-  border-radius: 14px;
-  padding: 7px 10px;
+  min-height: 34px;
+  border-radius: 9999px;
+  padding: 7px 12px;
   font-size: 13px;
   font-weight: 500;
   line-height: 1.2;

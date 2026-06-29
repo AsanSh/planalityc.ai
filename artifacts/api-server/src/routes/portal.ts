@@ -32,6 +32,55 @@ const LINKED_KEY_BY_TYPE: Record<string, "linkedTenantId" | "linkedBuyerId" | "l
   investor: "linkedInvestorId",
 };
 
+// POST /portal/link-user — привязать СУЩЕСТВУЮЩЕГО портального пользователя к сущности.
+// Удобно для email/парольных аккаунтов (демо), которые createPortalUser не умеет
+// до-привязывать. Body: { email | userId, type, entityId? | contractId? }
+router.post("/portal/link-user", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+  const { email, userId: userIdRaw, type, entityId: entityIdRaw, contractId } = req.body ?? {};
+  const linkedKey = LINKED_KEY_BY_TYPE[String(type)];
+  if (!linkedKey) { res.status(400).json({ error: "Неверный тип портала" }); return; }
+
+  const companyId = req.scopedCompanyId!;
+
+  let user;
+  if (userIdRaw) {
+    [user] = await db.select().from(usersTable)
+      .where(and(eq(usersTable.id, Number(userIdRaw)), eq(usersTable.companyId, companyId)));
+  } else if (email) {
+    [user] = await db.select().from(usersTable)
+      .where(and(eq(usersTable.email, String(email).trim()), eq(usersTable.companyId, companyId)));
+  }
+  if (!user) { res.status(404).json({ error: "Пользователь не найден" }); return; }
+
+  let entityId: number | null = entityIdRaw ? Number(entityIdRaw) : null;
+  if (!entityId && type === "buyer" && contractId) {
+    const [contract] = await db.select().from(constructionSalesContractsTable)
+      .where(and(eq(constructionSalesContractsTable.id, Number(contractId)), eq(constructionSalesContractsTable.companyId, companyId)));
+    if (contract) {
+      if (contract.buyerId) {
+        entityId = contract.buyerId;
+      } else {
+        const name = contract.buyerName || `${user.firstName} ${user.lastName}`;
+        const [created] = await db.insert(counterpartiesTable).values({
+          companyId, category: "buyer", categories: ["buyer"],
+          fullName: name, phone: contract.buyerPhone || null,
+        } as any).returning();
+        entityId = created.id;
+        await db.update(constructionSalesContractsTable)
+          .set({ buyerId: entityId })
+          .where(eq(constructionSalesContractsTable.id, contract.id));
+      }
+    }
+  }
+  if (!entityId) { res.status(400).json({ error: "Не указана сущность (entityId или contractId)" }); return; }
+
+  await db.update(usersTable)
+    .set({ role: type, [linkedKey]: entityId } as any)
+    .where(eq(usersTable.id, user.id));
+
+  res.json({ ok: true, userId: user.id, role: type, entityId });
+});
+
 // ── Загрузчики данных порталов (используются и для /me, и для /preview) ──────────
 
 async function loadInvestorPortal(companyId: number, investorId: number) {

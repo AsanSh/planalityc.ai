@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, Eye, FileText, Plus, UserPlus, XCircle } from "lucide-react";
+import { ChevronRight, ExternalLink, Eye, FileText, Plus, UserPlus, XCircle } from "lucide-react";
 import { ContractTerminationDialog } from "@/components/contract-termination-dialog";
 import { useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -37,6 +37,7 @@ import { ContractStatusStepper } from "@/components/contract-status-stepper";
 import { ContractTab } from "@/components/contract-tab";
 import { ContractFileUpload } from "@/components/contract-file-upload";
 import { DocumentsSection } from "@/components/documents-section";
+import { PortalPreviewDialog } from "@/components/portal-preview-dialog";
 import {
 	AdminReconciliationAct,
 	reconciliationFmtMoney,
@@ -74,15 +75,6 @@ function ContractDetailSummary({
 	onRefresh: () => void;
 	hideReconciliation?: boolean;
 }) {
-	const [portalForm, setPortalForm] = useState({
-		phone: "",
-		email: "",
-		firstName: "",
-		lastName: "",
-	});
-	const [portalLoading, setPortalLoading] = useState(false);
-	const [, navigate] = useLocation();
-
 	const { data: reconciliationData } = useQuery({
 		queryKey: ["contract-sales-reconciliation", contract.id],
 		queryFn: () =>
@@ -92,43 +84,8 @@ function ContractDetailSummary({
 		enabled: !hideReconciliation,
 	});
 
-	useEffect(() => {
-		const parts = (contract.buyerName || "").trim().split(/\s+/);
-		setPortalForm({
-			phone: contract.buyerPhone || "",
-			email: contract.buyerEmail || "",
-			firstName: parts[0] || "",
-			lastName: parts.slice(1).join(" ") || "",
-		});
-	}, [contract.id, contract.buyerName, contract.buyerEmail, contract.buyerPhone]);
-
 	const reconciliation = reconciliationData?.reconciliation;
 	const currency = contract.currency || "KGS";
-
-	const createPortalAccount = async () => {
-		if (!portalForm.phone || !portalForm.firstName || !portalForm.lastName) {
-			toast.error("Заполните телефон, имя и фамилию");
-			return;
-		}
-		setPortalLoading(true);
-		try {
-			await api.post("/portal/create-buyer-account", {
-				buyerId: contract.buyerId || undefined,
-				contractId: contract.id,
-				buyerName: contract.buyerName || `${portalForm.firstName} ${portalForm.lastName}`.trim(),
-				phone: portalForm.phone,
-				email: portalForm.email || undefined,
-				firstName: portalForm.firstName,
-				lastName: portalForm.lastName,
-			});
-			toast.success("Доступ создан. Покупатель войдёт по номеру и SMS-коду.");
-			onRefresh();
-		} catch (err: unknown) {
-			toast.error(getApiErrorMessage(err, "Не удалось создать доступ"));
-		} finally {
-			setPortalLoading(false);
-		}
-	};
 
 	return (
 		<div className="space-y-4 mt-4">
@@ -166,6 +123,13 @@ function ContractDetailSummary({
 					<div className="font-bold text-cyan-700">{fmt(contract.remainingAmount)}</div>
 				</div>
 			</div>
+
+			<SalesContractPortalAccess
+				contract={contract}
+				variant="card"
+				onRefresh={onRefresh}
+			/>
+
 			<ContractStatusStepper
 				status={contract.status}
 				loading={statusMut.isPending}
@@ -210,7 +174,7 @@ function ContractDetailSummary({
 								entityType: "buyer",
 								entityId: contract.buyerId,
 								entityName: contract.buyerName,
-								defaultEmail: portalForm.email,
+								defaultEmail: contract.buyerEmail || "",
 							}
 						: undefined
 				}
@@ -246,89 +210,266 @@ function ContractDetailSummary({
 					lines={reconciliation.lines ?? []}
 				/>
 			)}
+		</div>
+	);
+}
 
-			<div className="border rounded-lg p-3 space-y-3">
-					<p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-						Доступ в портал покупателя
-					</p>
-					{!contract.buyerId && (
-						<p className="text-[11px] text-amber-600 bg-amber-50 px-2 py-1 rounded">
-							ℹ️ При создании аккаунта покупатель будет автоматически добавлен в справочник контрагентов
-						</p>
-					)}
-					<div className="grid gap-3 sm:grid-cols-2">
-						<div className="sm:col-span-2 flex flex-col">
-							<Label className="leading-tight mb-1.5">Телефон *</Label>
-							<Input
-								className="mt-auto"
-								type="tel"
-								placeholder="+996 700 123 456"
-								value={portalForm.phone}
-								onChange={(e) =>
-									setPortalForm((p) => ({ ...p, phone: e.target.value }))
-								}
-							/>
-							<p className="text-[10px] text-gray-600 mt-1">Покупатель войдёт по этому номеру и SMS-коду</p>
+function splitBuyerName(fullName: string) {
+	const parts = (fullName || "").trim().split(/\s+/).filter(Boolean);
+	return {
+		firstName: parts[0] || "",
+		lastName: parts.slice(1).join(" ") || "",
+	};
+}
+
+function SalesContractPortalAccess({
+	contract,
+	variant = "row",
+	onRefresh,
+}: {
+	contract: any;
+	variant?: "row" | "card";
+	onRefresh?: () => void;
+}) {
+	const qc = useQueryClient();
+	const [, navigate] = useLocation();
+	const [formOpen, setFormOpen] = useState(false);
+	const [previewOpen, setPreviewOpen] = useState(false);
+	const [form, setForm] = useState(() => ({
+		phone: contract.buyerPhone || "",
+		email: contract.buyerEmail || "",
+		...splitBuyerName(contract.buyerName || ""),
+	}));
+
+	const { data: status } = useQuery({
+		queryKey: ["portal-account-status", "buyer", contract.buyerId],
+		queryFn: () =>
+			api
+				.get(`/portal/account-status/buyer/${contract.buyerId}`)
+				.then((r) => r.data),
+		enabled: !!contract.buyerId,
+	});
+
+	useEffect(() => {
+		if (!formOpen) return;
+		setForm({
+			phone: contract.buyerPhone || "",
+			email: contract.buyerEmail || "",
+			...splitBuyerName(contract.buyerName || ""),
+		});
+	}, [formOpen, contract.buyerName, contract.buyerEmail, contract.buyerPhone]);
+
+	const portalEnabled = Boolean(status?.exists);
+	const portalLogin = status?.phone || status?.email || contract.buyerPhone || "—";
+
+	const createPortalMutation = useMutation({
+		mutationFn: () =>
+			api
+				.post("/portal/create-buyer-account", {
+					buyerId: contract.buyerId || undefined,
+					contractId: contract.id,
+					buyerName:
+						contract.buyerName ||
+						`${form.firstName} ${form.lastName}`.trim(),
+					phone: form.phone,
+					email: form.email || undefined,
+					firstName: form.firstName,
+					lastName: form.lastName,
+				})
+				.then((r) => r.data),
+		onSuccess: () => {
+			setFormOpen(false);
+			qc.invalidateQueries({ queryKey: ["construction-contracts-sales"] });
+			qc.invalidateQueries({ queryKey: ["portal-account-status"] });
+			onRefresh?.();
+			toast.success("Доступ в портал покупателя создан");
+		},
+		onError: (err: unknown) => {
+			toast.error(getApiErrorMessage(err, "Не удалось создать доступ в портал"));
+		},
+	});
+
+	const submit = () => {
+		if (!form.phone || !form.firstName || !form.lastName) {
+			toast.error("Заполните телефон, имя и фамилию");
+			return;
+		}
+		createPortalMutation.mutate();
+	};
+
+	const controls = (
+		<div className="flex flex-wrap items-center gap-2">
+			{contract.buyerId && (
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					className="gap-1.5"
+					onClick={() => setPreviewOpen(true)}
+				>
+					<Eye className="h-3.5 w-3.5" />
+					Глазами покупателя
+				</Button>
+			)}
+			{contract.buyerId && (
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					className="gap-1.5"
+					onClick={() => navigate(`/admin/portal/buyer/${contract.buyerId}`)}
+				>
+					<ExternalLink className="h-3.5 w-3.5" />
+					Портал
+				</Button>
+			)}
+			<Button
+				type="button"
+				variant={portalEnabled ? "outline" : "default"}
+				size="sm"
+				className={portalEnabled ? "gap-1.5" : "gap-1.5 bg-am-brand hover:bg-am-brand-hover"}
+				onClick={() => setFormOpen(true)}
+			>
+				<UserPlus className="h-3.5 w-3.5" />
+				{portalEnabled ? "Изменить доступ" : "Создать доступ"}
+			</Button>
+		</div>
+	);
+
+	return (
+		<>
+			{variant === "card" ? (
+				<div className="rounded-2xl border border-am-border bg-white p-4">
+					<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+						<div>
+							<p className="text-xs font-semibold uppercase tracking-wide text-am-text-muted">
+								Портал покупателя
+							</p>
+							<p className="mt-1 text-sm font-semibold text-am-text-strong">
+								{portalEnabled ? "Доступ открыт" : "Доступ ещё не создан"}
+							</p>
+							<p className="mt-0.5 text-xs text-am-text-muted">
+								{portalEnabled
+									? `Вход: ${portalLogin}`
+									: "Покупатель сможет видеть договор, платежи, документы и новости портала."}
+							</p>
 						</div>
-						<div className="flex flex-col">
-							<Label className="leading-tight mb-1.5">Имя *</Label>
-							<Input
-								className="mt-auto"
-								value={portalForm.firstName}
-								onChange={(e) =>
-									setPortalForm((p) => ({ ...p, firstName: e.target.value }))
-								}
-							/>
-						</div>
-						<div className="flex flex-col">
-							<Label className="leading-tight mb-1.5">Фамилия *</Label>
-							<Input
-								className="mt-auto"
-								value={portalForm.lastName}
-								onChange={(e) =>
-									setPortalForm((p) => ({ ...p, lastName: e.target.value }))
-								}
-							/>
-						</div>
-						<div className="sm:col-span-2 flex flex-col">
-							<Label className="leading-tight mb-1.5">Email (необязательно)</Label>
-							<Input
-								className="mt-auto"
-								type="email"
-								value={portalForm.email}
-								onChange={(e) =>
-									setPortalForm((p) => ({ ...p, email: e.target.value }))
-								}
-							/>
-						</div>
+						{controls}
 					</div>
-					<div className="flex gap-2 flex-wrap">
-						<Button
-							type="button"
-							variant="outline"
-							size="sm"
-							className="gap-1.5"
-							onClick={() => void createPortalAccount()}
-							disabled={portalLoading}
-						>
-							<UserPlus className="w-4 h-4" />
-							{portalLoading ? "..." : "Создать доступ в портал"}
-						</Button>
+				</div>
+			) : (
+				<div className="flex min-w-[220px] items-center justify-between gap-2">
+					<div className="min-w-0">
+						<p className={`text-[11px] font-semibold ${portalEnabled ? "text-emerald-700" : "text-am-text-muted"}`}>
+							{portalEnabled ? "Открыт" : "Нет доступа"}
+						</p>
+						<p className="truncate text-[10px] text-am-text-subtle" title={portalLogin}>
+							{portalEnabled ? portalLogin : "создать из договора"}
+						</p>
+					</div>
+					<div className="flex items-center gap-1">
 						{contract.buyerId && (
 							<Button
 								type="button"
-								variant="outline"
-								size="sm"
-								className="gap-1.5"
-								onClick={() => navigate(`/admin/portal/buyer/${contract.buyerId}`)}
+								variant="ghost"
+								size="icon"
+								className="h-8 w-8 rounded-full"
+								onClick={(e) => {
+									e.stopPropagation();
+									setPreviewOpen(true);
+								}}
+								title="Глазами покупателя"
 							>
-								<Eye className="w-4 h-4" />
-								Глазами покупателя
+								<Eye className="h-3.5 w-3.5" />
 							</Button>
 						)}
+						<Button
+							type="button"
+							variant={portalEnabled ? "outline" : "default"}
+							size="sm"
+							className={portalEnabled ? "h-8 rounded-full px-3" : "h-8 rounded-full bg-am-brand px-3 hover:bg-am-brand-hover"}
+							onClick={(e) => {
+								e.stopPropagation();
+								setFormOpen(true);
+							}}
+						>
+							{portalEnabled ? "Доступ" : "Открыть"}
+						</Button>
 					</div>
 				</div>
-		</div>
+			)}
+
+			<Dialog open={formOpen} onOpenChange={(v) => !v && setFormOpen(false)}>
+				<DialogContent className="sm:max-w-xl">
+					<DialogHeader>
+						<DialogTitle>Доступ в портал покупателя</DialogTitle>
+						<DialogDescription>
+							Договор {contract.contractNumber}. Покупатель войдёт по номеру телефона и SMS-коду.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-3">
+						<div>
+							<Label>Телефон *</Label>
+							<Input
+								className="mt-1"
+								type="tel"
+								placeholder="+996 700 123 456"
+								value={form.phone}
+								onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+							/>
+						</div>
+						<div className="grid gap-3 sm:grid-cols-2">
+							<div>
+								<Label>Имя *</Label>
+								<Input
+									className="mt-1"
+									value={form.firstName}
+									onChange={(e) => setForm((p) => ({ ...p, firstName: e.target.value }))}
+								/>
+							</div>
+							<div>
+								<Label>Фамилия *</Label>
+								<Input
+									className="mt-1"
+									value={form.lastName}
+									onChange={(e) => setForm((p) => ({ ...p, lastName: e.target.value }))}
+								/>
+							</div>
+						</div>
+						<div>
+							<Label>Email (необязательно)</Label>
+							<Input
+								className="mt-1"
+								type="email"
+								value={form.email}
+								onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+							/>
+						</div>
+						<div className="flex gap-2 pt-2">
+							<Button variant="outline" className="flex-1" onClick={() => setFormOpen(false)}>
+								Отмена
+							</Button>
+							<Button
+								className="flex-1 bg-am-brand hover:bg-am-brand-hover"
+								onClick={submit}
+								disabled={createPortalMutation.isPending}
+							>
+								{createPortalMutation.isPending ? "Сохранение..." : "Сохранить доступ"}
+							</Button>
+						</div>
+					</div>
+				</DialogContent>
+			</Dialog>
+
+			{contract.buyerId && (
+				<PortalPreviewDialog
+					type="buyer"
+					id={contract.buyerId}
+					open={previewOpen}
+					onClose={() => setPreviewOpen(false)}
+				/>
+			)}
+		</>
 	);
 }
 
@@ -496,6 +637,21 @@ export default function ConstructionContractsSales() {
 				),
 			},
 			{
+				id: "portal",
+				header: "Портал",
+				size: 240,
+				enableSorting: false,
+				meta: { exportLabel: "Портал" },
+				cell: ({ row }) => (
+					<SalesContractPortalAccess
+						contract={row.original}
+						onRefresh={() => {
+							qc.invalidateQueries({ queryKey: ["construction-contracts-sales"] });
+						}}
+					/>
+				),
+			},
+			{
 				id: "project",
 				header: "Проект",
 				size: 140,
@@ -596,7 +752,7 @@ export default function ConstructionContractsSales() {
 				cell: () => <ChevronRight className="w-4 h-4 text-gray-300" />,
 			},
 		],
-		[projects],
+		[projects, qc],
 	);
 
 	const totalContracts = contracts.length;

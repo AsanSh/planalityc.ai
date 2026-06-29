@@ -486,8 +486,10 @@ router.get("/portal/supplier/contract-document", async (req: AuthenticatedReques
   res.json(doc);
 });
 
+const BUYER_PORTAL_MANAGER_ROLES = ["admin", "company_admin", "owner", "commercial_director", "sales_manager"] as const;
+
 // POST /portal/create-buyer-account — phone-first (OTP логин)
-router.post("/portal/create-buyer-account", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+router.post("/portal/create-buyer-account", requireRole(...BUYER_PORTAL_MANAGER_ROLES), async (req: AuthenticatedRequest, res): Promise<void> => {
   const { buyerId: buyerIdRaw, contractId, buyerName, email, firstName, lastName, phone } = req.body;
   if (!phone) {
     res.status(400).json({ error: "Телефон обязателен" }); return;
@@ -687,8 +689,8 @@ router.get("/portal/buyer/me", async (req: AuthenticatedRequest, res): Promise<v
   });
 });
 
-// GET /portal/buyer/preview/:buyerId — предпросмотр портала покупателя для админа
-router.get("/portal/buyer/preview/:buyerId", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+// GET /portal/buyer/preview/:buyerId — предпросмотр портала покупателя для менеджеров договора
+router.get("/portal/buyer/preview/:buyerId", requireRole(...BUYER_PORTAL_MANAGER_ROLES), async (req: AuthenticatedRequest, res): Promise<void> => {
   const buyerId = parseInt(req.params.buyerId as string, 10);
   if (!buyerId) { res.status(400).json({ error: "buyerId обязателен" }); return; }
   const companyId = req.scopedCompanyId!;
@@ -811,7 +813,7 @@ router.get("/portal/buyer/contract-document", async (req: AuthenticatedRequest, 
 });
 
 // GET /portal/account-status/:type/:id — есть ли уже доступ в портал у контрагента
-router.get("/portal/account-status/:type/:id", requireRole("admin", "company_admin"), async (req: AuthenticatedRequest, res): Promise<void> => {
+router.get("/portal/account-status/:type/:id", requireRole("admin", "company_admin", "owner", "commercial_director", "sales_manager"), async (req: AuthenticatedRequest, res): Promise<void> => {
   const type = String(req.params.type);
   const id = parseInt(req.params.id as string, 10);
   const linkedKey = LINKED_KEY_BY_TYPE[type];

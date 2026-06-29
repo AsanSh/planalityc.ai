@@ -48,6 +48,7 @@ import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { CashSummary } from "@/components/cash-summary";
+import { LegalEntityField } from "@/components/legal-entity-field";
 
 const typeLabels: Record<string, string> = {
 	bank: "Банковский счёт",
@@ -87,6 +88,7 @@ const emptyForm = {
 	currency: "KGS",
 	openingBalance: "0",
 	notes: "",
+	legalEntityId: null as number | null,
 };
 
 const emptyTransfer = {
@@ -189,6 +191,7 @@ export default function RentalAccounts() {
 			currency: acc.currency || "KGS",
 			openingBalance: acc.openingBalance || "0",
 			notes: acc.notes || "",
+			legalEntityId: acc.legalEntityId ?? null,
 		});
 		setOpen(true);
 	}
@@ -467,6 +470,10 @@ export default function RentalAccounts() {
 								}
 							/>
 						</div>
+						<LegalEntityField
+							value={form.legalEntityId}
+							onChange={(id) => setForm((f) => ({ ...f, legalEntityId: id }))}
+						/>
 						<div className="grid gap-3 sm:grid-cols-2">
 							<div className="flex flex-col">
 								<Label className="text-sm font-medium leading-tight mb-1.5">Тип</Label>

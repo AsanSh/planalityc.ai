@@ -268,11 +268,12 @@ router.get("/rental/accounts", async (req: AuthenticatedRequest, res): Promise<v
 });
 
 router.post("/rental/accounts", async (req: AuthenticatedRequest, res): Promise<void> => {
-  const { name, type, bank, bik, accountNumber, currency, openingBalance, notes } = req.body;
+  const { name, type, bank, bik, accountNumber, currency, openingBalance, notes, legalEntityId } = req.body;
   if (!name) { res.status(400).json({ error: "name required" }); return; }
   const open = openingBalance || "0";
   const [row] = await db.insert(bankAccountsTable).values({
     companyId: req.scopedCompanyId!,
+    legalEntityId: legalEntityId ?? null,
     module: RENTAL_ACCOUNTS,
     name,
     type: type || "bank",

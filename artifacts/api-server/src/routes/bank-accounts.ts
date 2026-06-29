@@ -47,6 +47,7 @@ router.post(
         currentBalance,
         isActive,
         notes,
+        legalEntityId,
       } = req.body;
 
       if (!name || !type || !currency) {
@@ -60,6 +61,7 @@ router.post(
         .insert(bankAccountsTable)
         .values({
           companyId: req.scopedCompanyId!,
+          legalEntityId: legalEntityId ?? null,
           name,
           type,
           bank,
@@ -109,6 +111,7 @@ router.patch(
         currentBalance,
         isActive,
         notes,
+        legalEntityId,
       } = req.body;
 
       const conditions: SQL[] = [eq(bankAccountsTable.id, id)];
@@ -127,6 +130,7 @@ router.patch(
           currentBalance,
           isActive,
           notes,
+          legalEntityId,
         })
         .where(and(...conditions))
         .returning();

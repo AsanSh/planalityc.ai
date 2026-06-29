@@ -21,6 +21,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/lib/api";
+import { LegalEntityField } from "@/components/legal-entity-field";
 
 const TYPE_CONFIG = {
 	cash: {
@@ -58,6 +59,7 @@ export default function ConstructionAccounts() {
 		currency: "KGS",
 		openingBalance: "0",
 		notes: "",
+		legalEntityId: null as number | null,
 	});
 
 	const { data: accounts = [], isLoading } = useQuery({
@@ -87,6 +89,7 @@ export default function ConstructionAccounts() {
 			currency: "KGS",
 			openingBalance: "0",
 			notes: "",
+			legalEntityId: null,
 		});
 	}
 
@@ -213,6 +216,10 @@ export default function ConstructionAccounts() {
 								placeholder="Касса стройки / Расчётный счёт"
 							/>
 						</div>
+						<LegalEntityField
+							value={form.legalEntityId}
+							onChange={(id) => setForm((f) => ({ ...f, legalEntityId: id }))}
+						/>
 						<div className="grid gap-3 sm:grid-cols-2">
 							<div className="flex flex-col">
 								<Label className="text-xs leading-tight mb-1.5">Тип</Label>

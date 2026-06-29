@@ -417,7 +417,7 @@ export function ContractTab({ salesContractId, projectId, initialPayload }: Prop
 					<Button
 						onClick={handleDownload}
 						disabled={loading}
-						className="bg-amber-500 hover:bg-orange-600 gap-2"
+						className="bg-am-brand hover:bg-am-brand-hover gap-2"
 					>
 						{loading ? (
 							<Loader2 className="h-4 w-4 animate-spin" />

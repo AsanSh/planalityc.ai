@@ -238,7 +238,7 @@ function WorkerDialog({
 						</Button>
 						<Button
 							type="submit"
-							className="bg-amber-500 hover:bg-orange-600"
+							className="bg-am-brand hover:bg-am-brand-hover"
 							disabled={loading}
 						>
 							{loading ? "..." : "Сохранить"}
@@ -407,7 +407,7 @@ export default function ConstructionWorkers() {
 				</div>
 				<Button
 					onClick={() => setDialog("new")}
-					className="bg-amber-500 hover:bg-orange-600 gap-2"
+					className="bg-am-brand hover:bg-am-brand-hover gap-2"
 				>
 					<Plus className="w-4 h-4" /> Добавить
 				</Button>

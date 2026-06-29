@@ -377,7 +377,7 @@ export function ChessByCounterpartyView({
 								return (
 									<Fragment key={g.key}>
 										<TableRow
-											className="cursor-pointer hover:bg-amber-50/40"
+											className="cursor-pointer hover:bg-gray-50"
 											onClick={() => toggle(g.key)}
 										>
 											<TableCell>

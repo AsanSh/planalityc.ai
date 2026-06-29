@@ -321,7 +321,7 @@ export function UnitDialog({
 						{!readOnly && (
 							<Button
 								type="submit"
-								className="bg-amber-500 hover:bg-orange-600"
+								className="bg-am-brand hover:bg-am-brand-hover"
 								disabled={loading}
 							>
 								{loading ? "..." : "Сохранить"}
@@ -474,7 +474,7 @@ export function BulkGenerateDialog({
 						</Button>
 						<Button
 							type="submit"
-							className="bg-amber-500 hover:bg-orange-600"
+							className="bg-am-brand hover:bg-am-brand-hover"
 							disabled={loading}
 						>
 							{loading ? "Создание..." : "Сгенерировать"}
@@ -716,7 +716,7 @@ export function PtoEditAreaDialog({
 							Отмена
 						</Button>
 						<Button
-							className="bg-amber-500 hover:bg-orange-600"
+							className="bg-am-brand hover:bg-am-brand-hover"
 							onClick={save}
 							disabled={loading || !area || (newArea === oldArea && !doc)}
 						>

@@ -98,7 +98,7 @@ export function EditablePriceCell({
 			type="button"
 			className={cn(
 				"group ml-auto flex items-center justify-end gap-1 rounded px-1 text-right font-mono tabular-nums",
-				"hover:bg-amber-50 hover:text-amber-900",
+				"hover:bg-gray-50 hover:text-amber-900",
 				price <= 0 && "italic text-slate-400",
 			)}
 			title="Изменить цену за м²"

@@ -15,6 +15,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { DataTable } from "@/components/data-table";
+import { KpiCard, KpiRow } from "@/components/kpi-card";
 import {
 	AlertDialog,
 	AlertDialogCancel,
@@ -215,7 +216,7 @@ function PaymentRow({
 					/>
 				</div>
 			</td>
-			<td className="px-4 py-3 text-right font-mono font-bold text-amber-600">
+			<td className="px-4 py-3 text-right font-mono font-bold text-am-text-strong">
 				{fmt(a.remainingAmount)}
 			</td>
 			<td className="px-4 py-3">
@@ -817,7 +818,7 @@ export default function ConstructionAccruals() {
 				accessorFn: (row: any) => parseFloat(row.remainingAmount || "0"),
 				meta: { exportLabel: "Остаток (сом)", align: "right" },
 				cell: ({ row }) => (
-					<span className="font-mono font-bold text-amber-600">
+					<span className="font-mono font-bold text-am-text-strong">
 						{fmt(row.original.remainingAmount)}
 					</span>
 				),
@@ -875,32 +876,36 @@ export default function ConstructionAccruals() {
 				<LegalEntityScopeSelect />
 			</div>
 
-			<div className="am-kpi-grid mb-5">
-				<div className="am-kpi-card">
-					<div className="text-xs text-gray-500 mb-1">К получению</div>
-					<div className="text-xl font-bold text-blue-600">
-						{fmt(totalPending)}
-					</div>
-				</div>
-				<div className="am-kpi-card">
-					<div className="text-xs text-gray-500 mb-1">Получено</div>
-					<div className="text-xl font-bold text-emerald-600">
-						{fmt(totalPaid)}
-					</div>
-				</div>
-				<div className="am-kpi-card">
-					<div className="text-xs text-gray-500 mb-1">Просрочено</div>
-					<div className="text-xl font-bold text-rose-600">
-						{fmt(totalOverdue)}
-					</div>
-				</div>
-				<div className="am-kpi-card">
-					<div className="text-xs text-gray-500 mb-1">Просроченных</div>
-					<div className="text-xl font-bold text-rose-600">
-						{countOverdue} шт.
-					</div>
-				</div>
-			</div>
+			<KpiRow className="mb-5">
+				<KpiCard
+					variant="strip"
+					label="К получению"
+					value={fmt(totalPending)}
+					icon={Banknote}
+					color="blue"
+				/>
+				<KpiCard
+					variant="strip"
+					label="Получено"
+					value={fmt(totalPaid)}
+					icon={CheckCircle2}
+					color="green"
+				/>
+				<KpiCard
+					variant="strip"
+					label="Просрочено"
+					value={fmt(totalOverdue)}
+					icon={AlertTriangle}
+					color="red"
+				/>
+				<KpiCard
+					variant="strip"
+					label="Просроченных"
+					value={`${countOverdue} шт.`}
+					icon={Clock}
+					color="red"
+				/>
+			</KpiRow>
 
 			<div className="am-panel mb-4 flex flex-wrap items-center gap-3 p-3">
 				<div className="flex flex-wrap gap-2">
@@ -908,7 +913,7 @@ export default function ConstructionAccruals() {
 						<button
 							key={s}
 							onClick={() => setFilterStatus(s)}
-							className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${filterStatus === s ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+							className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${filterStatus === s ? "bg-am-brand text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
 						>
 							{s === "all"
 								? "Все"
@@ -953,7 +958,7 @@ export default function ConstructionAccruals() {
 						>
 							Список платежей
 							{viewMode === "list" && dateRangeKey === "all" && (
-								<span className="ml-auto text-amber-600">✓</span>
+								<span className="ml-auto text-am-brand">✓</span>
 							)}
 						</DropdownMenuItem>
 						<DropdownMenuItem
@@ -964,7 +969,7 @@ export default function ConstructionAccruals() {
 						>
 							Контрагенты
 							{viewMode === "counterparties" && (
-								<span className="ml-auto text-amber-600">✓</span>
+								<span className="ml-auto text-am-brand">✓</span>
 							)}
 						</DropdownMenuItem>
 						<DropdownMenuSeparator />
@@ -980,7 +985,7 @@ export default function ConstructionAccruals() {
 								>
 									{DATE_RANGE_LABELS[key]}
 									{dateRangeKey === key && (
-										<span className="ml-auto text-amber-600">✓</span>
+										<span className="ml-auto text-am-brand">✓</span>
 									)}
 								</DropdownMenuItem>
 							),
@@ -1084,7 +1089,7 @@ export default function ConstructionAccruals() {
 									return (
 										<Fragment key={buyer.key}>
 											<tr
-												className="border-b border-gray-100 hover:bg-amber-50/40 cursor-pointer"
+												className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
 												onClick={() => toggleBuyerExpanded(buyer.key)}
 											>
 												<td className="px-2 py-3 text-center">
@@ -1117,7 +1122,7 @@ export default function ConstructionAccruals() {
 												<td className="px-4 py-3 text-right font-mono text-emerald-600">
 													{fmt(buyer.totalPaid)}
 												</td>
-												<td className="px-4 py-3 text-right font-mono font-bold text-amber-600">
+												<td className="px-4 py-3 text-right font-mono font-bold text-am-text-strong">
 													{fmt(buyer.totalRemaining)}
 												</td>
 											</tr>

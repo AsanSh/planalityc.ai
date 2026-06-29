@@ -186,7 +186,7 @@ export default function ConstructionBroadcast() {
 							</div>
 
 							<Button
-								className="w-full bg-amber-500 hover:bg-orange-600"
+								className="w-full bg-am-brand hover:bg-am-brand-hover"
 								disabled={activeContracts.length === 0}
 							>
 								<Send className="w-4 h-4 mr-2" />

@@ -126,7 +126,7 @@ export default function ConstructionApprovals() {
 					</div>
 					<div className="flex flex-wrap gap-2">
 						<Link href="/warehouse/requests">
-							<Button className="gap-2 bg-amber-500 hover:bg-orange-600">
+							<Button className="gap-2 bg-am-brand hover:bg-am-brand-hover">
 								<CheckSquare className="h-4 w-4" />
 								Новая заявка
 							</Button>

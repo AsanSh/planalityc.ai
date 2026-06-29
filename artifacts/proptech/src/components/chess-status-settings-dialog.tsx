@@ -283,7 +283,7 @@ export function ChessStatusSettingsDialog({
 						)}
 						<Button
 							type="button"
-							className="bg-amber-500 hover:bg-orange-600"
+							className="bg-am-brand hover:bg-am-brand-hover"
 							disabled={createMut.isPending || updateMut.isPending}
 							onClick={handleSave}
 						>

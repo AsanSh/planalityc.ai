@@ -333,7 +333,7 @@ function BudgetDialog({
 						</Button>
 						<Button
 							type="submit"
-							className="bg-amber-500 hover:bg-orange-600"
+							className="bg-am-brand hover:bg-am-brand-hover"
 							disabled={loading}
 						>
 							{loading ? "..." : "Сохранить"}
@@ -438,7 +438,7 @@ export default function ConstructionBudget() {
 					</Button>
 					<Button
 						onClick={() => setDialog("new")}
-						className="bg-amber-500 hover:bg-orange-600 gap-2"
+						className="bg-am-brand hover:bg-am-brand-hover gap-2"
 					>
 						<Plus className="w-4 h-4" /> Добавить статью
 					</Button>
@@ -479,7 +479,7 @@ export default function ConstructionBudget() {
 			<div className="flex gap-2 flex-wrap">
 				<button
 					onClick={() => setProjectFilter("all")}
-					className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${projectFilter === "all" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+					className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${projectFilter === "all" ? "bg-am-brand text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
 				>
 					Все
 				</button>
@@ -487,7 +487,7 @@ export default function ConstructionBudget() {
 					<button
 						key={p.id}
 						onClick={() => setProjectFilter(String(p.id))}
-						className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${projectFilter === String(p.id) ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+						className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${projectFilter === String(p.id) ? "bg-am-brand text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
 					>
 						{p.name}
 					</button>

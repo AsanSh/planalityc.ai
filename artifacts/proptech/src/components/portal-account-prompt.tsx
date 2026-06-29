@@ -167,7 +167,7 @@ export function PortalAccountPrompt({
 							Позже
 						</Button>
 						<Button
-							className="flex-1 bg-amber-500 hover:bg-orange-600"
+							className="flex-1 bg-am-brand hover:bg-am-brand-hover"
 							onClick={() => void createAccount()}
 							disabled={loading}
 						>

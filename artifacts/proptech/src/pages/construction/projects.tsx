@@ -361,7 +361,7 @@ function ProjectDialog({
 						<Button
 							type="button"
 							variant="outline"
-							className="w-full gap-2 border-amber-200 text-amber-800 hover:bg-amber-50"
+							className="w-full gap-2 border-amber-200 text-amber-800 hover:bg-gray-50"
 							onClick={onRequestDocUpload}
 						>
 							<FileUp className="w-4 h-4" />
@@ -806,7 +806,7 @@ function ProjectDialog({
 						</Button>
 						<Button
 							type="submit"
-							className="bg-amber-500 hover:bg-orange-600"
+							className="bg-am-brand hover:bg-am-brand-hover"
 							disabled={loading}
 						>
 							{loading
@@ -993,7 +993,7 @@ export default function ConstructionProjects() {
 							setPrefill(null);
 							setDialog("new");
 						}}
-						className="h-9 gap-2 rounded-md bg-amber-500 hover:bg-amber-600"
+						className="h-9 gap-2 rounded-md bg-am-brand hover:bg-am-brand-hover"
 					>
 						<Plus className="w-4 h-4" /> Новый проект
 					</Button>

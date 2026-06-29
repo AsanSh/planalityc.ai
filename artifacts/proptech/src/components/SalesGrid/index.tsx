@@ -493,7 +493,7 @@ export default function SalesGrid() {
 					{projectId && !isSalesOnly && (
 						<Button
 							size="sm"
-							className="h-8 gap-1 bg-amber-500 text-xs hover:bg-orange-600"
+							className="h-8 gap-1 bg-am-brand text-xs hover:bg-am-brand-hover"
 							onClick={() => setSelectedUnit("new")}
 						>
 							<Plus className="h-3.5 w-3.5" />

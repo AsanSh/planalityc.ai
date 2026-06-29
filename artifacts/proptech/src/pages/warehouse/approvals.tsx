@@ -238,7 +238,7 @@ export default function WarehouseSupplyApprovals() {
 					>
 						{f.label}
 						{f.value === "pending" && pendingCount != null && pendingCount > 0 && (
-							<Badge className="ml-2 bg-amber-500 text-white">{pendingCount}</Badge>
+							<Badge className="ml-2 bg-am-brand text-white">{pendingCount}</Badge>
 						)}
 					</Button>
 				))}

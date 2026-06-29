@@ -90,7 +90,7 @@ export function EditableAreaCell({
 			type="button"
 			className={cn(
 				"group inline-flex items-center gap-1 rounded px-1 -mx-1 tabular-nums",
-				"hover:bg-amber-50 hover:text-amber-900",
+				"hover:bg-gray-50 hover:text-amber-900",
 				!area && "text-slate-400 italic",
 			)}
 			title="Изменить площадь"

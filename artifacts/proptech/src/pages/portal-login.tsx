@@ -101,7 +101,7 @@ export default function PortalLogin() {
 						<Button
 							onClick={sendCode}
 							disabled={loading || !phone.trim()}
-							className="w-full bg-amber-500 hover:bg-orange-600 h-11"
+							className="w-full bg-am-brand hover:bg-am-brand-hover h-11"
 						>
 							{loading ? "Отправляем..." : "Получить код"}
 						</Button>
@@ -138,7 +138,7 @@ export default function PortalLogin() {
 						<Button
 							onClick={verify}
 							disabled={loading || code.length < 4}
-							className="w-full bg-amber-500 hover:bg-orange-600 h-11"
+							className="w-full bg-am-brand hover:bg-am-brand-hover h-11"
 						>
 							{loading ? "Проверяем..." : "Войти"}
 						</Button>

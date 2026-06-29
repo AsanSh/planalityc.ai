@@ -243,7 +243,7 @@ function PortalPreviewCard({ draft }: { draft: DraftContent }) {
 					<Badge variant="secondary">{AUDIENCE_LABELS[draft.audience]}</Badge>
 					<Badge variant="secondary">{PLACEMENT_LABELS[draft.placement ?? "home"]}</Badge>
 					{draft.pinned && (
-						<Badge className="bg-amber-50 text-amber-800 hover:bg-amber-50">
+						<Badge className="bg-amber-50 text-amber-800 hover:bg-gray-50">
 							Закреплено
 						</Badge>
 					)}

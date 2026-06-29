@@ -157,7 +157,7 @@ export function DocumentsSection({
           <Button
             size="sm"
             variant="outline"
-            className="gap-1.5 text-amber-700 border-amber-200 hover:bg-amber-50"
+            className="gap-1.5 text-amber-700 border-amber-200 hover:bg-gray-50"
             onClick={() => void handleGenerateTaxInvoice()}
             disabled={generating || taxInvoiceMut.isPending}
           >

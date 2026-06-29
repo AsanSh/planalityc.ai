@@ -369,7 +369,7 @@ export function UnitSaleDialog({
 						</Button>
 						<Button
 							type="submit"
-							className="bg-amber-500 hover:bg-orange-600"
+							className="bg-am-brand hover:bg-am-brand-hover"
 							disabled={loading || sumMismatch}
 						>
 							{loading ? "Сохранение..." : "Сохранить и открыть договоры"}

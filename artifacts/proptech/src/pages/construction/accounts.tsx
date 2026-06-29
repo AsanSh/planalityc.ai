@@ -109,7 +109,7 @@ export default function ConstructionAccounts() {
 					<CashSummary accounts={accountsArray} />
 					<Button
 						onClick={() => setOpen(true)}
-						className="bg-amber-500 hover:bg-orange-600"
+						className="bg-am-brand hover:bg-am-brand-hover"
 					>
 						<Plus className="w-4 h-4 mr-2" /> Добавить счёт
 					</Button>
@@ -307,7 +307,7 @@ export default function ConstructionAccounts() {
 								Отмена
 							</Button>
 							<Button
-								className="flex-1 bg-amber-500 hover:bg-orange-600"
+								className="flex-1 bg-am-brand hover:bg-am-brand-hover"
 								disabled={createMut.isPending || !form.name}
 								onClick={() =>
 									createMut.mutate({

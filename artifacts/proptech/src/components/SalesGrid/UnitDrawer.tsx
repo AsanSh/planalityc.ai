@@ -130,7 +130,7 @@ export function UnitDrawer({
 			<div className="border-t border-slate-100 p-3 flex flex-wrap gap-2">
 				{isPTO && onEditArea && (
 					<>
-						<Button size="sm" className="gap-1.5 bg-amber-500 hover:bg-orange-600" onClick={onEditArea}>
+						<Button size="sm" className="gap-1.5 bg-am-brand hover:bg-am-brand-hover" onClick={onEditArea}>
 							<Ruler className="h-3.5 w-3.5" />
 							Площадь
 						</Button>
@@ -175,7 +175,7 @@ export function UnitDrawer({
 				{canSell && (
 					<Button
 						size="sm"
-						className="bg-amber-500 hover:bg-orange-600"
+						className="bg-am-brand hover:bg-am-brand-hover"
 						onClick={() => onRequestSale!("sold")}
 					>
 						Продать

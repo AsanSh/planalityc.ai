@@ -259,7 +259,7 @@ export function ChessUnitsImportDialog({
 						<Button
 							onClick={handleImport}
 							disabled={loading || rows.length === 0}
-							className="bg-amber-500 hover:bg-orange-600"
+							className="bg-am-brand hover:bg-am-brand-hover"
 						>
 							{loading ? "Импорт..." : `Импортировать ${rows.length} строк`}
 						</Button>

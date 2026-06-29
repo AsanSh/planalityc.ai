@@ -545,7 +545,7 @@ function TaskDialog({
 					</div>
 					<div className="flex justify-end gap-2 pt-1">
 						<Button type="button" variant="outline" onClick={onClose} disabled={loading}>Отмена</Button>
-						<Button type="submit" className="bg-amber-500 hover:bg-orange-600" disabled={loading}>
+						<Button type="submit" className="bg-am-brand hover:bg-am-brand-hover" disabled={loading}>
 							{loading ? "..." : "Сохранить"}
 						</Button>
 					</div>
@@ -1104,13 +1104,13 @@ function TasksCalendarView({
 								onClick={() => setSelectedDay(day)}
 								className={`min-h-[88px] border-b border-r border-gray-100 p-1.5 text-left transition-colors ${
 									!inMonth ? "bg-gray-50/80" : "bg-white"
-								} ${selected ? "ring-2 ring-inset ring-amber-400 z-[1]" : "hover:bg-amber-50/40"}`}
+								} ${selected ? "ring-2 ring-inset ring-amber-400 z-[1]" : "hover:bg-gray-50"}`}
 							>
 								<div className="flex items-center justify-between gap-1 mb-1">
 									<span
 										className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full ${
 											today
-												? "bg-amber-500 text-white"
+												? "bg-am-brand text-white"
 												: inMonth
 													? "text-gray-800"
 													: "text-gray-600"
@@ -1558,7 +1558,7 @@ export default function ConstructionTasks() {
 						{overdueCount > 0 && <span className="text-rose-600"> · {overdueCount} просрочено</span>}
 					</p>
 				</div>
-				<Button onClick={() => setDialog("new")} className="bg-amber-500 hover:bg-orange-600 gap-2">
+				<Button onClick={() => setDialog("new")} className="bg-am-brand hover:bg-am-brand-hover gap-2">
 					<Plus className="w-4 h-4" /> Новая задача
 				</Button>
 			</div>

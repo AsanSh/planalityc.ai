@@ -555,7 +555,7 @@ export default function ConstructionOperations() {
 					{canWriteFinance && (
 						<Button
 							onClick={() => setQuickWizardOpen(true)}
-							className="h-9 px-4 text-sm font-medium rounded-xl bg-amber-500 hover:bg-amber-600 text-white"
+							className="h-9 px-4 text-sm font-medium rounded-xl bg-am-brand hover:bg-am-brand-hover text-white"
 						>
 							<Zap className="w-4 h-4 mr-2" /> Быстрая операция
 						</Button>

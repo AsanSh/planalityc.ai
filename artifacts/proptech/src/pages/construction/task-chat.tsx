@@ -123,7 +123,7 @@ function ChatBubble({
 					{name} · {new Date(comment.createdAt).toLocaleString("ru-KG", { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" })}
 				</span>
 				<div className={`px-3 py-2 rounded-2xl text-sm ${
-					isMe ? "bg-amber-500 text-white rounded-br-sm" : "bg-white border border-gray-200 rounded-bl-sm"
+					isMe ? "bg-am-brand text-white rounded-br-sm" : "bg-white border border-gray-200 rounded-bl-sm"
 				} ${typeStyle[comment.commentType] || ""}`}>
 					{typeIcon[comment.commentType] && <span className="mr-1">{typeIcon[comment.commentType]}</span>}
 					{comment.content}
@@ -269,7 +269,7 @@ export default function TaskChat({ taskId }: { taskId: number }) {
 								onClick={() => setSendType(btn.type as any)}
 								className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium transition-colors ${
 									sendType === btn.type
-										? "bg-amber-500 text-white"
+										? "bg-am-brand text-white"
 										: "bg-gray-100 text-gray-600 hover:bg-gray-200"
 								}`}
 							>
@@ -301,7 +301,7 @@ export default function TaskChat({ taskId }: { taskId: number }) {
 					<Button
 						onClick={sendMessage}
 						disabled={!text.trim() || sending}
-						className="bg-amber-500 hover:bg-orange-600 h-10 w-10 p-0 rounded-xl flex-shrink-0"
+						className="bg-am-brand hover:bg-am-brand-hover h-10 w-10 p-0 rounded-xl flex-shrink-0"
 					>
 						{sendType === "return" ? <CornerDownLeft className="w-4 h-4" /> : <Send className="w-4 h-4" />}
 					</Button>

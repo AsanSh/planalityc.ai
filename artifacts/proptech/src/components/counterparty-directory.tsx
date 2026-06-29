@@ -276,7 +276,7 @@ export function CounterpartyDirectory({
 			<button
 				type="button"
 				onClick={() => setRoleFilter("all")}
-				className={`px-3 py-1.5 rounded-full text-xs font-medium ${roleFilter === "all" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+				className={`px-3 py-1.5 rounded-full text-xs font-medium ${roleFilter === "all" ? "bg-am-brand text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
 			>
 				Все ({rows.length})
 			</button>
@@ -287,7 +287,7 @@ export function CounterpartyDirectory({
 						key={role}
 						type="button"
 						onClick={() => setRoleFilter(role)}
-						className={`px-3 py-1.5 rounded-full text-xs font-medium ${roleFilter === role ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+						className={`px-3 py-1.5 rounded-full text-xs font-medium ${roleFilter === role ? "bg-am-brand text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
 					>
 						{ROLE_LABELS[role] || role} ({count})
 					</button>
@@ -304,7 +304,7 @@ export function CounterpartyDirectory({
 					{subtitle && <p className="text-sm text-am-text-muted mt-0.5">{subtitle}</p>}
 				</div>
 				{canEdit && (
-					<Button onClick={openCreate} className="bg-amber-500 hover:bg-orange-600 gap-2">
+					<Button onClick={openCreate} className="bg-am-brand hover:bg-am-brand-hover gap-2">
 						<Plus className="w-4 h-4" /> Добавить
 					</Button>
 				)}
@@ -480,7 +480,7 @@ function CounterpartyDialog({
 						<Button type="button" variant="outline" onClick={onClose} disabled={saving}>
 							Отмена
 						</Button>
-						<Button type="submit" className="bg-amber-500 hover:bg-orange-600" disabled={saving || !form.fullName.trim()}>
+						<Button type="submit" className="bg-am-brand hover:bg-am-brand-hover" disabled={saving || !form.fullName.trim()}>
 							{saving ? "Сохранение..." : "Сохранить"}
 						</Button>
 					</div>

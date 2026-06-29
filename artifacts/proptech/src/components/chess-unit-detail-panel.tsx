@@ -341,7 +341,7 @@ function PanelBody({
 						<>
 							<Button
 								size="sm"
-								className="bg-amber-500 hover:bg-orange-600 gap-1.5"
+								className="bg-am-brand hover:bg-am-brand-hover gap-1.5"
 								onClick={onEditArea}
 							>
 								<Ruler className="w-3.5 h-3.5" />
@@ -386,7 +386,7 @@ function PanelBody({
 						<>
 							<Button
 								size="sm"
-								className="bg-amber-500 hover:bg-orange-600"
+								className="bg-am-brand hover:bg-am-brand-hover"
 								onClick={() => onRequestSale("sold")}
 							>
 								Продать

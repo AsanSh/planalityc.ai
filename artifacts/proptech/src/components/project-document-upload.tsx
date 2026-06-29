@@ -178,7 +178,7 @@ export function ProjectDocumentUploadDialog({
 				</DialogHeader>
 
 				<div
-					className="border-2 border-dashed border-amber-200 rounded-xl p-8 text-center bg-amber-50/50 cursor-pointer hover:bg-amber-50 transition-colors"
+					className="border-2 border-dashed border-amber-200 rounded-xl p-8 text-center bg-amber-50/50 cursor-pointer hover:bg-gray-50 transition-colors"
 					onClick={() => !loading && inputRef.current?.click()}
 					onKeyDown={(e) => e.key === "Enter" && inputRef.current?.click()}
 					role="button"
@@ -272,7 +272,7 @@ export function ProjectDocumentUploadDialog({
 					</Button>
 					<Button
 						type="button"
-						className="bg-amber-500 hover:bg-orange-600"
+						className="bg-am-brand hover:bg-am-brand-hover"
 						disabled={!preview}
 						onClick={() => {
 							if (preview) {

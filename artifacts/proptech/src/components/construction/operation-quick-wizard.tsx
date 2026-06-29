@@ -366,7 +366,7 @@ export function OperationQuickWizard({
 					{step < 2 ? (
 						<Button
 							type="button"
-							className="bg-amber-500 hover:bg-amber-600"
+							className="bg-am-brand hover:bg-am-brand-hover"
 							disabled={
 								(step === 0 && !canNextStep1) || (step === 1 && !canNextStep2)
 							}
@@ -377,7 +377,7 @@ export function OperationQuickWizard({
 					) : (
 							<Button
 								type="button"
-								className="bg-amber-500 hover:bg-amber-600"
+								className="bg-am-brand hover:bg-am-brand-hover"
 								disabled={!description.trim() || isPending}
 								onClick={handleFinish}
 							>

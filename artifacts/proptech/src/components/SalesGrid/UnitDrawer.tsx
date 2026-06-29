@@ -2,7 +2,7 @@ import { History, Pencil, Receipt, Ruler, Trash2, X, XCircle } from "lucide-reac
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { isUnitPublishedForSale } from "@/lib/unit-pricing";
+import { hasUnitSalePrice } from "@/lib/unit-pricing";
 import type { StatusBadgeCfg } from "@/lib/unit-statuses";
 import { DocsTab } from "./DrawerTabs/DocsTab";
 import { FinanceTab } from "./DrawerTabs/FinanceTab";
@@ -83,7 +83,7 @@ export function UnitDrawer({
 	const canStartSale =
 		!isPTO &&
 		!isPricingMode &&
-		isUnitPublishedForSale(unit) &&
+		hasUnitSalePrice(unit) &&
 		!!onRequestSale;
 	const canSell = canStartSale && !isSold && (!hasActiveContract || isReserved);
 	const canReserve = canStartSale && !hasActiveContract && !isSold;

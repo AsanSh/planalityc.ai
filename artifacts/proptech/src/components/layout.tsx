@@ -846,6 +846,13 @@ export function Layout({ children }: { children: ReactNode }) {
 	const showModuleSwitcher = moduleSwitcherModules.length > 1;
 	const adminRoles = new Set(["company_admin", "admin", "super_admin"]);
 	const isAdminUser = adminRoles.has(String((user as { role?: string })?.role ?? role));
+	// Роли «стройки» не видят деньги компании (пилюля «Деньги бизнеса» в шапке)
+	const moneyBlockedRole = [
+		"pto",
+		"engineer",
+		"pto_engineer",
+		"construction_project_manager",
+	].includes(String((user as { role?: string })?.role ?? role));
 
 	const navSections = useMemo(() => {
 		const userRole = (user as { role?: string })?.role;
@@ -1353,7 +1360,9 @@ export function Layout({ children }: { children: ReactNode }) {
 					)}
 
 					{/* Notifications */}
-					<div className="hidden lg:block"><CashSummary accounts={allBankAccounts} /></div>
+					{!moneyBlockedRole && (
+						<div className="hidden lg:block"><CashSummary accounts={allBankAccounts} /></div>
+					)}
 					<NotificationBell />
 					{/* <NotificationsPanel /> */}
 

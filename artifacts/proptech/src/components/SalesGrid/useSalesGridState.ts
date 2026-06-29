@@ -6,7 +6,13 @@ export function useSalesGridState(userRole: string) {
 	const isAdmin = ["admin", "super_admin", "company_admin", "owner"].includes(userRole);
 	const isCommercialDirector = userRole === "commercial_director";
 	const isSalesOnly = userRole === "sales_manager";
-	const forcedPto = userRole === "pto" || userRole === "engineer";
+	// Роли «стройки»: видят площади/статусы, но НЕ деньги (цены, оплаты, финслой)
+	const forcedPto = [
+		"pto",
+		"engineer",
+		"pto_engineer",
+		"construction_project_manager",
+	].includes(userRole);
 
 	const [adminMode, setAdminMode] = useState<CellViewMode>("crm");
 	const cellViewMode: CellViewMode = forcedPto
@@ -46,8 +52,8 @@ export function useSalesGridState(userRole: string) {
 	}, [projectId]);
 
 	const effectiveView = useMemo(
-		() => (isMobile ? "list" : view),
-		[isMobile, view],
+		() => (forcedPto ? "grid" : isMobile ? "list" : view),
+		[forcedPto, isMobile, view],
 	);
 
 	return {

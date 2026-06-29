@@ -593,6 +593,7 @@ export default function SalesGrid() {
 								view={effectiveView}
 								onChange={setView}
 								isMobile={isMobile}
+								gridOnly={isPTO}
 								onExportCsv={handleExportCsv}
 								onExportExcel={handleExportExcel}
 								onImport={
@@ -632,7 +633,7 @@ export default function SalesGrid() {
 										onBulkFloor={toggleBulkFloor}
 									onMoveUnit={handleMoveUnit}
 								/>
-								) : effectiveView === "financial" ? (
+								) : effectiveView === "financial" && !isPTO ? (
 									<FinancialLayerView
 										units={filteredUnits}
 										statusGridMap={statusGridMap}

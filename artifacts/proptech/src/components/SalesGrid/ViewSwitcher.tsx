@@ -16,6 +16,7 @@ export function ViewSwitcher({
 	onExportExcel,
 	onImport,
 	isMobile,
+	gridOnly,
 }: {
 	view: SalesGridView;
 	onChange: (v: SalesGridView) => void;
@@ -23,11 +24,14 @@ export function ViewSwitcher({
 	onExportExcel?: () => void;
 	onImport?: () => void;
 	isMobile?: boolean;
+	gridOnly?: boolean;
 }) {
+	// ПТО/стройка: только «Шахматка» (площади), без финслоя/списка/контрагентов
+	const views = gridOnly ? VIEWS.filter((v) => v.id === "grid") : VIEWS;
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-2">
 			<div className="flex flex-wrap gap-1.5">
-				{VIEWS.map(({ id, label, icon: Icon }) => (
+				{views.map(({ id, label, icon: Icon }) => (
 					<button
 						key={id}
 						type="button"

@@ -1193,7 +1193,6 @@ export default function ConstructionAccruals() {
 					data={filtered}
 					isLoading={isLoading}
 					maxHeight="calc(100vh - 320px)"
-					defaultDensity="comfortable"
 					initialSorting={[{ id: "dueDate", desc: true }]}
 					rowClassName={(a: any) =>
 						a.isOverdue && a.status !== "paid" ? "bg-rose-50/30" : ""

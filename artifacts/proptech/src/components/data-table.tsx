@@ -50,7 +50,7 @@ export type TableDensity = "compact" | "normal" | "comfortable";
 type Persisted = TableViewLayout;
 
 const DENSITY_PADDING: Record<TableDensity, string> = {
-	compact: "py-1.5",
+	compact: "py-1",
 	normal: "py-2.5",
 	comfortable: "py-4",
 };
@@ -122,7 +122,7 @@ export function DataTable<T>({
 	maxHeight,
 	showRowIndex = false,
 	hideToolbar = false,
-	defaultDensity = "normal",
+	defaultDensity = "compact",
 	getRowId,
 }: DataTableProps<T>) {
 	const isExcel = variant === "excel";

@@ -864,12 +864,13 @@
 
 .am-table-row {
   border-bottom: 1px solid hsl(var(--am-border) / 0.62);
-  background: rgb(255 255 255 / 0.68);
+  background: #ffffff;
   transition: background-color 140ms var(--am-ease-out);
 }
 
-.am-table-row:nth-child(odd) {
-  background: rgb(255 255 255 / 0.54);
+/* Видимая зебра — как в «Объектах»/«Договорах»: чётные строки светло-серые */
+.am-table-row:nth-child(even) {
+  background: rgb(241 245 249 / 0.7);
 }
 
 .am-table-row:hover {

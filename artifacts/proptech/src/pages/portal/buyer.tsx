@@ -5,19 +5,14 @@ import {
 	Bell,
 	Building2,
 	CheckCircle,
-	ChevronRight,
-	Clock,
 	CreditCard,
 	Download,
 	FileText,
 	Home,
 	LogOut,
-	Megaphone,
-	MessageCircle,
 	Phone,
 	Printer,
 	Send,
-	Settings,
 	Share2,
 	Wallet,
 	Wrench,
@@ -403,24 +398,75 @@ export default function BuyerPortal({ previewBuyerId }: { previewBuyerId?: numbe
 					</DialogHeader>
 					{modal === "chat" ? (
 						<div className="space-y-3">
+							{buyerNews.length > 0 && (
+								<div className="max-h-48 space-y-2 overflow-y-auto">
+									{buyerNews.slice(0, 5).map((item: any) => (
+										<div key={item.id} className="rounded-2xl bg-gray-50 p-3 text-sm">
+											<div className="font-semibold text-gray-900">{item.title}</div>
+											{item.body && <div className="mt-0.5 text-xs text-gray-600">{item.body}</div>}
+										</div>
+									))}
+								</div>
+							)}
 							<Textarea
 								value={chatBody}
 								onChange={(e) => setChatBody(e.target.value)}
-								placeholder="Введите сообщение..."
+								placeholder="Сообщение менеджеру..."
 							/>
 							<Button
-								className="w-full"
+								className="w-full gap-2"
 								onClick={() => {
+									if (!chatBody.trim()) return;
 									setChatBody("");
-									toast({ title: "Сообщение отправлено" });
+									toast({ title: "Сообщение отправлено менеджеру" });
 								}}
 							>
-								Отправить
+								<Send className="h-4 w-4" /> Отправить
+							</Button>
+						</div>
+					) : modal === "manager" ? (
+						<div className="space-y-3 text-center">
+							<div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
+								<Phone className="h-7 w-7 text-emerald-600" />
+							</div>
+							<p className="font-semibold text-gray-900">Менеджер объекта</p>
+							<p className="text-sm text-gray-500">
+								По вопросам оплаты, документов и приёмки оставьте заявку — менеджер
+								свяжется с вами.
+							</p>
+							<Button className="w-full gap-2" onClick={() => setModal("requests")}>
+								<Wrench className="h-4 w-4" /> Оставить заявку
 							</Button>
 						</div>
 					) : (
-						<div className="rounded-xl border border-dashed p-6 text-center text-sm text-gray-500">
-							Раздел готовится к подключению.
+						<div className="space-y-3">
+							<div className="space-y-2 rounded-xl border p-3 text-sm">
+								<div className="flex justify-between gap-3">
+									<span className="text-gray-500">Имя</span>
+									<span className="font-medium text-gray-900">
+										{[user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+											buyer?.fullName ||
+											"—"}
+									</span>
+								</div>
+								<div className="flex justify-between gap-3">
+									<span className="text-gray-500">Телефон</span>
+									<span className="font-medium text-gray-900">
+										{buyer?.phone || "—"}
+									</span>
+								</div>
+								<div className="flex justify-between gap-3">
+									<span className="text-gray-500">E-mail</span>
+									<span className="font-medium text-gray-900">{user?.email || "—"}</span>
+								</div>
+							</div>
+							<Button
+								variant="outline"
+								className="w-full gap-2 text-rose-600 hover:text-rose-700"
+								onClick={logout}
+							>
+								<LogOut className="h-4 w-4" /> Выйти из кабинета
+							</Button>
 						</div>
 					)}
 				</DialogContent>
@@ -634,23 +680,36 @@ export default function BuyerPortal({ previewBuyerId }: { previewBuyerId?: numbe
 									</tr>
 								</thead>
 								<tbody className="divide-y">
-									{accruals.map((a: any) => (
-										<tr key={a.id} className="hover:bg-gray-50">
-											<td className="px-3 sm:px-6 py-3 text-gray-600">{a.installmentNumber}</td>
-											<td className="px-3 sm:px-6 py-3 text-gray-600 whitespace-nowrap">{fmtDate(a.dueDate)}</td>
-											<td className="px-3 sm:px-6 py-3 text-right font-medium whitespace-nowrap">
-												{fmt(a.amount)} {a.currency || currency}
-											</td>
-											<td className="px-3 sm:px-6 py-3 text-right text-emerald-700 whitespace-nowrap">
-												{fmt(a.paidAmount)} {a.currency || currency}
-											</td>
-											<td className="px-3 sm:px-6 py-3">
-												<Badge variant="secondary" className="text-xs">
-													{a.status}
-												</Badge>
-											</td>
-										</tr>
-									))}
+									{accruals.map((a: any) => {
+										const st = scheduleStatusOf(a);
+										const meta = SCHEDULE_STATUS[st];
+										const paidNum = parseFloat(String(a.paidAmount ?? 0));
+										return (
+											<tr key={a.id} className={`transition-colors hover:bg-gray-50/80 ${meta.row}`}>
+												<td className="px-3 sm:px-6 py-3 text-gray-500">{a.installmentNumber}</td>
+												<td className="px-3 sm:px-6 py-3 text-gray-600 whitespace-nowrap">{fmtDate(a.dueDate)}</td>
+												<td className="px-3 sm:px-6 py-3 text-right font-medium text-gray-900 whitespace-nowrap">
+													{fmt(a.amount)} {a.currency || currency}
+												</td>
+												<td
+													className={`px-3 sm:px-6 py-3 text-right whitespace-nowrap ${
+														paidNum > 0 ? "font-semibold text-emerald-600" : "text-gray-300"
+													}`}
+												>
+													{fmt(a.paidAmount)} {a.currency || currency}
+												</td>
+												<td className="px-3 sm:px-6 py-3">
+													<span
+														className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${meta.cls}`}
+													>
+														{st === "paid" && <CheckCircle className="h-3 w-3" />}
+														{st === "overdue" && <AlertCircle className="h-3 w-3" />}
+														{meta.label}
+													</span>
+												</td>
+											</tr>
+										);
+									})}
 								</tbody>
 							</table>
 						</div>

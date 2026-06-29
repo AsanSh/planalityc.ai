@@ -86,7 +86,7 @@ const DOC_TEMPLATES: {
 	{
 		id: "lease",
 		Icon: FileSignature,
-		color: "text-blue-600 bg-blue-50",
+		color: "text-cyan-600 bg-cyan-50",
 		label: "Договор аренды",
 		desc: "Стандартный договор аренды помещения",
 	},
@@ -107,7 +107,7 @@ const DOC_TEMPLATES: {
 	{
 		id: "reconciliation",
 		Icon: FileBarChart,
-		color: "text-blue-600 bg-blue-50",
+		color: "text-cyan-600 bg-cyan-50",
 		label: "Акт сверки расчётов",
 		desc: "Сводный акт по начислениям и платежам",
 	},
@@ -158,7 +158,7 @@ const CHANNEL_INFO: Record<
 	},
 	email: {
 		icon: Mail,
-		color: "text-blue-600",
+		color: "text-cyan-600",
 		requirements: [
 			"SMTP-сервер или Email API (SendGrid, Mailgun)",
 			"Email отправителя в домене .kg (например info@vashcompany.kg)",
@@ -168,7 +168,7 @@ const CHANNEL_INFO: Record<
 	},
 	all: {
 		icon: Bell,
-		color: "text-blue-600",
+		color: "text-cyan-600",
 		requirements: ["Настройки для всех трёх каналов: SMS, WhatsApp, Email"],
 		note: "Уведомление отправляется по всем доступным каналам.",
 	},
@@ -340,7 +340,7 @@ function DocTemplateRow({
 	};
 
 	return (
-		<div className="flex items-center gap-3 p-3.5 border border-gray-200 rounded-xl hover:border-blue-200 hover:bg-blue-50/30 transition-colors group">
+		<div className="flex items-center gap-3 p-3.5 border border-gray-200 rounded-xl hover:border-cyan-200 hover:bg-cyan-50/30 transition-colors group">
 			<div
 				className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${doc.color}`}
 			>
@@ -517,10 +517,10 @@ function DocsTab() {
 					))}
 				</div>
 			)}
-			<div className="mt-3 rounded-lg bg-blue-50 border border-blue-100 p-3">
+			<div className="mt-3 rounded-lg bg-cyan-50 border border-cyan-100 p-3">
 				<div className="flex items-start gap-2">
-					<Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-					<p className="text-xs text-blue-700">
+					<Info className="w-4 h-4 text-cyan-500 flex-shrink-0 mt-0.5" />
+					<p className="text-xs text-cyan-700">
 						Форматы: PDF, DOC, DOCX, JPG, PNG — до 5 МБ. Загруженные шаблоны
 						доступны всем пользователям компании для скачивания.
 					</p>
@@ -531,7 +531,7 @@ function DocsTab() {
 				<DialogContent className="sm:max-w-sm">
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2">
-							<FilePlus2 className="w-4 h-4 text-blue-600" /> Добавить шаблон
+							<FilePlus2 className="w-4 h-4 text-cyan-600" /> Добавить шаблон
 						</DialogTitle>
 					</DialogHeader>
 					<div className="space-y-3 py-1">
@@ -658,7 +658,7 @@ export default function RentalSettings() {
 							onClick={() => setTab(t.id)}
 							className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
 								tab === t.id
-									? "border-blue-600 text-blue-700"
+									? "border-cyan-600 text-cyan-700"
 									: "border-transparent text-gray-500 hover:text-gray-700"
 							}`}
 						>
@@ -785,17 +785,17 @@ export default function RentalSettings() {
 								</SelectContent>
 							</Select>
 							{selectedRegime && (
-								<div className="mt-2 rounded-lg bg-blue-50 border border-blue-100 p-3">
-									<p className="text-xs font-semibold text-blue-800 mb-1.5">
+								<div className="mt-2 rounded-lg bg-cyan-50 border border-cyan-100 p-3">
+									<p className="text-xs font-semibold text-cyan-800 mb-1.5">
 										Применяемые налоги:
 									</p>
 									{selectedRegime.taxes.map((t) => (
 										<div
 											key={t.name}
-											className="flex items-center justify-between text-xs text-blue-700"
+											className="flex items-center justify-between text-xs text-cyan-700"
 										>
 											<span>{t.name}</span>
-											<span className="font-bold bg-blue-100 px-2 py-0.5 rounded-full">
+											<span className="font-bold bg-cyan-100 px-2 py-0.5 rounded-full">
 												{t.rate}
 											</span>
 										</div>

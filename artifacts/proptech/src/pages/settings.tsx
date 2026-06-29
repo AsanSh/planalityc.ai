@@ -452,9 +452,9 @@ export default function Settings() {
 			{activeArea === "rental" && <RentalSettings />}
 			{activeArea === "warehouse" && <WarehouseSettings />}
 			{activeArea === "crm" && (
-				<div className="rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
+				<div className="rounded-lg border border-gray-100 bg-white p-6">
 					<div className="mb-5 flex items-center gap-3">
-						<div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+						<div className="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600">
 							<Users className="h-5 w-5" />
 						</div>
 						<div>
@@ -466,7 +466,7 @@ export default function Settings() {
 					</div>
 					<div className="grid gap-3 sm:grid-cols-2">
 						<Link href="/crm/lead-intake">
-							<div className="rounded-lg border border-gray-100 p-4 transition-colors hover:border-blue-200 hover:bg-blue-50/40">
+							<div className="rounded-lg border border-gray-100 p-4 transition-colors hover:border-cyan-200 hover:bg-cyan-50/40">
 								<p className="text-sm font-semibold text-gray-900">Сбор лидов</p>
 								<p className="mt-1 text-xs text-gray-500">
 									Webhook, токены, Instagram и входящие заявки
@@ -474,7 +474,7 @@ export default function Settings() {
 							</div>
 						</Link>
 						<Link href="/crm/counterparties">
-							<div className="rounded-lg border border-gray-100 p-4 transition-colors hover:border-blue-200 hover:bg-blue-50/40">
+							<div className="rounded-lg border border-gray-100 p-4 transition-colors hover:border-cyan-200 hover:bg-cyan-50/40">
 								<p className="text-sm font-semibold text-gray-900">Контрагенты CRM</p>
 								<p className="mt-1 text-xs text-gray-500">
 									Клиенты, покупатели и связанные карточки
@@ -501,7 +501,7 @@ export default function Settings() {
 						className={cn(
 							"flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors",
 							activeTab === tab.id
-								? "border-blue-600 text-blue-600"
+								? "border-cyan-600 text-cyan-600"
 								: "border-transparent text-gray-500 hover:text-gray-700",
 						)}
 					>
@@ -513,24 +513,24 @@ export default function Settings() {
 
 			{/* Org tab */}
 			{activeTab === "org" && (
-				<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
+				<div className="bg-white rounded-lg border border-gray-100 p-6">
 					{loading ? (
 						<div className="flex items-center justify-center py-12">
-							<Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+							<Loader2 className="h-6 w-6 animate-spin text-cyan-500" />
 						</div>
 					) : (
 						<>
 							<div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
-								<div className="h-12 w-12 bg-blue-50 rounded-xl flex items-center justify-center">
-									<Building2 className="h-6 w-6 text-blue-600" />
+								<div className="h-12 w-12 bg-cyan-50 rounded-xl flex items-center justify-center">
+									<Building2 className="h-6 w-6 text-cyan-600" />
 								</div>
 								<div>
 									<h2 className="font-semibold text-gray-900">
 										{org?.name || "Организация"}
 									</h2>
 									<div className="flex items-center gap-1.5 mt-0.5">
-										<Shield className="h-3.5 w-3.5 text-blue-500" />
-										<span className="text-xs text-blue-600 font-medium">
+										<Shield className="h-3.5 w-3.5 text-cyan-500" />
+										<span className="text-xs text-cyan-600 font-medium">
 											{isAdmin ? "Администратор" : "Сотрудник"}
 										</span>
 									</div>
@@ -636,7 +636,7 @@ export default function Settings() {
 										<Button
 											type="submit"
 											disabled={saving}
-											className="h-11 px-6 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-700"
+											className="h-11 px-6 rounded-xl text-sm font-semibold bg-cyan-600 hover:bg-cyan-700"
 										>
 											{saving ? (
 												<>
@@ -685,9 +685,9 @@ export default function Settings() {
 			{activeTab === "profile" && (
 				<div className="space-y-5">
 					{/* Header card */}
-					<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
+					<div className="bg-white rounded-lg border border-gray-100 p-6">
 						<div className="flex items-center gap-4">
-							<div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center text-2xl font-bold text-blue-700 flex-shrink-0">
+							<div className="h-16 w-16 rounded-full bg-cyan-100 flex items-center justify-center text-2xl font-bold text-cyan-700 flex-shrink-0">
 								{profileForm.firstName?.[0]}
 								{profileForm.lastName?.[0]}
 							</div>
@@ -697,7 +697,7 @@ export default function Settings() {
 								</p>
 								<p className="text-sm text-gray-500">{(user as any)?.email}</p>
 								<span
-									className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full mt-1 ${isAdmin ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-700"}`}
+									className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full mt-1 ${isAdmin ? "bg-cyan-50 text-cyan-700" : "bg-gray-100 text-gray-700"}`}
 								>
 									<Shield className="h-3 w-3" />
 									{isAdmin ? "Администратор" : "Сотрудник"}
@@ -707,9 +707,9 @@ export default function Settings() {
 					</div>
 
 					{/* Edit profile form */}
-					<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
+					<div className="bg-white rounded-lg border border-gray-100 p-6">
 						<h3 className="font-semibold text-gray-900 mb-5 flex items-center gap-2">
-							<User className="w-4 h-4 text-blue-500" />
+							<User className="w-4 h-4 text-cyan-500" />
 							Личные данные
 						</h3>
 						<form onSubmit={handleSaveProfile} className="space-y-4">
@@ -766,7 +766,7 @@ export default function Settings() {
 								<Button
 									type="submit"
 									disabled={savingProfile}
-									className="h-11 px-6 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-700"
+									className="h-11 px-6 rounded-xl text-sm font-semibold bg-cyan-600 hover:bg-cyan-700"
 								>
 									{savingProfile ? (
 										<>
@@ -785,9 +785,9 @@ export default function Settings() {
 					</div>
 
 					{/* Change password form */}
-					<div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
+					<div className="bg-white rounded-lg border border-gray-100 p-6">
 						<h3 className="font-semibold text-gray-900 mb-5 flex items-center gap-2">
-							<KeyRound className="w-4 h-4 text-blue-500" />
+							<KeyRound className="w-4 h-4 text-cyan-500" />
 							Изменить пароль
 						</h3>
 						<form onSubmit={handleChangePassword} className="space-y-4">
@@ -866,9 +866,9 @@ export default function Settings() {
 			{/* Modules tab */}
 			{activeTab === "modules" && (
 				<div className="space-y-5">
-					<div className="bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 text-sm text-blue-800">
+					<div className="bg-cyan-50 border border-cyan-200 rounded-xl px-5 py-4 text-sm text-cyan-800">
 						<p className="font-medium mb-0.5">Управление модулями системы</p>
-						<p className="text-blue-600 text-xs">
+						<p className="text-cyan-600 text-xs">
 							Включайте только нужные функции. Данные сохраняются при отключении
 							модуля.
 						</p>
@@ -889,7 +889,7 @@ export default function Settings() {
 							{[1, 2, 3].map((i) => (
 								<div
 									key={i}
-									className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 flex items-center gap-4 animate-pulse"
+									className="bg-white rounded-lg border border-gray-100 p-4 flex items-center gap-4 animate-pulse"
 								>
 									<div className="w-10 h-10 bg-gray-200 rounded-xl flex-shrink-0" />
 									<div className="flex-1 space-y-2">
@@ -917,7 +917,7 @@ export default function Settings() {
 						Object.entries(groupedModules).map(([category, mods]) => (
 							<div
 								key={category}
-								className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden"
+								className="bg-white rounded-lg border border-gray-100 overflow-hidden"
 							>
 								<div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
 									<p className="text-xs font-semibold uppercase tracking-wider text-gray-600">
@@ -937,13 +937,13 @@ export default function Settings() {
 												<div
 													className={cn(
 														"w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
-														m.isEnabled ? "bg-blue-50" : "bg-gray-100",
+														m.isEnabled ? "bg-cyan-50" : "bg-gray-100",
 													)}
 												>
 													<IconComp
 														className={cn(
 															"w-5 h-5",
-															m.isEnabled ? "text-blue-600" : "text-gray-600",
+															m.isEnabled ? "text-cyan-600" : "text-gray-600",
 														)}
 													/>
 												</div>
@@ -953,7 +953,7 @@ export default function Settings() {
 															{m.name}
 														</p>
 														{isCore && (
-															<span className="text-[10px] font-semibold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded uppercase tracking-wide">
+															<span className="text-[10px] font-semibold bg-cyan-100 text-cyan-700 px-1.5 py-0.5 rounded uppercase tracking-wide">
 																Core
 															</span>
 														)}
@@ -978,7 +978,7 @@ export default function Settings() {
 															disabled={isCore || isToggling}
 															className={cn(
 																"relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed",
-																m.isEnabled ? "bg-blue-600" : "bg-gray-200",
+																m.isEnabled ? "bg-cyan-600" : "bg-gray-200",
 															)}
 														>
 															<span

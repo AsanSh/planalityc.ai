@@ -94,6 +94,8 @@ export default function ChatPanel() {
 	);
 	const panelRef = useRef<HTMLDivElement>(null);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const conversationsInitializedRef = useRef(false);
+	const lastSeenMessageRef = useRef<Map<number, string | number>>(new Map());
 	const qc = useQueryClient();
 
 	const {
@@ -141,6 +143,36 @@ export default function ChatPanel() {
 	);
 	const myId = (user as any)?.id;
 
+	async function requestChatNotificationPermission() {
+		if (typeof window === "undefined" || !("Notification" in window)) return;
+		if (Notification.permission === "default") {
+			try {
+				await Notification.requestPermission();
+			} catch {
+				// Browser may reject permission prompts outside supported contexts.
+			}
+		}
+	}
+
+	function notifyIncomingMessage(conversation: any) {
+		const partnerName = getUserName(conversation.partner);
+		const body = conversation.lastMessage?.content || "Новое сообщение";
+
+		if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+			new Notification(partnerName, {
+				body,
+				icon: "/favicon.svg",
+				tag: `planalityc-chat-${conversation.partnerId}`,
+			});
+		}
+
+		if (typeof document !== "undefined" && document.visibilityState === "visible") {
+			toast.message(`Новое сообщение: ${partnerName}`, {
+				description: body,
+			});
+		}
+	}
+
 	useEffect(() => {
 		function onClick(e: MouseEvent) {
 			if (panelRef.current && !panelRef.current.contains(e.target as Node))
@@ -158,6 +190,33 @@ export default function ChatPanel() {
 	useEffect(() => {
 		if (activeConv) qc.invalidateQueries({ queryKey: ["chat-conversations"] });
 	}, [qc.invalidateQueries, activeConv]);
+
+	useEffect(() => {
+		if (!conversations.length) return;
+
+		const nextSeen = new Map<number, string | number>();
+
+		for (const conversation of conversations) {
+			const lastMessage = conversation.lastMessage;
+			if (!lastMessage) continue;
+
+			const messageKey = lastMessage.id ?? lastMessage.createdAt;
+			nextSeen.set(conversation.partnerId, messageKey);
+
+			if (!conversationsInitializedRef.current) continue;
+
+			const previousKey = lastSeenMessageRef.current.get(conversation.partnerId);
+			const isIncoming = lastMessage.fromUserId !== myId;
+			const isNewMessage = previousKey !== undefined && previousKey !== messageKey;
+
+			if (isIncoming && isNewMessage) {
+				notifyIncomingMessage(conversation);
+			}
+		}
+
+		lastSeenMessageRef.current = nextSeen;
+		conversationsInitializedRef.current = true;
+	}, [conversations, myId]);
 
 	async function sendMessage() {
 		if (!message.trim() || !activeConv) return;
@@ -288,8 +347,16 @@ export default function ChatPanel() {
 	return (
 		<div ref={panelRef} className="relative">
 			<button
-				onClick={() => setOpen((v) => !v)}
-				className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-transparent text-slate-700 transition-colors hover:border-cyan-100 hover:bg-cyan-50"
+				onClick={() => {
+					setOpen((v) => !v);
+					void requestChatNotificationPermission();
+				}}
+				className={`relative flex h-11 w-11 items-center justify-center rounded-2xl border transition-all ${
+					open
+						? "border-slate-900 bg-slate-950 text-white shadow-lg shadow-slate-950/20"
+						: "border-transparent text-slate-700 hover:border-cyan-100 hover:bg-cyan-50"
+				}`}
+				aria-expanded={open}
 				aria-label="Чаты"
 			>
 				<MessageCircle className="h-5 w-5" />

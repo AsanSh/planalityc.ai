@@ -56,7 +56,7 @@ const emptyUnitsOverview: UnitsOverview = {
 
 const LAUNCH_STEPS = [
 	{
-		title: "Проект / ЖК",
+		title: "Проекты",
 		description: "Создать объект учета: адрес, этажность, юниты, сроки и бюджет.",
 		href: "/construction/projects?create=1",
 		icon: Building2,

@@ -118,7 +118,7 @@ const MODULES: Module[] = [
 					title: "Проект",
 					items: [
 						{ href: "/dashboard?tab=construction", label: "Обзор", icon: LayoutDashboard },
-						{ href: "/construction/projects", label: "Проект / ЖК", icon: Building2 },
+						{ href: "/construction/projects", label: "Проекты", icon: Building2 },
 						{ href: "/construction/chess", label: "Шахматка", icon: Grid3X3 },
 						{ href: "/construction/contracts-sales", label: "Договоры продаж", icon: FileText },
 					],

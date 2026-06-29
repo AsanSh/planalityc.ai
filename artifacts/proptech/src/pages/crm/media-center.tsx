@@ -831,7 +831,7 @@ export default function CrmMediaCenter() {
 
 						<div className="grid grid-cols-2 gap-3">
 							<div>
-								<Label>Проект / ЖК</Label>
+								<Label>Проекты</Label>
 								<Input
 									className="mt-1"
 									value={draft.projectName || ""}

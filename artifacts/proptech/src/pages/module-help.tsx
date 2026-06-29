@@ -30,7 +30,7 @@ const HELP: Record<
 		startHref: "/construction/projects?create=1",
 		icon: Building2,
 		steps: [
-			{ title: "Создайте проект / ЖК", text: "Укажите адрес, этажность, количество юнитов, сроки и плановую себестоимость.", href: "/construction/projects?create=1" },
+			{ title: "Создайте проект", text: "Укажите адрес, этажность, количество юнитов, сроки и плановую себестоимость.", href: "/construction/projects?create=1" },
 			{ title: "Соберите шахматку", text: "Сгенерируйте квартиры или импортируйте Excel. Проверьте площадь, секцию, статус.", href: "/construction/chess" },
 			{ title: "Утвердите цены", text: "Коммерческий директор задает базовую цену и коэффициент. Без этого юнит не активен для продаж.", href: "/construction/chess" },
 			{ title: "Создайте договор", text: "Продажник выбирает только открытый к продаже юнит, покупателя и условия оплаты.", href: "/construction/contracts-sales" },

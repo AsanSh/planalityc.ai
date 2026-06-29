@@ -1141,7 +1141,7 @@ export default function ConstructionProjects() {
 										<div className="flex items-start justify-between gap-3">
 											<div className="min-w-0">
 												<p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300/85">
-													Проект / ЖК
+													Проекты
 												</p>
 												<div className="mt-1 flex min-w-0 items-center gap-2">
 													<h3 className="line-clamp-2 break-words text-xl font-black leading-tight text-white">

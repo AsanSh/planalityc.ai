@@ -1051,21 +1051,24 @@ export default function ConstructionAccruals() {
 			)}
 
 			{viewMode === "counterparties" ? (
-				<div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+				<div
+					className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-auto"
+					style={{ maxHeight: "calc(100vh - 320px)" }}
+				>
 					<table className="w-full text-sm">
 						<thead>
-							<tr className="bg-gray-50 border-b border-gray-100">
-								<th className="w-10 px-2" />
-								<th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">
+							<tr className="border-b border-gray-100">
+								<th className="sticky top-0 z-10 bg-gray-50 w-10 px-2" />
+								<th className="sticky top-0 z-10 bg-gray-50 text-left px-4 py-3 text-xs font-semibold text-gray-500">
 									Контрагент
 								</th>
-								<th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">
+								<th className="sticky top-0 z-10 bg-gray-50 text-right px-4 py-3 text-xs font-semibold text-gray-500">
 									Начислено за период
 								</th>
-								<th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">
+								<th className="sticky top-0 z-10 bg-gray-50 text-right px-4 py-3 text-xs font-semibold text-gray-500">
 									Оплачено
 								</th>
-								<th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">
+								<th className="sticky top-0 z-10 bg-gray-50 text-right px-4 py-3 text-xs font-semibold text-gray-500">
 									Остаток
 								</th>
 							</tr>
@@ -1189,6 +1192,7 @@ export default function ConstructionAccruals() {
 					columns={listColumns}
 					data={filtered}
 					isLoading={isLoading}
+					maxHeight="calc(100vh - 320px)"
 					defaultDensity="comfortable"
 					initialSorting={[{ id: "dueDate", desc: true }]}
 					rowClassName={(a: any) =>

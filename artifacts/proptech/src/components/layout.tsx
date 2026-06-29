@@ -881,13 +881,25 @@ export function Layout({ children }: { children: ReactNode }) {
 				items: s.items.filter((item) => item.href !== "/design-system"),
 			}));
 		}
+		// Продажи живут в CRM: при доступе к CRM прячем «Договоры продаж» из «Стройки»
+		if (
+			activeModule.id === "construction" &&
+			allowedModules.includes("proptech")
+		) {
+			sections = sections.map((s) => ({
+				...s,
+				items: s.items.filter(
+					(item) => item.href !== "/construction/contracts-sales",
+				),
+			}));
+		}
 		return sections
 			.map((section) => ({
 				...section,
 				items: section.items.filter((item) => item.label !== "Настройки"),
 			}))
 			.filter((section) => section.items.length > 0);
-	}, [activeModule, user, isAdminUser]);
+	}, [activeModule, user, isAdminUser, allowedModules]);
 
 	// On module switch, reset to that module's default-open sections.
 	useEffect(() => {

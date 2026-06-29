@@ -300,7 +300,7 @@ function AccountDialog({ open, onClose, account }: AccountDialogProps) {
 					</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-4">
-						<LegalEntityField required label="ÐÑÐÐ (Ð²Ð»Ð°Ð´ÐµÐ»ÐµÑ ÑÑÑÑÐ°)" value={formData.legalEntityId} onChange={(id) => setFormData({ ...formData, legalEntityId: id })} />
+						<LegalEntityField required label="ОсОО (владелец счёта)" value={formData.legalEntityId} onChange={(id) => setFormData({ ...formData, legalEntityId: id })} />
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div className="flex flex-col">
 							<Label className="leading-tight mb-1.5">Название счета *</Label>

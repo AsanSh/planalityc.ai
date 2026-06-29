@@ -42,6 +42,8 @@ import {
 } from "@/components/project-document-upload";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { canEditProject } from "@/lib/user-roles";
 import { ProjectsProgressTab } from "@/pages/construction/projects-progress-tab";
 import {
 	convertProjectAmountForDisplay,
@@ -920,6 +922,8 @@ export default function ConstructionProjects() {
 	> | null>(null);
 	const [search, setSearch] = useState("");
 	const [pageTab, setPageTab] = useState("cards");
+	const { user } = useAuth();
+	const canEdit = canEditProject((user as { role?: string })?.role);
 	const displayCurrencyState = useProjectDisplayCurrency();
 	const {
 		displayCurrency,
@@ -1013,7 +1017,7 @@ export default function ConstructionProjects() {
 				</div>
 				<div className="flex flex-wrap items-center gap-2">
 					<ProjectDisplayCurrencyControls {...displayCurrencyState} compact />
-					<Button
+					{canEdit && (<><Button
 						variant="outline"
 						onClick={() => setDocUploadOpen(true)}
 						className="h-9 gap-2 rounded-md"
@@ -1028,7 +1032,7 @@ export default function ConstructionProjects() {
 						className="h-9 gap-2 rounded-md bg-am-brand hover:bg-am-brand-hover"
 					>
 						<Plus className="w-4 h-4" /> Новый проект
-					</Button>
+					</Button></>)}
 				</div>
 			</div>
 
@@ -1147,7 +1151,7 @@ export default function ConstructionProjects() {
 													<h3 className="line-clamp-2 break-words text-xl font-black leading-tight text-white">
 														{p.name}
 													</h3>
-													<Button
+													{canEdit && (<Button
 														size="icon"
 														variant="ghost"
 														className="h-8 w-8 shrink-0 rounded-lg text-slate-300 hover:bg-white/10 hover:text-white"
@@ -1155,7 +1159,7 @@ export default function ConstructionProjects() {
 														onClick={() => setDialog(p)}
 													>
 														<Edit2 className="h-4 w-4" />
-													</Button>
+													</Button>)}
 												</div>
 											{(p.address || p.region) && (
 													<div className="mt-1 flex items-center gap-1.5">
@@ -1251,14 +1255,14 @@ export default function ConstructionProjects() {
 											>
 												<Grid3X3 className="h-4 w-4" /> Шахматка
 											</a>
-											<Button
+											{canEdit && (<Button
 												size="icon"
 												variant="ghost"
 												className="h-9 w-9 rounded-xl text-rose-400 hover:bg-white/10 hover:text-rose-300"
 												onClick={() => handleDelete(p.id, p.name)}
 											>
 												<Trash2 className="h-4 w-4" />
-											</Button>
+											</Button>)}
 										</div>
 									</div>
 

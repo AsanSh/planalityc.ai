@@ -29,8 +29,21 @@ import { logTaskActivity, taskFieldChanges } from "../lib/construction-task-work
 import { constructionSalesContractsTable } from "../lib/db";
 import { ensureCounterpartyWithRole } from "../lib/counterparty-sync";
 import { uploadFile } from "../lib/file-storage";
-import { requireAuth, requirePermission, AuthenticatedRequest } from "../middleware/auth";
+import { requireAuth, requirePermission, requireRole, AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
+
+// Создавать/редактировать/удалять проект могут только директора и админы
+const PROJECT_EDITOR_ROLES = [
+	"super_admin",
+	"admin",
+	"company_admin",
+	"owner",
+	"general_director",
+	"executive_operations_director",
+	"construction_director",
+	"commercial_director",
+	"financial_director",
+];
 import { isModuleEnabledForCompany, requireEnabledModule } from "../middleware/modules";
 import { sendServerError } from "../lib/http-errors";
 import { getPaginationParams, createPaginatedResponse, getPaginationQuery } from "../lib/pagination";
@@ -252,7 +265,7 @@ router.post("/projects/parse-document", async (req: AuthenticatedRequest, res): 
   }
 });
 
-router.post("/projects", async (req: AuthenticatedRequest, res): Promise<void> => {
+router.post("/projects", requireRole(...PROJECT_EDITOR_ROLES), async (req: AuthenticatedRequest, res): Promise<void> => {
   const body = req.body;
   const totalArea = parseFloat(body.totalArea || "0");
   const costPerSqm = parseFloat(body.costPerSqm || "0");
@@ -490,7 +503,7 @@ router.get("/projects/:id/units", async (req: AuthenticatedRequest, res): Promis
   res.json(result);
 });
 
-router.patch("/projects/:id", async (req: AuthenticatedRequest, res): Promise<void> => {
+router.patch("/projects/:id", requireRole(...PROJECT_EDITOR_ROLES), async (req: AuthenticatedRequest, res): Promise<void> => {
   const id = parseInt(req.params.id as string);
   const body = req.body;
   const totalArea = parseFloat(body.totalArea || "0");
@@ -575,7 +588,7 @@ router.patch("/projects/:id", async (req: AuthenticatedRequest, res): Promise<vo
   res.json({ ...row, unitsCreated, unitsRemoved, unitsSkipped });
 });
 
-router.delete("/projects/:id", async (req: AuthenticatedRequest, res): Promise<void> => {
+router.delete("/projects/:id", requireRole(...PROJECT_EDITOR_ROLES), async (req: AuthenticatedRequest, res): Promise<void> => {
   const id = parseInt(req.params.id as string);
   await db.delete(constructionProjectsTable)
     .where(and(eq(constructionProjectsTable.id, id), eq(constructionProjectsTable.companyId, req.scopedCompanyId!)));

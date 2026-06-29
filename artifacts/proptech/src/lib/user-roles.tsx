@@ -10,6 +10,23 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 
+// Создавать/редактировать/удалять проект могут только директора и админы
+export const PROJECT_EDITOR_ROLES = [
+	"super_admin",
+	"admin",
+	"company_admin",
+	"owner",
+	"general_director",
+	"executive_operations_director",
+	"construction_director",
+	"commercial_director",
+	"financial_director",
+];
+
+export function canEditProject(role?: string | null): boolean {
+	return !!role && PROJECT_EDITOR_ROLES.includes(role);
+}
+
 export const MATRIX_JOB_ROLES = [
 	{ value: "general_director", label: "Генеральный директор" },
 	{ value: "executive_operations_director", label: "Исполнительный и Операционный директор" },

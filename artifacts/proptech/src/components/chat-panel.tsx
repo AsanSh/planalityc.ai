@@ -2,8 +2,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	Building2,
 	ChevronLeft,
+	Download,
+	FileText,
+	Image as ImageIcon,
 	Mail,
 	MessageCircle,
+	Paperclip,
 	Phone,
 	Plus,
 	Search,
@@ -68,6 +72,41 @@ function avatarColor(id: number) {
 	return AVATAR_COLORS[id % AVATAR_COLORS.length];
 }
 
+const MAX_ATTACHMENT_BYTES = 6 * 1024 * 1024;
+
+function fileToBase64(file: File): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => {
+			const value = String(reader.result || "");
+			resolve(value.includes(",") ? value.split(",")[1] : value);
+		};
+		reader.onerror = () => reject(reader.error);
+		reader.readAsDataURL(file);
+	});
+}
+
+function formatFileSize(size?: number | null) {
+	if (!size) return "";
+	if (size < 1024) return `${size} Б`;
+	if (size < 1024 * 1024) return `${Math.round(size / 1024)} КБ`;
+	return `${(size / (1024 * 1024)).toFixed(1)} МБ`;
+}
+
+function downloadAttachment(message: any) {
+	if (!message?.attachmentData || !message?.attachmentName) return;
+	const bytes = Uint8Array.from(atob(message.attachmentData), (c) => c.charCodeAt(0));
+	const blob = new Blob([bytes], { type: message.attachmentMime || "application/octet-stream" });
+	const url = URL.createObjectURL(blob);
+	const link = document.createElement("a");
+	link.href = url;
+	link.download = message.attachmentName;
+	document.body.appendChild(link);
+	link.click();
+	link.remove();
+	URL.revokeObjectURL(url);
+}
+
 type ContactType = "employee" | "tenant" | "investor" | "counterparty";
 
 interface ContactInfo {
@@ -89,11 +128,13 @@ export default function ChatPanel() {
 	const [message, setMessage] = useState("");
 	const [search, setSearch] = useState("");
 	const [showNewChat, setShowNewChat] = useState(false);
+	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [contactTab, setContactTab] = useState<"employees" | "counterparties">(
 		"employees",
 	);
 	const panelRef = useRef<HTMLDivElement>(null);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 	const conversationsInitializedRef = useRef(false);
 	const lastSeenMessageRef = useRef<Map<number, string | number>>(new Map());
 	const qc = useQueryClient();
@@ -105,7 +146,7 @@ export default function ChatPanel() {
 	} = useQuery<any[]>({
 		queryKey: ["chat-conversations"],
 		queryFn: () => api.get("/messages/conversations").then((r) => r.data),
-		refetchInterval: open ? 5000 : 60000,
+		refetchInterval: open ? 3000 : 7000,
 	});
 
 	const {
@@ -156,7 +197,11 @@ export default function ChatPanel() {
 
 	function notifyIncomingMessage(conversation: any) {
 		const partnerName = getUserName(conversation.partner);
-		const body = conversation.lastMessage?.content || "Новое сообщение";
+		const body =
+			conversation.lastMessage?.content ||
+			(conversation.lastMessage?.attachmentName
+				? `Файл: ${conversation.lastMessage.attachmentName}`
+				: "Новое сообщение");
 
 		if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
 			new Notification(partnerName, {
@@ -207,9 +252,10 @@ export default function ChatPanel() {
 
 			const previousKey = lastSeenMessageRef.current.get(conversation.partnerId);
 			const isIncoming = lastMessage.fromUserId !== myId;
-			const isNewMessage = previousKey !== undefined && previousKey !== messageKey;
+			const isNewMessage = previousKey !== messageKey;
+			const hasUnread = (conversation.unreadCount || 0) > 0;
 
-			if (isIncoming && isNewMessage) {
+			if (isIncoming && isNewMessage && (previousKey !== undefined || hasUnread)) {
 				notifyIncomingMessage(conversation);
 			}
 		}
@@ -219,13 +265,29 @@ export default function ChatPanel() {
 	}, [conversations, myId]);
 
 	async function sendMessage() {
-		if (!message.trim() || !activeConv) return;
+		if ((!message.trim() && !selectedFile) || !activeConv) return;
+		if (selectedFile && selectedFile.size > MAX_ATTACHMENT_BYTES) {
+			toast.error("Файл слишком большой", {
+				description: "Можно отправлять файлы до 6 МБ.",
+			});
+			return;
+		}
 		try {
+			const attachment = selectedFile
+				? {
+						fileName: selectedFile.name,
+						mimeType: selectedFile.type || "application/octet-stream",
+						size: selectedFile.size,
+						dataBase64: await fileToBase64(selectedFile),
+					}
+				: undefined;
 			await api.post("/messages", {
 				toUserId: activeConv,
 				content: message.trim(),
+				attachment,
 			});
 			setMessage("");
+			setSelectedFile(null);
 			qc.invalidateQueries({ queryKey: ["chat-messages", activeConv] });
 			qc.invalidateQueries({ queryKey: ["chat-conversations"] });
 		} catch {
@@ -342,6 +404,7 @@ export default function ChatPanel() {
 	function goBack() {
 		setActiveConv(null);
 		setActiveContact(null);
+		setSelectedFile(null);
 	}
 
 	return (
@@ -361,7 +424,7 @@ export default function ChatPanel() {
 			>
 				<MessageCircle className="h-5 w-5" />
 				{totalUnread > 0 && (
-					<span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-cyan-600 px-1 text-[10px] font-bold leading-none text-white">
+					<span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-rose-600 px-1 text-[10px] font-bold leading-none text-white shadow-sm shadow-rose-900/25">
 						{totalUnread > 99 ? "99+" : totalUnread}
 					</span>
 				)}
@@ -576,7 +639,42 @@ export default function ChatPanel() {
 														<div
 															className={`rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-sm ${isMe ? "rounded-br-sm bg-gradient-to-br from-cyan-700 to-teal-600 text-white" : "rounded-bl-sm border border-white/80 bg-white text-slate-700"}`}
 														>
-															{m.content}
+															{m.content ? <p>{m.content}</p> : null}
+															{m.attachmentName && (
+																<button
+																	type="button"
+																	onClick={() => downloadAttachment(m)}
+																	className={`mt-2 block w-full overflow-hidden rounded-xl border text-left transition ${
+																		isMe
+																			? "border-white/20 bg-white/12 hover:bg-white/18"
+																			: "border-slate-200 bg-slate-50 hover:bg-slate-100"
+																	}`}
+																>
+																	{String(m.attachmentMime || "").startsWith("image/") ? (
+																		<>
+																			<img
+																				src={`data:${m.attachmentMime};base64,${m.attachmentData}`}
+																				alt={m.attachmentName}
+																				className="max-h-48 w-full object-cover"
+																			/>
+																			<div className="flex items-center gap-2 px-2 py-1.5 text-[11px]">
+																				<ImageIcon className="h-3.5 w-3.5 flex-shrink-0" />
+																				<span className="truncate">{m.attachmentName}</span>
+																				<Download className="ml-auto h-3.5 w-3.5 flex-shrink-0 opacity-70" />
+																			</div>
+																		</>
+																	) : (
+																		<div className="flex items-center gap-2 p-2">
+																			<FileText className="h-5 w-5 flex-shrink-0" />
+																			<div className="min-w-0 flex-1">
+																				<p className="truncate text-xs font-semibold">{m.attachmentName}</p>
+																				<p className="text-[10px] opacity-70">{formatFileSize(m.attachmentSize)}</p>
+																			</div>
+																			<Download className="h-4 w-4 flex-shrink-0 opacity-70" />
+																		</div>
+																	)}
+																</button>
+															)}
 														</div>
 														<span className="text-[10px] text-gray-600 mt-0.5 px-1">
 															{fullTime(m.createdAt)}
@@ -589,21 +687,55 @@ export default function ChatPanel() {
 								)}
 								<div ref={messagesEndRef} />
 							</div>
-							<div className="flex gap-2 border-t border-slate-100 bg-white/90 p-3">
-								<Input
-									className="flex-1 text-sm h-9"
-									placeholder="Написать сообщение..."
-									value={message}
-									onChange={(e) => setMessage(e.target.value)}
-									onKeyDown={handleKeyDown}
-								/>
-								<button
-									onClick={sendMessage}
-									disabled={!message.trim()}
-									className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-700 to-teal-600 text-white shadow-lg shadow-cyan-950/16 transition-colors hover:from-cyan-600 hover:to-teal-500 disabled:bg-none disabled:bg-slate-200 disabled:shadow-none"
-								>
-									<Send className="w-4 h-4" />
-								</button>
+							<div className="border-t border-slate-100 bg-white/90 p-3">
+								{selectedFile && (
+									<div className="mb-2 flex items-center gap-2 rounded-2xl border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-slate-700">
+										{selectedFile.type.startsWith("image/") ? (
+											<ImageIcon className="h-4 w-4 text-cyan-700" />
+										) : (
+											<FileText className="h-4 w-4 text-cyan-700" />
+										)}
+										<span className="min-w-0 flex-1 truncate">{selectedFile.name}</span>
+										<span className="text-slate-400">{formatFileSize(selectedFile.size)}</span>
+										<button
+											type="button"
+											className="rounded-lg p-1 text-slate-400 hover:bg-white hover:text-rose-600"
+											onClick={() => setSelectedFile(null)}
+										>
+											<X className="h-3.5 w-3.5" />
+										</button>
+									</div>
+								)}
+								<div className="flex gap-2">
+									<input
+										ref={fileInputRef}
+										type="file"
+										className="hidden"
+										accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+										onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+									/>
+									<button
+										type="button"
+										onClick={() => fileInputRef.current?.click()}
+										className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-600 transition-colors hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700"
+									>
+										<Paperclip className="h-4 w-4" />
+									</button>
+									<Input
+										className="h-9 flex-1 text-sm"
+										placeholder="Написать сообщение..."
+										value={message}
+										onChange={(e) => setMessage(e.target.value)}
+										onKeyDown={handleKeyDown}
+									/>
+									<button
+										onClick={sendMessage}
+										disabled={!message.trim() && !selectedFile}
+										className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-700 to-teal-600 text-white shadow-lg shadow-cyan-950/16 transition-colors hover:from-cyan-600 hover:to-teal-500 disabled:bg-none disabled:bg-slate-200 disabled:shadow-none"
+									>
+										<Send className="w-4 h-4" />
+									</button>
+								</div>
 							</div>
 						</>
 					) : showNewChat ? (
@@ -823,7 +955,7 @@ export default function ChatPanel() {
 														{getInitials(c.partner)}
 													</div>
 													{c.unreadCount > 0 && (
-														<span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-blue-600 text-white text-[9px] flex items-center justify-center rounded-full font-bold px-0.5">
+														<span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-0.5 text-[9px] font-bold text-white">
 															{c.unreadCount}
 														</span>
 													)}
@@ -841,7 +973,10 @@ export default function ChatPanel() {
 													</div>
 													<p className="mt-0.5 truncate text-xs text-slate-500">
 														{c.lastMessage?.fromUserId === myId ? "Вы: " : ""}
-														{c.lastMessage?.content}
+														{c.lastMessage?.content ||
+															(c.lastMessage?.attachmentName
+																? `Файл: ${c.lastMessage.attachmentName}`
+																: "")}
 													</p>
 												</div>
 											</button>

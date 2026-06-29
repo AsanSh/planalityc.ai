@@ -555,11 +555,20 @@ export default function Counterparties() {
 			{
 				accessorKey: "phone",
 				header: "Телефон",
-				size: 130,
+				size: 170,
 				meta: { exportLabel: "Телефон" },
-				cell: ({ row }) => (
-					<span className="text-gray-600">{row.original.phone || "—"}</span>
-				),
+				cell: ({ row }) => {
+					const phones = normalizeContactPhones((row.original as any).phones, row.original.phone)
+						.filter((p) => p.number.trim());
+					if (!phones.length) return <span className="text-gray-500">—</span>;
+					return (
+						<div className="space-y-0.5">
+							<div className="text-sm font-medium text-slate-700">{phones[0].number}</div>
+							{phones[0].owner && <div className="text-[11px] text-slate-500">{phones[0].owner}</div>}
+							{phones.length > 1 && <div className="text-[11px] text-cyan-700">+{phones.length - 1} еще</div>}
+						</div>
+					);
+				},
 			},
 			{
 				accessorKey: "email",

@@ -427,6 +427,7 @@ router.post("/rental/tenants", async (req: AuthenticatedRequest, res): Promise<v
     type: (type as "individual" | "company") || "individual",
     iin,
     phone: primaryPhone,
+    phones: normalizedPhones,
     email,
     existingId: counterpartyId ?? null,
   });
@@ -456,17 +457,21 @@ router.patch("/rental/tenants/:id", async (req: AuthenticatedRequest, res): Prom
   const normalizedPhones = phones !== undefined ? normalizePhones(phones, phone) : undefined;
   const conditions: SQL[] = [eq(tenantsTable.id, id)];
   conditions.push(eq(tenantsTable.companyId, req.scopedCompanyId!));
+  const updates: Record<string, unknown> = {
+    fullName,
+    phone,
+    email,
+    iin,
+    type,
+    status,
+    comment,
+  };
+  if (normalizedPhones) {
+    updates.phone = normalizedPhones[0]?.number || null;
+    updates.phones = normalizedPhones;
+  }
   const [row] = await db.update(tenantsTable)
-    .set({
-      fullName,
-      phone: normalizedPhones ? normalizedPhones[0]?.number || null : phone,
-      phones: normalizedPhones,
-      email,
-      iin,
-      type,
-      status,
-      comment,
-    })
+    .set(updates)
     .where(and(...conditions)).returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
   res.json(row);

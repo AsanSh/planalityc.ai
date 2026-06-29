@@ -14,11 +14,12 @@ export async function ensureCounterpartyWithRole(params: {
   type?: "individual" | "company";
   iin?: string | null;
   phone?: string | null;
+  phones?: Array<{ number: string; owner?: string | null }> | null;
   email?: string | null;
   address?: string | null;
   existingId?: number | null;
 }): Promise<number> {
-  const { companyId, role, fullName, type = "company", iin, phone, email, address, existingId } = params;
+  const { companyId, role, fullName, type = "company", iin, phone, phones, email, address, existingId } = params;
 
   // Если existingId передан явно — добавляем роль и используем
   if (existingId) {
@@ -26,10 +27,14 @@ export async function ensureCounterpartyWithRole(params: {
       .where(and(eq(counterpartiesTable.id, existingId), eq(counterpartiesTable.companyId, companyId)));
     if (existing) {
       const cats = Array.isArray(existing.categories) ? existing.categories : [];
+      const updates: Record<string, unknown> = {};
       if (!cats.includes(role)) {
-        await db.update(counterpartiesTable)
-          .set({ categories: [...cats, role] })
-          .where(eq(counterpartiesTable.id, existing.id));
+        updates.categories = [...cats, role];
+      }
+      if (phones?.length) updates.phones = phones;
+      if (phone) updates.phone = phone;
+      if (Object.keys(updates).length) {
+        await db.update(counterpartiesTable).set(updates).where(eq(counterpartiesTable.id, existing.id));
       }
       return existing.id;
     }
@@ -44,10 +49,14 @@ export async function ensureCounterpartyWithRole(params: {
 
   if (matched) {
     const cats = Array.isArray(matched.categories) ? matched.categories : [];
+    const updates: Record<string, unknown> = {};
     if (!cats.includes(role)) {
-      await db.update(counterpartiesTable)
-        .set({ categories: [...cats, role] })
-        .where(eq(counterpartiesTable.id, matched.id));
+      updates.categories = [...cats, role];
+    }
+    if (phones?.length) updates.phones = phones;
+    if (phone) updates.phone = phone;
+    if (Object.keys(updates).length) {
+      await db.update(counterpartiesTable).set(updates).where(eq(counterpartiesTable.id, matched.id));
     }
     return matched.id;
   }
@@ -61,6 +70,7 @@ export async function ensureCounterpartyWithRole(params: {
     fullName,
     iin: iin || null,
     phone: phone || null,
+    phones: phones || null,
     email: email || null,
     address: address || null,
   }).returning();

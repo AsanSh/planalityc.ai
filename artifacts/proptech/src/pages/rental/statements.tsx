@@ -424,9 +424,9 @@ export default function OwnerStatements() {
 				<p className="text-sm font-semibold text-gray-700 mb-3">
 					Фильтр и формирование актов
 				</p>
-				<div className="flex flex-wrap gap-3 items-center">
+				<div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-0.5">
 					<Select value={propertyFilter} onValueChange={setPropertyFilter}>
-						<SelectTrigger className="w-full sm:w-56">
+						<SelectTrigger className="h-10 w-[168px] shrink-0">
 							<SelectValue placeholder="Все объекты" />
 						</SelectTrigger>
 						<SelectContent>
@@ -439,16 +439,18 @@ export default function OwnerStatements() {
 						</SelectContent>
 					</Select>
 
-					<PeriodPicker value={period} onChange={setPeriod} />
-
-					<div className="flex-1" />
+					<PeriodPicker
+						value={period}
+						onChange={setPeriod}
+						className="shrink-0"
+					/>
 
 					<Button
 						onClick={handleGenerate}
 						disabled={
 							isGenerating || propertyFilter === "all" || !generateMonth
 						}
-						className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+						className="h-10 shrink-0 bg-blue-600 hover:bg-blue-700 text-white gap-2"
 					>
 						<RefreshCw
 							className={`w-4 h-4 ${isGenerating ? "animate-spin" : ""}`}

@@ -181,6 +181,101 @@ export function PortalKpi({
 	);
 }
 
+/** Карточка профиля (аватар-инициалы + бейджи + контакты). */
+export function PortalProfile({
+	name,
+	badges = [],
+	rows,
+}: {
+	name: string;
+	badges?: string[];
+	rows: { icon: ElementType; label: string; value: string }[];
+}) {
+	const initials =
+		name
+			.split(" ")
+			.filter(Boolean)
+			.slice(0, 2)
+			.map((s) => s[0])
+			.join("")
+			.toUpperCase() || "—";
+	return (
+		<div className="max-w-3xl rounded-2xl border border-gray-200/80 bg-white p-7 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+			<div className="flex items-center gap-5 border-b border-gray-100 pb-5">
+				<div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gray-100 text-lg font-bold text-slate-500">
+					{initials}
+				</div>
+				<div>
+					<p className="font-serif text-2xl font-bold text-slate-900">{name}</p>
+					{badges.length > 0 && (
+						<div className="mt-2 flex flex-wrap gap-2">
+							{badges.map((b) => (
+								<span key={b} className="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-0.5 text-xs text-gray-600">
+									{b}
+								</span>
+							))}
+						</div>
+					)}
+				</div>
+			</div>
+			<div className="mt-5 grid gap-5 sm:grid-cols-2">
+				{rows.map((r, i) => {
+					const Icon = r.icon;
+					return (
+						<div key={i}>
+							<p className="flex items-center gap-1.5 text-xs text-gray-400">
+								<Icon className="h-3.5 w-3.5" />
+								{r.label}
+							</p>
+							<p className="mt-1 font-medium text-slate-900">{r.value}</p>
+						</div>
+					);
+				})}
+			</div>
+		</div>
+	);
+}
+
+const PARTNER_SERVICES = [
+	{ title: "Ремонт под ключ", vendor: "СтройМастер", desc: "Полный ремонт квартиры с материалами. Гарантия 2 года.", price: "от 8 500", tag: "renovation" },
+	{ title: "Дизайн интерьера", vendor: "АртДизайн Студия", desc: "Разработка дизайн-проекта и авторский надзор.", price: "от 2 500", tag: "renovation" },
+	{ title: "Мебель на заказ", vendor: "МебельПро", desc: "Изготовление и установка мебели под размеры вашей квартиры.", price: "от 120 000", tag: "furniture" },
+	{ title: "Кондиционирование", vendor: "КлиматКомфорт", desc: "Установка и обслуживание систем кондиционирования.", price: "от 45 000", tag: "climate" },
+	{ title: "Профессиональный клининг", vendor: "ЧистоДом", desc: "Послестроительная уборка и регулярный клининг.", price: "от 5 000", tag: "cleaning" },
+	{ title: "Управление арендой", vendor: "РентМенеджер", desc: "Полный цикл управления арендой: поиск жильцов, контроль оплаты.", price: "от 3 000", tag: "rental" },
+];
+
+/** Раздел «Партнёрские сервисы». */
+export function PortalServices({ onRequest }: { onRequest?: (title: string) => void }) {
+	return (
+		<>
+			<h2 className="mb-4 font-serif text-xl font-bold text-slate-900">Партнёрские сервисы</h2>
+			<div className="grid gap-4 md:grid-cols-2">
+				{PARTNER_SERVICES.map((s) => (
+					<div key={s.title} className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+						<div className="flex items-start justify-between gap-3">
+							<p className="font-semibold text-slate-900">{s.title}</p>
+							<span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">{s.tag}</span>
+						</div>
+						<p className="mt-0.5 text-xs text-gray-400">{s.vendor}</p>
+						<p className="mt-2 text-sm text-gray-600">{s.desc}</p>
+						<div className="mt-3 flex items-center justify-between">
+							<span className="font-semibold text-slate-900">{s.price} ₽</span>
+							<button
+								type="button"
+								onClick={() => onRequest?.(s.title)}
+								className="inline-flex items-center gap-1 text-sm font-medium text-slate-700 hover:text-slate-900"
+							>
+								Запросить →
+							</button>
+						</div>
+					</div>
+				))}
+			</div>
+		</>
+	);
+}
+
 /** Блок AI-рекомендации (серый, со «спарклом» и обновлением). */
 export function PortalAiTip({ children }: { children: ReactNode }) {
 	return (

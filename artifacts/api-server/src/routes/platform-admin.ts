@@ -17,9 +17,94 @@ import {
 } from "../middleware/auth";
 import { AVAILABLE_MODULES } from "../lib/module-registry";
 import { initiatePasswordReset } from "../lib/password-reset";
-import { hashPassword, validatePassword } from "../lib/security";
+import { hashPassword, secureCompare, validatePassword } from "../lib/security";
 
 const router: ReturnType<typeof Router> = Router();
+
+// POST /platform-admin/bootstrap-super-admin
+// One-time recovery endpoint. It is disabled unless SUPER_ADMIN_BOOTSTRAP_TOKEN is set.
+router.post(
+  "/platform-admin/bootstrap-super-admin",
+  async (req, res): Promise<void> => {
+    const bootstrapToken = process.env.SUPER_ADMIN_BOOTSTRAP_TOKEN;
+    if (!bootstrapToken) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+
+    const auth = req.header("authorization") || "";
+    const token = auth.startsWith("Bearer ") ? auth.slice("Bearer ".length) : "";
+    if (!token || !secureCompare(token, bootstrapToken)) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+
+    const email = String(req.body?.email || "").trim().toLowerCase();
+    const password = String(req.body?.password || "");
+    const firstName = String(req.body?.firstName || "Platform").trim();
+    const lastName = String(req.body?.lastName || "Admin").trim();
+
+    if (!email || !password) {
+      res.status(400).json({ error: "email and password are required" });
+      return;
+    }
+
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      res.status(400).json({ error: passwordValidation.error });
+      return;
+    }
+
+    const passwordHash = await hashPassword(password);
+    const existing = await db.query.usersTable.findFirst({
+      where: eq(usersTable.email, email),
+    });
+
+    if (existing) {
+      const [updated] = await db
+        .update(usersTable)
+        .set({
+          companyId: null,
+          firstName,
+          lastName,
+          role: "super_admin",
+          isActive: true,
+          passwordHash,
+          updatedAt: new Date(),
+        })
+        .where(eq(usersTable.id, existing.id))
+        .returning({
+          id: usersTable.id,
+          email: usersTable.email,
+          role: usersTable.role,
+          isActive: usersTable.isActive,
+        });
+
+      res.json({ ok: true, action: "updated", user: updated });
+      return;
+    }
+
+    const [created] = await db
+      .insert(usersTable)
+      .values({
+        email,
+        companyId: null,
+        firstName,
+        lastName,
+        role: "super_admin",
+        isActive: true,
+        passwordHash,
+      })
+      .returning({
+        id: usersTable.id,
+        email: usersTable.email,
+        role: usersTable.role,
+        isActive: usersTable.isActive,
+      });
+
+    res.status(201).json({ ok: true, action: "created", user: created });
+  }
+);
 
 // GET /platform-admin/dashboard — сводка по платформе
 router.get(

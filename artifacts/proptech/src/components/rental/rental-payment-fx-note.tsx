@@ -1,24 +1,40 @@
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import {
 	convertViaKgs,
 	fmtCurrencyAmount,
 	nbkrUsdRateLabel,
 	type NbkrResponse,
+	unitInKgs,
 } from "@/lib/nbkr-currency";
+import { resolveProjectUsdRate } from "@/lib/project-currency";
+import {
+	fmtRentalCurrency,
+	paymentToContractAmount,
+	rentalDisplayCurrency,
+} from "@/lib/rental-currency";
 
 type Props = {
 	paymentAmount: number;
 	paymentCurrency: string;
 	accountCurrency: string;
+	contractCurrency?: string;
 	paymentDate: string;
+	exchangeRate?: string;
+	onExchangeRateChange?: (rate: string) => void;
 };
 
 export function RentalPaymentFxNote({
 	paymentAmount,
 	paymentCurrency,
 	accountCurrency,
+	contractCurrency,
 	paymentDate,
+	exchangeRate,
+	onExchangeRateChange,
 }: Props) {
 	const { data: nbkr } = useQuery<NbkrResponse>({
 		queryKey: ["nbkr-rates", paymentDate],
@@ -30,27 +46,52 @@ export function RentalPaymentFxNote({
 		enabled: paymentAmount > 0 && !!paymentDate,
 	});
 
-	if (paymentAmount <= 0) return null;
-
 	const payCur = paymentCurrency || "KGS";
 	const accCur = accountCurrency || "KGS";
-
-	if (payCur === accCur) {
-		return (
-			<p className="text-xs text-gray-500 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
-				Валюта платежа и счёта совпадают ({payCur}). На счёт зачислится{" "}
-				<strong>
-					{fmtCurrencyAmount(paymentAmount, payCur === "USD" ? "USD" : "KGS")}
-				</strong>
-				.
-			</p>
-		);
-	}
-
+	const contractCur = contractCurrency || payCur;
 	const rates = nbkr?.rates ?? {};
+	const nbkrUsdRate = rates.USD ? unitInKgs("USD", rates) : 0;
+	const needsContractFx =
+		payCur !== contractCur && paymentAmount > 0;
+	const effectiveKgsPerUsd = resolveProjectUsdRate(
+		exchangeRate,
+		nbkrUsdRate,
+	);
+
+	useEffect(() => {
+		if (!needsContractFx || !onExchangeRateChange || exchangeRate) return;
+		if (nbkrUsdRate <= 0) return;
+		onExchangeRateChange(String(resolveProjectUsdRate(undefined, nbkrUsdRate)));
+	}, [needsContractFx, nbkrUsdRate, exchangeRate, onExchangeRateChange]);
+
+	if (paymentAmount <= 0) return null;
+
+	const contractEquivalent = needsContractFx
+		? paymentToContractAmount(
+				paymentAmount,
+				payCur,
+				contractCur,
+				effectiveKgsPerUsd,
+			)
+		: paymentAmount;
+
 	let accountCredit: number | null = null;
 	try {
-		accountCredit = convertViaKgs(paymentAmount, payCur, accCur, rates);
+		if (payCur === accCur) {
+			accountCredit = paymentAmount;
+		} else if (payCur === "KGS" && accCur === "USD") {
+			accountCredit =
+				effectiveKgsPerUsd > 0
+					? paymentAmount / effectiveKgsPerUsd
+					: null;
+		} else if (payCur === "USD" && accCur === "KGS") {
+			accountCredit =
+				effectiveKgsPerUsd > 0
+					? paymentAmount * effectiveKgsPerUsd
+					: null;
+		} else {
+			accountCredit = convertViaKgs(paymentAmount, payCur, accCur, rates);
+		}
 	} catch {
 		accountCredit = null;
 	}
@@ -58,33 +99,73 @@ export function RentalPaymentFxNote({
 	const usdLabel = nbkrUsdRateLabel(rates);
 
 	return (
-		<div className="text-xs rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 space-y-1">
+		<div className="text-xs rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 space-y-2">
 			<p className="text-blue-900">
 				<span className="text-blue-700">Платёж:</span>{" "}
 				<strong>
 					{fmtCurrencyAmount(
 						paymentAmount,
-						payCur === "USD" ? "USD" : "KGS",
+						rentalDisplayCurrency(payCur),
 					)}
 				</strong>
+				{" · "}
+				<span className="text-blue-700">Договор:</span>{" "}
+				<strong>{contractCur}</strong>
 				{" · "}
 				<span className="text-blue-700">Счёт:</span>{" "}
 				<strong>{accCur}</strong>
 			</p>
-			{accountCredit != null ? (
+
+			{needsContractFx && onExchangeRateChange ? (
+				<div className="space-y-1">
+					<Label className="text-blue-800 text-xs">
+						Курс (1 USD = сом) — НБКР, можно изменить
+					</Label>
+					<Input
+						type="number"
+						min="1"
+						step="0.01"
+						className="h-8 text-xs bg-white"
+						value={exchangeRate ?? ""}
+						onChange={(e) => onExchangeRateChange(e.target.value)}
+						placeholder={
+							nbkrUsdRate > 0 ? String(nbkrUsdRate.toFixed(2)) : "87.50"
+						}
+					/>
+					<p className="text-blue-800">
+						По договору:{" "}
+						<strong>
+							{fmtRentalCurrency(contractEquivalent, contractCur)}
+						</strong>
+					</p>
+				</div>
+			) : null}
+
+			{payCur === accCur ? (
+				<p className="text-blue-800">
+					На счёт зачислится{" "}
+					<strong>
+						{fmtCurrencyAmount(
+							paymentAmount,
+							rentalDisplayCurrency(payCur),
+						)}
+					</strong>
+					.
+				</p>
+			) : accountCredit != null ? (
 				<p className="text-blue-800">
 					На счёт зачислится{" "}
 					<strong>
 						{fmtCurrencyAmount(
 							accountCredit,
-							accCur === "USD" ? "USD" : "KGS",
+							rentalDisplayCurrency(accCur),
 						)}
 					</strong>
 					{nbkr?.date ? (
 						<span className="text-blue-600">
 							{" "}
 							(курс НБКР на {nbkr.date}
-							{usdLabel && payCur !== accCur ? `, ${usdLabel}` : ""})
+							{usdLabel ? `, ${usdLabel}` : ""})
 						</span>
 					) : null}
 				</p>

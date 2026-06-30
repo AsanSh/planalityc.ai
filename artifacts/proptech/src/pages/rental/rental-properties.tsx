@@ -481,7 +481,14 @@ function PropTable({ isLoading, sortedProps, propertiesArray, rentedCount, total
 						</tr>
 					) : (
 						sortedProps.map((p, idx) => (
-							<tr key={p.id} className={`${idx % 2 === 0 ? "bg-white" : "bg-slate-50/60"} transition-colors hover:bg-cyan-50/70`}>
+							<tr
+								key={p.id}
+								className={`${idx % 2 === 0 ? "bg-white" : "bg-slate-50/60"} transition-colors hover:bg-cyan-50/70`}
+								onContextMenu={(e) => {
+									e.preventDefault();
+									openEdit(p);
+								}}
+							>
 								<td className={TD + " font-medium text-gray-900"}>{p.projectName}</td>
 								<td className={TD}>{p.unitNumber}</td>
 								<td className={TD}>{p.type === "apartment" ? "Квартира" : p.type === "office" ? "Офис" : p.type}</td>

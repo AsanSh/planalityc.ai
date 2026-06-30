@@ -24,7 +24,14 @@ import {
 	Search,
 	SlidersHorizontal,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	type MouseEvent,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { ConstructionLoader } from "@/components/ui/construction-loader";
 import {
@@ -84,6 +91,8 @@ export interface DataTableProps<T> {
 	isLoading?: boolean;
 	emptyState?: React.ReactNode;
 	onRowClick?: (row: T) => void;
+	/** ПКМ по строке (например открыть редактирование) */
+	onRowContextMenu?: (row: T, event: MouseEvent<HTMLTableRowElement>) => void;
 	rowClassName?: (row: T) => string;
 	/** Доп. контролы слева в тулбаре (фильтры, период) */
 	toolbar?: React.ReactNode;
@@ -113,6 +122,7 @@ export function DataTable<T>({
 	isLoading,
 	emptyState,
 	onRowClick,
+	onRowContextMenu,
 	rowClassName,
 	toolbar,
 	toolbarEnd,
@@ -575,6 +585,14 @@ export function DataTable<T>({
 									key={row.id}
 									onClick={
 										onRowClick ? () => onRowClick(row.original) : undefined
+									}
+									onContextMenu={
+										onRowContextMenu
+											? (e) => {
+													e.preventDefault();
+													onRowContextMenu(row.original, e);
+												}
+											: undefined
 									}
 									className={cn(
 										isExcel

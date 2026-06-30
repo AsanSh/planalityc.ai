@@ -636,6 +636,7 @@ export default function RentalTenants() {
 					columns={columns}
 					data={tenantsArray}
 					isLoading={isLoading}
+					onRowContextMenu={handleEdit}
 					enableSearch
 					searchPlaceholder="Поиск по ФИО, телефону, email, ИИН…"
 					initialSorting={[{ id: "fullName", desc: false }]}

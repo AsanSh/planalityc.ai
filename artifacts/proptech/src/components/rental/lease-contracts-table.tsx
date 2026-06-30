@@ -395,6 +395,7 @@ export function LeaseContractsTable({
 			columns={columns}
 			data={data}
 			isLoading={isLoading}
+			onRowContextMenu={onEdit}
 			maxHeight="calc(100vh - 320px)"
 			enableSearch
 			searchPlaceholder="Поиск по номеру, объекту, арендатору…"

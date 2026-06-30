@@ -10,6 +10,7 @@ import {
 import { requireAuth, requireRole, AuthenticatedRequest } from "../middleware/auth";
 import {
   expireOverdueLeaseContracts,
+  reactivateProlongedLeaseContracts,
   refreshPropertyRentalStatus,
 } from "../lib/rental-lease-expiration";
 import {
@@ -527,6 +528,7 @@ router.delete("/rental/tenants/:id", async (req: AuthenticatedRequest, res): Pro
 router.get("/rental/contracts", async (req: AuthenticatedRequest, res): Promise<void> => {
   const { propertyId, tenantId, status } = req.query as Record<string, string | undefined>;
   await expireOverdueLeaseContracts(req.scopedCompanyId!);
+  await reactivateProlongedLeaseContracts(req.scopedCompanyId!);
   const conditions: SQL[] = [];
   conditions.push(eq(leaseContractsTable.companyId, req.scopedCompanyId!));
   if (propertyId) conditions.push(eq(leaseContractsTable.propertyId, parseInt(propertyId, 10)));

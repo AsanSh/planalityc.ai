@@ -1,4 +1,4 @@
-import { and, eq, gt, inArray, isNotNull, lt, sql, type SQL } from "drizzle-orm";
+import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, or, sql, type SQL } from "drizzle-orm";
 import { db, accrualsTable, leaseContractsTable } from "./db";
 
 function todayIsoDate(): string {
@@ -84,4 +84,32 @@ export async function expireOverdueLeaseContracts(companyId?: number): Promise<n
   }
 
   return overdue.length;
+}
+
+/**
+ * Истёкшие договоры, у которых дату окончания продлили (endDate ≥ сегодня или
+ * сняли) → возвращаются в статус «active», объект снова занимается.
+ */
+export async function reactivateProlongedLeaseContracts(companyId?: number): Promise<number> {
+  const today = todayIsoDate();
+  const conditions: SQL[] = [
+    eq(leaseContractsTable.status, "expired"),
+    or(isNull(leaseContractsTable.endDate), gte(leaseContractsTable.endDate, today))!,
+  ];
+  if (companyId != null) conditions.push(eq(leaseContractsTable.companyId, companyId));
+
+  const prolonged = await db.select().from(leaseContractsTable).where(and(...conditions));
+  if (prolonged.length === 0) return 0;
+
+  for (const contract of prolonged) {
+    const note = `Активирован автоматически ${today} (продление до ${contract.endDate ?? "бессрочно"})`;
+    const comment = [contract.comment, note].filter(Boolean).join("\n");
+    await db
+      .update(leaseContractsTable)
+      .set({ status: "active", comment })
+      .where(eq(leaseContractsTable.id, contract.id));
+    await refreshPropertyRentalStatus(contract.propertyId, companyId);
+  }
+
+  return prolonged.length;
 }

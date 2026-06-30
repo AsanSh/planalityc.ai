@@ -267,7 +267,7 @@ export default function Deposits() {
 	const leasesArray = Array.isArray(leases) ? leases : [];
 	const depositsArray = Array.isArray(deposits) ? deposits : [];
 	const [dialogOpen, setDialogOpen] = useState(false);
-	const [period, setPeriod] = useState<PeriodValue>(defaultPeriod());
+	const [period, setPeriod] = useState<PeriodValue>(defaultPeriod("all"));
 	const leaseLabel = useMemo(() => {
 		const map: Record<number, string> = {};
 		for (const l of leasesArray) {

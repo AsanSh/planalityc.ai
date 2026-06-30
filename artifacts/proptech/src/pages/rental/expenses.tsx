@@ -44,6 +44,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 
+const FINANCIAL_CATEGORIES_QUERY_KEY = ["financial-categories"] as const;
+const CREATE_CATEGORY_VALUE = "__create_category__";
+
 const categoryLabels: Record<string, string> = {
 	maintenance: "Обслуживание",
 	utilities: "Коммунальные услуги",
@@ -52,6 +55,43 @@ const categoryLabels: Record<string, string> = {
 	repair: "Ремонт",
 	other: "Прочее",
 };
+
+interface FinancialCategory {
+	id: number;
+	name: string;
+	type: string;
+	module: string;
+	isActive: boolean;
+	sortOrder: number;
+}
+
+function categoryDisplayLabel(raw: string): string {
+	return categoryLabels[raw] || raw;
+}
+
+function normalizeCategoryForSelect(
+	raw: string,
+	categories: FinancialCategory[],
+): string {
+	if (!raw) return "";
+	if (categories.some((c) => c.name === raw)) return raw;
+	const legacyLabel = categoryLabels[raw];
+	if (legacyLabel && categories.some((c) => c.name === legacyLabel)) {
+		return legacyLabel;
+	}
+	return raw;
+}
+
+function rentalExpenseCategories(categories: FinancialCategory[]): FinancialCategory[] {
+	return categories
+		.filter(
+			(c) =>
+				c.isActive &&
+				c.type === "expense" &&
+				(c.module === "rental" || c.module === "all"),
+		)
+		.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "ru"));
+}
 
 function formatCurrency(amount: number | string, currency: string) {
 	const num = typeof amount === "string" ? parseFloat(amount) : amount;
@@ -74,7 +114,7 @@ interface ExpenseDialogProps {
 
 const emptyForm = {
 	propertyId: "",
-	category: "maintenance",
+	category: "",
 	amount: "",
 	currency: "KGS",
 	expenseDate: new Date().toISOString().split("T")[0],
@@ -88,12 +128,26 @@ function ExpenseDialog({ open, expense, onClose }: ExpenseDialogProps) {
 	const { data: properties } = useListProperties();
 	const propertiesArray = Array.isArray(properties) ? properties : [];
 	const [loading, setLoading] = useState(false);
+	const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
+	const [newCategoryName, setNewCategoryName] = useState("");
+	const [creatingCategory, setCreatingCategory] = useState(false);
 	const isEdit = !!expense;
 
 	const { data: accounts = [] } = useQuery<any[]>({
 		queryKey: getRentalAccountsQueryKey(),
 		queryFn: () => api.get("/rental/accounts").then((r) => r.data),
 	});
+
+	const { data: financialCategories = [] } = useQuery<FinancialCategory[]>({
+		queryKey: FINANCIAL_CATEGORIES_QUERY_KEY,
+		queryFn: () => api.get("/categories").then((r) => r.data),
+		enabled: open,
+	});
+
+	const expenseCategories = useMemo(
+		() => rentalExpenseCategories(Array.isArray(financialCategories) ? financialCategories : []),
+		[financialCategories],
+	);
 
 	const accountsArray = Array.isArray(accounts) ? accounts : [];
 
@@ -104,7 +158,7 @@ function ExpenseDialog({ open, expense, onClose }: ExpenseDialogProps) {
 		if (expense) {
 			setFormData({
 				propertyId: String(expense.propertyId),
-				category: expense.category || "maintenance",
+				category: normalizeCategoryForSelect(expense.category || "", expenseCategories),
 				amount: String(expense.amount ?? ""),
 				currency: expense.currency || "KGS",
 				expenseDate: expense.expenseDate?.slice(0, 10) || new Date().toISOString().split("T")[0],
@@ -118,10 +172,58 @@ function ExpenseDialog({ open, expense, onClose }: ExpenseDialogProps) {
 				accountId: accountsArray[0] ? String(accountsArray[0].id) : "",
 			});
 		}
-	}, [open, expense, accountsArray]);
+	}, [open, expense, accountsArray, expenseCategories]);
+
+	const handleCreateCategory = async (e: React.FormEvent) => {
+		e.preventDefault();
+		const name = newCategoryName.trim();
+		if (!name) {
+			toast({
+				title: "Введите название категории",
+				variant: "destructive",
+			});
+			return;
+		}
+		setCreatingCategory(true);
+		try {
+			const { data: created } = await api.post<FinancialCategory>("/categories", {
+				name,
+				type: "expense",
+				module: "rental",
+			});
+			await queryClient.invalidateQueries({ queryKey: FINANCIAL_CATEGORIES_QUERY_KEY });
+			setFormData((prev) => ({ ...prev, category: created.name }));
+			setNewCategoryName("");
+			setCreateCategoryOpen(false);
+			toast({ title: "Категория создана" });
+		} catch {
+			toast({
+				title: "Ошибка",
+				description: "Не удалось создать категорию",
+				variant: "destructive",
+			});
+		} finally {
+			setCreatingCategory(false);
+		}
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (!formData.propertyId) {
+			toast({
+				title: "Выберите объект",
+				variant: "destructive",
+			});
+			return;
+		}
+		if (!formData.category?.trim()) {
+			toast({
+				title: "Выберите категорию",
+				description: "Категория расхода обязательна",
+				variant: "destructive",
+			});
+			return;
+		}
 		if (!formData.accountId) {
 			toast({
 				title: "Выберите расчётный счёт",
@@ -190,18 +292,39 @@ function ExpenseDialog({ open, expense, onClose }: ExpenseDialogProps) {
 					<div>
 						<Label>Категория *</Label>
 						<Select
-							value={formData.category}
-							onValueChange={(v) => setFormData({ ...formData, category: v })}
+							value={formData.category || undefined}
+							onValueChange={(v) => {
+								if (v === CREATE_CATEGORY_VALUE) {
+									setCreateCategoryOpen(true);
+									return;
+								}
+								setFormData({ ...formData, category: v });
+							}}
 						>
 							<SelectTrigger>
-								<SelectValue />
+								<SelectValue placeholder="Выберите категорию" />
 							</SelectTrigger>
 							<SelectContent>
-								{Object.entries(categoryLabels).map(([k, v]) => (
-									<SelectItem key={k} value={k}>
-										{v}
+								{formData.category &&
+									!expenseCategories.some((c) => c.name === formData.category) && (
+										<SelectItem value={formData.category}>
+											{categoryDisplayLabel(formData.category)}
+										</SelectItem>
+									)}
+								{expenseCategories.map((c) => (
+									<SelectItem key={c.id} value={c.name}>
+										{c.name}
 									</SelectItem>
 								))}
+								<SelectItem
+									value={CREATE_CATEGORY_VALUE}
+									className="text-blue-600 font-medium"
+								>
+									<span className="inline-flex items-center gap-1.5">
+										<Plus className="w-3.5 h-3.5" />
+										Создать категорию…
+									</span>
+								</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>
@@ -287,11 +410,54 @@ function ExpenseDialog({ open, expense, onClose }: ExpenseDialogProps) {
 						<Button type="button" variant="outline" onClick={onClose}>
 							Отмена
 						</Button>
-						<Button type="submit" disabled={loading || !formData.accountId}>
+						<Button
+							type="submit"
+							disabled={
+								loading ||
+								!formData.accountId ||
+								!formData.category ||
+								!formData.propertyId
+							}
+						>
 							{loading ? "Сохранение..." : isEdit ? "Сохранить" : "Добавить"}
 						</Button>
 					</div>
 				</form>
+
+				<Dialog open={createCategoryOpen} onOpenChange={setCreateCategoryOpen}>
+					<DialogContent className="sm:max-w-sm">
+						<DialogHeader>
+							<DialogTitle>Новая категория расхода</DialogTitle>
+						</DialogHeader>
+						<form onSubmit={handleCreateCategory} className="space-y-4">
+							<div>
+								<Label>Название *</Label>
+								<Input
+									value={newCategoryName}
+									onChange={(e) => setNewCategoryName(e.target.value)}
+									placeholder="Например: Страхование объекта"
+									autoFocus
+									required
+								/>
+							</div>
+							<div className="flex justify-end gap-2">
+								<Button
+									type="button"
+									variant="outline"
+									onClick={() => {
+										setCreateCategoryOpen(false);
+										setNewCategoryName("");
+									}}
+								>
+									Отмена
+								</Button>
+								<Button type="submit" disabled={creatingCategory || !newCategoryName.trim()}>
+									{creatingCategory ? "Создание..." : "Создать"}
+								</Button>
+							</div>
+						</form>
+					</DialogContent>
+				</Dialog>
 			</DialogContent>
 		</Dialog>
 	);
@@ -375,7 +541,7 @@ export default function Expenses() {
 			filteredExpenses.map((e) => ({
 				...e,
 				propertyLabel: propertyLabel[e.propertyId] || `Объект #${e.propertyId}`,
-				categoryLabel: categoryLabels[e.category] || e.category,
+				categoryLabel: categoryDisplayLabel(e.category),
 			})),
 		[filteredExpenses, propertyLabel],
 	);

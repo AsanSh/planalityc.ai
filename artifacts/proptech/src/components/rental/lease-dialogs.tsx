@@ -8,6 +8,7 @@ import {
 import { useMemo, useState } from "react";
 import {
 	type CreateLeaseContractBodyStatus,
+	getListDepositsQueryKey,
 	getListLeaseContractsQueryKey,
 	type LeaseContract,
 	useCreateLeaseContract,
@@ -656,6 +657,9 @@ export function CreateLeaseDialog({
 			queryClient.invalidateQueries({
 				queryKey: getListLeaseContractsQueryKey(),
 			});
+			queryClient.invalidateQueries({
+				queryKey: getListDepositsQueryKey(),
+			});
 			setForm({ ...EMPTY_FORM, contractNumber: generateContractNumber() });
 			onClose();
 		} catch (err: any) {
@@ -753,6 +757,9 @@ export function EditLeaseDialog({
 			toast({ title: "Договор обновлён" });
 			queryClient.invalidateQueries({
 				queryKey: getListLeaseContractsQueryKey(),
+			});
+			queryClient.invalidateQueries({
+				queryKey: getListDepositsQueryKey(),
 			});
 
 			if (keyFieldsChanged) {

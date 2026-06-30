@@ -35,6 +35,7 @@ import { ensureCounterpartyWithRole } from "../lib/counterparty-sync";
 import { resolveRentalPaymentAccountCredit } from "../lib/rental-payment-fx";
 import { resolveCompanyLegalEntityId } from "../lib/settings-catalog-sync";
 import { ensureContractInvoice, ensurePaymentTaxInvoice } from "../lib/document-generators";
+import { syncContractDeposit } from "../lib/sync-contract-deposit";
 
 const RENTAL_ACCOUNTS = BANK_ACCOUNT_MODULE.rental;
 const RENTAL_SETTINGS_MODULE = "rental";
@@ -587,6 +588,15 @@ router.post("/rental/contracts", async (req: AuthenticatedRequest, res): Promise
     }
   }
 
+  await syncContractDeposit({
+    companyId: req.scopedCompanyId!,
+    leaseContractId: row.id,
+    depositAmount,
+    currency,
+    signDate: signDate || null,
+    startDate,
+  });
+
   const [t] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, tenantId));
   const [p] = await db.select().from(propertiesTable).where(eq(propertiesTable.id, propertyId));
 
@@ -653,6 +663,15 @@ router.patch("/rental/contracts/:id", async (req: AuthenticatedRequest, res): Pr
   if (status !== beforePatch?.status) {
     await refreshPropertyRentalStatus(row.propertyId, req.scopedCompanyId);
   }
+
+  await syncContractDeposit({
+    companyId: req.scopedCompanyId!,
+    leaseContractId: row.id,
+    depositAmount,
+    currency,
+    signDate: signDate ?? null,
+    startDate,
+  });
 
   res.json({ ...row, tenantName: t?.fullName ?? null, propertyUnitNumber: p?.unitNumber ?? null });
 });

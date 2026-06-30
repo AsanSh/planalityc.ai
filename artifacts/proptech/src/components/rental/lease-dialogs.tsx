@@ -1,14 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useColResize } from "@/lib/use-col-resize";
 import {
-	ChevronDown,
-	ChevronUp,
-	ChevronsUpDown,
-	FileX,
 	Info,
-	Pencil,
 	RefreshCw,
-	Trash2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -30,13 +23,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -46,7 +32,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
@@ -55,20 +40,20 @@ import { authFetch } from "@/lib/auth-fetch";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-const statusColors: Record<string, string> = {
+export const leaseStatusColors: Record<string, string> = {
 	draft: "bg-gray-100 text-gray-800",
 	active: "bg-emerald-100 text-emerald-800",
 	expired: "bg-amber-100 text-amber-800",
 	terminated: "bg-rose-100 text-rose-800",
 };
-const statusLabels: Record<string, string> = {
+export const leaseStatusLabels: Record<string, string> = {
 	draft: "Черновик",
 	active: "Активный",
 	expired: "Истёк",
 	terminated: "Расторгнут",
 };
 
-function fmt(amount: number | string, currency = "KGS") {
+export function fmtLeaseAmount(amount: number | string, currency = "KGS") {
 	const num = typeof amount === "string" ? parseFloat(amount) : amount;
 	if (Number.isNaN(num)) return "—";
 	try {
@@ -81,7 +66,7 @@ function fmt(amount: number | string, currency = "KGS") {
 	}
 }
 
-function fmtDate(date: string | null | undefined) {
+export function fmtLeaseDate(date: string | null | undefined) {
 	if (!date) return "—";
 	return new Date(date).toLocaleDateString("ru-RU");
 }
@@ -204,7 +189,7 @@ function ProrationPreview({
 					<div>
 						<span className="text-blue-600">{firstMonth.label}:</span>{" "}
 						<span className="font-semibold">
-							{fmt(firstMonth.amount, currency)}
+							{fmtLeaseAmount(firstMonth.amount, currency)}
 						</span>{" "}
 						<span className="text-blue-500">
 							(с {new Date(startDate).toLocaleDateString("ru-RU")} до конца
@@ -216,7 +201,7 @@ function ProrationPreview({
 					<div>
 						<span className="text-blue-600">{lastMonth.label}:</span>{" "}
 						<span className="font-semibold">
-							{fmt(lastMonth.amount, currency)}
+							{fmtLeaseAmount(lastMonth.amount, currency)}
 						</span>{" "}
 						<span className="text-blue-500">
 							(до {new Date(endDate).toLocaleDateString("ru-RU")})
@@ -224,7 +209,7 @@ function ProrationPreview({
 					</div>
 				)}
 				<div className="text-blue-500 text-xs mt-1">
-					Остальные месяцы — {fmt(amount, currency)}
+					Остальные месяцы — {fmtLeaseAmount(amount, currency)}
 				</div>
 			</AlertDescription>
 		</Alert>
@@ -802,20 +787,20 @@ export function RecalcDialog({
 				<div className="py-2 text-sm text-muted-foreground space-y-1">
 					{lease.signDate && (
 						<div>
-							Дата подписания: <strong>{fmtDate(lease.signDate)}</strong>
+							Дата подписания: <strong>{fmtLeaseDate(lease.signDate)}</strong>
 						</div>
 					)}
 					<div>
-						Дата начала начисления: <strong>{fmtDate(lease.startDate)}</strong>
+						Дата начала начисления: <strong>{fmtLeaseDate(lease.startDate)}</strong>
 					</div>
 					{lease.endDate && (
 						<div>
-							Дата завершения: <strong>{fmtDate(lease.endDate)}</strong>
+							Дата завершения: <strong>{fmtLeaseDate(lease.endDate)}</strong>
 						</div>
 					)}
 					<div>
 						Ставка аренды:{" "}
-						<strong>{fmt(lease.rentAmount, lease.currency)}</strong>/мес.
+						<strong>{fmtLeaseAmount(lease.rentAmount, lease.currency)}</strong>/мес.
 					</div>
 				</div>
 				<DialogFooter className="flex gap-2">
@@ -925,122 +910,5 @@ export function TerminateLeaseDialog({
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>
-	);
-}
-
-// ── Table component ───────────────────────────────────────────────────────────
-
-const TH = "relative border-r border-slate-700/80 px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.04em] text-white/72 whitespace-nowrap bg-slate-950 sticky top-0 z-20 select-none";
-const TD = "border-b border-slate-100 px-3 py-2.5 text-sm text-slate-700 align-middle";
-
-function LeaseSortTh({ label, col, sortKey, sortDir, onToggle, widths, startResize }: {
-	label: string; col: string; sortKey: string; sortDir: "asc" | "desc";
-	onToggle: (k: string) => void; widths: Record<string, number>;
-	startResize: (k: string) => (e: React.MouseEvent) => void;
-}) {
-	const active = sortKey === col;
-	return (
-		<th className={TH + " cursor-pointer hover:bg-slate-900"} style={{ width: widths[col], minWidth: widths[col] }} onClick={() => onToggle(col)}>
-			<span className="inline-flex items-center gap-1">
-				{label}
-				{active ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3 text-cyan-300" /> : <ChevronDown className="w-3 h-3 text-cyan-300" />) : <ChevronsUpDown className="w-3 h-3 text-white/35" />}
-			</span>
-			<div className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-cyan-400 z-20" onMouseDown={startResize(col)} onClick={(e) => e.stopPropagation()} />
-		</th>
-	);
-}
-
-export function LeaseTable({ isLoading, leasesArray, sortedLeases, sortKey, sortDir, toggle, activeCount, totalRent, setEditLease, setRecalcLease, setTerminateLease, setStructuredTerminateLease, onDeleteLease }: {
-	isLoading: boolean; leasesArray: any[]; sortedLeases: any[]; sortKey: string; sortDir: "asc" | "desc";
-	toggle: (k: string) => void; activeCount: number; totalRent: number;
-	setEditLease: (l: any) => void; setRecalcLease: (l: any) => void;
-	setTerminateLease: (l: any) => void; setStructuredTerminateLease?: (l: any) => void; onDeleteLease: (l: LeaseContract) => void;
-}) {
-	const { widths, startResize } = useColResize({ contractNumber: 130, propertyUnitNumber: 140, tenantName: 180, signDate: 110, startDate: 120, endDate: 110, rentAmount: 120, status: 110, actions: 56 });
-	return (
-		<div className="am-table-wrap rounded-[18px] overflow-auto" style={{ maxHeight: "calc(100vh - 300px)" }}>
-			<table className="w-full border-separate border-spacing-0 text-sm">
-				<thead>
-					<tr>
-						<LeaseSortTh label="Номер" col="contractNumber" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} widths={widths} startResize={startResize} />
-						<LeaseSortTh label="Объект" col="propertyUnitNumber" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} widths={widths} startResize={startResize} />
-						<LeaseSortTh label="Арендатор" col="tenantName" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} widths={widths} startResize={startResize} />
-						<LeaseSortTh label="Подписание" col="signDate" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} widths={widths} startResize={startResize} />
-						<LeaseSortTh label="Нач. начислений" col="startDate" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} widths={widths} startResize={startResize} />
-						<LeaseSortTh label="Завершение" col="endDate" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} widths={widths} startResize={startResize} />
-						<LeaseSortTh label="Аренда/мес." col="rentAmount" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} widths={widths} startResize={startResize} />
-						<LeaseSortTh label="Статус" col="status" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} widths={widths} startResize={startResize} />
-						<th className={TH} style={{ width: widths.actions }} />
-					</tr>
-				</thead>
-				<tbody>
-					{isLoading ? (
-						Array.from({ length: 3 }).map((_, i) => (
-							<tr key={i}>{Array.from({ length: 9 }).map((_, j) => <td key={j} className={TD}><Skeleton className="h-4 w-full" /></td>)}</tr>
-						))
-					) : !leasesArray.length ? (
-						<tr><td colSpan={9} className="text-center text-gray-600 py-8 text-sm">Договоры аренды не найдены</td></tr>
-					) : (
-						sortedLeases.map((lease, idx) => (
-							<tr key={lease.id} className={`${idx % 2 === 0 ? "bg-white" : "bg-slate-50/60"} transition-colors hover:bg-cyan-50/70`}>
-								<td className={TD + " font-medium text-gray-900"}>{lease.contractNumber}</td>
-								<td className={TD}>{(lease as any).propertyUnitNumber || `#${lease.propertyId}`}</td>
-								<td className={TD}>{(lease as any).tenantName || `#${lease.tenantId}`}</td>
-								<td className={TD + " text-gray-500"}>{fmtDate(lease.signDate)}</td>
-								<td className={TD}>{fmtDate(lease.startDate)}</td>
-								<td className={TD + " text-gray-500"}>{lease.endDate ? fmtDate(lease.endDate) : "бессрочный"}</td>
-								<td className={TD + " tabular-nums text-right font-medium"}>{fmt(lease.rentAmount, lease.currency)}</td>
-								<td className={TD}>
-									<span className={`inline-flex h-6 items-center rounded-full px-2.5 text-xs font-medium ${statusColors[lease.status] || "bg-gray-100 text-gray-600"}`}>
-										{statusLabels[lease.status] || lease.status}
-									</span>
-								</td>
-								<td className={TD + " text-center"}>
-									<DropdownMenu>
-										<DropdownMenuTrigger asChild>
-											<button className="text-gray-500 hover:text-gray-900"><ChevronDown className="w-3.5 h-3.5" /></button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end">
-											<DropdownMenuItem onClick={() => setEditLease(lease)}>
-												<Pencil className="w-4 h-4 mr-2" />Редактировать
-											</DropdownMenuItem>
-											<DropdownMenuItem onClick={() => setRecalcLease(lease)}>
-												<RefreshCw className="w-4 h-4 mr-2" />Пересчитать начисления
-											</DropdownMenuItem>
-											{(lease.status === "active" || lease.status === "expired") && (
-												<DropdownMenuItem onClick={() => setTerminateLease(lease)}>
-													<FileX className="w-4 h-4 mr-2" />Расторгнуть
-												</DropdownMenuItem>
-											)}
-											{(lease.status === "active" || lease.status === "expired") && setStructuredTerminateLease && (
-												<DropdownMenuItem onClick={() => setStructuredTerminateLease(lease)}>
-													<FileX className="w-4 h-4 mr-2" />Расторгнуть договор (детально)
-												</DropdownMenuItem>
-											)}
-											<DropdownMenuSeparator />
-											<DropdownMenuItem
-												className="text-rose-600 focus:text-rose-600"
-												onClick={() => onDeleteLease(lease)}
-											>
-												<Trash2 className="w-4 h-4 mr-2" />Удалить
-											</DropdownMenuItem>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								</td>
-							</tr>
-						))
-					)}
-				</tbody>
-				{!isLoading && leasesArray.length > 0 && (
-					<tfoot>
-						<tr className="bg-slate-50 font-semibold border-t-2 border-slate-200">
-							<td className={TD + " text-gray-700"} colSpan={6}>Итого: {leasesArray.length} договоров, активных: {activeCount}</td>
-							<td className={TD + " tabular-nums text-right text-gray-700"}>{new Intl.NumberFormat("ru-RU").format(totalRent)}</td>
-							<td className={TD} colSpan={2} />
-						</tr>
-					</tfoot>
-				)}
-			</table>
-		</div>
 	);
 }

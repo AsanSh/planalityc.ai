@@ -9,6 +9,10 @@ import {
 
 import { requireAuth, requireRole, AuthenticatedRequest } from "../middleware/auth";
 import {
+  expireOverdueLeaseContracts,
+  refreshPropertyRentalStatus,
+} from "../lib/rental-lease-expiration";
+import {
   addRentalCustomTemplate,
   deleteRentalCustomTemplate,
   deleteRentalDocumentTemplateFile,
@@ -75,21 +79,6 @@ function pickSettings(input: unknown, keys: readonly string[]): Record<string, s
 async function contractOutstandingBalance(contractId: number): Promise<number> {
   const rows = await db.select().from(accrualsTable).where(eq(accrualsTable.leaseContractId, contractId));
   return rows.reduce((s, a) => s + parseFloat(a.balance || "0"), 0);
-}
-
-async function refreshPropertyRentalStatus(propertyId: number, companyId?: number): Promise<void> {
-  const conditions: SQL[] = [
-    eq(leaseContractsTable.propertyId, propertyId),
-    eq(leaseContractsTable.status, "active"),
-  ];
-  if (companyId) conditions.push(eq(leaseContractsTable.companyId, companyId));
-  const [active] = await db.select().from(leaseContractsTable).where(and(...conditions));
-  const propConditions: SQL[] = [eq(propertiesTable.id, propertyId)];
-  if (companyId) propConditions.push(eq(propertiesTable.companyId, companyId));
-  await db
-    .update(propertiesTable)
-    .set({ rentalStatus: active ? "rented" : "free" })
-    .where(and(...propConditions));
 }
 
 async function logOp(
@@ -532,6 +521,7 @@ router.delete("/rental/tenants/:id", async (req: AuthenticatedRequest, res): Pro
 // LEASE CONTRACTS
 router.get("/rental/contracts", async (req: AuthenticatedRequest, res): Promise<void> => {
   const { propertyId, tenantId, status } = req.query as Record<string, string | undefined>;
+  await expireOverdueLeaseContracts(req.scopedCompanyId!);
   const conditions: SQL[] = [];
   conditions.push(eq(leaseContractsTable.companyId, req.scopedCompanyId!));
   if (propertyId) conditions.push(eq(leaseContractsTable.propertyId, parseInt(propertyId, 10)));
@@ -548,8 +538,13 @@ router.get("/rental/contracts", async (req: AuthenticatedRequest, res): Promise<
     return {
       ...c,
       tenantName: t?.fullName ?? null,
+      tenantPhone: t?.phone ?? null,
+      tenantEmail: t?.email ?? null,
+      tenantIin: t?.iin ?? null,
       propertyUnitNumber: p?.unitNumber ?? null,
       propertyProjectName: p?.projectName ?? null,
+      propertyBlock: p?.block ?? null,
+      propertyRentalStatus: p?.rentalStatus ?? null,
     };
   }));
   res.json(enriched);
@@ -565,7 +560,9 @@ router.post("/rental/contracts", async (req: AuthenticatedRequest, res): Promise
     companyId: req.scopedCompanyId!, propertyId, tenantId, contractNumber, signDate: signDate || null, startDate, endDate, rentAmount, currency, depositAmount, accrualDay, status, comment
   }).returning();
 
-  await db.update(propertiesTable).set({ rentalStatus: "rented" }).where(eq(propertiesTable.id, propertyId));
+  if (status === "active") {
+    await refreshPropertyRentalStatus(propertyId, req.scopedCompanyId!);
+  }
 
   if (status === "active" || status === "draft") {
     const accrualRows = buildAccrualRows({
@@ -643,6 +640,10 @@ router.patch("/rental/contracts/:id", async (req: AuthenticatedRequest, res): Pr
       amount: row.rentAmount ? parseFloat(String(row.rentAmount)) : null,
       currency: String(row.currency),
     });
+  }
+
+  if (status !== beforePatch?.status) {
+    await refreshPropertyRentalStatus(row.propertyId, req.scopedCompanyId);
   }
 
   res.json({ ...row, tenantName: t?.fullName ?? null, propertyUnitNumber: p?.unitNumber ?? null });

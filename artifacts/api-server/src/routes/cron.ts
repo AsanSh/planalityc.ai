@@ -1,6 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { logger } from "../lib/logger";
 import { runSlaRemindersCron } from "../lib/task-sla-reminders";
+import { expireOverdueLeaseContracts } from "../lib/rental-lease-expiration";
 
 const router: IRouter = Router();
 
@@ -28,6 +29,22 @@ router.get("/cron/sla-reminders", async (req, res): Promise<void> => {
     res.json({ ok: true, ...result, ranAt: new Date().toISOString() });
   } catch (err) {
     logger.error({ err }, "cron: sla-reminders failed");
+    res.status(500).json({
+      error: err instanceof Error ? err.message : "Cron failed",
+    });
+  }
+});
+
+/** Vercel Cron: истечение договоров аренды по endDate */
+router.get("/cron/rental-lease-expiration", async (req, res): Promise<void> => {
+  if (!assertCronAuthorized(req, res)) return;
+
+  try {
+    const expiredCount = await expireOverdueLeaseContracts();
+    logger.info({ expiredCount }, "cron: rental-lease-expiration completed");
+    res.json({ ok: true, expiredCount, ranAt: new Date().toISOString() });
+  } catch (err) {
+    logger.error({ err }, "cron: rental-lease-expiration failed");
     res.status(500).json({
       error: err instanceof Error ? err.message : "Cron failed",
     });

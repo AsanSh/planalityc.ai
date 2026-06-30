@@ -55,6 +55,8 @@ const DENSITY_PADDING: Record<TableDensity, string> = {
 	comfortable: "py-4",
 };
 
+const HIDDEN_COLUMN_IDS = new Set(["__select", "__actions", "actions"]);
+
 export type DataTableColumnMeta = {
 	exportLabel?: string;
 	align?: "right" | "center";
@@ -269,7 +271,7 @@ export function DataTable<T>({
 	const exportCsv = () => {
 		const cols = table
 			.getVisibleLeafColumns()
-			.filter((c) => c.id !== "__select" && c.id !== "__actions");
+			.filter((c) => !HIDDEN_COLUMN_IDS.has(c.id));
 		const header = cols.map((c) => {
 			const h = c.columnDef.meta as { exportLabel?: string } | undefined;
 			return toCsvValue(h?.exportLabel ?? c.id);
@@ -374,7 +376,7 @@ export function DataTable<T>({
 						<DropdownMenuSeparator />
 						{table
 							.getAllLeafColumns()
-							.filter((c) => c.id !== "__select" && c.id !== "__actions")
+							.filter((c) => !HIDDEN_COLUMN_IDS.has(c.id))
 							.map((col) => {
 								const label =
 									(col.columnDef.meta as { exportLabel?: string } | undefined)

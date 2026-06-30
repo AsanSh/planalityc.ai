@@ -9,6 +9,10 @@
     {
       "path": "/cron/sla-reminders",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/cron/rental-lease-expiration",
+      "schedule": "0 5 * * *"
     }
   ],
   "functions": {

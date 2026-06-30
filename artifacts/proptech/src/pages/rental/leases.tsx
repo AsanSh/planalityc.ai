@@ -1,5 +1,4 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useSortable } from "@/lib/use-sortable";
 import { CalendarClock, CheckCircle2, FileText, Plus, Wallet } from "lucide-react";
 import { useState } from "react";
 import { ContractTerminationDialog } from "@/components/contract-termination-dialog";
@@ -13,10 +12,10 @@ import {
 import {
 	CreateLeaseDialog,
 	EditLeaseDialog,
-	LeaseTable,
 	RecalcDialog,
 	TerminateLeaseDialog,
 } from "@/components/rental/lease-dialogs";
+import { LeaseContractsTable } from "@/components/rental/lease-contracts-table";
 import { RentalQueryState } from "@/components/rental/rental-query-state";
 import { KpiCard, KpiRow } from "@/components/kpi-card";
 import { Button } from "@/components/ui/button";
@@ -30,7 +29,6 @@ export default function RentalContracts() {
 	const queryClient = useQueryClient();
 	const { toast } = useToast();
 	const leasesArray = Array.isArray(leases) ? leases : [];
-	const { sorted: sortedLeases, sortKey, sortDir, toggle } = useSortable(leasesArray, "contractNumber");
 	const activeCount = leasesArray.filter((l) => l.status === "active").length;
 	const draftCount = leasesArray.filter((l) => l.status === "draft").length;
 	const totalRent = leasesArray.reduce(
@@ -106,20 +104,16 @@ export default function RentalContracts() {
 			</div>
 
 			<RentalQueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
-			<LeaseTable
+			<LeaseContractsTable
+				data={leasesArray}
 				isLoading={isLoading}
-				leasesArray={leasesArray}
-				sortedLeases={sortedLeases}
-				sortKey={sortKey}
-				sortDir={sortDir}
-				toggle={toggle}
 				activeCount={activeCount}
 				totalRent={totalRent}
-				setEditLease={setEditLease}
-				setRecalcLease={setRecalcLease}
-				setTerminateLease={setTerminateLease}
-				setStructuredTerminateLease={setStructuredTerminateLease}
-				onDeleteLease={handleDeleteLease}
+				onEdit={setEditLease}
+				onRecalc={setRecalcLease}
+				onTerminate={setTerminateLease}
+				onStructuredTerminate={setStructuredTerminateLease}
+				onDelete={handleDeleteLease}
 			/>
 			</RentalQueryState>
 

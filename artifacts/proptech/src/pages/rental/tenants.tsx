@@ -35,6 +35,11 @@ import { RentalQueryState } from "@/components/rental/rental-query-state";
 import { api } from "@/lib/api";
 import { useLocation } from "wouter";
 
+const typeLabels: Record<string, string> = {
+	individual: "Физлицо",
+	company: "Юрлицо",
+};
+
 const statusColors: Record<string, string> = {
 	active: "bg-emerald-100 text-emerald-800",
 	inactive: "bg-gray-100 text-gray-800",
@@ -62,6 +67,20 @@ function normalizeContactPhones(value: unknown, fallbackPhone?: string | null): 
 		.filter((p) => p.number.trim() || p.owner.trim());
 	if (phones.length === 0) phones.push({ number: fallbackPhone || "", owner: "" });
 	return phones;
+}
+
+function formatPhonesList(value: unknown, fallbackPhone?: string | null): string {
+	return normalizeContactPhones(value, fallbackPhone)
+		.filter((p) => p.number.trim())
+		.map((p) => (p.owner ? `${p.number} (${p.owner})` : p.number))
+		.join("; ");
+}
+
+function fmtDateTime(value: string | null | undefined) {
+	if (!value) return "—";
+	const d = new Date(value);
+	if (Number.isNaN(d.getTime())) return "—";
+	return d.toLocaleString("ru-RU");
 }
 
 interface TenantDialogProps {
@@ -425,6 +444,81 @@ export default function RentalTenants() {
 				cell: ({ row }) => row.original.email || "—",
 			},
 			{
+				id: "type",
+				header: "Тип",
+				size: 110,
+				accessorFn: (row) =>
+					typeLabels[(row as Tenant & { type?: string }).type || ""] ||
+					(row as Tenant & { type?: string }).type ||
+					"—",
+				meta: { exportLabel: "Тип" },
+				cell: ({ row }) => {
+					const type = (row.original as Tenant & { type?: string }).type || "individual";
+					return typeLabels[type] || type;
+				},
+			},
+			{
+				id: "phonesAll",
+				header: "Все телефоны",
+				size: 220,
+				accessorFn: (row) =>
+					formatPhonesList((row as Tenant & { phones?: unknown }).phones, row.phone),
+				meta: { exportLabel: "Все телефоны", grow: true },
+				cell: ({ row }) => {
+					const phones = normalizeContactPhones(
+						(row.original as Tenant & { phones?: unknown }).phones,
+						row.original.phone,
+					).filter((p) => p.number.trim());
+					if (!phones.length) return "—";
+					return (
+						<div className="space-y-0.5 text-sm">
+							{phones.map((p, i) => (
+								<div key={i}>
+									<span className="font-medium text-slate-700">{p.number}</span>
+									{p.owner ? (
+										<span className="ml-1 text-[11px] text-slate-500">({p.owner})</span>
+									) : null}
+								</div>
+							))}
+						</div>
+					);
+				},
+			},
+			{
+				accessorKey: "comment",
+				header: "Комментарий",
+				size: 180,
+				meta: { exportLabel: "Комментарий", grow: true, truncate: true },
+				cell: ({ row }) => row.original.comment || "—",
+			},
+			{
+				id: "counterpartyId",
+				header: "Контрагент",
+				size: 110,
+				accessorFn: (row) =>
+					(row as Tenant & { counterpartyId?: number | null }).counterpartyId ?? "—",
+				meta: { exportLabel: "ID контрагента", align: "right" },
+				cell: ({ row }) => {
+					const id = (row.original as Tenant & { counterpartyId?: number | null })
+						.counterpartyId;
+					return id ?? "—";
+				},
+			},
+			{
+				accessorKey: "createdAt",
+				header: "Создан",
+				size: 150,
+				meta: { exportLabel: "Создан" },
+				cell: ({ row }) => fmtDateTime(row.original.createdAt),
+			},
+			{
+				accessorKey: "updatedAt",
+				header: "Обновлён",
+				size: 150,
+				meta: { exportLabel: "Обновлён" },
+				cell: ({ row }) => fmtDateTime(row.original.updatedAt),
+			},
+			{
 				id: "status",
 				header: "Статус",
 				size: 130,
@@ -510,11 +604,8 @@ export default function RentalTenants() {
 					footer={
 						!isLoading && tenantsArray.length > 0 ? (
 							<tr className="bg-gray-50 font-semibold border-t-2">
-								<td colSpan={4} className="px-3 py-2 text-sm text-gray-600">
-									Итого: {tenantsArray.length} арендаторов
-								</td>
-								<td className="px-3 py-2 text-sm text-gray-600">
-									{activeCount} активных
+								<td colSpan={columns.length - 1} className="px-3 py-2 text-sm text-gray-600">
+									Итого: {tenantsArray.length} арендаторов · {activeCount} активных
 								</td>
 								<td />
 							</tr>

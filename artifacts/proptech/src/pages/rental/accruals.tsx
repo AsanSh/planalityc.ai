@@ -380,7 +380,7 @@ export default function Accruals() {
 				/>
 				<LegalEntityScopeSelect className="h-9 shrink-0 !w-[130px] bg-white text-sm" />
 				<Select value={statusFilter} onValueChange={setStatusFilter}>
-					<SelectTrigger className="h-9 shrink-0 !w-[120px]">
+					<SelectTrigger className="h-9 shrink-0 !w-[132px]">
 						<SelectValue placeholder="Все статусы" />
 					</SelectTrigger>
 					<SelectContent>

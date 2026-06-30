@@ -41,9 +41,15 @@ const typeLabels: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-	active: "bg-emerald-100 text-emerald-800",
-	inactive: "bg-gray-100 text-gray-800",
-	blacklisted: "bg-rose-100 text-rose-800",
+	active: "bg-emerald-100 text-emerald-700 border-emerald-200",
+	inactive: "bg-gray-100 text-gray-600 border-gray-200",
+	blacklisted: "bg-rose-100 text-rose-700 border-rose-200",
+};
+
+type TenantRow = Tenant & {
+	type?: string;
+	phones?: unknown;
+	counterpartyId?: number | null;
 };
 
 const statusLabels: Record<string, string> = {
@@ -80,7 +86,7 @@ function fmtDateTime(value: string | null | undefined) {
 	if (!value) return "—";
 	const d = new Date(value);
 	if (Number.isNaN(d.getTime())) return "—";
-	return d.toLocaleString("ru-RU");
+	return d.toLocaleString("ru-KG");
 }
 
 interface TenantDialogProps {
@@ -366,7 +372,7 @@ export default function RentalTenants() {
 
 	const activeCount = tenantsArray.filter((t) => t.status === "active").length;
 	const inactiveCount = tenantsArray.length - activeCount;
-	const companyCount = tenantsArray.filter((t) => (t as Tenant & { type?: string }).type === "company").length;
+	const companyCount = tenantsArray.filter((t) => (t as TenantRow).type === "company").length;
 	const individualCount = tenantsArray.length - companyCount;
 
 	const handleAdd = () => { setSelectedTenant(undefined); setDialogOpen(true); };
@@ -400,7 +406,7 @@ export default function RentalTenants() {
 		}
 	}, [queryClient, toast]);
 
-	const columns = useMemo<ColumnDef<Tenant, unknown>[]>(
+	const columns = useMemo<ColumnDef<TenantRow, unknown>[]>(
 		() => [
 			{
 				accessorKey: "fullName",
@@ -424,7 +430,7 @@ export default function RentalTenants() {
 				size: 140,
 				meta: { exportLabel: "Телефон" },
 				cell: ({ row }) => {
-					const phones = normalizeContactPhones((row.original as any).phones, row.original.phone)
+					const phones = normalizeContactPhones(row.original.phones, row.original.phone)
 						.filter((p) => p.number.trim());
 					if (!phones.length) return "—";
 					return (
@@ -448,12 +454,10 @@ export default function RentalTenants() {
 				header: "Тип",
 				size: 110,
 				accessorFn: (row) =>
-					typeLabels[(row as Tenant & { type?: string }).type || ""] ||
-					(row as Tenant & { type?: string }).type ||
-					"—",
+					typeLabels[row.type || ""] || row.type || "—",
 				meta: { exportLabel: "Тип" },
 				cell: ({ row }) => {
-					const type = (row.original as Tenant & { type?: string }).type || "individual";
+					const type = row.original.type || "individual";
 					return typeLabels[type] || type;
 				},
 			},
@@ -461,12 +465,11 @@ export default function RentalTenants() {
 				id: "phonesAll",
 				header: "Все телефоны",
 				size: 220,
-				accessorFn: (row) =>
-					formatPhonesList((row as Tenant & { phones?: unknown }).phones, row.phone),
+				accessorFn: (row) => formatPhonesList(row.phones, row.phone),
 				meta: { exportLabel: "Все телефоны", grow: true },
 				cell: ({ row }) => {
 					const phones = normalizeContactPhones(
-						(row.original as Tenant & { phones?: unknown }).phones,
+						row.original.phones,
 						row.original.phone,
 					).filter((p) => p.number.trim());
 					if (!phones.length) return "—";
@@ -492,17 +495,24 @@ export default function RentalTenants() {
 				cell: ({ row }) => row.original.comment || "—",
 			},
 			{
-				id: "counterpartyId",
-				header: "Контрагент",
+				accessorKey: "counterpartyId",
+				header: "ID контрагента",
 				size: 110,
-				accessorFn: (row) =>
-					(row as Tenant & { counterpartyId?: number | null }).counterpartyId ?? "—",
 				meta: { exportLabel: "ID контрагента", align: "right" },
-				cell: ({ row }) => {
-					const id = (row.original as Tenant & { counterpartyId?: number | null })
-						.counterpartyId;
-					return id ?? "—";
-				},
+				cell: ({ row }) => row.original.counterpartyId ?? "—",
+			},
+			{
+				accessorKey: "id",
+				header: "ID",
+				size: 80,
+				meta: { exportLabel: "ID арендатора", align: "right" },
+			},
+			{
+				accessorKey: "companyId",
+				header: "ID компании",
+				size: 110,
+				meta: { exportLabel: "ID компании", align: "right" },
+				cell: ({ row }) => row.original.companyId ?? "—",
 			},
 			{
 				accessorKey: "createdAt",
@@ -527,7 +537,7 @@ export default function RentalTenants() {
 				cell: ({ row }) => (
 					<Badge
 						className={statusColors[row.original.status]}
-						variant="secondary"
+						variant="outline"
 					>
 						{statusLabels[row.original.status] || row.original.status}
 					</Badge>

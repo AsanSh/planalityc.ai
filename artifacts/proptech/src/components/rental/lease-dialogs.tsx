@@ -1,5 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import {
+	Check,
+	ChevronsUpDown,
 	Info,
 	RefreshCw,
 } from "lucide-react";
@@ -16,6 +18,13 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
+	Command,
+	CommandEmpty,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
+import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -25,6 +34,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -37,6 +51,7 @@ import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { authFetch } from "@/lib/auth-fetch";
+import { cn } from "@/lib/utils";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -248,6 +263,135 @@ const EMPTY_FORM: FormState = {
 	comment: "",
 };
 
+type RentalPropertyOption = {
+	id: number;
+	projectName: string;
+	unitNumber: string;
+	rentalStatus?: string;
+	block?: string | null;
+};
+
+function formatPropertyLabel(
+	p: RentalPropertyOption,
+	mode: "create" | "edit",
+): string {
+	const base = `${p.projectName} ${p.unitNumber}`;
+	if (mode === "create" && p.rentalStatus !== "free") {
+		return `${base} · занят`;
+	}
+	return base;
+}
+
+function propertySearchText(p: RentalPropertyOption): string {
+	return [p.unitNumber, p.projectName, p.block]
+		.filter(Boolean)
+		.join(" ")
+		.toLowerCase();
+}
+
+function tenantSearchText(t: {
+	fullName: string;
+	phone?: string | null;
+	iin?: string | null;
+}): string {
+	return [t.fullName, t.phone, t.iin].filter(Boolean).join(" ").toLowerCase();
+}
+
+function SearchableCombobox<T extends { id: number }>({
+	value,
+	onValueChange,
+	options,
+	getLabel,
+	getSearchText,
+	placeholder,
+	searchPlaceholder,
+	disabled,
+}: {
+	value: string;
+	onValueChange: (v: string) => void;
+	options: T[];
+	getLabel: (item: T) => string;
+	getSearchText: (item: T) => string;
+	placeholder: string;
+	searchPlaceholder: string;
+	disabled?: boolean;
+}) {
+	const [open, setOpen] = useState(false);
+	const [search, setSearch] = useState("");
+
+	const filtered = useMemo(() => {
+		const q = search.trim().toLowerCase();
+		if (!q) return options;
+		return options.filter((item) => getSearchText(item).includes(q));
+	}, [options, search, getSearchText]);
+
+	const selectedLabel = useMemo(() => {
+		if (!value) return placeholder;
+		const item = options.find((x) => String(x.id) === value);
+		return item ? getLabel(item) : placeholder;
+	}, [value, options, getLabel, placeholder]);
+
+	return (
+		<Popover
+			open={open}
+			onOpenChange={(next) => {
+				setOpen(next);
+				if (!next) setSearch("");
+			}}
+		>
+			<PopoverTrigger asChild>
+				<Button
+					variant="outline"
+					role="combobox"
+					aria-expanded={open}
+					disabled={disabled}
+					className={cn(
+						"w-full justify-between font-normal mt-auto",
+						!value && "text-muted-foreground",
+					)}
+				>
+					<span className="truncate">{selectedLabel}</span>
+					<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+				</Button>
+			</PopoverTrigger>
+			<PopoverContent
+				className="w-[var(--radix-popover-trigger-width)] p-0"
+				align="start"
+			>
+				<Command shouldFilter={false}>
+					<CommandInput
+						placeholder={searchPlaceholder}
+						value={search}
+						onValueChange={setSearch}
+					/>
+					<CommandList>
+						<CommandEmpty>Ничего не найдено</CommandEmpty>
+						{filtered.map((item) => (
+							<CommandItem
+								key={item.id}
+								value={String(item.id)}
+								onSelect={() => {
+									onValueChange(String(item.id));
+									setOpen(false);
+									setSearch("");
+								}}
+							>
+								<Check
+									className={cn(
+										"mr-2 h-4 w-4",
+										value === String(item.id) ? "opacity-100" : "opacity-0",
+									)}
+								/>
+								{getLabel(item)}
+							</CommandItem>
+						))}
+					</CommandList>
+				</Command>
+			</PopoverContent>
+		</Popover>
+	);
+}
+
 // ── Shared form fields ────────────────────────────────────────────────────────
 
 function LeaseFormFields({
@@ -283,42 +427,29 @@ function LeaseFormFields({
 			<div className="grid gap-3 sm:grid-cols-2">
 				<div className="flex flex-col">
 					<Label className="leading-tight mb-1.5">Объект {mode === "create" && "*"}</Label>
-					<Select
+					<SearchableCombobox
 						value={form.propertyId}
 						onValueChange={(v) => setForm({ ...form, propertyId: v })}
+						options={availableProperties}
+						getLabel={(p) => formatPropertyLabel(p, mode)}
+						getSearchText={propertySearchText}
+						placeholder="Выберите объект"
+						searchPlaceholder="Номер, адрес, блок..."
 						disabled={mode === "edit"}
-					>
-						<SelectTrigger className="mt-auto">
-							<SelectValue placeholder="Выберите объект" />
-						</SelectTrigger>
-						<SelectContent>
-							{availableProperties.map((p) => (
-								<SelectItem key={p.id} value={String(p.id)}>
-									{p.projectName} {p.unitNumber}
-									{mode === "create" && p.rentalStatus !== "free" ? " · занят" : ""}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+					/>
 				</div>
 				<div className="flex flex-col">
 					<Label className="leading-tight mb-1.5">Арендатор {mode === "create" && "*"}</Label>
-					<Select
+					<SearchableCombobox
 						value={form.tenantId}
 						onValueChange={(v) => setForm({ ...form, tenantId: v })}
+						options={tenantsArray}
+						getLabel={(t) => t.fullName}
+						getSearchText={tenantSearchText}
+						placeholder="Выберите арендатора"
+						searchPlaceholder="ФИО, телефон, ИИН..."
 						disabled={mode === "edit"}
-					>
-						<SelectTrigger className="mt-auto">
-							<SelectValue placeholder="Выберите арендатора" />
-						</SelectTrigger>
-						<SelectContent>
-							{tenantsArray.map((t) => (
-								<SelectItem key={t.id} value={String(t.id)}>
-									{t.fullName}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+					/>
 				</div>
 			</div>
 

@@ -50,7 +50,7 @@ export default function Login() {
 			style={{ background: "linear-gradient(180deg, #f8fbfc 0%, #eef4f6 100%)" }}
 		>
 			<div
-				className="hidden lg:flex w-1/2 flex-col justify-between p-12"
+				className="hidden lg:flex w-1/2 order-2 flex-col justify-between p-12"
 				style={{ background: AUTH_GRADIENT }}
 			>
 				<PlanalitycLogo variant="auth" inverse />
@@ -82,7 +82,7 @@ export default function Login() {
 				<p className="text-sm text-cyan-100/55">{BRAND.copyright()}</p>
 			</div>
 
-			<div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+			<div className="w-full lg:w-1/2 order-1 flex items-center justify-center p-8">
 				<div className="w-full max-w-md">
 					<div className="lg:hidden mb-8">
 						<PlanalitycLogo variant="auth" />

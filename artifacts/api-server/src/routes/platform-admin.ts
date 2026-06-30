@@ -32,8 +32,7 @@ router.post(
       return;
     }
 
-    const auth = req.header("authorization") || "";
-    const token = auth.startsWith("Bearer ") ? auth.slice("Bearer ".length) : "";
+    const token = req.header("x-bootstrap-token") || "";
     if (!token || !secureCompare(token, bootstrapToken)) {
       res.status(403).json({ error: "Forbidden" });
       return;

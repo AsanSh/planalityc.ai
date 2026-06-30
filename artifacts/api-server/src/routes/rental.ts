@@ -32,7 +32,10 @@ import {
 } from "../lib/bank-account-module";
 import { investmentsTable } from "../lib/db";
 import { ensureCounterpartyWithRole } from "../lib/counterparty-sync";
-import { resolveRentalPaymentAccountCredit } from "../lib/rental-payment-fx";
+import {
+  convertPaymentToContractCurrency,
+  resolveRentalPaymentAccountCredit,
+} from "../lib/rental-payment-fx";
 import { resolveCompanyLegalEntityId } from "../lib/settings-catalog-sync";
 import { ensureContractInvoice, ensurePaymentTaxInvoice } from "../lib/document-generators";
 import { syncContractDeposit } from "../lib/sync-contract-deposit";
@@ -1016,7 +1019,17 @@ router.get("/rental/payments", async (req: AuthenticatedRequest, res): Promise<v
 });
 
 router.post("/rental/payments", async (req: AuthenticatedRequest, res): Promise<void> => {
-  const { leaseContractId, amount, currency, paymentDate, paymentMethod, accountId, note, allocations } = req.body;
+  const {
+    leaseContractId,
+    amount,
+    currency,
+    paymentDate,
+    paymentMethod,
+    accountId,
+    note,
+    allocations,
+    exchangeRate: exchangeRateBody,
+  } = req.body;
   if (!leaseContractId || !amount || !currency || !paymentDate) {
     res.status(400).json({ error: "leaseContractId, amount, currency, paymentDate required" });
     return;
@@ -1036,6 +1049,9 @@ router.post("/rental/payments", async (req: AuthenticatedRequest, res): Promise<
 
   const paymentAmount = parseFloat(amount);
   const paymentCurrency = String(currency).toUpperCase();
+  const exchangeRateOverride = exchangeRateBody != null
+    ? parseFloat(String(exchangeRateBody))
+    : undefined;
 
   const [contract] = await db.select({
     id: leaseContractsTable.id,
@@ -1051,9 +1067,10 @@ router.post("/rental/payments", async (req: AuthenticatedRequest, res): Promise<
     return;
   }
   const contractCurrency = String(contract.currency || "KGS").toUpperCase();
-  if (paymentCurrency !== contractCurrency) {
+  const allowedPaymentCurrencies = new Set([contractCurrency, "KGS"]);
+  if (!allowedPaymentCurrencies.has(paymentCurrency)) {
     res.status(400).json({
-      error: `Валюта платежа (${paymentCurrency}) должна совпадать с валютой договора (${contractCurrency})`,
+      error: `Валюта платежа (${paymentCurrency}) должна быть ${contractCurrency} или KGS`,
     });
     return;
   }
@@ -1070,13 +1087,22 @@ router.post("/rental/payments", async (req: AuthenticatedRequest, res): Promise<
   }
   const accountCurrency = String(account.currency || "KGS").toUpperCase();
 
+  let contractFx: Awaited<ReturnType<typeof convertPaymentToContractCurrency>>;
   let fx: Awaited<ReturnType<typeof resolveRentalPaymentAccountCredit>>;
   try {
+    contractFx = await convertPaymentToContractCurrency({
+      paymentAmount,
+      paymentCurrency,
+      contractCurrency,
+      paymentDate: String(paymentDate).slice(0, 10),
+      exchangeRateOverride,
+    });
     fx = await resolveRentalPaymentAccountCredit({
       paymentAmount,
       paymentCurrency,
       accountCurrency,
       paymentDate: String(paymentDate).slice(0, 10),
+      exchangeRateOverride: exchangeRateOverride ?? contractFx.kgsPerUsd,
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Ошибка курса НБКР";
@@ -1085,6 +1111,7 @@ router.post("/rental/payments", async (req: AuthenticatedRequest, res): Promise<
   }
 
   const accountCredit = fx.accountAmount;
+  const contractAmount = contractFx.contractAmount;
 
   // Создаём запись платежа
   const [payment] = await db.insert(paymentsTable).values({
@@ -1101,7 +1128,7 @@ router.post("/rental/payments", async (req: AuthenticatedRequest, res): Promise<
     note: note || null,
   }).returning();
 
-  let remainingAmount = paymentAmount;
+  let remainingAmount = contractAmount;
   const createdAllocations = [];
 
   if (allocations && Array.isArray(allocations) && allocations.length > 0) {
@@ -1194,11 +1221,13 @@ router.post("/rental/payments", async (req: AuthenticatedRequest, res): Promise<
     ...payment,
     allocations: createdAllocations,
     unallocated: remainingAmount,
+    contractCurrency,
+    contractAmount,
     accountCurrency,
     accountAmount: accountCredit,
     exchangeRate: fx.exchangeRate,
     exchangeRateDate: fx.exchangeRateDate,
-    rateWarning: fx.rateWarning,
+    rateWarning: fx.rateWarning ?? contractFx.rateWarning,
   });
 });
 

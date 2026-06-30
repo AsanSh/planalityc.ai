@@ -4,8 +4,6 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 
-const fmt = (n: any) => Math.round(parseFloat(n ?? 0)).toLocaleString("ru-KG");
-
 export default function ContractorPortal({ previewContractorId }: { previewContractorId?: number } = {}) {
 	const { user, logout } = useAuth();
 	const { toast } = useToast();
@@ -86,9 +84,14 @@ export default function ContractorPortal({ previewContractorId }: { previewContr
 			dashSubtitle="Обзор договора подряда и расчётов."
 			currency={currency}
 			kpis={[
-				{ label: "Сумма договора", value: `${fmt(summary.contractAmount)} ${currency}` },
-				{ label: "Оплачено", value: `${fmt(summary.paidAmount)} ${currency}`, positive: true },
-				{ label: "Остаток", value: `${fmt(summary.outstanding)} ${currency}` },
+				{ label: "Сумма договора", amount: parseFloat(summary.contractAmount || 0), native: currency },
+				{ label: "Оплачено", amount: parseFloat(summary.paidAmount || 0), native: currency, positive: true },
+				{ label: "Остаток по договору", amount: parseFloat(summary.outstanding || 0), native: currency },
+			]}
+			stats={[
+				{ label: "Статус договора", value: parseFloat(summary.outstanding || 0) <= 0 ? "Закрыт" : "Открыт" },
+				{ label: "Оплачено", value: `${summary.contractAmount ? Math.round((parseFloat(summary.paidAmount || 0) / parseFloat(summary.contractAmount)) * 100) : 0}%` },
+				{ label: "Платежей проведено", value: String(lines.length) },
 			]}
 			aiTip="Закрывающие документы и акты выполненных работ ускоряют оплату по договору подряда."
 			contractsTitle="Мой договор"
@@ -97,8 +100,9 @@ export default function ContractorPortal({ previewContractorId }: { previewContr
 				{
 					title: summary.contractNumber ? `Договор №${summary.contractNumber}` : "Договор подряда",
 					sub: contractor?.fullName,
-					amount: `${fmt(summary.contractAmount)} ${currency}`,
-					status: summary.status,
+					amount: parseFloat(summary.contractAmount || 0),
+					amountNative: currency,
+					status: parseFloat(summary.outstanding || 0) <= 0 ? "Закрыт" : "Открыт",
 				},
 			]}
 			ledger={ledger}

@@ -17,16 +17,14 @@ import {
 	PortalShell,
 	type PortalNavItem,
 } from "@/components/portal/portal-shell";
+import { PortalCurrencyProvider, usePortalCurrency } from "@/lib/portal-currency";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
-function fmt(n: any) {
-	const num = parseFloat(n ?? 0);
-	return num.toLocaleString("ru-KG", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}
 function fmtDate(d: string) {
 	if (!d) return "—";
-	return new Date(d).toLocaleDateString("ru-KG", { day: "2-digit", month: "2-digit", year: "numeric" });
+	const t = new Date(d);
+	return Number.isNaN(t.getTime()) ? "—" : t.toLocaleDateString("ru-KG", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 const NAV: PortalNavItem[] = [
@@ -39,14 +37,9 @@ const NAV: PortalNavItem[] = [
 	{ id: "profile", label: "Профиль", icon: UserRound },
 ];
 
-/** Лёгкий SVG-график «История стоимости». */
 function AreaChart({ points }: { points: { value: number }[] }) {
 	if (points.length < 2) {
-		return (
-			<div className="flex h-44 items-center justify-center text-sm text-gray-400">
-				Недостаточно данных для графика
-			</div>
-		);
+		return <div className="flex h-44 items-center justify-center text-sm text-gray-400">Недостаточно данных для графика</div>;
 	}
 	const w = 720;
 	const h = 200;
@@ -70,17 +63,24 @@ function AreaChart({ points }: { points: { value: number }[] }) {
 	);
 }
 
-export default function InvestorPortal({ previewInvestorId }: { previewInvestorId?: number } = {}) {
+export default function InvestorPortal(props: { previewInvestorId?: number } = {}) {
+	return (
+		<PortalCurrencyProvider>
+			<InvestorPortalInner {...props} />
+		</PortalCurrencyProvider>
+	);
+}
+
+function InvestorPortalInner({ previewInvestorId }: { previewInvestorId?: number } = {}) {
 	const { user, logout } = useAuth();
+	const { fmt } = usePortalCurrency();
 	const isPreview = !!previewInvestorId;
 	const [section, setSection] = useState("dashboard");
 
 	const { data, isLoading } = useQuery<any>({
 		queryKey: isPreview ? ["portal-investor-preview", previewInvestorId] : ["portal-investor-me"],
 		queryFn: () =>
-			api
-				.get(isPreview ? `/portal/investor/preview/${previewInvestorId}` : "/portal/investor/me")
-				.then((r) => r.data),
+			api.get(isPreview ? `/portal/investor/preview/${previewInvestorId}` : "/portal/investor/me").then((r) => r.data),
 		staleTime: 60_000,
 		refetchOnWindowFocus: false,
 		retry: 1,
@@ -91,8 +91,15 @@ export default function InvestorPortal({ previewInvestorId }: { previewInvestorI
 	const distributions: any[] = data?.distributions ?? [];
 	const currency = investments[0]?.currency ?? "KGS";
 
+	const shareByProperty = useMemo(() => {
+		const m = new Map<number, number>();
+		investments.forEach((i) => m.set(i.propertyId, parseFloat(i.sharePercent || 0) / 100));
+		return m;
+	}, [investments]);
+	const payoutOf = (d: any) => parseFloat(d.netProfit ?? d.amount ?? 0) * (shareByProperty.get(d.propertyId) ?? 0);
+
 	const totalInvested = investments.reduce((s, i) => s + parseFloat(i.capitalInvested || 0), 0);
-	const totalReceived = distributions.reduce((s, d) => s + parseFloat(d.amount || 0), 0);
+	const totalReceived = distributions.reduce((s, d) => s + payoutOf(d), 0);
 	const roi = totalInvested > 0 ? (totalReceived / totalInvested) * 100 : 0;
 	const balance = totalInvested - totalReceived;
 
@@ -110,10 +117,10 @@ export default function InvestorPortal({ previewInvestorId }: { previewInvestorI
 				received: 0,
 			})),
 			...distributions.map((d) => ({
-				date: d.date || d.distributedAt || d.createdAt,
-				label: d.description || "Выплата дохода",
+				date: d.distributedAt || d.createdAt,
+				label: d.period ? `Выплата · ${d.period}` : "Выплата дохода",
 				invested: 0,
-				received: parseFloat(d.amount || 0),
+				received: payoutOf(d),
 			})),
 		].sort((a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime());
 		let run = 0;
@@ -121,9 +128,9 @@ export default function InvestorPortal({ previewInvestorId }: { previewInvestorI
 			run += r.invested - r.received;
 			return { ...r, balance: run };
 		});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [investments, distributions]);
 
-	// Кумулятивная стоимость портфеля по датам для графика
 	const valueSeries = useMemo(() => {
 		let run = 0;
 		return investments
@@ -160,7 +167,7 @@ export default function InvestorPortal({ previewInvestorId }: { previewInvestorI
 
 	return (
 		<PortalShell
-			brandSub="Клиентский портал"
+			brandSub="Портал инвестора"
 			userName={userName}
 			isPreview={isPreview}
 			onLogout={logout}
@@ -172,16 +179,9 @@ export default function InvestorPortal({ previewInvestorId }: { previewInvestorI
 				<>
 					<PortalPageTitle title={`Добрый день, ${firstName}`} subtitle="Обзор вашего инвестиционного портфеля." />
 					<div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
-						<PortalKpi icon={Wallet} label="Стоимость портфеля" value={`${fmt(totalInvested)} ${currency}`} sub={`${investments.length} объект(а)`} />
-						<PortalKpi
-							icon={TrendingUp}
-							label="Рост портфеля"
-							value={`+${roi.toFixed(1)}%`}
-							valueClassName="text-emerald-600"
-							sub={`+${fmt(totalReceived)} ${currency}`}
-							subClassName="text-emerald-600"
-						/>
-						<PortalKpi icon={Wallet} label="Получено выплат" value={`${fmt(totalReceived)} ${currency}`} sub={`${distributions.length} транзакций`} />
+						<PortalKpi icon={Wallet} label="Стоимость портфеля" value={fmt(totalInvested, currency)} sub={`${investments.length} объект(а)`} />
+						<PortalKpi icon={TrendingUp} label="Рост портфеля" value={`+${roi.toFixed(1)}%`} valueClassName="text-emerald-600" sub={`+${fmt(totalReceived, currency)}`} subClassName="text-emerald-600" />
+						<PortalKpi icon={Wallet} label="Получено выплат" value={fmt(totalReceived, currency)} sub={`${distributions.length} транзакций`} />
 						<PortalKpi icon={Building2} label="Объектов" value={`${investments.length}`} sub="в портфеле" />
 					</div>
 
@@ -196,17 +196,15 @@ export default function InvestorPortal({ previewInvestorId }: { previewInvestorI
 					<h2 className="mb-3 mt-8 font-serif text-xl font-bold text-slate-900">Последние операции</h2>
 					<div className="space-y-3">
 						{distributions.length === 0 && (
-							<div className="rounded-2xl border border-gray-200/80 bg-white py-10 text-center text-sm text-gray-400">
-								Операций пока нет
-							</div>
+							<div className="rounded-2xl border border-gray-200/80 bg-white py-10 text-center text-sm text-gray-400">Операций пока нет</div>
 						)}
 						{distributions.slice(0, 5).map((d, idx) => (
 							<div key={d.id ?? idx} className="flex items-center justify-between rounded-2xl border border-gray-200/80 bg-white px-5 py-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
 								<div>
-									<p className="font-semibold text-slate-900">{d.description || "Выплата дохода"}</p>
-									<p className="mt-0.5 text-xs text-gray-400">{fmtDate(d.date || d.distributedAt || "")}</p>
+									<p className="font-semibold text-slate-900">{d.period ? `Выплата · ${d.period}` : "Выплата дохода"}</p>
+									<p className="mt-0.5 text-xs text-gray-400">{fmtDate(d.distributedAt || d.createdAt || "")}</p>
 								</div>
-								<p className="font-bold text-slate-900">+{fmt(d.amount)} {d.currency || currency}</p>
+								<p className="font-bold text-emerald-600">+{fmt(payoutOf(d), currency)}</p>
 							</div>
 						))}
 					</div>
@@ -218,9 +216,7 @@ export default function InvestorPortal({ previewInvestorId }: { previewInvestorI
 					<PortalPageTitle title="Мои объекты" subtitle="Управляйте вашим портфелем недвижимости." />
 					<div className="space-y-4">
 						{investments.length === 0 && (
-							<div className="rounded-2xl border border-gray-200/80 bg-white py-12 text-center text-sm text-gray-400">
-								Объектов пока нет
-							</div>
+							<div className="rounded-2xl border border-gray-200/80 bg-white py-12 text-center text-sm text-gray-400">Объектов пока нет</div>
 						)}
 						{investments.map((inv, idx) => {
 							const share = totalInvested > 0 ? (parseFloat(inv.capitalInvested || 0) / totalInvested) * 100 : 0;
@@ -235,12 +231,10 @@ export default function InvestorPortal({ previewInvestorId }: { previewInvestorI
 									</div>
 									<div className="flex flex-col justify-center gap-3 p-6">
 										<div className="flex items-center justify-between border-b border-gray-100 pb-3">
-											<div className="flex items-center gap-2">
-												<span className="font-bold text-slate-900">Доля {inv.sharePercent ?? 0}%</span>
-											</div>
+											<span className="font-bold text-slate-900">Доля {inv.sharePercent ?? 0}%</span>
 											<div className="text-right">
 												<p className="text-xs text-gray-400">Вложено</p>
-												<p className="font-bold text-slate-900">{fmt(inv.capitalInvested)} {inv.currency || currency}</p>
+												<p className="font-bold text-slate-900">{fmt(inv.capitalInvested, inv.currency || currency)}</p>
 											</div>
 										</div>
 										<div className="flex items-center justify-between text-sm">
@@ -258,27 +252,19 @@ export default function InvestorPortal({ previewInvestorId }: { previewInvestorI
 			{section === "finance" && (
 				<>
 					<PortalPageTitle title="Финансы" subtitle="Вложения, выплаты и акт сверки." />
-					<div className="mb-5">
-						<PortalAiTip>
-							{balance > 0
-								? "Часть тела инвестиций ещё не возвращена выплатами — следите за графиком распределений."
-								: "Все вложения покрыты выплатами. Рассмотрите новые объекты в каталоге."}
-						</PortalAiTip>
-					</div>
-
 					<div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
 						<div className="grid gap-6 sm:grid-cols-3">
 							<div>
 								<p className="text-sm text-gray-500">Вложено</p>
-								<p className="mt-1 text-2xl font-bold text-slate-900">{fmt(totalInvested)} {currency}</p>
+								<p className="mt-1 text-2xl font-bold text-slate-900">{fmt(totalInvested, currency)}</p>
 							</div>
 							<div>
 								<p className="text-sm text-gray-500">Получено</p>
-								<p className="mt-1 text-2xl font-bold text-emerald-600">{fmt(totalReceived)} {currency}</p>
+								<p className="mt-1 text-2xl font-bold text-emerald-600">{fmt(totalReceived, currency)}</p>
 							</div>
 							<div>
 								<p className="text-sm text-gray-500">Сальдо</p>
-								<p className="mt-1 text-2xl font-bold text-slate-900">{fmt(balance)} {currency}</p>
+								<p className="mt-1 text-2xl font-bold text-slate-900">{fmt(balance, currency)}</p>
 							</div>
 						</div>
 						<div className="mt-5">
@@ -313,9 +299,9 @@ export default function InvestorPortal({ previewInvestorId }: { previewInvestorI
 										<tr key={idx} className="hover:bg-gray-50/80">
 											<td className="whitespace-nowrap px-5 py-3 text-gray-600">{fmtDate(r.date || "")}</td>
 											<td className="px-5 py-3 text-slate-800">{r.label}</td>
-											<td className="px-5 py-3 text-right text-slate-900">{r.invested ? fmt(r.invested) : "—"}</td>
-											<td className="px-5 py-3 text-right text-emerald-600">{r.received ? fmt(r.received) : "—"}</td>
-											<td className="whitespace-nowrap px-5 py-3 text-right font-semibold text-slate-900">{fmt(r.balance)}</td>
+											<td className="px-5 py-3 text-right text-slate-900">{r.invested ? fmt(r.invested, currency) : "—"}</td>
+											<td className="px-5 py-3 text-right text-emerald-600">{r.received ? fmt(r.received, currency) : "—"}</td>
+											<td className="whitespace-nowrap px-5 py-3 text-right font-semibold text-slate-900">{fmt(r.balance, currency)}</td>
 										</tr>
 									))}
 								</tbody>
@@ -342,10 +328,10 @@ export default function InvestorPortal({ previewInvestorId }: { previewInvestorI
 						Ориентировочная оценка. Данные носят информационный характер и не являются гарантией доходности.
 					</div>
 					<div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
-						<PortalKpi icon={Wallet} label="Вложено" value={`${fmt(totalInvested)} ${currency}`} />
-						<PortalKpi icon={Wallet} label="Получено" value={`${fmt(totalReceived)} ${currency}`} valueClassName="text-emerald-600" />
-						<PortalKpi icon={TrendingUp} label="Доходность" value={`+${fmt(totalReceived)} ${currency}`} valueClassName="text-emerald-600" />
-						<PortalKpi icon={TrendingUp} label="Рост (%)" value={`+${roi.toFixed(1)}%`} valueClassName="text-emerald-600" />
+						<PortalKpi icon={Wallet} label="Вложено" value={fmt(totalInvested, currency)} />
+						<PortalKpi icon={Wallet} label="Получено" value={fmt(totalReceived, currency)} valueClassName="text-emerald-600" />
+						<PortalKpi icon={TrendingUp} label="Доход" value={`+${fmt(totalReceived, currency)}`} valueClassName="text-emerald-600" />
+						<PortalKpi icon={TrendingUp} label="Доходность" value={`+${roi.toFixed(1)}%`} valueClassName="text-emerald-600" />
 					</div>
 
 					<div className="mt-5 rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
@@ -360,7 +346,7 @@ export default function InvestorPortal({ previewInvestorId }: { previewInvestorI
 								<p className="font-semibold text-slate-900">{inv.propertyName || "Объект"}{inv.propertyUnit ? ` · ${inv.propertyUnit}` : ""}</p>
 								<div className="mt-3 flex items-center justify-between text-sm">
 									<span className="text-gray-500">Вложено</span>
-									<span className="font-bold text-slate-900">{fmt(inv.capitalInvested)} {inv.currency || currency}</span>
+									<span className="font-bold text-slate-900">{fmt(inv.capitalInvested, inv.currency || currency)}</span>
 								</div>
 								<div className="mt-1 flex items-center justify-between text-sm">
 									<span className="text-gray-500">Доля</span>
@@ -374,9 +360,9 @@ export default function InvestorPortal({ previewInvestorId }: { previewInvestorI
 
 			{section === "services" && (
 				<>
-					<PortalPageTitle title="Сервисы" subtitle="Дополнительные возможности портала." />
+					<PortalPageTitle title="Сервисы и предложения" subtitle="Эксклюзивные услуги и новые инвестиционные возможности." />
 					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-						{["Заявки", "Документооборот", "Поддержка", "Уведомления", "Каталог объектов", "Реинвестирование"].map((s) => (
+						{["Новые проекты", "Реинвестирование", "Документооборот", "Поддержка", "Аналитический отчёт", "Налоговая справка"].map((s) => (
 							<div key={s} className="relative rounded-2xl border border-gray-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
 								<span className="absolute right-3 top-3 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">Скоро</span>
 								<LayoutGrid className="h-6 w-6 text-gray-300" />
@@ -389,7 +375,7 @@ export default function InvestorPortal({ previewInvestorId }: { previewInvestorI
 
 			{section === "profile" && (
 				<>
-					<PortalPageTitle title="Профиль" subtitle="Данные инвестора." />
+					<PortalPageTitle title="Мой профиль" subtitle="Ваши персональные данные." />
 					<div className="max-w-lg space-y-2 rounded-2xl border border-gray-200/80 bg-white p-6 text-sm shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
 						<div className="flex justify-between gap-3 border-b border-gray-100 pb-3">
 							<span className="text-gray-500">Имя</span>

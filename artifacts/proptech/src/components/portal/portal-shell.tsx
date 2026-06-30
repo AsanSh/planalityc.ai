@@ -1,13 +1,13 @@
-import { type ElementType, type ReactNode, useState } from "react";
-import { LogOut, Menu, X } from "lucide-react";
+import { type ElementType, type ReactNode } from "react";
+import { LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PortalCurrencyToggle } from "@/lib/portal-currency";
 
 export type PortalNavItem = { id: string; label: string; icon: ElementType };
 
 /**
- * Общий каркас порталов в стиле SmartEstate: белый левый сайдбар с текстовым
- * логотипом + тёплая светлая рабочая область, serif-заголовки, зелёный акцент.
- * Навигация переключает секцию внутри страницы (без роутинга).
+ * Общий каркас порталов в стиле SmartEstate. Десктоп — белый сайдбар слева;
+ * мобильные — меню уезжает вниз (bottom nav). Сверху — переключатель валют.
  */
 export function PortalShell({
 	brandSub = "Клиентский портал",
@@ -28,44 +28,34 @@ export function PortalShell({
 	onNavigate: (id: string) => void;
 	children: ReactNode;
 }) {
-	const [open, setOpen] = useState(false);
-	const activeItem = nav.find((n) => n.id === active);
-
-	const NavList = (
-		<nav className="flex-1 space-y-0.5 px-3">
-			{nav.map((item) => {
-				const Icon = item.icon;
-				const isActive = item.id === active;
-				return (
-					<button
-						key={item.id}
-						type="button"
-						onClick={() => {
-							onNavigate(item.id);
-							setOpen(false);
-						}}
-						className={cn(
-							"flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] transition",
-							isActive
-								? "bg-gray-100 font-semibold text-slate-900"
-								: "text-gray-500 hover:bg-gray-50 hover:text-slate-700",
-						)}
-					>
-						<Icon className={cn("h-[18px] w-[18px] shrink-0", isActive ? "text-slate-700" : "text-gray-400")} />
-						{item.label}
-					</button>
-				);
-			})}
-		</nav>
-	);
-
 	const SidebarInner = (
 		<div className="flex h-full flex-col gap-5 py-6">
 			<div className="px-6">
 				<p className="font-serif text-xl font-bold leading-none text-slate-900">SmartEstate</p>
 				<p className="mt-1.5 text-xs text-gray-400">{brandSub}</p>
 			</div>
-			{NavList}
+			<nav className="flex-1 space-y-0.5 px-3">
+				{nav.map((item) => {
+					const Icon = item.icon;
+					const isActive = item.id === active;
+					return (
+						<button
+							key={item.id}
+							type="button"
+							onClick={() => onNavigate(item.id)}
+							className={cn(
+								"flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] transition",
+								isActive
+									? "bg-gray-100 font-semibold text-slate-900"
+									: "text-gray-500 hover:bg-gray-50 hover:text-slate-700",
+							)}
+						>
+							<Icon className={cn("h-[18px] w-[18px] shrink-0", isActive ? "text-slate-700" : "text-gray-400")} />
+							{item.label}
+						</button>
+					);
+				})}
+			</nav>
 			<div className="mt-auto border-t border-gray-100 px-3 pt-3">
 				{userName && (
 					<p className="truncate px-3 pb-2 text-xs text-gray-400">
@@ -88,44 +78,60 @@ export function PortalShell({
 	);
 
 	return (
-		<div className="min-h-screen bg-[#faf9f7]">
-			{/* Мобильная верхняя панель */}
-			<div className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 lg:hidden">
-				<button type="button" onClick={() => setOpen(true)} className="text-gray-600">
-					<Menu className="h-5 w-5" />
-				</button>
-				<span className="font-serif text-base font-bold text-slate-900">{activeItem?.label}</span>
-				<span className="w-5" />
-			</div>
-
-			<div className="flex w-full">
-				{/* Десктоп-сайдбар */}
-				<aside className="sticky top-0 hidden h-screen w-[230px] shrink-0 border-r border-gray-200 bg-white lg:block">
-					{SidebarInner}
-				</aside>
-
-				{/* Мобильный drawer */}
-				{open && (
-					<div className="fixed inset-0 z-50 lg:hidden">
-						<div className="absolute inset-0 bg-black/30" onClick={() => setOpen(false)} />
-						<aside className="absolute left-0 top-0 h-full w-64 bg-white shadow-xl">
-							<button
-								type="button"
-								onClick={() => setOpen(false)}
-								className="absolute right-3 top-5 text-gray-400"
-							>
-								<X className="h-5 w-5" />
+		<>
+			<div className="min-h-screen bg-[#faf9f7] pb-16 lg:pb-0">
+				{/* Мобильная верхняя панель: бренд + валюта + выход */}
+				<div className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-gray-200 bg-white px-4 lg:hidden">
+					<span className="font-serif text-base font-bold text-slate-900">SmartEstate</span>
+					<div className="flex items-center gap-2">
+						<PortalCurrencyToggle />
+						{!isPreview && onLogout && (
+							<button type="button" onClick={onLogout} aria-label="Выйти" className="text-gray-400">
+								<LogOut className="h-5 w-5" />
 							</button>
-							{SidebarInner}
-						</aside>
+						)}
 					</div>
-				)}
+				</div>
 
-				<main className="min-w-0 flex-1 px-5 py-7 sm:px-8 lg:px-12 lg:py-10">
-					<div className="mx-auto max-w-[1180px]">{children}</div>
-				</main>
+				<div className="flex w-full">
+					<aside className="sticky top-0 hidden h-screen w-[230px] shrink-0 border-r border-gray-200 bg-white lg:block">
+						{SidebarInner}
+					</aside>
+
+					<main className="min-w-0 flex-1">
+						{/* Десктоп: переключатель валют сверху справа */}
+						<div className="sticky top-0 z-20 hidden justify-end border-b border-gray-100 bg-[#faf9f7]/85 px-12 py-3 backdrop-blur lg:flex">
+							<PortalCurrencyToggle />
+						</div>
+						<div className="px-5 py-7 sm:px-8 lg:px-12 lg:py-8">
+							<div className="mx-auto max-w-[1180px]">{children}</div>
+						</div>
+					</main>
+				</div>
+
+				{/* Мобильное меню снизу */}
+				<nav className="fixed bottom-0 left-0 right-0 z-30 flex border-t border-gray-200 bg-white lg:hidden">
+					{nav.map((item) => {
+						const Icon = item.icon;
+						const isActive = item.id === active;
+						return (
+							<button
+								key={item.id}
+								type="button"
+								onClick={() => onNavigate(item.id)}
+								className={cn(
+									"flex flex-1 flex-col items-center justify-center gap-0.5 py-2",
+									isActive ? "text-slate-900" : "text-gray-400",
+								)}
+							>
+								<Icon className="h-5 w-5" />
+								<span className="text-[10px] font-medium leading-none">{item.label}</span>
+							</button>
+						);
+					})}
+				</nav>
 			</div>
-		</div>
+		</>
 	);
 }
 
@@ -276,7 +282,7 @@ export function PortalServices({ onRequest }: { onRequest?: (title: string) => v
 	);
 }
 
-/** Блок AI-рекомендации (серый, со «спарклом» и обновлением). */
+/** Блок AI-рекомендации (серый, со «спарклом»). */
 export function PortalAiTip({ children }: { children: ReactNode }) {
 	return (
 		<div className="flex items-start gap-3 rounded-2xl bg-[#f3f3f1] p-5">

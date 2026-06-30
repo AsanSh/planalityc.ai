@@ -4,7 +4,6 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 
-const fmt = (n: any) => Math.round(parseFloat(n ?? 0)).toLocaleString("ru-KG");
 const fmtDate = (d: string) => {
 	if (!d) return "—";
 	const t = new Date(d);
@@ -98,6 +97,13 @@ export default function BuyerPortal({ previewBuyerId }: { previewBuyerId?: numbe
 			onDownload: () => void handleDownload(c.id),
 		}));
 
+	// Прирост стоимости актива (ориентировочно, ~9% годовых от даты договора)
+	const boughtFor = parseFloat(summary.contractAmount || 0);
+	const firstDate = contracts[0]?.contractDate;
+	const yearsHeld = firstDate ? Math.max((Date.now() - new Date(firstDate).getTime()) / (365 * 24 * 3600 * 1000), 0) : 1;
+	const appreciation = Math.min(0.09 * yearsHeld, 0.6);
+	const currentValue = Math.round(boughtFor * (1 + appreciation));
+
 	return (
 		<CounterpartyPortal
 			brandSub="Портал покупателя"
@@ -108,18 +114,20 @@ export default function BuyerPortal({ previewBuyerId }: { previewBuyerId?: numbe
 			dashSubtitle="Обзор вашего договора и платежей."
 			currency={currency}
 			kpis={[
-				{ label: "Сумма договора", value: `${fmt(summary.contractAmount)} ${currency}` },
-				{ label: "Оплачено", value: `${fmt(summary.totalPaid)} ${currency}`, sub: `${payments.length} платежей`, positive: true },
-				{ label: "По графику", value: `${fmt(summary.totalCharged)} ${currency}`, sub: `${accruals.length} начислений` },
-				{ label: "Задолженность", value: `${fmt(summary.outstanding)} ${currency}` },
+				{ label: "Сумма договора", amount: parseFloat(summary.contractAmount || 0), native: currency },
+				{ label: "Оплачено", amount: parseFloat(summary.totalPaid || 0), native: currency, sub: `${payments.length} платежей`, positive: true },
+				{ label: "По графику", amount: parseFloat(summary.totalCharged || 0), native: currency, sub: `${accruals.length} начислений` },
+				{ label: "Задолженность", amount: parseFloat(summary.outstanding || 0), native: currency },
 			]}
-			aiTip="Следующий платёж по договору приближается. Планируйте заранее — это поможет избежать просрочек."
+			growth={{ boughtFor, currentValue, native: currency }}
+			aiTip="Следующий платёж по договору приближается. Планируйте заранее — это поможет избежать просрочек. Стоимость вашего объекта растёт вместе с готовностью дома."
 			contractsTitle="Мои договоры"
 			contractsSubtitle="Договоры купли-продажи и приобретённые объекты."
 			contracts={contracts.map((c) => ({
 				title: `${c.projectName || "Объект"}${c.unitNumber ? ` · ${c.unitNumber}` : ""}`,
 				sub: `№${c.contractNumber} · ${fmtDate(c.contractDate || "")}`,
-				amount: `${fmt(c.totalAmount)} ${currency}`,
+				amount: parseFloat(c.totalAmount || 0),
+				amountNative: currency,
 				status: STATUS[c.status] || c.status,
 			}))}
 			ledger={ledger}

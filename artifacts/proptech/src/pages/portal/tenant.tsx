@@ -82,18 +82,24 @@ export default function TenantPortal({ previewTenantId }: { previewTenantId?: nu
 			dashSubtitle="Обзор вашей аренды и платежей."
 			currency={currency}
 			kpis={[
-				{ label: "Аренда / мес", value: `${fmt(rent)} ${currency}` },
-				{ label: "Начислено", value: `${fmt(totalCharged)} ${currency}`, sub: `${accruals.length} начислений` },
-				{ label: "Оплачено", value: `${fmt(totalPaid)} ${currency}`, sub: `${payments.length} платежей`, positive: true },
-				{ label: "Остаток", value: `${fmt(totalCharged - totalPaid)} ${currency}` },
+				{ label: "Аренда / мес", amount: parseFloat(rent || 0), native: currency },
+				{ label: "Начислено", amount: totalCharged, native: currency, sub: `${accruals.length} начислений` },
+				{ label: "Оплачено", amount: totalPaid, native: currency, sub: `${payments.length} платежей`, positive: true },
+				{ label: "Остаток", amount: totalCharged - totalPaid, native: currency },
+			]}
+			stats={[
+				{ label: "Платежей внесено", value: String(payments.length) },
+				{ label: "Действующих договоров", value: String(contracts.filter((c) => c.status === "active").length) },
+				{ label: "Закрыто начислений", value: `${accruals.length ? Math.round((Math.min(totalPaid, totalCharged) / (totalCharged || 1)) * 100) : 0}%` },
 			]}
 			aiTip="Своевременная оплата аренды формирует положительную историю и доступ к специальным условиям продления."
 			contractsTitle="Мои договоры аренды"
 			contractsSubtitle="Действующие и завершённые договоры."
 			contracts={contracts.map((c) => ({
 				title: `${c.propertyName || "Объект"}${c.propertyUnit ? ` · ${c.propertyUnit}` : ""}`,
-				sub: `№${c.contractNumber} · ${fmtDate(c.startDate)} — ${fmtDate(c.endDate)}`,
-				amount: `${fmt(c.rentAmount)} ${currency}/мес`,
+				sub: `№${c.contractNumber} · ${fmtDate(c.startDate)} — ${fmtDate(c.endDate)} · ${fmt(c.rentAmount)} ${currency}/мес`,
+				amount: parseFloat(c.rentAmount || 0),
+				amountNative: currency,
 				status: STATUS[c.status] || c.status,
 			}))}
 			ledger={ledger}

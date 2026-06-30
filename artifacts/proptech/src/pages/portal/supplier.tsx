@@ -3,8 +3,6 @@ import { CounterpartyPortal, type LedgerInput } from "@/components/portal/counte
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
-const fmt = (n: any) => Math.round(parseFloat(n ?? 0)).toLocaleString("ru-KG");
-
 export default function SupplierPortal({ previewSupplierId }: { previewSupplierId?: number } = {}) {
 	const { user, logout } = useAuth();
 	const isPreview = !!previewSupplierId;
@@ -72,9 +70,14 @@ export default function SupplierPortal({ previewSupplierId }: { previewSupplierI
 			dashSubtitle="Обзор поставок и расчётов."
 			currency={currency}
 			kpis={[
-				{ label: "Поставлено", value: `${fmt(summary.totalSupplied || summary.contractAmount)} ${currency}`, sub: `${deliveries.length} поставок` },
-				{ label: "Оплачено", value: `${fmt(summary.paidAmount)} ${currency}`, sub: `${payments.length} платежей`, positive: true },
-				{ label: "Остаток", value: `${fmt(summary.outstanding)} ${currency}` },
+				{ label: "Поставлено", amount: parseFloat(summary.totalSupplied || summary.contractAmount || 0), native: currency, sub: `${deliveries.length} поставок` },
+				{ label: "Оплачено", amount: parseFloat(summary.paidAmount || 0), native: currency, sub: `${payments.length} платежей`, positive: true },
+				{ label: "Остаток по договору", amount: parseFloat(summary.outstanding || 0), native: currency },
+			]}
+			stats={[
+				{ label: "Статус договора", value: parseFloat(summary.outstanding || 0) <= 0 ? "Закрыт" : "Открыт" },
+				{ label: "Поставок выполнено", value: String(deliveries.length) },
+				{ label: "Оплачено", value: `${summary.contractAmount ? Math.round((parseFloat(summary.paidAmount || 0) / parseFloat(summary.contractAmount)) * 100) : 0}%` },
 			]}
 			aiTip="Своевременное предоставление накладных и счетов ускоряет оплату поставок."
 			contractsTitle="Мой договор поставки"
@@ -83,7 +86,8 @@ export default function SupplierPortal({ previewSupplierId }: { previewSupplierI
 				{
 					title: summary.contractNumber ? `Договор №${summary.contractNumber}` : "Договор поставки",
 					sub: supplierName,
-					amount: `${fmt(summary.contractAmount)} ${currency}`,
+					amount: parseFloat(summary.contractAmount || 0),
+					amountNative: currency,
 					status: summary.isActive === false ? "Завершён" : "Активен",
 				},
 			]}

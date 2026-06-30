@@ -19,21 +19,22 @@ import {
 	PortalShell,
 	type PortalNavItem,
 } from "@/components/portal/portal-shell";
+import { PortalCurrencyProvider, usePortalCurrency } from "@/lib/portal-currency";
 
-export type LedgerInput = { date: string; label: string; charged: number; paid: number };
-export type PortalKpiInput = { label: string; value: string; sub?: string; positive?: boolean };
+export type LedgerInput = { date: string; label: string; charged: number; paid: number; currency?: string };
+export type PortalKpiInput = { label: string; amount?: number; native?: string; text?: string; sub?: string; positive?: boolean };
 export type PortalContractInput = {
 	title: string;
 	sub?: string;
-	amount?: string;
+	amount?: number;
+	amountNative?: string;
 	status?: string;
 	icon?: ReactNode;
 };
 export type PortalDocInput = { label: string; sub?: string; onDownload?: () => void };
+export type PortalGrowth = { boughtFor: number; currentValue: number; native: string };
+export type PortalStat = { label: string; value: string };
 
-function fmt(n: number) {
-	return Math.round(n).toLocaleString("ru-KG");
-}
 function fmtDate(d: string) {
 	if (!d) return "—";
 	const t = new Date(d);
@@ -51,9 +52,18 @@ const NAV: PortalNavItem[] = [
 
 /**
  * Единый портал «финансового контрагента» (арендатор / подрядчик / поставщик /
- * покупатель) в стиле SmartEstate. Данные нормализуются вызывающей страницей.
+ * покупатель) в стиле SmartEstate. Суммы — сырые числа, форматируются по
+ * выбранной валюте. Данные нормализуются вызывающей страницей.
  */
-export function CounterpartyPortal({
+export function CounterpartyPortal(props: Parameters<typeof CounterpartyPortalInner>[0]) {
+	return (
+		<PortalCurrencyProvider>
+			<CounterpartyPortalInner {...props} />
+		</PortalCurrencyProvider>
+	);
+}
+
+function CounterpartyPortalInner({
 	brandSub,
 	userName,
 	isPreview,
@@ -63,6 +73,8 @@ export function CounterpartyPortal({
 	currency,
 	kpis,
 	aiTip,
+	growth,
+	stats,
 	contractsTitle = "Мои договоры",
 	contractsSubtitle,
 	contracts,
@@ -80,6 +92,8 @@ export function CounterpartyPortal({
 	currency: string;
 	kpis: PortalKpiInput[];
 	aiTip: ReactNode;
+	growth?: PortalGrowth;
+	stats?: PortalStat[];
 	contractsTitle?: string;
 	contractsSubtitle?: string;
 	contracts: PortalContractInput[];
@@ -89,20 +103,20 @@ export function CounterpartyPortal({
 	profile: { name: string; phone?: string; email?: string; badges?: string[] };
 }) {
 	const [section, setSection] = useState("dashboard");
+	const { fmt } = usePortalCurrency();
 
 	const totalCharged = ledger.reduce((s, r) => s + r.charged, 0);
 	const totalPaid = ledger.reduce((s, r) => s + r.paid, 0);
 	const balance = totalCharged - totalPaid;
 	const progress = totalCharged > 0 ? Math.min((totalPaid / totalCharged) * 100, 100) : 0;
+	const growthPct = growth && growth.boughtFor > 0 ? ((growth.currentValue - growth.boughtFor) / growth.boughtFor) * 100 : 0;
 
 	const sortedLedger = useMemo(() => {
-		const rows = ledger
-			.slice()
-			.sort((a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime());
+		const rows = ledger.slice().sort((a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime());
 		let run = 0;
 		return rows.map((r) => {
 			run += r.charged - r.paid;
-			return { ...r, balance: run };
+			return { ...r, balanceRun: run };
 		});
 	}, [ledger]);
 
@@ -128,19 +142,51 @@ export function CounterpartyPortal({
 			{section === "dashboard" && (
 				<>
 					<PortalPageTitle title={`Добрый день, ${greetingName}`} subtitle={dashSubtitle} />
-					<div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
+					<div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
 						{kpis.map((k) => (
 							<PortalKpi
 								key={k.label}
 								icon={Wallet}
 								label={k.label}
-								value={k.value}
+								value={k.text ?? fmt(k.amount ?? 0, k.native ?? currency)}
 								sub={k.sub}
 								valueClassName={k.positive ? "text-emerald-600" : "text-slate-900"}
 								subClassName={k.positive ? "text-emerald-600" : "text-gray-400"}
 							/>
 						))}
 					</div>
+
+					{growth && (
+						<div className="mt-5 rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+							<p className="font-serif text-lg font-bold text-slate-900">Стоимость вашего актива</p>
+							<div className="mt-4 grid gap-6 sm:grid-cols-3">
+								<div>
+									<p className="text-sm text-gray-500">Приобретено за</p>
+									<p className="mt-1 text-xl font-bold text-slate-900">{fmt(growth.boughtFor, growth.native)}</p>
+								</div>
+								<div>
+									<p className="text-sm text-gray-500">Текущая оценка</p>
+									<p className="mt-1 text-xl font-bold text-emerald-600">{fmt(growth.currentValue, growth.native)}</p>
+								</div>
+								<div>
+									<p className="text-sm text-gray-500">Прирост</p>
+									<p className="mt-1 text-xl font-bold text-emerald-600">+{growthPct.toFixed(1)}%</p>
+								</div>
+							</div>
+							<p className="mt-3 text-xs text-gray-400">Оценка ориентировочная и носит информационный характер.</p>
+						</div>
+					)}
+
+					{stats && stats.length > 0 && (
+						<div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+							{stats.map((s) => (
+								<div key={s.label} className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+									<p className="text-sm text-gray-500">{s.label}</p>
+									<p className="mt-1.5 text-xl font-bold text-slate-900">{s.value}</p>
+								</div>
+							))}
+						</div>
+					)}
 
 					<div className="mt-5">
 						<PortalAiTip>{aiTip}</PortalAiTip>
@@ -159,7 +205,7 @@ export function CounterpartyPortal({
 									<p className="font-semibold text-slate-900">{r.label}</p>
 									<p className="mt-0.5 text-xs text-gray-400">{fmtDate(r.date)}</p>
 								</div>
-								<p className="font-bold text-emerald-600">+{fmt(r.paid)} {currency}</p>
+								<p className="font-bold text-emerald-600">+{fmt(r.paid, r.currency ?? currency)}</p>
 							</div>
 						))}
 					</div>
@@ -184,10 +230,10 @@ export function CounterpartyPortal({
 									<p className="font-bold text-slate-900">{c.title}</p>
 									{c.sub && <p className="text-xs text-gray-400">{c.sub}</p>}
 								</div>
-								{c.amount && (
+								{c.amount != null && (
 									<div className="text-right">
 										<p className="text-xs text-gray-400">Сумма</p>
-										<p className="font-bold text-slate-900">{c.amount}</p>
+										<p className="font-bold text-slate-900">{fmt(c.amount, c.amountNative ?? currency)}</p>
 									</div>
 								)}
 								{c.status && (
@@ -206,15 +252,15 @@ export function CounterpartyPortal({
 						<div className="grid gap-6 sm:grid-cols-3">
 							<div>
 								<p className="text-sm text-gray-500">{summaryLabels.charged}</p>
-								<p className="mt-1 text-2xl font-bold text-slate-900">{fmt(totalCharged)} {currency}</p>
+								<p className="mt-1 text-2xl font-bold text-slate-900">{fmt(totalCharged, currency)}</p>
 							</div>
 							<div>
 								<p className="text-sm text-gray-500">{summaryLabels.paid}</p>
-								<p className="mt-1 text-2xl font-bold text-emerald-600">{fmt(totalPaid)} {currency}</p>
+								<p className="mt-1 text-2xl font-bold text-emerald-600">{fmt(totalPaid, currency)}</p>
 							</div>
 							<div>
 								<p className="text-sm text-gray-500">{summaryLabels.balance}</p>
-								<p className="mt-1 text-2xl font-bold text-slate-900">{fmt(balance)} {currency}</p>
+								<p className="mt-1 text-2xl font-bold text-slate-900">{fmt(balance, currency)}</p>
 							</div>
 						</div>
 						<div className="mt-5">
@@ -249,9 +295,9 @@ export function CounterpartyPortal({
 										<tr key={idx} className="hover:bg-gray-50/80">
 											<td className="whitespace-nowrap px-5 py-3 text-gray-600">{fmtDate(r.date)}</td>
 											<td className="px-5 py-3 text-slate-800">{r.label}</td>
-											<td className="px-5 py-3 text-right text-slate-900">{r.charged ? fmt(r.charged) : "—"}</td>
-											<td className="px-5 py-3 text-right text-emerald-600">{r.paid ? fmt(r.paid) : "—"}</td>
-											<td className="whitespace-nowrap px-5 py-3 text-right font-semibold text-slate-900">{fmt(r.balance)}</td>
+											<td className="px-5 py-3 text-right text-slate-900">{r.charged ? fmt(r.charged, r.currency ?? currency) : "—"}</td>
+											<td className="px-5 py-3 text-right text-emerald-600">{r.paid ? fmt(r.paid, r.currency ?? currency) : "—"}</td>
+											<td className="whitespace-nowrap px-5 py-3 text-right font-semibold text-slate-900">{fmt(r.balanceRun, currency)}</td>
 										</tr>
 									))}
 								</tbody>

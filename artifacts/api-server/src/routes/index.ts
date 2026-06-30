@@ -46,6 +46,8 @@ const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
+router.use(platformAdminMarketplaceRouter);
+router.use(platformAdminRouter);
 router.use(companiesRouter);
 router.use(usersRouter);
 router.use(counterpartiesRouter);
@@ -82,8 +84,6 @@ router.use(bankAccountsRouter);
 router.use(rolesRouter);
 router.use(warehouseRouter);
 router.use(crmRouter);
-router.use(platformAdminMarketplaceRouter);
-router.use(platformAdminRouter);
 router.use(marketplaceRouter);
 router.use(aiRouter);
 

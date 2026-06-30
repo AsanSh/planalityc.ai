@@ -92,6 +92,7 @@ const EMPTY_FORM: FormState = {
 
 const RENTAL_IMPORT_COLUMNS = [
 	"ОсОО",
+	"Проект",
 	"Адрес",
 	"Номер объекта",
 	"Тип",
@@ -121,6 +122,7 @@ type RentalImportRow = Partial<Record<RentalImportColumn, unknown>>;
 const RENTAL_TEMPLATE_SAMPLE: Record<RentalImportColumn, string | number>[] = [
 	{
 		"ОсОО": "ОсОО \"Бишкек Пропертис\"",
+		"Проект": "БФТ блок А",
 		"Адрес": "г. Бишкек, ул. Залкар 55",
 		"Номер объекта": "101",
 		"Тип": "Офис",

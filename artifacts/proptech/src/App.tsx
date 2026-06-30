@@ -26,6 +26,9 @@ class PageErrorBoundary extends React.Component<
 	render() {
 		if (this.state.error) {
 			const isStaleAssetError = isChunkLoadError(this.state.error);
+			const message = this.state.error.message || "";
+			const isMinifiedReactError = /Minified React error #\d+/i.test(message);
+			const shouldReload = isStaleAssetError || isMinifiedReactError;
 			return (
 				<div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center p-6">
 					<div className="text-4xl">!</div>
@@ -35,16 +38,22 @@ class PageErrorBoundary extends React.Component<
 					<p className="text-sm text-gray-500 max-w-md">
 						{isStaleAssetError
 							? "Версия приложения обновилась. Нажмите кнопку ниже, чтобы загрузить свежие файлы."
+							: isMinifiedReactError
+								? "Похоже, браузер открыл старую версию приложения после обновления. Нажмите кнопку ниже, чтобы загрузить свежую версию."
 							: this.state.error.message}
 					</p>
 					<button
 						onClick={() => {
-							if (reloadForFreshAssets(this.state.error)) return;
+							if (shouldReload) {
+								if (reloadForFreshAssets(this.state.error)) return;
+								window.location.reload();
+								return;
+							}
 							this.setState({ error: null });
 						}}
 						className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
 					>
-						{isStaleAssetError ? "Обновить страницу" : "Попробовать снова"}
+						{shouldReload ? "Обновить страницу" : "Попробовать снова"}
 					</button>
 				</div>
 			);

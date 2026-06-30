@@ -8,13 +8,15 @@ import {
 	Wallet,
 	X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useListProperties } from "@/api-client";
 import { DataTable } from "@/components/data-table";
 import { defaultPeriod, PeriodPicker, type PeriodValue } from "@/components/period-picker";
 import { KpiCard, KpiRow } from "@/components/kpi-card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -62,26 +64,25 @@ async function generateStatement(
 	return res.json();
 }
 
-/** Месяц YYYY-MM для API — только если выбран один календарный месяц. */
+/** YYYY-MM — один календарный месяц для фильтра таблицы через API. */
 function apiMonthFilter(period: PeriodValue): string | undefined {
-	if (period.preset === "month" || period.preset === "prev_month") {
+	if (
+		period.preset === "month" ||
+		period.preset === "prev_month" ||
+		period.preset === "today" ||
+		period.preset === "yesterday"
+	) {
 		return period.from.slice(0, 7);
 	}
-	if (period.from.slice(0, 7) === period.to.slice(0, 7)) {
-		return period.from.slice(0, 7);
-	}
-	return undefined;
-}
-
-/** Месяц для генерации акта (один календарный месяц). */
-function generateMonthFromPeriod(period: PeriodValue): string | null {
 	const fromMonth = period.from.slice(0, 7);
 	const toMonth = period.to.slice(0, 7);
 	if (fromMonth === toMonth) return fromMonth;
-	if (period.preset === "month" || period.preset === "prev_month") {
-		return fromMonth;
-	}
-	return null;
+	return undefined;
+}
+
+function currentMonthISO(): string {
+	const now = new Date();
+	return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function statementPeriodInRange(
@@ -130,9 +131,14 @@ function fmtPeriod(period: string) {
 export default function OwnerStatements() {
 	const [propertyFilter, setPropertyFilter] = useState("all");
 	const [period, setPeriod] = useState<PeriodValue>(defaultPeriod());
+	const [generateMonth, setGenerateMonth] = useState(currentMonthISO);
 	const apiMonth = apiMonthFilter(period);
-	const generateMonth = generateMonthFromPeriod(period);
 	const [isGenerating, setIsGenerating] = useState(false);
+
+	useEffect(() => {
+		const month = apiMonthFilter(period);
+		if (month) setGenerateMonth(month);
+	}, [period]);
 	const [selectedStatement, setSelectedStatement] =
 		useState<OwnerStatement | null>(null);
 	const { data: properties } = useListProperties();
@@ -335,15 +341,6 @@ export default function OwnerStatements() {
 			});
 			return;
 		}
-		if (!generateMonth) {
-			toast({
-				title: "Выберите один месяц",
-				description:
-					"Для формирования акта укажите период в пределах одного календарного месяца",
-				variant: "destructive",
-			});
-			return;
-		}
 		const propertyId = parseInt(propertyFilter, 10);
 		if (
 			statementsArray.some(
@@ -390,6 +387,12 @@ export default function OwnerStatements() {
 		(s, r) => s + parseFloat(String(r.netIncome || 0)),
 		0,
 	);
+
+	const canGenerate = propertyFilter !== "all" && !!generateMonth && !isGenerating;
+	const generateHint =
+		propertyFilter === "all"
+			? "Выберите объект — без этого кнопка «Сформировать акт» недоступна."
+			: `Акт будет сформирован за ${fmtPeriod(generateMonth)} по выбранному объекту. Фильтр периода слева влияет только на таблицу.`;
 
 	return (
 		<div className="space-y-3">
@@ -445,11 +448,27 @@ export default function OwnerStatements() {
 						className="shrink-0"
 					/>
 
+					<div className="flex items-center gap-1.5 shrink-0">
+						<Label
+							htmlFor="statement-generate-month"
+							className="text-xs text-gray-500 whitespace-nowrap"
+						>
+							Месяц акта
+						</Label>
+						<Input
+							id="statement-generate-month"
+							type="month"
+							value={generateMonth}
+							onChange={(e) => setGenerateMonth(e.target.value)}
+							className="h-10 w-[148px] text-sm"
+							title="Месяц для формирования акта"
+							aria-label="Месяц акта"
+						/>
+					</div>
+
 					<Button
 						onClick={handleGenerate}
-						disabled={
-							isGenerating || propertyFilter === "all" || !generateMonth
-						}
+						disabled={isGenerating || !canGenerate}
 						className="h-10 shrink-0 bg-blue-600 hover:bg-blue-700 text-white gap-2"
 					>
 						<RefreshCw
@@ -458,17 +477,11 @@ export default function OwnerStatements() {
 						{isGenerating ? "Формирование..." : "Сформировать акт"}
 					</Button>
 				</div>
-				{propertyFilter === "all" && (
-					<p className="text-xs text-amber-600 mt-2">
-						Для формирования нового акта выберите конкретный объект
-					</p>
-				)}
-				{propertyFilter !== "all" && !generateMonth && (
-					<p className="text-xs text-amber-600 mt-2">
-						Для формирования акта выберите период в пределах одного календарного
-						месяца
-					</p>
-				)}
+				<p
+					className={`text-xs mt-2 ${canGenerate ? "text-gray-500" : "text-amber-600"}`}
+				>
+					{generateHint}
+				</p>
 			</div>
 
 			{isError && (

@@ -316,7 +316,7 @@ export function DateRangePicker({ value, onChange, hideShift, className }: DateR
 				<PopoverTrigger asChild>
 					<button
 						type="button"
-						className={`am-control am-press !h-9 inline-flex items-center gap-2 px-3 min-w-[130px] hover:border-am-border-strong ${hideShift ? "" : "!rounded-none"}`}
+						className={`am-control am-press !h-9 !w-auto inline-flex items-center gap-2 px-3 min-w-[130px] hover:border-am-border-strong ${hideShift ? "" : "!rounded-none"}`}
 					>
 						<CalendarDays className="w-4 h-4 text-am-text-muted" />
 						<span className="text-sm text-am-text-strong flex-1 text-left">{periodLabel(value)}</span>

@@ -378,9 +378,9 @@ export default function Accruals() {
 					onValueChange={setLeaseFilter}
 					leases={leases || []}
 				/>
-				<LegalEntityScopeSelect className="h-9 shrink-0 w-[130px] max-w-[130px] bg-white text-sm" />
+				<LegalEntityScopeSelect className="h-9 shrink-0 !w-[130px] bg-white text-sm" />
 				<Select value={statusFilter} onValueChange={setStatusFilter}>
-					<SelectTrigger className="h-9 shrink-0 w-[120px]">
+					<SelectTrigger className="h-9 shrink-0 !w-[120px]">
 						<SelectValue placeholder="Все статусы" />
 					</SelectTrigger>
 					<SelectContent>
@@ -397,7 +397,7 @@ export default function Accruals() {
 					value={viewMode}
 					onValueChange={(v) => setViewMode(v as "list" | "counterparties")}
 				>
-					<SelectTrigger className="h-9 shrink-0 w-[110px]">
+					<SelectTrigger className="h-9 shrink-0 !w-[110px]">
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>

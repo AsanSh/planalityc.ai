@@ -10,7 +10,6 @@ import {
 	Clock,
 	Receipt,
 	RefreshCw,
-	Users,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -353,22 +352,19 @@ export default function Accruals() {
 				<KpiCard variant="strip" label="Остаток" value={fmtCurrency(filteredBalance)} sub="к оплате" icon={AlertTriangle} color="red" loading={isLoading} />
 			</KpiRow>
 
-			<div className="flex justify-between items-start flex-wrap gap-3">
-				<div>
-					<h1 className="text-2xl font-bold text-gray-900">Начисления</h1>
-					<p className="text-sm text-gray-500 mt-1">
-						Ежемесячные начисления по договорам аренды
-						{pendingCount > 0 && (
-							<span className="ml-2 text-amber-600 font-medium">
-								· {pendingCount} ожидают
-							</span>
-						)}
-					</p>
-				</div>
-				<LegalEntityScopeSelect />
+			<div>
+				<h1 className="text-2xl font-bold text-gray-900">Начисления</h1>
+				<p className="text-sm text-gray-500 mt-1">
+					Ежемесячные начисления по договорам аренды
+					{pendingCount > 0 && (
+						<span className="ml-2 text-amber-600 font-medium">
+							· {pendingCount} ожидают
+						</span>
+					)}
+				</p>
 			</div>
 
-			<div className="flex flex-wrap items-center gap-2 mb-1">
+			<div className="flex flex-nowrap items-center gap-2 mb-1 overflow-x-auto pb-0.5">
 				<PeriodPicker
 					value={period}
 					onChange={setPeriod}
@@ -379,8 +375,9 @@ export default function Accruals() {
 					onValueChange={setLeaseFilter}
 					leases={leases || []}
 				/>
+				<LegalEntityScopeSelect className="h-10 w-[168px] shrink-0 bg-white text-sm" />
 				<Select value={statusFilter} onValueChange={setStatusFilter}>
-					<SelectTrigger className="h-10 w-[168px]">
+					<SelectTrigger className="h-10 w-[168px] shrink-0">
 						<SelectValue placeholder="Все статусы" />
 					</SelectTrigger>
 					<SelectContent>
@@ -397,7 +394,7 @@ export default function Accruals() {
 					value={viewMode}
 					onValueChange={(v) => setViewMode(v as "list" | "counterparties")}
 				>
-					<SelectTrigger className="h-10 w-[168px]">
+					<SelectTrigger className="h-10 w-[168px] shrink-0">
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
@@ -405,13 +402,21 @@ export default function Accruals() {
 						<SelectItem value="counterparties">Контрагенты</SelectItem>
 					</SelectContent>
 				</Select>
+				{viewMode === "counterparties" && (
+					<Input
+						value={groupSearch}
+						onChange={(e) => setGroupSearch(e.target.value)}
+						placeholder="Поиск контрагента…"
+						className="h-10 min-w-[180px] max-w-[240px] shrink-0"
+					/>
+				)}
 				{leaseFilter !== "all" && (
 					<Button
 						variant="outline"
 						size="sm"
 						onClick={handleRecalculate}
 						disabled={recalcLoading}
-						className="h-10 gap-2 text-blue-700 border-blue-300 hover:bg-blue-50"
+						className="h-10 shrink-0 gap-2 text-blue-700 border-blue-300 hover:bg-blue-50"
 					>
 						<RefreshCw
 							className={cn("w-4 h-4", recalcLoading && "animate-spin")}
@@ -419,21 +424,7 @@ export default function Accruals() {
 						{recalcLoading ? "Пересчёт..." : "Пересчитать"}
 					</Button>
 				)}
-				{viewMode === "counterparties" && (
-					<>
-						<Input
-							value={groupSearch}
-							onChange={(e) => setGroupSearch(e.target.value)}
-							placeholder="Поиск контрагента…"
-							className="h-10 w-48"
-						/>
-						<Badge variant="secondary" className="gap-1">
-							<Users className="w-3 h-3" />
-							Все начисления арендатора
-						</Badge>
-					</>
-				)}
-				<span className="ml-auto text-xs text-gray-500">
+				<span className="ml-auto shrink-0 whitespace-nowrap text-xs text-gray-500">
 					{enrichedAccruals.length} записей
 				</span>
 			</div>

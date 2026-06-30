@@ -17,6 +17,7 @@ import {
 	UserRound,
 	Users,
 } from "lucide-react";
+// CheckCircle2 kept — used in Pending Accruals empty state
 import { Link } from "wouter";
 import {
 	useListAccruals,
@@ -268,49 +269,17 @@ export default function RentalDashboard() {
 				quickLinks={rentalQuickLinks}
 			/>
 
-			{/* KPI Row 1 */}
-			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-				<KpiCard
-					label="Активных договоров"
-					value={activeLeases.length}
-					sub={`из ${leasesArray.length} всего`}
-					icon={FileText}
-					color="blue"
-					loading={leasesLoading}
-					href="/rental/contracts"
-				/>
-				<KpiCard
-					label="Арендаторов"
-					value={tenantsArray.filter((t) => t.status === "active").length}
-					sub="активных"
-					icon={Users}
-					color="purple"
-					loading={tenantsLoading}
-					href="/rental/tenants"
-				/>
-				<KpiCard
-					label="Сдаётся объектов"
-					value={rentedProps}
-					sub={`из ${propertiesArray.length} в портфеле`}
-					icon={Building2}
-					color="green"
-					href="/rental/properties"
-				/>
+			{/* Операционная строка: просрочки + начисления */}
+			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				<KpiCard
 					label="Просроченных начислений"
 					value={overdueAccruals.length}
-					sub={
-						overdueAccruals.length > 0 ? "требуют внимания" : "всё в порядке"
-					}
+					sub={overdueAccruals.length > 0 ? "требуют внимания" : "всё в порядке"}
 					icon={AlertTriangle}
 					color={overdueAccruals.length > 0 ? "red" : "green"}
 					loading={accrualsLoading}
 					href="/rental/accruals"
 				/>
-			</div>
-
-			{/* KPI Row 2 - Financial */}
-			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				<KpiCard
 					label="Начислено всего"
 					value={formatCurrency(totalCharged)}
@@ -321,22 +290,12 @@ export default function RentalDashboard() {
 					href="/rental/accruals"
 				/>
 				<KpiCard
-					label="Получено платежей"
-					value={formatCurrency(totalPaid)}
-					sub="за всё время"
-					icon={TrendingUp}
+					label="Сдаётся объектов"
+					value={rentedProps}
+					sub={`из ${propertiesArray.length} в портфеле`}
+					icon={Building2}
 					color="green"
-					loading={paymentsLoading}
-					href="/rental/payments"
-				/>
-				<KpiCard
-					label="Общая задолженность"
-					value={formatCurrency(totalBalance)}
-					sub={totalBalance > 0 ? "к погашению" : "задолженности нет"}
-					icon={totalBalance > 0 ? AlertTriangle : CheckCircle2}
-					color={totalBalance > 0 ? "red" : "green"}
-					loading={accrualsLoading}
-					href="/rental/accruals"
+					href="/rental/properties"
 				/>
 			</div>
 

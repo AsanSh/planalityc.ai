@@ -283,10 +283,10 @@ export default function Settings() {
 			});
 			return;
 		}
-		if (passwordForm.next.length < 6) {
+		if (passwordForm.next.length < 8) {
 			toast({
 				title: "Ошибка",
-				description: "Пароль должен быть не менее 6 символов",
+				description: "Пароль должен быть не менее 8 символов",
 				variant: "destructive",
 			});
 			return;

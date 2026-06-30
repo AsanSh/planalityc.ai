@@ -93,8 +93,8 @@ export default function ConstructionEmployees() {
 			setError("Укажите email");
 			return;
 		}
-		if (!editingId && (!form.password || form.password.length < 6)) {
-			setError("Пароль — минимум 6 символов");
+		if (!editingId && (!form.password || form.password.length < 8)) {
+			setError("Пароль — минимум 8 символов");
 			return;
 		}
 		setSaving(true);

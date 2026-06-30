@@ -136,8 +136,8 @@ export default function UserProfileDropdown() {
 	}
 
 	async function savePassword() {
-		if (!pwForm.password || pwForm.password.length < 6) {
-			setError("Минимум 6 символов");
+		if (!pwForm.password || pwForm.password.length < 8) {
+			setError("Минимум 8 символов");
 			return;
 		}
 		if (pwForm.password !== pwForm.confirm) {

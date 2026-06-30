@@ -17,9 +17,13 @@ let sentryInitialized = false;
 async function ensureSentry(): Promise<void> {
   if (sentryInitialized) return;
   sentryInitialized = true;
-  if (!process.env.SENTRY_DSN) return;
+  if (!process.env.SENTRY_DSN) {
+    if (process.env.NODE_ENV === "production") {
+      logger.warn("SENTRY_DSN is not set — production errors will only appear in Vercel logs. Set SENTRY_DSN in Vercel env vars to enable error tracking.");
+    }
+    return;
+  }
   try {
-    // @ts-ignore — пакет может быть не установлен
     const Sentry = await import("@sentry/node").catch(() => null);
     if (!Sentry) return;
     Sentry.init({
@@ -30,7 +34,7 @@ async function ensureSentry(): Promise<void> {
     sentryClient = Sentry;
     logger.info("Sentry initialized");
   } catch (e) {
-    logger.warn({ err: (e as Error).message }, "Sentry init failed — ошибки будут только в logger");
+    logger.warn({ err: (e as Error).message }, "Sentry init failed — errors will only appear in logger");
   }
 }
 

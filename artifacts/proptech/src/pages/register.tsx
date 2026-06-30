@@ -222,10 +222,10 @@ export default function Register() {
 		}
 
 		// Валидация пароля
-		if (form.password.length < 6) {
+		if (form.password.length < 8) {
 			toast({
 				title: "Ошибка",
-				description: "Пароль должен быть не менее 6 символов",
+				description: "Пароль должен быть не менее 8 символов",
 				variant: "destructive",
 			});
 			return;

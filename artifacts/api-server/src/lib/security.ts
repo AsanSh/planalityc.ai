@@ -85,10 +85,10 @@ export function validatePassword(password: string): {
   valid: boolean;
   error?: string;
 } {
-  if (password.length < 6) {
+  if (password.length < 8) {
     return {
       valid: false,
-      error: 'Пароль должен содержать минимум 6 символов',
+      error: 'Пароль должен содержать минимум 8 символов',
     };
   }
 

@@ -279,9 +279,13 @@ function LeaseFormFields({
 	const { data: properties } = useListRentalProperties();
 	const propertiesArray = Array.isArray(properties) ? properties : [];
 
+	// Показываем все объекты; свободные — первыми, занятые — с пометкой.
 	const availableProperties =
 		mode === "create"
-			? propertiesArray.filter((p) => p.rentalStatus === "free")
+			? [...propertiesArray].sort(
+					(a, b) =>
+						(a.rentalStatus === "free" ? 0 : 1) - (b.rentalStatus === "free" ? 0 : 1),
+				)
 			: propertiesArray;
 
 	const f =
@@ -306,6 +310,7 @@ function LeaseFormFields({
 							{availableProperties.map((p) => (
 								<SelectItem key={p.id} value={String(p.id)}>
 									{p.projectName} {p.unitNumber}
+									{mode === "create" && p.rentalStatus !== "free" ? " · занят" : ""}
 								</SelectItem>
 							))}
 						</SelectContent>

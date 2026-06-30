@@ -386,13 +386,10 @@ export function LeaseContractsTable({
 			footer={
 				!isLoading && data.length > 0 ? (
 					<tr className="border-t-2 bg-gray-50 font-semibold">
-						<td colSpan={columns.length - 2} className="px-3 py-2 text-sm text-gray-600">
-							Итого: {data.length} договоров · активных: {activeCount}
+						<td colSpan={columns.length} className="px-3 py-2 text-sm text-gray-600">
+							Итого: {data.length} договоров · активных: {activeCount} · суммарная
+							аренда: {formatCurrency(totalRent)}
 						</td>
-						<td className="px-3 py-2 text-right text-sm tabular-nums text-gray-700">
-							{formatCurrency(totalRent)}
-						</td>
-						<td />
 					</tr>
 				) : undefined
 			}

@@ -957,6 +957,51 @@ router.post("/rental/accruals/:id/discount", async (req: AuthenticatedRequest, r
   res.json(row);
 });
 
+// DELETE /rental/accruals/:id/discount — отменить применённую льготу
+router.delete("/rental/accruals/:id/discount", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
+  const conditions: SQL[] = [eq(accrualsTable.id, id)];
+  conditions.push(eq(accrualsTable.companyId, req.scopedCompanyId!));
+  if (req.query.legalEntityId) conditions.push(eq(accrualsTable.legalEntityId, parseInt(String(req.query.legalEntityId), 10)));
+
+  const [existing] = await db.select().from(accrualsTable).where(and(...conditions));
+  if (!existing) { res.status(404).json({ error: "Начисление не найдено" }); return; }
+  if (!existing.discountType) { res.status(400).json({ error: "Льгота не применена" }); return; }
+
+  const baseAmount = parseFloat(existing.amount);
+  const paid = parseFloat(existing.paidAmount);
+  let newDueDate = existing.dueDate;
+
+  if (existing.discountType === "grace" && existing.gracePeriodDays) {
+    const due = new Date(existing.dueDate);
+    due.setDate(due.getDate() - existing.gracePeriodDays);
+    newDueDate = due.toISOString().split("T")[0];
+  }
+
+  const newBalance = Math.max(0, baseAmount - paid);
+  let newStatus = existing.status;
+  if (existing.status !== "cancelled") {
+    if (newBalance <= 0) newStatus = "paid";
+    else if (paid > 0) newStatus = "partial";
+    else {
+      const today = new Date().toISOString().split("T")[0];
+      newStatus = newDueDate < today ? "overdue" : "pending";
+    }
+  }
+
+  const [row] = await db.update(accrualsTable).set({
+    discountType: null,
+    discountAmount: null,
+    discountReason: null,
+    gracePeriodDays: null,
+    dueDate: newDueDate,
+    balance: String(newBalance),
+    status: newStatus,
+  }).where(and(...conditions)).returning();
+
+  res.json(row);
+});
+
 // PAYMENTS
 router.get("/rental/payments", async (req: AuthenticatedRequest, res): Promise<void> => {
   const { leaseContractId } = req.query as Record<string, string | undefined>;

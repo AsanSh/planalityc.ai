@@ -20,6 +20,7 @@ import {
 	Receipt,
 	TrendingUp,
 	Undo2,
+	Users,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -52,10 +53,19 @@ import { useToast } from "@/hooks/use-toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { RentalQueryState } from "@/components/rental/rental-query-state";
 import { RentalPaymentFxNote } from "@/components/rental/rental-payment-fx-note";
-import { fmtCurrencyAmount } from "@/lib/nbkr-currency";
+import {
+	fmtRentalCurrency,
+	paymentToContractAmount,
+	pickDefaultRentalAccountId,
+	rentalDisplayCurrency,
+} from "@/lib/rental-currency";
 import { api } from "@/lib/api";
 import { getApiBase } from "@/lib/api-base";
 import { cn } from "@/lib/utils";
+import {
+	TenantPaymentsGroupedView,
+	type EnrichedPayment,
+} from "@/components/rental/tenant-grouped-views";
 
 const methodLabels: Record<string, string> = {
 	cash: "Наличные",
@@ -65,14 +75,8 @@ const methodLabels: Record<string, string> = {
 	other: "Другое",
 };
 
-function fmtCurrency(amount: number | string) {
-	const num = typeof amount === "string" ? parseFloat(amount) : amount;
-	return new Intl.NumberFormat("ru-KG", {
-		style: "currency",
-		currency: "KGS",
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 0,
-	}).format(num);
+function fmtCurrency(amount: number | string, currency = "KGS") {
+	return fmtRentalCurrency(amount, currency);
 }
 
 function formatDate(date: string) {
@@ -94,6 +98,7 @@ interface OpenAccrual {
 	amount: string;
 	balance: string;
 	dueDate: string;
+	currency?: string;
 }
 
 interface PaymentDialogProps {
@@ -118,12 +123,13 @@ function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 	const [formData, setFormData] = useState({
 		leaseContractId: "",
 		amount: "",
-		currency: "KGS",
+		paymentCurrency: "KGS",
 		paymentDate: new Date().toISOString().split("T")[0],
 		paymentMethod: "bank_transfer",
 		accountId: "",
 		note: "",
 	});
+	const [exchangeRate, setExchangeRate] = useState("");
 
 	const [allocationMode, setAllocationMode] = useState<"auto" | "manual">(
 		"auto",
@@ -141,24 +147,28 @@ function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 		() => (Array.isArray(leases) ? leases : []),
 		[leases],
 	);
-	const defaultAccountId = accountsArray[0] ? String(accountsArray[0].id) : "";
-
 	const selectedLease = leasesArray.find(
 		(l) => String(l.id) === formData.leaseContractId,
 	);
 	const contractCurrency = (selectedLease?.currency || "KGS").toUpperCase();
+	const defaultAccountId = accountsArray[0]
+		? pickDefaultRentalAccountId(accountsArray, contractCurrency)
+		: "";
+	const paymentCurrency = formData.paymentCurrency.toUpperCase();
 	const selectedAccount = accountsArray.find(
 		(a) => String(a.id) === formData.accountId,
 	);
 	const accountCurrency = (selectedAccount?.currency || "KGS").toUpperCase();
 
 	useEffect(() => {
-		if (!open || !defaultAccountId) return;
+		if (!open || !formData.leaseContractId) return;
 		setFormData((prev) => ({
 			...prev,
+			paymentCurrency: contractCurrency,
 			accountId: prev.accountId || defaultAccountId,
 		}));
-	}, [open, defaultAccountId]);
+		setExchangeRate("");
+	}, [open, formData.leaseContractId, contractCurrency, defaultAccountId]);
 
 	// Load open accruals for selected contract
 	const { data: openAccruals = [] } = useQuery<OpenAccrual[]>({
@@ -184,12 +194,22 @@ function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 		0,
 	);
 	const paymentAmount = parseFloat(formData.amount) || 0;
+	const kgsPerUsd = parseFloat(exchangeRate) || 0;
+	const contractPaymentAmount =
+		paymentCurrency !== contractCurrency && kgsPerUsd > 0
+			? paymentToContractAmount(
+					paymentAmount,
+					paymentCurrency,
+					contractCurrency,
+					kgsPerUsd,
+				)
+			: paymentAmount;
 
 	const manualTotal = Object.values(manualAllocations).reduce(
 		(s, v) => s + (parseFloat(v) || 0),
 		0,
 	);
-	const unallocated = paymentAmount - manualTotal;
+	const unallocated = contractPaymentAmount - manualTotal;
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -210,12 +230,15 @@ function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 			const body: any = {
 				leaseContractId: parseInt(formData.leaseContractId, 10),
 				amount: parseFloat(formData.amount),
-				currency: contractCurrency,
+				currency: paymentCurrency,
 				paymentDate: formData.paymentDate,
 				paymentMethod: formData.paymentMethod,
 				accountId: parseInt(formData.accountId, 10),
 				note: formData.note || null,
 			};
+			if (paymentCurrency !== contractCurrency && exchangeRate) {
+				body.exchangeRate = parseFloat(exchangeRate);
+			}
 
 			if (
 				allocationMode === "manual" &&
@@ -243,25 +266,22 @@ function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 			const allocCount = result.allocations?.length ?? 0;
 			const unallocAmt = result.unallocated ?? 0;
 			const payAmt = parseFloat(formData.amount);
-			const payLabel = fmtCurrencyAmount(
-				payAmt,
-				contractCurrency === "USD" ? "USD" : "KGS",
-			);
+			const payLabel = fmtRentalCurrency(payAmt, paymentCurrency);
 			let desc = `${payLabel} · распределено по ${allocCount} начислениям`;
 			if (unallocAmt > 0) {
-				desc += ` · нераспред.: ${fmtCurrencyAmount(
+				desc += ` · нераспред.: ${fmtRentalCurrency(
 					unallocAmt,
-					contractCurrency === "USD" ? "USD" : "KGS",
+					contractCurrency,
 				)}`;
 			}
 			if (
 				result.accountAmount != null &&
 				result.accountCurrency &&
-				result.accountCurrency !== contractCurrency
+				result.accountCurrency !== paymentCurrency
 			) {
-				desc += ` · на счёт: ${fmtCurrencyAmount(
+				desc += ` · на счёт: ${fmtRentalCurrency(
 					Number(result.accountAmount),
-					result.accountCurrency === "USD" ? "USD" : "KGS",
+					result.accountCurrency,
 				)}`;
 			}
 
@@ -298,11 +318,14 @@ function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 							value={formData.leaseContractId}
 							onValueChange={(v) => {
 								const lease = leasesArray.find((l) => String(l.id) === v);
+								const cur = (lease?.currency || "KGS").toUpperCase();
 								setFormData({
 									...formData,
 									leaseContractId: v,
-									currency: (lease?.currency || "KGS").toUpperCase(),
+									paymentCurrency: cur,
+									accountId: pickDefaultRentalAccountId(accountsArray, cur),
 								});
+								setExchangeRate("");
 								setManualAllocations({});
 							}}
 						>
@@ -327,7 +350,7 @@ function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 						<div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
 							<p className="text-xs font-semibold text-amber-700 mb-2">
 								Открытые начисления: {openAccrualsArray.length} шт. · долг{" "}
-								{fmtCurrency(totalOpen)}
+								{fmtCurrency(totalOpen, contractCurrency)}
 							</p>
 							<div className="space-y-1">
 								{openAccrualsArray.slice(0, 3).map((a) => (
@@ -337,7 +360,10 @@ function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 									>
 										<span>{a.period}</span>
 										<span className="font-semibold">
-											{fmtCurrency(parseFloat(a.balance))}
+											{fmtCurrency(
+												parseFloat(a.balance),
+												a.currency || contractCurrency,
+											)}
 										</span>
 									</div>
 								))}
@@ -350,11 +376,38 @@ function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 						</div>
 					)}
 
+					{contractCurrency === "USD" ? (
+						<Field label="Валюта платежа">
+							<Select
+								value={paymentCurrency}
+								onValueChange={(v) => {
+									setExchangeRate("");
+									setFormData((prev) => ({
+										...prev,
+										paymentCurrency: v,
+										accountId:
+											v === "USD"
+												? pickDefaultRentalAccountId(accountsArray, "USD")
+												: prev.accountId,
+									}));
+								}}
+							>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="USD">USD (по договору)</SelectItem>
+									<SelectItem value="KGS">KGS (сом)</SelectItem>
+								</SelectContent>
+							</Select>
+						</Field>
+					) : null}
+
 					<FormGrid>
 						<Field
 							label={
 								selectedLease
-									? `Сумма платежа (${contractCurrency})`
+									? `Сумма платежа (${paymentCurrency})`
 									: "Сумма платежа"
 							}
 							required
@@ -363,12 +416,8 @@ function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 							<MoneyInput
 								value={formData.amount}
 								onChange={(v) => setFormData({ ...formData, amount: v })}
-								currency={
-									(contractCurrency === "USD" ? "USD" : "KGS") as
-										| "KGS"
-										| "USD"
-								}
-								placeholder={contractCurrency === "USD" ? "400" : "150 000"}
+								currency={rentalDisplayCurrency(paymentCurrency)}
+								placeholder={paymentCurrency === "USD" ? "400" : "150 000"}
 							/>
 						</Field>
 						<Field label="Дата платежа" required className="col-span-4">
@@ -430,9 +479,12 @@ function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 					{formData.leaseContractId && formData.accountId && paymentAmount > 0 && (
 						<RentalPaymentFxNote
 							paymentAmount={paymentAmount}
-							paymentCurrency={contractCurrency}
+							paymentCurrency={paymentCurrency}
 							accountCurrency={accountCurrency}
+							contractCurrency={contractCurrency}
 							paymentDate={formData.paymentDate}
+							exchangeRate={exchangeRate}
+							onExchangeRateChange={setExchangeRate}
 						/>
 					)}
 
@@ -469,11 +521,12 @@ function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 							{allocationMode === "auto" && (
 								<div className="px-3 py-2.5 bg-blue-50">
 									<p className="text-xs text-blue-700">
-										Платёж {fmtCurrency(paymentAmount)} будет автоматически
-										распределён по старейшим долгам
-										{paymentAmount < totalOpen &&
-											` (остаток ${fmtCurrency(totalOpen - paymentAmount)})`}
-										{paymentAmount >= totalOpen && " — покроет весь долг"}
+										Платёж{" "}
+										{fmtCurrency(contractPaymentAmount, contractCurrency)} будет
+										автоматически распределён по старейшим долгам
+										{contractPaymentAmount < totalOpen &&
+											` (остаток ${fmtCurrency(totalOpen - contractPaymentAmount, contractCurrency)})`}
+										{contractPaymentAmount >= totalOpen && " — покроет весь долг"}
 									</p>
 								</div>
 							)}
@@ -485,7 +538,11 @@ function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 											<div className="flex-1 text-xs">
 												<span className="font-medium">{a.period}</span>
 												<span className="text-gray-600 ml-2">
-													до {fmtCurrency(parseFloat(a.balance))}
+													до{" "}
+													{fmtCurrency(
+														parseFloat(a.balance),
+														a.currency || contractCurrency,
+													)}
 												</span>
 											</div>
 											<Input
@@ -519,7 +576,7 @@ function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 														: "text-emerald-600",
 											)}
 										>
-											{fmtCurrency(unallocated)}
+											{fmtCurrency(unallocated, contractCurrency)}
 										</span>
 									</div>
 									{unallocated < 0 && (
@@ -575,9 +632,11 @@ export default function Payments() {
 	const { toast } = useToast();
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [period, setPeriod] = useState<PeriodValue>(defaultPeriod());
+	const [viewMode, setViewMode] = useState<"list" | "counterparties">("list");
+	const [groupSearch, setGroupSearch] = useState("");
 	const scope = useLegalEntityScope();
 	const handleCancel = async (payment: any) => {
-		if (!confirm(`Отменить платёж ${fmtCurrency(payment.amount)} от ${formatDate(payment.paymentDate)}? Начисление будет восстановлено.`)) return;
+		if (!confirm(`Отменить платёж ${fmtCurrency(payment.amount, payment.currency)} от ${formatDate(payment.paymentDate)}? Начисление будет восстановлено.`)) return;
 		try {
 			const res = await fetch(`${BASE}/rental/payments/${payment.id}`, {
 				method: "DELETE",
@@ -606,40 +665,57 @@ export default function Payments() {
 	// Map: leaseContractId → { contractNumber, tenantName, projectName }
 	const leaseInfo = useMemo(() => {
 		const leasesArray = Array.isArray(leases) ? leases : [];
-		const map: Record<number, { label: string; projectName: string }> = {};
+		const map: Record<
+			number,
+			{ label: string; projectName: string; tenantName: string }
+		> = {};
 		for (const l of leasesArray) {
 			map[l.id] = {
 				label: `${l.contractNumber} — ${l.tenantName || ""}`.trim(),
 				projectName: l.propertyProjectName || "Без проекта",
+				tenantName: l.tenantName || "Без арендатора",
 			};
 		}
 		return map;
 	}, [leases]);
 
 	const paymentsArray = Array.isArray(payments) ? payments : [];
-	const filteredPayments = useMemo(
-		() => paymentsArray.filter((p) => inPeriod(p.paymentDate, period)),
-		[paymentsArray, period],
+	const allEnrichedPayments = useMemo(
+		() =>
+			paymentsArray.map((p) => {
+				const info = leaseInfo[p.leaseContractId];
+				const tenantName = info?.tenantName || "Без арендатора";
+				return {
+					...p,
+					projectName: info?.projectName || "Без проекта",
+					contractLabel:
+						info?.label || `Договор #${p.leaseContractId}`,
+					tenantName,
+					tenantKey: tenantName.toLowerCase(),
+				} satisfies EnrichedPayment;
+			}),
+		[paymentsArray, leaseInfo],
 	);
-	const totalPaid = filteredPayments.reduce(
-		(s, p) => s + (parseFloat(p.amount) || 0),
+	const filteredPayments = useMemo(
+		() =>
+			viewMode === "counterparties"
+				? allEnrichedPayments
+				: allEnrichedPayments.filter((p) => inPeriod(p.paymentDate, period)),
+		[allEnrichedPayments, viewMode, period],
+	);
+	const periodFilteredPayments = useMemo(
+		() => allEnrichedPayments.filter((p) => inPeriod(p.paymentDate, period)),
+		[allEnrichedPayments, period],
+	);
+	const totalPaid = periodFilteredPayments.reduce(
+		(s, p) => s + (parseFloat(String(p.amount)) || 0),
 		0,
 	);
 
-	// Group payments by project name
-	const enrichedPayments = useMemo(
-		() =>
-			filteredPayments.map((p) => ({
-				...p,
-				projectName: leaseInfo[p.leaseContractId]?.projectName || "Без проекта",
-				contractLabel:
-					leaseInfo[p.leaseContractId]?.label || `Договор #${p.leaseContractId}`,
-			})),
-		[filteredPayments, leaseInfo],
-	);
-	type EnrichedPayment = (typeof enrichedPayments)[number];
+	const enrichedPayments = filteredPayments;
+	type EnrichedPaymentRow = (typeof enrichedPayments)[number];
 
-	const tableColumns = useMemo<ColumnDef<EnrichedPayment, unknown>[]>(
+	const tableColumns = useMemo<ColumnDef<EnrichedPaymentRow, unknown>[]>(
 		() => [
 			{
 				id: "projectName",
@@ -675,7 +751,7 @@ export default function Payments() {
 				meta: { exportLabel: "Сумма", align: "right" },
 				cell: ({ row }) => (
 					<span className="font-mono font-semibold text-emerald-600">
-						{fmtCurrency(row.original.amount)}
+						{fmtCurrency(row.original.amount, row.original.currency)}
 					</span>
 				),
 			},
@@ -735,21 +811,61 @@ export default function Payments() {
 			}
 			kpis={
 				<KpiRow>
-					<KpiCard variant="strip" label="Платежей" value={filteredPayments.length} sub="за период" icon={Receipt} color="blue" loading={isLoading} />
+					<KpiCard variant="strip" label="Платежей" value={periodFilteredPayments.length} sub="за период" icon={Receipt} color="blue" loading={isLoading} />
 					<KpiCard variant="strip" label="Получено" value={fmtCurrency(totalPaid)} sub="за период" icon={TrendingUp} color="green" loading={isLoading} />
-					<KpiCard variant="strip" label="Объектов" value={new Set(enrichedPayments.map((p) => p.projectName)).size} sub="с платежами" icon={Building2} color="purple" loading={isLoading} />
-					<KpiCard variant="strip" label="Средний платёж" value={filteredPayments.length ? fmtCurrency(totalPaid / filteredPayments.length) : "—"} sub="за период" icon={Banknote} color="yellow" loading={isLoading} />
+					<KpiCard variant="strip" label="Объектов" value={new Set(periodFilteredPayments.map((p) => p.projectName)).size} sub="с платежами" icon={Building2} color="purple" loading={isLoading} />
+					<KpiCard variant="strip" label="Средний платёж" value={periodFilteredPayments.length ? fmtCurrency(totalPaid / periodFilteredPayments.length) : "—"} sub="за период" icon={Banknote} color="yellow" loading={isLoading} />
 				</KpiRow>
 			}
 			filters={
 				<>
-					<PeriodPicker value={period} onChange={setPeriod} />
+					<PeriodPicker
+						value={period}
+						onChange={setPeriod}
+						className={cn(viewMode === "counterparties" && "opacity-50 pointer-events-none")}
+					/>
+					<Select
+						value={viewMode}
+						onValueChange={(v) => setViewMode(v as "list" | "counterparties")}
+					>
+						<SelectTrigger className="h-9 w-[168px]">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="list">Список</SelectItem>
+							<SelectItem value="counterparties">Контрагенты</SelectItem>
+						</SelectContent>
+					</Select>
+					{viewMode === "counterparties" && (
+						<>
+							<Input
+								value={groupSearch}
+								onChange={(e) => setGroupSearch(e.target.value)}
+								placeholder="Поиск контрагента…"
+								className="h-9 w-48"
+							/>
+							<Badge variant="secondary" className="gap-1">
+								<Users className="w-3 h-3" />
+								Вся история платежей
+							</Badge>
+						</>
+					)}
 					<LegalEntityScopeSelect />
-					<p className="text-xs text-am-text-muted ml-auto">{enrichedPayments.length} записей</p>
+					<p className="text-xs text-am-text-muted ml-auto">
+						{enrichedPayments.length} записей
+					</p>
 				</>
 			}
 		>
 			<RentalQueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
+				{viewMode === "counterparties" ? (
+					<TenantPaymentsGroupedView
+						payments={enrichedPayments}
+						isLoading={isLoading}
+						onCancel={handleCancel}
+						search={groupSearch}
+					/>
+				) : (
 				<Tablo maxHeight="calc(100vh - 320px)"
 					tableId="rental-payments"
 					columns={tableColumns}
@@ -766,10 +882,10 @@ export default function Payments() {
 						</div>
 					}
 					footer={
-						filteredPayments.length > 0 ? (
+						periodFilteredPayments.length > 0 ? (
 							<tr className="bg-am-surface font-semibold border-t border-am-border">
 								<td colSpan={3} className="px-3 py-2 text-sm text-am-text-muted">
-									Итого: {filteredPayments.length}
+									Итого: {periodFilteredPayments.length}
 								</td>
 								<td className="px-3 py-2 font-mono text-right text-emerald-700">
 									{fmtCurrency(totalPaid)}
@@ -779,6 +895,7 @@ export default function Payments() {
 						) : undefined
 					}
 				/>
+				)}
 			</RentalQueryState>
 
 			<PaymentDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />

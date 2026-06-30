@@ -10,6 +10,7 @@ import {
 	Clock,
 	Receipt,
 	RefreshCw,
+	Users,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -31,6 +32,7 @@ import {
 } from "@/components/rental/accrual-components";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -43,6 +45,10 @@ import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { getApiBase } from "@/lib/api-base";
 import { cn } from "@/lib/utils";
+import {
+	TenantAccrualsGroupedView,
+	type EnrichedAccrual,
+} from "@/components/rental/tenant-grouped-views";
 
 const BASE = getApiBase();
 const authHeaders = () => {
@@ -73,6 +79,8 @@ export default function Accruals() {
 	const [discountAccrual, setDiscountAccrual] = useState<Accrual | null>(null);
 	const [quickPayAccrual, setQuickPayAccrual] = useState<Accrual | null>(null);
 	const [recalcLoading, setRecalcLoading] = useState(false);
+	const [viewMode, setViewMode] = useState<"list" | "counterparties">("list");
+	const [groupSearch, setGroupSearch] = useState("");
 	const scope = useLegalEntityScope();
 	const { data: accruals, isLoading } = useQuery<Accrual[]>({
 		queryKey: [...getListAccrualsQueryKey(), scope.queryKeyPart],
@@ -120,18 +128,34 @@ export default function Accruals() {
 		});
 	}, [accruals, leaseFilter, statusFilter, period]);
 
-	const enrichedAccruals = useMemo(
-		() =>
-			filtered.map((a) => {
+	const allEnrichedAccruals = useMemo(() => {
+		const accrualsArray = Array.isArray(accruals) ? accruals : [];
+		return accrualsArray
+			.filter((a) => {
+				if (leaseFilter !== "all" && String(a.leaseContractId) !== leaseFilter)
+					return false;
+				if (statusFilter !== "all" && a.status !== statusFilter) return false;
+				return true;
+			})
+			.map((a) => {
 				const info = leaseInfoMap[a.leaseContractId];
+				const tenantName = info?.tenantName || "Без арендатора";
 				return {
 					...a,
 					projectName: info?.projectName || "Без проекта",
 					contractLabel: info?.label || `#${a.leaseContractId}`,
-					tenantName: info?.tenantName || "",
-				};
-			}),
-		[filtered, leaseInfoMap],
+					tenantName,
+					tenantKey: tenantName.toLowerCase(),
+				} satisfies EnrichedAccrual;
+			});
+	}, [accruals, leaseFilter, statusFilter, leaseInfoMap]);
+
+	const enrichedAccruals = useMemo(
+		() =>
+			viewMode === "counterparties"
+				? allEnrichedAccruals
+				: allEnrichedAccruals.filter((a) => inPeriod(a.dueDate, period)),
+		[allEnrichedAccruals, viewMode, period],
 	);
 	const filteredBalance = filtered.reduce(
 		(s, a) => s + (parseFloat(a.balance) || 0),
@@ -166,9 +190,9 @@ export default function Accruals() {
 		}
 	};
 
-	type EnrichedAccrual = (typeof enrichedAccruals)[number];
+	type EnrichedAccrualRow = (typeof enrichedAccruals)[number];
 
-	const tableColumns = useMemo<ColumnDef<EnrichedAccrual, unknown>[]>(
+	const tableColumns = useMemo<ColumnDef<EnrichedAccrualRow, unknown>[]>(
 		() => [
 			{
 				id: "projectName",
@@ -202,7 +226,9 @@ export default function Accruals() {
 				accessorFn: (row) => parseFloat(row.amount || "0"),
 				meta: { exportLabel: "Сумма", align: "right" },
 				cell: ({ row }) => (
-					<span className="font-mono">{fmtCurrency(parseFloat(row.original.amount))}</span>
+					<span className="font-mono">
+						{fmtCurrency(parseFloat(row.original.amount), row.original.currency)}
+					</span>
 				),
 			},
 			{
@@ -213,7 +239,7 @@ export default function Accruals() {
 				meta: { exportLabel: "Скидка", align: "right" },
 				cell: ({ row }) =>
 					parseFloat(row.original.discountAmount || "0") > 0
-						? `-${fmtCurrency(parseFloat(row.original.discountAmount!))}`
+						? `-${fmtCurrency(parseFloat(row.original.discountAmount!), row.original.currency)}`
 						: "—",
 			},
 			{
@@ -224,7 +250,7 @@ export default function Accruals() {
 				meta: { exportLabel: "Оплачено", align: "right" },
 				cell: ({ row }) => (
 					<span className="font-mono text-emerald-700">
-						{fmtCurrency(parseFloat(row.original.paidAmount))}
+						{fmtCurrency(parseFloat(row.original.paidAmount), row.original.currency)}
 					</span>
 				),
 			},
@@ -238,7 +264,7 @@ export default function Accruals() {
 					<span
 						className={`font-mono font-medium ${parseFloat(row.original.balance) > 0 ? "text-rose-600" : "text-emerald-600"}`}
 					>
-						{fmtCurrency(parseFloat(row.original.balance))}
+						{fmtCurrency(parseFloat(row.original.balance), row.original.currency)}
 					</span>
 				),
 			},
@@ -342,56 +368,94 @@ export default function Accruals() {
 				<LegalEntityScopeSelect />
 			</div>
 
-			<DataTable maxHeight="calc(100vh - 320px)"
+			<div className="flex flex-wrap items-center gap-2 mb-1">
+				<PeriodPicker
+					value={period}
+					onChange={setPeriod}
+					className={cn("shrink-0", viewMode === "counterparties" && "opacity-50 pointer-events-none")}
+				/>
+				<LeaseCombobox
+					value={leaseFilter}
+					onValueChange={setLeaseFilter}
+					leases={leases || []}
+				/>
+				<Select value={statusFilter} onValueChange={setStatusFilter}>
+					<SelectTrigger className="h-10 w-[168px]">
+						<SelectValue placeholder="Все статусы" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="all">Все статусы</SelectItem>
+						<SelectItem value="pending">Ожидает</SelectItem>
+						<SelectItem value="approved">Подтверждено</SelectItem>
+						<SelectItem value="partial">Частично</SelectItem>
+						<SelectItem value="paid">Оплачено</SelectItem>
+						<SelectItem value="overdue">Просрочено</SelectItem>
+						<SelectItem value="cancelled">Отменено</SelectItem>
+					</SelectContent>
+				</Select>
+				<Select
+					value={viewMode}
+					onValueChange={(v) => setViewMode(v as "list" | "counterparties")}
+				>
+					<SelectTrigger className="h-10 w-[168px]">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="list">Список</SelectItem>
+						<SelectItem value="counterparties">Контрагенты</SelectItem>
+					</SelectContent>
+				</Select>
+				{leaseFilter !== "all" && (
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={handleRecalculate}
+						disabled={recalcLoading}
+						className="h-10 gap-2 text-blue-700 border-blue-300 hover:bg-blue-50"
+					>
+						<RefreshCw
+							className={cn("w-4 h-4", recalcLoading && "animate-spin")}
+						/>
+						{recalcLoading ? "Пересчёт..." : "Пересчитать"}
+					</Button>
+				)}
+				{viewMode === "counterparties" && (
+					<>
+						<Input
+							value={groupSearch}
+							onChange={(e) => setGroupSearch(e.target.value)}
+							placeholder="Поиск контрагента…"
+							className="h-10 w-48"
+						/>
+						<Badge variant="secondary" className="gap-1">
+							<Users className="w-3 h-3" />
+							Все начисления арендатора
+						</Badge>
+					</>
+				)}
+				<span className="ml-auto text-xs text-gray-500">
+					{enrichedAccruals.length} записей
+				</span>
+			</div>
+
+			{viewMode === "counterparties" ? (
+				<TenantAccrualsGroupedView
+					accruals={enrichedAccruals}
+					isLoading={isLoading}
+					loadingId={loadingId}
+					onAccept={setQuickPayAccrual}
+					onStatusChange={handleStatusChange}
+					onDiscount={setDiscountAccrual}
+					search={groupSearch}
+				/>
+			) : (
+				<DataTable maxHeight="calc(100vh - 320px)"
 					tableId="rental-accruals"
 					columns={tableColumns}
 					data={enrichedAccruals}
 					isLoading={isLoading}
 					enableSearch
 					searchPlaceholder="Поиск по объекту, договору…"
-					toolbar={
-						<>
-							<PeriodPicker value={period} onChange={setPeriod} className="shrink-0" />
-							<LeaseCombobox
-								value={leaseFilter}
-								onValueChange={setLeaseFilter}
-								leases={leases || []}
-							/>
-							<Select value={statusFilter} onValueChange={setStatusFilter}>
-								<SelectTrigger className="h-10 w-[168px]">
-									<SelectValue placeholder="Все статусы" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="all">Все статусы</SelectItem>
-									<SelectItem value="pending">Ожидает</SelectItem>
-									<SelectItem value="approved">Подтверждено</SelectItem>
-									<SelectItem value="partial">Частично</SelectItem>
-									<SelectItem value="paid">Оплачено</SelectItem>
-									<SelectItem value="overdue">Просрочено</SelectItem>
-									<SelectItem value="cancelled">Отменено</SelectItem>
-								</SelectContent>
-							</Select>
-							{leaseFilter !== "all" && (
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={handleRecalculate}
-									disabled={recalcLoading}
-									className="h-10 gap-2 text-blue-700 border-blue-300 hover:bg-blue-50"
-								>
-									<RefreshCw
-										className={cn("w-4 h-4", recalcLoading && "animate-spin")}
-									/>
-									{recalcLoading ? "Пересчёт..." : "Пересчитать"}
-								</Button>
-							)}
-						</>
-					}
-					toolbarEnd={
-						<span className="px-2 text-xs text-gray-500">
-							{enrichedAccruals.length} записей
-						</span>
-					}
 					initialSorting={[{ id: "dueDate", desc: true }]}
 					emptyState={
 						<div className="py-8 text-center text-sm text-muted-foreground">
@@ -423,6 +487,7 @@ export default function Accruals() {
 						) : undefined
 					}
 				/>
+			)}
 
 			<DiscountDialog
 				accrual={discountAccrual}

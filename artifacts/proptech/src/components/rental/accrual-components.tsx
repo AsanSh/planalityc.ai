@@ -52,6 +52,12 @@ import { getRentalAccountsQueryKey } from "@/lib/rental-query-keys";
 import { cn } from "@/lib/utils";
 import { RentalPaymentFxNote } from "@/components/rental/rental-payment-fx-note";
 import { fmtCurrencyAmount } from "@/lib/nbkr-currency";
+import {
+	fmtRentalCurrency,
+	paymentToContractAmount,
+	pickDefaultRentalAccountId,
+	rentalDisplayCurrency,
+} from "@/lib/rental-currency";
 
 export const statusColors: Record<string, string> = {
 	pending: "bg-amber-100 text-amber-800",
@@ -71,14 +77,8 @@ export const statusLabels: Record<string, string> = {
 	cancelled: "Отменено",
 };
 
-export function fmtCurrency(amount: number | string) {
-	const num = typeof amount === "string" ? parseFloat(amount) : amount;
-	return new Intl.NumberFormat("ru-KG", {
-		style: "currency",
-		currency: "KGS",
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 0,
-	}).format(num);
+export function fmtCurrency(amount: number | string, currency = "KGS") {
+	return fmtRentalCurrency(amount, currency);
 }
 
 export function formatDate(date: string) {
@@ -104,6 +104,24 @@ async function applyDiscount(id: number, body: Record<string, unknown>) {
 	return res.json();
 }
 
+async function cancelDiscount(id: number) {
+	const res = await fetch(`${BASE}/rental/accruals/${id}/discount`, {
+		method: "DELETE",
+		headers: authHeaders(),
+	});
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({}));
+		throw new Error(err.error || "Ошибка отмены льготы");
+	}
+	return res.json();
+}
+
+const discountTypeLabels: Record<string, string> = {
+	percent: "Скидка в процентах",
+	fixed: "Фиксированная скидка",
+	grace: "Отсрочка платежа",
+};
+
 export interface Accrual {
 	id: number;
 	leaseContractId: number;
@@ -117,6 +135,7 @@ export interface Accrual {
 	discountType?: string | null;
 	discountAmount?: string | null;
 	discountReason?: string | null;
+	gracePeriodDays?: number | null;
 }
 
 interface DiscountDialogProps {
@@ -132,8 +151,47 @@ export function DiscountDialog({ accrual, onClose, onSaved }: DiscountDialogProp
 	const [reason, setReason] = useState("");
 	const [graceDays, setGraceDays] = useState("7");
 	const [loading, setLoading] = useState(false);
+	const [cancelling, setCancelling] = useState(false);
+
+	useEffect(() => {
+		if (!accrual) return;
+		setDiscountType("percent");
+		setDiscountValue("");
+		setReason("");
+		setGraceDays("7");
+	}, [accrual?.id]);
 
 	if (!accrual) return null;
+
+	const hasAppliedDiscount =
+		!!accrual.discountType &&
+		(parseFloat(accrual.discountAmount || "0") > 0 ||
+			accrual.discountType === "grace");
+
+	const handleCancelDiscount = async () => {
+		if (
+			!confirm(
+				"Отменить применённую льготу? Сумма и срок начисления будут восстановлены.",
+			)
+		) {
+			return;
+		}
+		setCancelling(true);
+		try {
+			await cancelDiscount(accrual.id);
+			toast({ title: "Льгота отменена" });
+			onSaved();
+			onClose();
+		} catch (err: any) {
+			toast({
+				title: "Ошибка",
+				description: err.message,
+				variant: "destructive",
+			});
+		} finally {
+			setCancelling(false);
+		}
+	};
 
 	const baseAmount = parseFloat(accrual.amount);
 	let preview = 0;
@@ -185,9 +243,49 @@ export function DiscountDialog({ accrual, onClose, onSaved }: DiscountDialogProp
 					</DialogTitle>
 					<DialogDescription>
 						Период {accrual.period} · Сумма:{" "}
-						{fmtCurrency(parseFloat(accrual.amount))}
+						{fmtCurrency(parseFloat(accrual.amount), accrual.currency)}
 					</DialogDescription>
 				</DialogHeader>
+
+				{hasAppliedDiscount && (
+					<div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 space-y-2">
+						<p className="text-xs font-semibold text-emerald-800">
+							Применённая льгота
+						</p>
+						<div className="text-sm text-emerald-900">
+							<span className="font-medium">
+								{discountTypeLabels[accrual.discountType!] ||
+									accrual.discountType}
+							</span>
+							{accrual.discountType === "grace" && accrual.gracePeriodDays ? (
+								<span className="ml-1">
+									· +{accrual.gracePeriodDays} дн. · срок{" "}
+									{formatDate(accrual.dueDate)}
+								</span>
+							) : parseFloat(accrual.discountAmount || "0") > 0 ? (
+								<span className="ml-1 font-mono">
+									· −{fmtCurrency(parseFloat(accrual.discountAmount!))}
+								</span>
+							) : null}
+						</div>
+						{accrual.discountReason && (
+							<p className="text-xs text-emerald-700">
+								Основание: {accrual.discountReason}
+							</p>
+						)}
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							className="h-8 text-rose-700 border-rose-200 hover:bg-rose-50"
+							onClick={handleCancelDiscount}
+							disabled={cancelling || loading}
+						>
+							{cancelling ? "Отмена..." : "Отменить льготу"}
+						</Button>
+					</div>
+				)}
+
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<div>
 						<Label>Тип льготы</Label>
@@ -198,7 +296,7 @@ export function DiscountDialog({ accrual, onClose, onSaved }: DiscountDialogProp
 							<SelectContent>
 								<SelectItem value="percent">Скидка в процентах (%)</SelectItem>
 								<SelectItem value="fixed">
-									Фиксированная скидка (сом)
+									Фиксированная скидка ({accrual.currency || "KGS"})
 								</SelectItem>
 								<SelectItem value="grace">Отсрочка платежа (дней)</SelectItem>
 							</SelectContent>
@@ -240,8 +338,8 @@ export function DiscountDialog({ accrual, onClose, onSaved }: DiscountDialogProp
 							/>
 							{preview > 0 && (
 								<p className="text-xs text-emerald-600 font-medium mt-1">
-									Скидка: {fmtCurrency(preview)} → итог:{" "}
-									{fmtCurrency(Math.max(0, baseAmount - preview))}
+									Скидка: {fmtCurrency(preview, accrual.currency)} → итог:{" "}
+									{fmtCurrency(Math.max(0, baseAmount - preview), accrual.currency)}
 								</p>
 							)}
 						</div>
@@ -257,12 +355,11 @@ export function DiscountDialog({ accrual, onClose, onSaved }: DiscountDialogProp
 						/>
 					</div>
 
-					{accrual.discountType && (
+					{hasAppliedDiscount && (
 						<div className="flex items-start gap-2 text-xs bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
 							<AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
 							<span className="text-amber-700">
-								Ранее уже применена льгота типа «{accrual.discountType}». Она
-								будет заменена.
+								Новая льгота заменит текущую.
 							</span>
 						</div>
 					)}
@@ -422,12 +519,16 @@ export function QuickPayDialog({
 		new Date().toISOString().split("T")[0],
 	);
 	const [paymentMethod, setPaymentMethod] = useState("cash");
+	const [paymentCurrency, setPaymentCurrency] = useState("KGS");
+	const [exchangeRate, setExchangeRate] = useState("");
 	const [amount, setAmount] = useState("");
 	const [accountId, setAccountId] = useState<string>("");
 	const [note, setNote] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [creatingAccount, setCreatingAccount] = useState(false);
 	const [newAccountName, setNewAccountName] = useState("");
+
+	const contractCurrency = (accrual?.currency || "KGS").toUpperCase();
 
 	const { data: accounts = [], refetch: refetchAccounts } = useQuery<BankAccount[]>({
 		queryKey: getRentalAccountsQueryKey(),
@@ -439,20 +540,31 @@ export function QuickPayDialog({
 		if (accrual) {
 			const bal = String(Math.max(0, parseFloat(accrual.balance)));
 			setAmount(bal);
+			setPaymentCurrency(contractCurrency);
+			setExchangeRate("");
 			setNote("");
 			setPaymentDate(new Date().toISOString().split("T")[0]);
 			setPaymentMethod("cash");
-			setAccountId(accounts[0] ? String(accounts[0].id) : "");
+			setAccountId(pickDefaultRentalAccountId(accounts, contractCurrency));
 			setCreatingAccount(false);
 			setNewAccountName("");
 		}
-	}, [accrual?.id, accounts]);
+	}, [accrual?.id, accounts, contractCurrency]);
 
 	const balanceNum = accrual ? Math.max(0, parseFloat(accrual.balance)) : 0;
-	const paymentCurrency = (accrual?.currency || "KGS").toUpperCase();
 	const selectedAccount = accounts.find((a) => String(a.id) === accountId);
 	const accountCurrency = (selectedAccount?.currency || "KGS").toUpperCase();
 	const sendAmountPreview = parseFloat(amount) || balanceNum;
+	const kgsPerUsd = parseFloat(exchangeRate) || 0;
+	const contractAllocationPreview =
+		paymentCurrency !== contractCurrency && kgsPerUsd > 0
+			? paymentToContractAmount(
+					sendAmountPreview,
+					paymentCurrency,
+					contractCurrency,
+					kgsPerUsd,
+				)
+			: sendAmountPreview;
 
 	if (!accrual || !leaseContractId) return null;
 
@@ -462,7 +574,7 @@ export function QuickPayDialog({
 		try {
 			const res = await api.post("/rental/accounts", {
 				name: newAccountName.trim(),
-				currency: paymentCurrency === "USD" ? "USD" : "KGS",
+				currency: contractCurrency === "USD" ? "USD" : "KGS",
 				type: "cash",
 			});
 			await refetchAccounts();
@@ -496,12 +608,28 @@ export function QuickPayDialog({
 				body: JSON.stringify({
 					leaseContractId,
 					amount: sendAmount,
-					currency: accrual.currency || "KGS",
+					currency: paymentCurrency,
 					paymentDate,
 					paymentMethod,
 					accountId: parseInt(accountId, 10),
 					note: note || null,
-					allocations: [{ accrualId: accrual.id, amount: sendAmount }],
+					...(paymentCurrency !== contractCurrency && exchangeRate
+						? { exchangeRate: parseFloat(exchangeRate) }
+						: {}),
+					allocations: [
+						{
+							accrualId: accrual.id,
+							amount:
+								paymentCurrency !== contractCurrency && kgsPerUsd > 0
+									? paymentToContractAmount(
+											sendAmount,
+											paymentCurrency,
+											contractCurrency,
+											kgsPerUsd,
+										)
+									: sendAmount,
+						},
+					],
 				}),
 			});
 			if (!res.ok) {
@@ -511,7 +639,7 @@ export function QuickPayDialog({
 			const result = await res.json();
 			const payLabel = fmtCurrencyAmount(
 				sendAmount,
-				paymentCurrency === "USD" ? "USD" : "KGS",
+				rentalDisplayCurrency(paymentCurrency),
 			);
 			let desc = `${payLabel} · ${accrual.period}`;
 			if (
@@ -546,12 +674,37 @@ export function QuickPayDialog({
 					</DialogTitle>
 					<DialogDescription>
 						Период {accrual.period} · Остаток:{" "}
-						{fmtCurrency(balanceNum)}
+						{fmtCurrency(balanceNum, accrual.currency)}
 					</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-4">
+					{contractCurrency === "USD" ? (
+						<div>
+							<Label>Валюта платежа</Label>
+							<Select
+								value={paymentCurrency}
+								onValueChange={(v) => {
+									setPaymentCurrency(v);
+									setExchangeRate("");
+									if (v === "USD") {
+										setAccountId(
+											pickDefaultRentalAccountId(accounts, "USD"),
+										);
+									}
+								}}
+							>
+								<SelectTrigger className="mt-1">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="USD">USD (по договору)</SelectItem>
+									<SelectItem value="KGS">KGS (сом)</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+					) : null}
 					<div>
-						<Label>Сумма ({accrual.currency || "KGS"})</Label>
+						<Label>Сумма ({paymentCurrency})</Label>
 						<Input
 							type="number"
 							min="0.01"
@@ -637,9 +790,20 @@ export function QuickPayDialog({
 							paymentAmount={sendAmountPreview}
 							paymentCurrency={paymentCurrency}
 							accountCurrency={accountCurrency}
+							contractCurrency={contractCurrency}
 							paymentDate={paymentDate}
+							exchangeRate={exchangeRate}
+							onExchangeRateChange={setExchangeRate}
 						/>
 					)}
+					{paymentCurrency !== contractCurrency && contractAllocationPreview > 0 ? (
+						<p className="text-xs text-gray-600">
+							Зачтётся по договору:{" "}
+							<strong>
+								{fmtRentalCurrency(contractAllocationPreview, contractCurrency)}
+							</strong>
+						</p>
+					) : null}
 
 					<div>
 						<Label>Примечание</Label>
@@ -754,18 +918,18 @@ export function AccrualRow({
 			<TableCell className="font-medium text-gray-900">
 				{accrual.period}
 			</TableCell>
-			<TableCell>{fmtCurrency(parseFloat(accrual.amount))}</TableCell>
+			<TableCell>{fmtCurrency(parseFloat(accrual.amount), accrual.currency)}</TableCell>
 			<TableCell>
 				{hasDiscount ? (
 					<span className="text-xs text-emerald-700 font-medium bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-						-{fmtCurrency(parseFloat(accrual.discountAmount!))}
+						-{fmtCurrency(parseFloat(accrual.discountAmount!), accrual.currency)}
 					</span>
 				) : (
 					<span className="text-gray-300 text-xs">—</span>
 				)}
 			</TableCell>
 			<TableCell className="text-gray-600">
-				{fmtCurrency(parseFloat(accrual.paidAmount))}
+				{fmtCurrency(parseFloat(accrual.paidAmount), accrual.currency)}
 			</TableCell>
 			<TableCell
 				className={cn(
@@ -775,7 +939,7 @@ export function AccrualRow({
 						: "text-emerald-600",
 				)}
 			>
-				{fmtCurrency(parseFloat(accrual.balance))}
+				{fmtCurrency(parseFloat(accrual.balance), accrual.currency)}
 			</TableCell>
 			<TableCell className="text-gray-500">
 				{formatDate(accrual.dueDate)}

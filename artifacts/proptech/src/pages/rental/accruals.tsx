@@ -364,20 +364,25 @@ export default function Accruals() {
 				</p>
 			</div>
 
-			<div className="flex flex-nowrap items-center gap-2 mb-1 overflow-x-auto pb-0.5">
+			<div className="flex flex-wrap items-center gap-2 mb-1">
 				<PeriodPicker
 					value={period}
 					onChange={setPeriod}
-					className={cn("shrink-0", viewMode === "counterparties" && "opacity-50 pointer-events-none")}
+					className={cn(
+						"w-full sm:w-auto",
+						viewMode === "counterparties" && "opacity-50 pointer-events-none",
+					)}
 				/>
-				<LeaseCombobox
-					value={leaseFilter}
-					onValueChange={setLeaseFilter}
-					leases={leases || []}
-				/>
-				<LegalEntityScopeSelect className="h-10 w-[168px] shrink-0 bg-white text-sm" />
+				<div className="w-full sm:w-auto sm:min-w-[14rem] [&_button]:h-10 [&_button]:w-full sm:[&_button]:w-56">
+					<LeaseCombobox
+						value={leaseFilter}
+						onValueChange={setLeaseFilter}
+						leases={leases || []}
+					/>
+				</div>
+				<LegalEntityScopeSelect className="h-10 w-full sm:w-auto sm:min-w-[168px] bg-white text-sm" />
 				<Select value={statusFilter} onValueChange={setStatusFilter}>
-					<SelectTrigger className="h-10 w-[168px] shrink-0">
+					<SelectTrigger className="h-10 w-full sm:w-auto sm:min-w-[168px]">
 						<SelectValue placeholder="Все статусы" />
 					</SelectTrigger>
 					<SelectContent>
@@ -394,7 +399,7 @@ export default function Accruals() {
 					value={viewMode}
 					onValueChange={(v) => setViewMode(v as "list" | "counterparties")}
 				>
-					<SelectTrigger className="h-10 w-[168px] shrink-0">
+					<SelectTrigger className="h-10 w-full sm:w-auto sm:min-w-[168px]">
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
@@ -407,7 +412,7 @@ export default function Accruals() {
 						value={groupSearch}
 						onChange={(e) => setGroupSearch(e.target.value)}
 						placeholder="Поиск контрагента…"
-						className="h-10 min-w-[180px] max-w-[240px] shrink-0"
+						className="h-10 w-full sm:w-auto sm:min-w-[180px] sm:max-w-[240px]"
 					/>
 				)}
 				{leaseFilter !== "all" && (
@@ -416,7 +421,7 @@ export default function Accruals() {
 						size="sm"
 						onClick={handleRecalculate}
 						disabled={recalcLoading}
-						className="h-10 shrink-0 gap-2 text-blue-700 border-blue-300 hover:bg-blue-50"
+						className="h-10 w-full sm:w-auto gap-2 text-blue-700 border-blue-300 hover:bg-blue-50"
 					>
 						<RefreshCw
 							className={cn("w-4 h-4", recalcLoading && "animate-spin")}
@@ -424,7 +429,7 @@ export default function Accruals() {
 						{recalcLoading ? "Пересчёт..." : "Пересчитать"}
 					</Button>
 				)}
-				<span className="ml-auto shrink-0 whitespace-nowrap text-xs text-gray-500">
+				<span className="w-full basis-full text-right text-xs text-gray-500 whitespace-nowrap sm:w-auto sm:basis-auto sm:ml-auto sm:text-left">
 					{enrichedAccruals.length} записей
 				</span>
 			</div>

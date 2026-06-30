@@ -92,7 +92,7 @@ const EMPTY_FORM: FormState = {
 
 const RENTAL_IMPORT_COLUMNS = [
 	"ОсОО",
-	"Проект",
+	"Адрес",
 	"Номер объекта",
 	"Тип",
 	"Площадь",
@@ -121,7 +121,7 @@ type RentalImportRow = Partial<Record<RentalImportColumn, unknown>>;
 const RENTAL_TEMPLATE_SAMPLE: Record<RentalImportColumn, string | number>[] = [
 	{
 		"ОсОО": "ОсОО \"Бишкек Пропертис\"",
-		"Проект": "Бизнес-центр А",
+		"Адрес": "г. Бишкек, ул. Залкар 55",
 		"Номер объекта": "101",
 		"Тип": "Офис",
 		"Площадь": 65,
@@ -236,8 +236,8 @@ function PropertyFormFields({
 				</Select>
 			</div>
 			<div>
-				<Label className="text-xs">Проект / здание *</Label>
-				<Input className="mt-1" value={form.projectName} onChange={(e) => setField("projectName", e.target.value)} placeholder="Например, ЖК Центральный" />
+				<Label className="text-xs">Адрес *</Label>
+				<Input className="mt-1" value={form.projectName} onChange={(e) => setField("projectName", e.target.value)} placeholder="г. Бишкек, ул. Залкар 55" />
 			</div>
 			<div className="grid gap-2 sm:grid-cols-2">
 				<div className="flex flex-col">
@@ -451,7 +451,7 @@ function PropTable({ isLoading, sortedProps, propertiesArray, rentedCount, total
 			<table className="w-full border-separate border-spacing-0 text-sm">
 				<thead>
 					<tr>
-						<SortTh label="Проект" col="projectName" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} widths={widths} startResize={startResize} />
+						<SortTh label="Адрес" col="projectName" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} widths={widths} startResize={startResize} />
 						<SortTh label="Номер" col="unitNumber" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} widths={widths} startResize={startResize} />
 						<SortTh label="Тип" col="type" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} widths={widths} startResize={startResize} />
 						<SortTh label="Площадь, м²" col="area" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} widths={widths} startResize={startResize} />
@@ -619,7 +619,7 @@ export default function RentalProperties() {
 			XLSX.utils.book_append_sheet(workbook, sheet, "Объекты аренды");
 			const rules = XLSX.utils.aoa_to_sheet([
 				["Правила заполнения"],
-				["Обязательные поля", "Проект, Номер объекта"],
+				["Обязательные поля", "Адрес, Номер объекта"],
 				["ОсОО", "Можно оставить пустым: будет выбрано первое активное ОсОО компании."],
 				["Договор", "Создаётся, если заполнены Арендатор, Дата начала и Аренда в месяц."],
 				["Тип объекта", "Квартира, Офис, Парковка, Кладовая"],
@@ -672,11 +672,11 @@ export default function RentalProperties() {
 
 			for (const [index, row] of rows.entries()) {
 				const rowNumber = index + 2;
-				const projectName = cellText(row["Проект"]);
+				const projectName = cellText(row["Адрес"]) || cellText(row["Проект"]);
 				const unitNumber = cellText(row["Номер объекта"]);
 
 				if (!projectName || !unitNumber) {
-					errors.push(`строка ${rowNumber}: нет проекта или номера объекта`);
+					errors.push(`строка ${rowNumber}: нет адреса или номера объекта`);
 					continue;
 				}
 

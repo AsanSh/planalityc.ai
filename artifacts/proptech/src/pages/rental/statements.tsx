@@ -22,12 +22,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
-import { getApiBase } from "@/lib/api-base";
-
-const BASE = getApiBase();
+import { getApiErrorMessage } from "@/lib/api-error";
+import { authFetch } from "@/lib/auth-fetch";
 
 interface OwnerStatement {
 	id: number;
@@ -49,11 +47,7 @@ async function fetchStatements(
 	const params = new URLSearchParams();
 	if (propertyId && propertyId !== "all") params.set("propertyId", propertyId);
 	if (month) params.set("month", month);
-	const token = localStorage.getItem("auth_token");
-	const res = await fetch(`${BASE}/rental/statements?${params}`, {
-		headers: { Authorization: `Bearer ${token}` },
-	});
-	if (!res.ok) throw new Error("Ошибка загрузки актов");
+	const res = await authFetch(`/rental/statements?${params}`);
 	return res.json();
 }
 
@@ -61,17 +55,45 @@ async function generateStatement(
 	propertyId: number,
 	period: string,
 ): Promise<OwnerStatement> {
-	const token = localStorage.getItem("auth_token");
-	const res = await fetch(`${BASE}/rental/statements/generate`, {
+	const res = await authFetch("/rental/statements/generate", {
 		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-			Authorization: `Bearer ${token}`,
-		},
 		body: JSON.stringify({ propertyId, period }),
 	});
-	if (!res.ok) throw new Error("Ошибка генерации акта");
 	return res.json();
+}
+
+/** Месяц YYYY-MM для API — только если выбран один календарный месяц. */
+function apiMonthFilter(period: PeriodValue): string | undefined {
+	if (period.preset === "month" || period.preset === "prev_month") {
+		return period.from.slice(0, 7);
+	}
+	if (period.from.slice(0, 7) === period.to.slice(0, 7)) {
+		return period.from.slice(0, 7);
+	}
+	return undefined;
+}
+
+/** Месяц для генерации акта (один календарный месяц). */
+function generateMonthFromPeriod(period: PeriodValue): string | null {
+	const fromMonth = period.from.slice(0, 7);
+	const toMonth = period.to.slice(0, 7);
+	if (fromMonth === toMonth) return fromMonth;
+	if (period.preset === "month" || period.preset === "prev_month") {
+		return fromMonth;
+	}
+	return null;
+}
+
+function statementPeriodInRange(
+	statementPeriod: string,
+	range: PeriodValue,
+): boolean {
+	const [y, m] = statementPeriod.split("-").map(Number);
+	if (!y || !m) return false;
+	const monthStart = `${statementPeriod}-01`;
+	const lastDay = new Date(y, m, 0).getDate();
+	const monthEnd = `${statementPeriod}-${String(lastDay).padStart(2, "0")}`;
+	return monthEnd >= range.from && monthStart <= range.to;
 }
 
 function fmtKGS(amount: string | number) {
@@ -86,6 +108,8 @@ function fmtKGS(amount: string | number) {
 function fmtPeriod(period: string) {
 	if (!period) return "—";
 	const [year, month] = period.split("-");
+	const monthIdx = parseInt(month, 10) - 1;
+	if (monthIdx < 0 || monthIdx > 11) return period;
 	const months = [
 		"Январь",
 		"Февраль",
@@ -100,31 +124,46 @@ function fmtPeriod(period: string) {
 		"Ноябрь",
 		"Декабрь",
 	];
-	return `${months[parseInt(month, 10) - 1]} ${year}`;
+	return `${months[monthIdx]} ${year}`;
 }
 
 export default function OwnerStatements() {
 	const [propertyFilter, setPropertyFilter] = useState("all");
 	const [period, setPeriod] = useState<PeriodValue>(defaultPeriod());
-	const monthFilter = period.from.slice(0, 7);
+	const apiMonth = apiMonthFilter(period);
+	const generateMonth = generateMonthFromPeriod(period);
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [selectedStatement, setSelectedStatement] =
 		useState<OwnerStatement | null>(null);
 	const { data: properties } = useListProperties();
 	const propertiesArray = Array.isArray(properties) ? properties : [];
+	const propertyLabelById = useMemo(() => {
+		const map = new Map<number, string>();
+		for (const p of propertiesArray) {
+			map.set(Number(p.id), `${p.projectName} — ${p.unitNumber}`);
+		}
+		return map;
+	}, [propertiesArray]);
 	const { toast } = useToast();
 	const queryClient = useQueryClient();
 
-	const { data: statements, isLoading } = useQuery({
-		queryKey: ["owner-statements", propertyFilter, monthFilter],
-		queryFn: () => fetchStatements(propertyFilter, monthFilter),
+	const { data: statementsRaw, isLoading, isError, error } = useQuery({
+		queryKey: ["owner-statements", propertyFilter, apiMonth],
+		queryFn: () => fetchStatements(propertyFilter, apiMonth),
 	});
-	const statementsArray = Array.isArray(statements) ? statements : [];
+	const statementsArray = useMemo(() => {
+		const arr = Array.isArray(statementsRaw) ? statementsRaw : [];
+		if (apiMonth) return arr;
+		return arr.filter((s) => statementPeriodInRange(s.period, period));
+	}, [statementsRaw, apiMonth, period]);
 	const enrichedStatements = useMemo(
 		() =>
 			statementsArray.map((s) => ({
 				...s,
-				propertyLabel: s.unitNumber || `Объект #${s.propertyId}`,
+				propertyLabel:
+					propertyLabelById.get(Number(s.propertyId)) ||
+					s.unitNumber ||
+					`Объект #${s.propertyId}`,
 				periodLabel: fmtPeriod(s.period),
 				chargedNum: parseFloat(String(s.rentCharged || 0)),
 				receivedNum: parseFloat(String(s.rentReceived || 0)),
@@ -139,7 +178,7 @@ export default function OwnerStatements() {
 							).toFixed(0)
 						: "0",
 			})),
-		[statementsArray],
+		[statementsArray, propertyLabelById],
 	);
 	type EnrichedStatement = (typeof enrichedStatements)[number];
 
@@ -252,11 +291,40 @@ export default function OwnerStatements() {
 		[],
 	);
 
-	const { data: expenses = [] } = useQuery<any[]>({
-		queryKey: ["rental-expenses"],
-		queryFn: () => api.get("/rental/expenses").then((r) => r.data),
+	const { data: expenses = [] } = useQuery<
+		{
+			id: number;
+			propertyId?: number;
+			expenseDate?: string;
+			createdAt?: string;
+			description?: string;
+			category?: string;
+			amount: string | number;
+		}[]
+	>({
+		queryKey: [
+			"rental-expenses",
+			selectedStatement?.propertyId,
+			selectedStatement?.period,
+		],
+		queryFn: () =>
+			api
+				.get("/rental/expenses", {
+					params: { propertyId: String(selectedStatement!.propertyId) },
+				})
+				.then((r) => r.data),
+		enabled: !!selectedStatement,
 	});
 	const expensesArray = Array.isArray(expenses) ? expenses : [];
+	const modalExpenses = useMemo(() => {
+		if (!selectedStatement) return [];
+		const [year, month] = selectedStatement.period.split("-");
+		const prefix = `${year}-${month}`;
+		return expensesArray.filter((e) => {
+			const eDate = e.expenseDate || e.createdAt || "";
+			return eDate.startsWith(prefix);
+		});
+	}, [expensesArray, selectedStatement]);
 
 	const handleGenerate = async () => {
 		if (propertyFilter === "all") {
@@ -267,15 +335,38 @@ export default function OwnerStatements() {
 			});
 			return;
 		}
+		if (!generateMonth) {
+			toast({
+				title: "Выберите один месяц",
+				description:
+					"Для формирования акта укажите период в пределах одного календарного месяца",
+				variant: "destructive",
+			});
+			return;
+		}
+		const propertyId = parseInt(propertyFilter, 10);
+		if (
+			statementsArray.some(
+				(s) =>
+					Number(s.propertyId) === propertyId && s.period === generateMonth,
+			)
+		) {
+			toast({
+				title: "Акт уже существует",
+				description: `Для этого объекта за ${fmtPeriod(generateMonth)} акт уже сформирован`,
+				variant: "destructive",
+			});
+			return;
+		}
 		setIsGenerating(true);
 		try {
-			await generateStatement(parseInt(propertyFilter, 10), monthFilter);
+			await generateStatement(propertyId, generateMonth);
 			toast({ title: "Акт сформирован" });
 			queryClient.invalidateQueries({ queryKey: ["owner-statements"] });
-		} catch {
+		} catch (e) {
 			toast({
 				title: "Ошибка",
-				description: "Не удалось сформировать акт",
+				description: getApiErrorMessage(e, "Не удалось сформировать акт"),
 				variant: "destructive",
 			});
 		} finally {
@@ -354,7 +445,9 @@ export default function OwnerStatements() {
 
 					<Button
 						onClick={handleGenerate}
-						disabled={isGenerating || propertyFilter === "all"}
+						disabled={
+							isGenerating || propertyFilter === "all" || !generateMonth
+						}
 						className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
 					>
 						<RefreshCw
@@ -368,7 +461,19 @@ export default function OwnerStatements() {
 						Для формирования нового акта выберите конкретный объект
 					</p>
 				)}
+				{propertyFilter !== "all" && !generateMonth && (
+					<p className="text-xs text-amber-600 mt-2">
+						Для формирования акта выберите период в пределах одного календарного
+						месяца
+					</p>
+				)}
 			</div>
+
+			{isError && (
+				<div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+					{getApiErrorMessage(error, "Не удалось загрузить акты")}
+				</div>
+			)}
 
 			<DataTable maxHeight="calc(100vh - 320px)"
 					tableId="rental-statements"
@@ -449,7 +554,8 @@ export default function OwnerStatements() {
 								</p>
 								<p className="text-center text-sm text-gray-600 font-medium mt-0.5">
 									Объект:{" "}
-									{selectedStatement.unitNumber ||
+									{propertyLabelById.get(Number(selectedStatement.propertyId)) ||
+										selectedStatement.unitNumber ||
 										`#${selectedStatement.propertyId}`}
 								</p>
 							</div>
@@ -500,14 +606,8 @@ export default function OwnerStatements() {
 											-{fmtKGS(selectedStatement.expenses)}
 										</td>
 									</tr>
-									{/* Expense breakdown from rental expenses */}
-									{expensesArray
-										.filter((e: any) => {
-											const [year, month] = selectedStatement.period.split("-");
-											const eDate = e.expenseDate || e.createdAt || "";
-											return eDate.startsWith(`${year}-${month}`);
-										})
-										.map((e: any) => (
+									{/* Expense breakdown for this property */}
+									{modalExpenses.map((e) => (
 											<tr key={e.id} className="border-b text-xs">
 												<td className="px-3 py-2 text-gray-600 pl-8">
 													— {e.description || e.category || "Расход"}

@@ -373,16 +373,14 @@ export default function Accruals() {
 						viewMode === "counterparties" && "opacity-50 pointer-events-none",
 					)}
 				/>
-				<div className="shrink-0 [&_button]:h-10 [&_button]:w-44">
-					<LeaseCombobox
-						value={leaseFilter}
-						onValueChange={setLeaseFilter}
-						leases={leases || []}
-					/>
-				</div>
-				<LegalEntityScopeSelect className="h-10 shrink-0 w-[150px] max-w-[150px] bg-white text-sm" />
+				<LeaseCombobox
+					value={leaseFilter}
+					onValueChange={setLeaseFilter}
+					leases={leases || []}
+				/>
+				<LegalEntityScopeSelect className="h-9 shrink-0 w-[130px] max-w-[130px] bg-white text-sm" />
 				<Select value={statusFilter} onValueChange={setStatusFilter}>
-					<SelectTrigger className="h-10 shrink-0 w-[150px]">
+					<SelectTrigger className="h-9 shrink-0 w-[120px]">
 						<SelectValue placeholder="Все статусы" />
 					</SelectTrigger>
 					<SelectContent>
@@ -399,7 +397,7 @@ export default function Accruals() {
 					value={viewMode}
 					onValueChange={(v) => setViewMode(v as "list" | "counterparties")}
 				>
-					<SelectTrigger className="h-10 shrink-0 w-[140px]">
+					<SelectTrigger className="h-9 shrink-0 w-[110px]">
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>

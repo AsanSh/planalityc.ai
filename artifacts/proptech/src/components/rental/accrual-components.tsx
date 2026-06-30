@@ -419,7 +419,7 @@ export function LeaseCombobox({
 					variant="outline"
 					role="combobox"
 					aria-expanded={open}
-					className="w-56 h-9 justify-between font-normal"
+					className="w-32 h-9 justify-between font-normal"
 				>
 					<span className="truncate">{selectedLabel}</span>
 					<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

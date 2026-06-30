@@ -262,33 +262,29 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
 				</button>
 			</PopoverTrigger>
 
-			<PopoverContent className="w-[300px] p-4 space-y-3" align="start">
-				{/* Date range inputs */}
-				<div className="flex items-center gap-2">
-					<div className="relative flex-1">
-						<input
-							type="date"
-							value={fromInput}
-							onChange={(e) => setFromInput(e.target.value)}
-							onBlur={() => applyCustom(fromInput, toInput)}
-							className="w-full h-9 pl-3 pr-8 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 bg-white"
-						/>
-						<CalendarDays className="absolute right-2 top-2.5 w-4 h-4 text-gray-300 pointer-events-none" />
-					</div>
-					<span className="text-gray-400 text-sm shrink-0">—</span>
-					<div className="relative flex-1">
-						<input
-							type="date"
-							value={toInput}
-							onChange={(e) => setToInput(e.target.value)}
-							onBlur={() => applyCustom(fromInput, toInput)}
-							className="w-full h-9 pl-3 pr-8 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 bg-white"
-						/>
-						<CalendarDays className="absolute right-2 top-2.5 w-4 h-4 text-gray-300 pointer-events-none" />
-					</div>
+			<PopoverContent className="w-[380px] p-3" align="start">
+				{/* Date inputs — native icon only, no duplicate */}
+				<div className="flex items-center gap-2 mb-3">
+					<input
+						type="date"
+						value={fromInput}
+						onChange={(e) => setFromInput(e.target.value)}
+						onBlur={() => applyCustom(fromInput, toInput)}
+						className="flex-1 h-9 px-3 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-gray-400 [&::-webkit-calendar-picker-indicator]:opacity-30 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+					/>
+					<span className="text-gray-300 text-lg shrink-0 select-none">—</span>
+					<input
+						type="date"
+						value={toInput}
+						onChange={(e) => setToInput(e.target.value)}
+						onBlur={() => applyCustom(fromInput, toInput)}
+						className="flex-1 h-9 px-3 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-gray-400 [&::-webkit-calendar-picker-indicator]:opacity-30 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+					/>
 				</div>
 
-				{/* Preset chips */}
+				<div className="border-t border-gray-100 mb-2.5" />
+
+				{/* Preset chips — 380px / 2 cols = ~178px, fits all Russian labels on one line */}
 				<div className="grid grid-cols-2 gap-1.5">
 					{CHIP_PRESETS.map(({ key, label }) => {
 						const active = value.preset === key;
@@ -298,11 +294,11 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
 								type="button"
 								onClick={() => applyPreset(key)}
 								className={cn(
-									"h-8 px-3 text-sm rounded-full border text-left transition-colors",
+									"h-9 px-3 text-sm rounded-full border whitespace-nowrap transition-colors",
 									active
-										? "border-emerald-500 text-emerald-700 bg-emerald-50 font-medium"
-										: "border-gray-200 text-gray-600 hover:border-gray-300 bg-white",
-									key === "all" && "col-span-2",
+										? "border-emerald-400 text-emerald-700 bg-emerald-50 font-medium"
+										: "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 bg-white",
+									key === "all" ? "col-span-2 text-center" : "text-left",
 								)}
 							>
 								{label}

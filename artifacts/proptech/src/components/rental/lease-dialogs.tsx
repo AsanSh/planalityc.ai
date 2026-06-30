@@ -1,17 +1,18 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
 	Check,
 	ChevronsUpDown,
 	Info,
 	RefreshCw,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	type CreateLeaseContractBodyStatus,
 	getListDepositsQueryKey,
 	getListLeaseContractsQueryKey,
 	type LeaseContract,
 	useCreateLeaseContract,
+	useListDeposits,
 	useListRentalProperties,
 	useListTenants,
 	useUpdateLeaseContract,
@@ -52,6 +53,8 @@ import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { authFetch } from "@/lib/auth-fetch";
+import { pickDefaultRentalAccountId } from "@/lib/rental-currency";
+import { getRentalAccountsQueryKey } from "@/lib/rental-query-keys";
 import { cn } from "@/lib/utils";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -244,6 +247,7 @@ type FormState = {
 	rentAmount: string;
 	currency: string;
 	depositAmount: string;
+	depositAccountId: string;
 	accrualDay: string;
 	status: CreateLeaseContractBodyStatus;
 	comment: string;
@@ -259,6 +263,7 @@ const EMPTY_FORM: FormState = {
 	rentAmount: "",
 	currency: "KGS",
 	depositAmount: "",
+	depositAccountId: "",
 	accrualDay: "1",
 	status: "active",
 	comment: "",
@@ -395,19 +400,49 @@ function SearchableCombobox<T extends { id: number }>({
 
 // ── Shared form fields ────────────────────────────────────────────────────────
 
+function depositAmountNumber(value: string): number {
+	const n = parseFloat(value);
+	return Number.isFinite(n) ? n : 0;
+}
+
 function LeaseFormFields({
 	form,
 	setForm,
 	mode,
 }: {
 	form: FormState;
-	setForm: (f: FormState) => void;
+	setForm: React.Dispatch<React.SetStateAction<FormState>>;
 	mode: "create" | "edit";
 }) {
 	const { data: tenants } = useListTenants();
 	const tenantsArray = Array.isArray(tenants) ? tenants : [];
 	const { data: properties } = useListRentalProperties();
 	const propertiesArray = Array.isArray(properties) ? properties : [];
+	const { data: accounts = [] } = useQuery<any[]>({
+		queryKey: getRentalAccountsQueryKey(),
+		queryFn: () => api.get("/rental/accounts").then((r) => r.data),
+	});
+	const accountsArray = Array.isArray(accounts) ? accounts : [];
+	const depositRequired =
+		form.depositAmount.trim() !== "" && parseFloat(form.depositAmount) > 0;
+
+	useEffect(() => {
+		if (!depositRequired || accountsArray.length === 0) return;
+		setForm((prev) => {
+			if (prev.depositAccountId) return prev;
+			const defaultId = pickDefaultRentalAccountId(accountsArray, prev.currency);
+			return defaultId ? { ...prev, depositAccountId: defaultId } : prev;
+		});
+	}, [depositRequired, form.currency, accountsArray, setForm]);
+
+	useEffect(() => {
+		if (!depositRequired || accountsArray.length === 0) return;
+		setForm((prev) => {
+			const match = pickDefaultRentalAccountId(accountsArray, prev.currency);
+			if (!match || match === prev.depositAccountId) return prev;
+			return { ...prev, depositAccountId: match };
+		});
+	}, [form.currency, accountsArray, depositRequired, setForm]);
 
 	// Показываем все объекты; свободные — первыми, занятые — с пометкой.
 	const availableProperties =
@@ -556,6 +591,7 @@ function LeaseFormFields({
 						value={form.depositAmount}
 						onChange={f("depositAmount")}
 						placeholder="300 000"
+						min={0}
 					/>
 				</div>
 				<div className="flex flex-col">
@@ -573,6 +609,40 @@ function LeaseFormFields({
 					/>
 				</div>
 			</div>
+
+			{depositRequired && (
+				<div>
+					<Label>Счёт для депозита *</Label>
+					<Select
+						value={form.depositAccountId}
+						onValueChange={(v) => setForm({ ...form, depositAccountId: v })}
+						required
+					>
+						<SelectTrigger className="mt-1">
+							<SelectValue placeholder="Выберите счёт" />
+						</SelectTrigger>
+						<SelectContent>
+							{accountsArray.length === 0 ? (
+								<SelectItem value="_empty" disabled>
+									Сначала создайте счёт в разделе «Расчётные счета»
+								</SelectItem>
+							) : (
+								accountsArray.map((a: { id: number; name: string; currency?: string }) => (
+									<SelectItem key={a.id} value={String(a.id)}>
+										{a.name}
+										{(a.currency || "KGS").toUpperCase() !== form.currency.toUpperCase()
+											? ` (${a.currency || "KGS"})`
+											: ""}
+									</SelectItem>
+								))
+							)}
+						</SelectContent>
+					</Select>
+					<p className="text-xs text-muted-foreground mt-1">
+						Депозит будет привязан к выбранному расчётному счёту
+					</p>
+				</div>
+			)}
 
 			<div>
 				<Label>Статус</Label>
@@ -634,6 +704,14 @@ export function CreateLeaseDialog({
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (depositAmountNumber(form.depositAmount) > 0 && !form.depositAccountId) {
+			toast({
+				title: "Выберите счёт для депозита",
+				description: "При указании суммы депозита нужно выбрать расчётный счёт",
+				variant: "destructive",
+			});
+			return;
+		}
 		try {
 			await createMutation.mutateAsync({
 				data: {
@@ -648,10 +726,13 @@ export function CreateLeaseDialog({
 					depositAmount: form.depositAmount
 						? parseFloat(form.depositAmount)
 						: null,
+					depositAccountId: form.depositAccountId
+						? parseInt(form.depositAccountId, 10)
+						: null,
 					accrualDay: form.accrualDay ? parseInt(form.accrualDay, 10) : null,
 					status: form.status,
 					comment: form.comment || null,
-				},
+				} as Parameters<typeof createMutation.mutateAsync>[0]["data"],
 			});
 			toast({ title: "Договор аренды создан" });
 			queryClient.invalidateQueries({
@@ -711,8 +792,14 @@ export function EditLeaseDialog({
 	const updateMutation = useUpdateLeaseContract();
 	const queryClient = useQueryClient();
 	const { toast } = useToast();
+	const { data: deposits } = useListDeposits();
+	const depositsArray = Array.isArray(deposits) ? deposits : [];
 	const [recalcConfirm, setRecalcConfirm] = useState(false);
 	const [recalcLoading, setRecalcLoading] = useState(false);
+
+	const contractDeposit = depositsArray.find(
+		(d) => Number(d.leaseContractId) === Number(lease.id) && d.status === "held",
+	) as (typeof depositsArray)[number] & { accountId?: number | null };
 
 	const [form, setForm] = useState<FormState>({
 		propertyId: String(lease.propertyId),
@@ -724,10 +811,35 @@ export function EditLeaseDialog({
 		rentAmount: String(lease.rentAmount),
 		currency: lease.currency,
 		depositAmount: lease.depositAmount ? String(lease.depositAmount) : "",
+		depositAccountId: contractDeposit?.accountId
+			? String(contractDeposit.accountId)
+			: "",
 		accrualDay: lease.accrualDay ? String(lease.accrualDay) : "1",
 		status: lease.status as CreateLeaseContractBodyStatus,
 		comment: lease.comment ?? "",
 	});
+
+	useEffect(() => {
+		if (!open) return;
+		const held = depositsArray.find(
+			(d) => Number(d.leaseContractId) === Number(lease.id) && d.status === "held",
+		) as (typeof depositsArray)[number] & { accountId?: number | null };
+		setForm({
+			propertyId: String(lease.propertyId),
+			tenantId: String(lease.tenantId),
+			contractNumber: lease.contractNumber,
+			signDate: lease.signDate ?? "",
+			startDate: lease.startDate,
+			endDate: lease.endDate ?? "",
+			rentAmount: String(lease.rentAmount),
+			currency: lease.currency,
+			depositAmount: lease.depositAmount ? String(lease.depositAmount) : "",
+			depositAccountId: held?.accountId ? String(held.accountId) : "",
+			accrualDay: lease.accrualDay ? String(lease.accrualDay) : "1",
+			status: lease.status as CreateLeaseContractBodyStatus,
+			comment: lease.comment ?? "",
+		});
+	}, [lease, open, depositsArray]);
 
 	const keyFieldsChanged =
 		form.startDate !== lease.startDate ||
@@ -737,6 +849,14 @@ export function EditLeaseDialog({
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (depositAmountNumber(form.depositAmount) > 0 && !form.depositAccountId) {
+			toast({
+				title: "Выберите счёт для депозита",
+				description: "При указании суммы депозита нужно выбрать расчётный счёт",
+				variant: "destructive",
+			});
+			return;
+		}
 		try {
 			await updateMutation.mutateAsync({
 				id: lease.id,
@@ -749,10 +869,13 @@ export function EditLeaseDialog({
 					depositAmount: form.depositAmount
 						? parseFloat(form.depositAmount)
 						: null,
+					depositAccountId: form.depositAccountId
+						? parseInt(form.depositAccountId, 10)
+						: null,
 					accrualDay: form.accrualDay ? parseInt(form.accrualDay, 10) : null,
 					status: form.status,
 					comment: form.comment || null,
-				},
+				} as Parameters<typeof updateMutation.mutateAsync>[0]["data"],
 			});
 			toast({ title: "Договор обновлён" });
 			queryClient.invalidateQueries({

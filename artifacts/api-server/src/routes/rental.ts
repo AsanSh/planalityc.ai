@@ -563,13 +563,32 @@ router.get("/rental/contracts", async (req: AuthenticatedRequest, res): Promise<
 });
 
 router.post("/rental/contracts", async (req: AuthenticatedRequest, res): Promise<void> => {
-  const { propertyId, tenantId, contractNumber, signDate, startDate, endDate, rentAmount, currency, depositAmount, accrualDay, status, comment } = req.body;
+  const { propertyId, tenantId, contractNumber, signDate, startDate, endDate, rentAmount, currency, depositAmount, depositAccountId, accrualDay, status, comment } = req.body;
   if (!propertyId || !tenantId || !contractNumber || !startDate || !rentAmount || !currency || !status) {
     res.status(400).json({ error: "Missing required fields" });
     return;
   }
+  const companyId = req.scopedCompanyId!;
+  const depositAmt = parseFloat(String(depositAmount ?? 0));
+  let parsedDepositAccountId: number | null = null;
+  if (Number.isFinite(depositAmt) && depositAmt > 0) {
+    if (!depositAccountId) {
+      res.status(400).json({ error: "Укажите счёт для депозита" });
+      return;
+    }
+    parsedDepositAccountId = parseInt(String(depositAccountId), 10);
+    if (!Number.isFinite(parsedDepositAccountId)) {
+      res.status(400).json({ error: "Некорректный счёт для депозита" });
+      return;
+    }
+    const ok = await accountExistsInModule(companyId, parsedDepositAccountId, RENTAL_ACCOUNTS);
+    if (!ok) {
+      res.status(400).json({ error: "Укажите счёт из модуля «Аренда»" });
+      return;
+    }
+  }
   const [row] = await db.insert(leaseContractsTable).values({
-    companyId: req.scopedCompanyId!, propertyId, tenantId, contractNumber, signDate: signDate || null, startDate, endDate, rentAmount, currency, depositAmount, accrualDay, status, comment
+    companyId, propertyId, tenantId, contractNumber, signDate: signDate || null, startDate, endDate, rentAmount, currency, depositAmount, accrualDay, status, comment
   }).returning();
 
   if (status === "active") {
@@ -592,12 +611,13 @@ router.post("/rental/contracts", async (req: AuthenticatedRequest, res): Promise
   }
 
   await syncContractDeposit({
-    companyId: req.scopedCompanyId!,
+    companyId,
     leaseContractId: row.id,
     depositAmount,
     currency,
     signDate: signDate || null,
     startDate,
+    depositAccountId: parsedDepositAccountId,
   });
 
   const [t] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, tenantId));
@@ -633,9 +653,28 @@ router.get("/rental/contracts/:id", async (req: AuthenticatedRequest, res): Prom
 
 router.patch("/rental/contracts/:id", async (req: AuthenticatedRequest, res): Promise<void> => {
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
-  const { signDate, startDate, endDate, rentAmount, currency, depositAmount, accrualDay, status, comment } = req.body;
+  const { signDate, startDate, endDate, rentAmount, currency, depositAmount, depositAccountId, accrualDay, status, comment } = req.body;
+  const companyId = req.scopedCompanyId!;
+  const depositAmt = parseFloat(String(depositAmount ?? 0));
+  let parsedDepositAccountId: number | null = null;
+  if (Number.isFinite(depositAmt) && depositAmt > 0) {
+    if (!depositAccountId) {
+      res.status(400).json({ error: "Укажите счёт для депозита" });
+      return;
+    }
+    parsedDepositAccountId = parseInt(String(depositAccountId), 10);
+    if (!Number.isFinite(parsedDepositAccountId)) {
+      res.status(400).json({ error: "Некорректный счёт для депозита" });
+      return;
+    }
+    const ok = await accountExistsInModule(companyId, parsedDepositAccountId, RENTAL_ACCOUNTS);
+    if (!ok) {
+      res.status(400).json({ error: "Укажите счёт из модуля «Аренда»" });
+      return;
+    }
+  }
   const conditions: SQL[] = [eq(leaseContractsTable.id, id)];
-  conditions.push(eq(leaseContractsTable.companyId, req.scopedCompanyId!));
+  conditions.push(eq(leaseContractsTable.companyId, companyId));
 
   // Read current status before update to detect activation transition
   const [beforePatch] = await db.select({ status: leaseContractsTable.status, contractNumber: leaseContractsTable.contractNumber })
@@ -668,12 +707,13 @@ router.patch("/rental/contracts/:id", async (req: AuthenticatedRequest, res): Pr
   }
 
   await syncContractDeposit({
-    companyId: req.scopedCompanyId!,
+    companyId,
     leaseContractId: row.id,
     depositAmount,
     currency,
     signDate: signDate ?? null,
     startDate,
+    depositAccountId: parsedDepositAccountId,
   });
 
   res.json({ ...row, tenantName: t?.fullName ?? null, propertyUnitNumber: p?.unitNumber ?? null });

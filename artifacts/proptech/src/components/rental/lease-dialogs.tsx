@@ -5,7 +5,7 @@ import {
 	Info,
 	RefreshCw,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	type CreateLeaseContractBodyStatus,
 	getListDepositsQueryKey,
@@ -422,27 +422,33 @@ function LeaseFormFields({
 		queryKey: getRentalAccountsQueryKey(),
 		queryFn: () => api.get("/rental/accounts").then((r) => r.data),
 	});
-	const accountsArray = Array.isArray(accounts) ? accounts : [];
+	const accountsArray = useMemo(
+		() => (Array.isArray(accounts) ? accounts : []),
+		[accounts],
+	);
 	const depositRequired =
 		form.depositAmount.trim() !== "" && parseFloat(form.depositAmount) > 0;
 
 	useEffect(() => {
 		if (!depositRequired || accountsArray.length === 0) return;
 		setForm((prev) => {
-			if (prev.depositAccountId) return prev;
 			const defaultId = pickDefaultRentalAccountId(accountsArray, prev.currency);
-			return defaultId ? { ...prev, depositAccountId: defaultId } : prev;
+			if (!defaultId || defaultId === prev.depositAccountId) return prev;
+			if (prev.depositAccountId) {
+				const current = accountsArray.find(
+					(a: { id: number; currency?: string | null }) =>
+						String(a.id) === prev.depositAccountId,
+				);
+				if (
+					current &&
+					(current.currency || "KGS").toUpperCase() === prev.currency.toUpperCase()
+				) {
+					return prev;
+				}
+			}
+			return { ...prev, depositAccountId: defaultId };
 		});
-	}, [depositRequired, form.currency, accountsArray, setForm]);
-
-	useEffect(() => {
-		if (!depositRequired || accountsArray.length === 0) return;
-		setForm((prev) => {
-			const match = pickDefaultRentalAccountId(accountsArray, prev.currency);
-			if (!match || match === prev.depositAccountId) return prev;
-			return { ...prev, depositAccountId: match };
-		});
-	}, [form.currency, accountsArray, depositRequired, setForm]);
+	}, [depositRequired, form.currency, accountsArray]);
 
 	// Показываем все объекты; свободные — первыми, занятые — с пометкой.
 	const availableProperties =
@@ -793,15 +799,21 @@ export function EditLeaseDialog({
 	const queryClient = useQueryClient();
 	const { toast } = useToast();
 	const { data: deposits } = useListDeposits();
-	const depositsArray = Array.isArray(deposits) ? deposits : [];
+	const depositsArray = useMemo(
+		() => (Array.isArray(deposits) ? deposits : []),
+		[deposits],
+	);
 	const [recalcConfirm, setRecalcConfirm] = useState(false);
 	const [recalcLoading, setRecalcLoading] = useState(false);
 
-	const contractDeposit = depositsArray.find(
-		(d) => Number(d.leaseContractId) === Number(lease.id) && d.status === "held",
-	) as (typeof depositsArray)[number] & { accountId?: number | null };
+	const leaseDepositAccountId = useMemo(() => {
+		const held = depositsArray.find(
+			(d) => Number(d.leaseContractId) === Number(lease.id) && d.status === "held",
+		) as (typeof depositsArray)[number] & { accountId?: number | null };
+		return held?.accountId ? String(held.accountId) : "";
+	}, [depositsArray, lease.id]);
 
-	const [form, setForm] = useState<FormState>({
+	const buildFormFromLease = useCallback((): FormState => ({
 		propertyId: String(lease.propertyId),
 		tenantId: String(lease.tenantId),
 		contractNumber: lease.contractNumber,
@@ -811,35 +823,18 @@ export function EditLeaseDialog({
 		rentAmount: String(lease.rentAmount),
 		currency: lease.currency,
 		depositAmount: lease.depositAmount ? String(lease.depositAmount) : "",
-		depositAccountId: contractDeposit?.accountId
-			? String(contractDeposit.accountId)
-			: "",
+		depositAccountId: leaseDepositAccountId,
 		accrualDay: lease.accrualDay ? String(lease.accrualDay) : "1",
 		status: lease.status as CreateLeaseContractBodyStatus,
 		comment: lease.comment ?? "",
-	});
+	}), [lease, leaseDepositAccountId]);
+
+	const [form, setForm] = useState<FormState>(buildFormFromLease);
 
 	useEffect(() => {
 		if (!open) return;
-		const held = depositsArray.find(
-			(d) => Number(d.leaseContractId) === Number(lease.id) && d.status === "held",
-		) as (typeof depositsArray)[number] & { accountId?: number | null };
-		setForm({
-			propertyId: String(lease.propertyId),
-			tenantId: String(lease.tenantId),
-			contractNumber: lease.contractNumber,
-			signDate: lease.signDate ?? "",
-			startDate: lease.startDate,
-			endDate: lease.endDate ?? "",
-			rentAmount: String(lease.rentAmount),
-			currency: lease.currency,
-			depositAmount: lease.depositAmount ? String(lease.depositAmount) : "",
-			depositAccountId: held?.accountId ? String(held.accountId) : "",
-			accrualDay: lease.accrualDay ? String(lease.accrualDay) : "1",
-			status: lease.status as CreateLeaseContractBodyStatus,
-			comment: lease.comment ?? "",
-		});
-	}, [lease, open, depositsArray]);
+		setForm(buildFormFromLease());
+	}, [open, buildFormFromLease]);
 
 	const keyFieldsChanged =
 		form.startDate !== lease.startDate ||

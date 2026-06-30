@@ -6,8 +6,13 @@ if (import.meta.env.DEV) {
 	console.info("[api] BASE:", BASE);
 }
 
+/** Central token accessor — use instead of localStorage.getItem("auth_token") directly. */
+export function getAuthToken(): string | null {
+	return localStorage.getItem("auth_token");
+}
+
 function getHeaders(): Record<string, string> {
-	const token = localStorage.getItem("auth_token");
+	const token = getAuthToken();
 	return {
 		"Content-Type": "application/json",
 		...(token ? { Authorization: `Bearer ${token}` } : {}),

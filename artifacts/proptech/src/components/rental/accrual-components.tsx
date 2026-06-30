@@ -1,3 +1,4 @@
+import { getAuthToken } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import {
 	AlertTriangle,
@@ -87,7 +88,7 @@ export function formatDate(date: string) {
 
 const BASE = getApiBase();
 const authHeaders = () => {
-	const token = localStorage.getItem("auth_token");
+	const token = getAuthToken();
 	return {
 		"Content-Type": "application/json",
 		...(token ? { Authorization: `Bearer ${token}` } : {}),

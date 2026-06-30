@@ -11,7 +11,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { api } from "@/lib/api";
+import { api, getAuthToken } from "@/lib/api";
 import { resolveAnnexScheduleForDisplay } from "@/lib/annex-schedule";
 import { getApiBase } from "@/lib/api-base";
 import { ContractAnnex1Preview } from "./contract-annex1-preview";
@@ -169,7 +169,7 @@ export function ContractTab({ salesContractId, projectId, initialPayload }: Prop
 
 	const loadContractData = useCallback(async () => {
 		if (!salesContractId) return;
-		const token = localStorage.getItem("auth_token");
+		const token = getAuthToken();
 		setLoadingData(true);
 		try {
 			const r = await fetch(
@@ -361,7 +361,7 @@ export function ContractTab({ salesContractId, projectId, initialPayload }: Prop
 		setLoadingAnnex(true);
 		try {
 			if (salesContractId) await persistBuyerProfile();
-			const token = localStorage.getItem("auth_token");
+			const token = getAuthToken();
 			const response = await fetch(
 				`${getApiBase()}/construction/contracts/generate-annex1-docx`,
 				{
@@ -410,7 +410,7 @@ export function ContractTab({ salesContractId, projectId, initialPayload }: Prop
 		setLoading(true);
 		try {
 			if (salesContractId) await persistBuyerProfile();
-			const token = localStorage.getItem("auth_token");
+			const token = getAuthToken();
 			const response = await fetch(
 				`${getApiBase()}/construction/contracts/generate-docx`,
 				{

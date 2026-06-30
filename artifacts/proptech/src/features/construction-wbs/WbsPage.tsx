@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { api } from "@/lib/api";
+import { api, getAuthToken } from "@/lib/api";
 import { getApiBase } from "@/lib/api-base";
 import {
 	fmtCurrencyAmount,
@@ -54,7 +54,7 @@ const BASE = getApiBase();
 const VIEW_STORAGE_KEY = "construction-wbs-view-mode";
 
 const ah = () => {
-	const t = localStorage.getItem("auth_token");
+	const t = getAuthToken();
 	return {
 		"Content-Type": "application/json",
 		...(t ? { Authorization: `Bearer ${t}` } : {}),

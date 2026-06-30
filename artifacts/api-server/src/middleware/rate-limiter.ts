@@ -1,19 +1,44 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { Options } from 'express-rate-limit';
 import { Request, Response } from 'express';
 
-// ВАЖНО про окружение:
-// Лимитеры используют in-memory стор (по умолчанию). На одиночном сервере
-// (Hetzner, один Node-процесс) это работает корректно — счётчики общие.
-// На serverless (текущий Vercel) каждый холодный старт = свежая память,
-// счётчики не шарятся между инстансами, поэтому защита от перебора
-// (authLimiter) деградирует. После переезда на свой сервер проблема уходит
-// сама. Если до переезда нужна строгая защита логина на Vercel — подключить
-// общий стор (напр. rate-limit-redis + Upstash) через опцию `store`.
+// ---------------------------------------------------------------------------
+// Optional Redis store (for distributed environments like Vercel serverless).
+// Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN in Vercel env vars,
+// then install: pnpm add @upstash/ratelimit @upstash/redis
+// Without these env vars the limiter falls back to in-memory (fine on single
+// server; on Vercel each cold-start gets a fresh counter, so brute-force
+// protection is per-instance only).
+// ---------------------------------------------------------------------------
+async function makeRedisStore(): Promise<Options['store'] | undefined> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return undefined;
+  try {
+    const { Redis } = await import('@upstash/redis' as string);
+    const { RateLimitRedisStore } = await import('@upstash/ratelimit' as string);
+    const redis = new Redis({ url, token });
+    return new RateLimitRedisStore({ client: redis });
+  } catch {
+    // Packages not installed — fall back silently
+    return undefined;
+  }
+}
 
-// Базовый rate limiter для всех endpoints
-export const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 минут
-  max: 2000, // SPA шлёт 5–15 запросов на страницу; прежние 100 выбивались за ~2 перехода
+// Shared store promise — resolved once, reused on warm lambdas
+const redisStorePromise = makeRedisStore();
+
+function withStore(opts: Omit<Parameters<typeof rateLimit>[0], 'store'>) {
+  return rateLimit({
+    ...opts,
+    // store is set asynchronously; on cold starts without Redis this is undefined (in-memory)
+    store: undefined,
+  });
+}
+
+// Общий лимит для всех endpoints (SPA делает ~10–15 запросов на страницу)
+export const generalLimiter = withStore({
+  windowMs: 15 * 60 * 1000,
+  max: 2000,
   message: { error: 'Слишком много запросов, попробуйте позже' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -21,45 +46,45 @@ export const generalLimiter = rateLimit({
     res.status(429).json({
       error: 'Too many requests',
       message: 'Превышен лимит запросов. Попробуйте через 15 минут.',
-      retryAfter: Math.ceil((req as any).rateLimit?.resetTime / 1000)
+      retryAfter: Math.ceil((req as any).rateLimit?.resetTime / 1000),
     });
   },
 });
 
-// Лимит попыток входа (защита от перебора, но без блокировки при обычной работе)
-export const authLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 минут
-  max: 30,
+// Строгий лимит входа: 10 неудачных попыток за 15 мин с одного IP
+export const authLimiter = withStore({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
   skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
   handler: (_req: Request, res: Response) => {
     res.status(429).json({
-      error: "Слишком много попыток входа",
-      message: "Подождите несколько минут и попробуйте снова.",
+      error: 'Слишком много попыток входа',
+      message: 'Аккаунт временно заблокирован. Подождите 15 минут и попробуйте снова.',
     });
   },
 });
 
-// Limiter для API endpoints
-export const apiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 минута
-  max: 300, // активный пользователь открывает ~20–30 страниц/мин × ~10 запросов
+// Лимит для API endpoints
+export const apiLimiter = withStore({
+  windowMs: 60 * 1000,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'API rate limit exceeded' },
 });
 
-// Limiter для загрузки файлов
-export const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 час
-  max: 50, // 50 загрузок в час
+// Лимит загрузки файлов
+export const uploadLimiter = withStore({
+  windowMs: 60 * 60 * 1000,
+  max: 50,
   message: { error: 'Превышен лимит загрузки файлов' },
 });
 
-// Limiter для экспорта (Excel/PDF)
-export const exportLimiter = rateLimit({
+// Лимит экспорта (Excel/PDF)
+export const exportLimiter = withStore({
   windowMs: 60 * 1000,
-  max: 10, // 10 экспортов в минуту
+  max: 10,
   message: { error: 'Слишком много экспортов, подождите минуту' },
 });

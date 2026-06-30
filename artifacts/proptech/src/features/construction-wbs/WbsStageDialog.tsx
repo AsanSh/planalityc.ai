@@ -17,12 +17,13 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { getApiBase } from "@/lib/api-base";
+import { getAuthToken } from "@/lib/api";
 import { WBS_STATUS_OPTS } from "./status";
 import type { DialogState, ProjectOption, WbsStage } from "./types";
 
 const BASE = getApiBase();
 const ah = () => {
-	const t = localStorage.getItem("auth_token");
+	const t = getAuthToken();
 	return {
 		"Content-Type": "application/json",
 		...(t ? { Authorization: `Bearer ${t}` } : {}),

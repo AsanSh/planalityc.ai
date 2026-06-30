@@ -107,6 +107,7 @@ function TenantDialog({ open, onClose, tenant }: TenantDialogProps) {
 		phones: [{ number: "", owner: "" }] as ContactPhone[],
 		email: "",
 		iin: "",
+		type: "individual" as "individual" | "company",
 		status: "active" as CreateTenantBodyStatus,
 		comment: "",
 	});
@@ -119,6 +120,7 @@ function TenantDialog({ open, onClose, tenant }: TenantDialogProps) {
 				phones: normalizeContactPhones((tenant as any).phones, tenant.phone),
 				email: tenant.email || "",
 				iin: tenant.iin || "",
+				type: ((tenant as TenantRow).type as "individual" | "company") || "individual",
 				status: tenant.status as CreateTenantBodyStatus,
 				comment: tenant.comment || "",
 			});
@@ -129,6 +131,7 @@ function TenantDialog({ open, onClose, tenant }: TenantDialogProps) {
 				phones: [{ number: "", owner: "" }],
 				email: "",
 				iin: "",
+				type: "individual",
 				status: "active",
 				comment: "",
 			});
@@ -146,15 +149,21 @@ function TenantDialog({ open, onClose, tenant }: TenantDialogProps) {
 					.filter((p) => p.number),
 				email: formData.email || null,
 				iin: formData.iin || null,
+				type: formData.type,
 				status: formData.status,
 				comment: formData.comment || null,
 			};
 
 			if (tenant) {
-				await updateMutation.mutateAsync({ id: tenant.id, data: payload });
+				await updateMutation.mutateAsync({
+					id: tenant.id,
+					data: payload as Parameters<typeof updateMutation.mutateAsync>[0]["data"],
+				});
 				toast({ title: "Арендатор обновлён" });
 			} else {
-				await createMutation.mutateAsync({ data: payload });
+				await createMutation.mutateAsync({
+					data: payload as Parameters<typeof createMutation.mutateAsync>[0]["data"],
+				});
 				toast({ title: "Арендатор добавлен" });
 			}
 
@@ -279,6 +288,26 @@ function TenantDialog({ open, onClose, tenant }: TenantDialogProps) {
 								setFormData({ ...formData, email: e.target.value })
 							}
 						/>
+					</div>
+					<div>
+						<Label htmlFor="type">Тип контрагента</Label>
+						<Select
+							value={formData.type}
+							onValueChange={(v) =>
+								setFormData({
+									...formData,
+									type: v as "individual" | "company",
+								})
+							}
+						>
+							<SelectTrigger id="type">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="individual">Физлицо</SelectItem>
+								<SelectItem value="company">Юрлицо</SelectItem>
+							</SelectContent>
+						</Select>
 					</div>
 					<div>
 						<Label htmlFor="status">Статус</Label>

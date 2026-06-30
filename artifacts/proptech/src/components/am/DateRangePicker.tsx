@@ -1,23 +1,15 @@
 /**
- * AM DateRangePicker — единый компонент выбора диапазона дат.
- *
- * Замена для старого PeriodPicker. Backward-compatible:
- * принимает и возвращает то же PeriodValue.
- *
- * UX-улучшения:
- * - Trigger показывает читаемый контекст («Май 2026», не «Все время»)
- * - 6 пресетов в radio-группе 2 колонки (без chip-overflow)
- * - Стрелки сдвига периода (◀ Май 2026 ▶) — переход на пред./след.
- * - Кнопка «Применить» — явное действие
+ * AM DateRangePicker — chip-style minimal period picker.
+ * Same PeriodValue API. Preset chips apply immediately; custom range applies on blur.
  */
 import { useEffect, useState } from "react";
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { CalendarDays, X } from "lucide-react";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export type PeriodPreset =
 	| "today"
@@ -68,7 +60,6 @@ function fmtShort(s: string): string {
 	return `${d.getDate()} ${MONTHS_GEN[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-/** Понедельник той же календарной недели (ISO-подобно для ru). */
 function weekStartMonday(d: Date): Date {
 	const start = new Date(d);
 	const day = start.getDay();
@@ -164,7 +155,6 @@ export function inPeriod(date: string | undefined | null, period: PeriodValue): 
 	return d >= period.from && d <= period.to;
 }
 
-/** Удобный label для trigger. */
 function periodLabel(p: PeriodValue): string {
 	if (p.preset === "today") return "Сегодня";
 	if (p.preset === "yesterday") return "Вчера";
@@ -184,236 +174,155 @@ function periodLabel(p: PeriodValue): string {
 	if (p.preset === "quarter") {
 		const d = parseISO(p.from);
 		const q = Math.floor(d.getMonth() / 3) + 1;
-		return `${q} квартал ${d.getFullYear()}`;
+		return `${q} кв. ${d.getFullYear()}`;
 	}
 	if (p.preset === "prev_quarter") {
 		const d = parseISO(p.from);
 		const q = Math.floor(d.getMonth() / 3) + 1;
-		return `${q} квартал ${d.getFullYear()}`;
+		return `${q} кв. ${d.getFullYear()}`;
 	}
-	if (p.preset === "year") {
-		return `${parseISO(p.from).getFullYear()} год`;
-	}
-	if (p.preset === "prev_year") {
-		return `${parseISO(p.from).getFullYear()} год`;
-	}
-	return `${fmtShort(p.from)} - ${fmtShort(p.to)}`;
+	if (p.preset === "year") return `${parseISO(p.from).getFullYear()} год`;
+	if (p.preset === "prev_year") return `${parseISO(p.from).getFullYear()} год`;
+	return `${fmtShort(p.from)} — ${fmtShort(p.to)}`;
 }
 
-/** Сдвиг периода стрелками. Работает для month/quarter/year/week/custom. */
-function shiftPeriod(p: PeriodValue, direction: -1 | 1): PeriodValue {
-	const from = parseISO(p.from);
-	const to = parseISO(p.to);
-	const ms = to.getTime() - from.getTime();
-
-	if (p.preset === "month") {
-		const next = new Date(from.getFullYear(), from.getMonth() + direction, 1);
-		const last = new Date(next.getFullYear(), next.getMonth() + 1, 0);
-		return { preset: "month", from: iso(next), to: iso(last) };
-	}
-	if (p.preset === "quarter") {
-		const next = new Date(from.getFullYear(), from.getMonth() + 3 * direction, 1);
-		const last = new Date(next.getFullYear(), next.getMonth() + 3, 0);
-		return { preset: "quarter", from: iso(next), to: iso(last) };
-	}
-	if (p.preset === "year") {
-		const next = new Date(from.getFullYear() + direction, 0, 1);
-		const last = new Date(from.getFullYear() + direction, 11, 31);
-		return { preset: "year", from: iso(next), to: iso(last) };
-	}
-	if (p.preset === "week" || p.preset === "prev_week") {
-		const next = new Date(from);
-		next.setDate(next.getDate() + 7 * direction);
-		const last = new Date(next);
-		last.setDate(next.getDate() + 6);
-		return { preset: p.preset, from: iso(next), to: iso(last) };
-	}
-	if (p.preset === "prev_month") {
-		const next = new Date(from.getFullYear(), from.getMonth() + direction, 1);
-		const last = new Date(next.getFullYear(), next.getMonth() + 1, 0);
-		return { preset: "prev_month", from: iso(next), to: iso(last) };
-	}
-	if (p.preset === "prev_quarter") {
-		const next = new Date(from.getFullYear(), from.getMonth() + 3 * direction, 1);
-		const last = new Date(next.getFullYear(), next.getMonth() + 3, 0);
-		return { preset: "prev_quarter", from: iso(next), to: iso(last) };
-	}
-	if (p.preset === "prev_year") {
-		const y = from.getFullYear() + direction;
-		return {
-			preset: "prev_year",
-			from: iso(new Date(y, 0, 1)),
-			to: iso(new Date(y, 11, 31)),
-		};
-	}
-	if (p.preset === "all") return p;
-	// today/yesterday/last7/last30/custom — сдвигаем по длине окна
-	const days = Math.round(ms / 86400000) + 1;
-	const nextFrom = new Date(from); nextFrom.setDate(nextFrom.getDate() + days * direction);
-	const nextTo = new Date(to); nextTo.setDate(nextTo.getDate() + days * direction);
-	return { preset: "custom", from: iso(nextFrom), to: iso(nextTo) };
-}
-
-const PRESETS: { key: PeriodPreset; label: string }[] = [
-	{ key: "today", label: "Сегодня" },
-	{ key: "yesterday", label: "Вчера" },
-	{ key: "last7", label: "±7 дней" },
-	{ key: "last30", label: "±30 дней" },
-	{ key: "week", label: "Текущая неделя" },
-	{ key: "prev_week", label: "Прошлая неделя" },
-	{ key: "month", label: "Текущий месяц" },
-	{ key: "prev_month", label: "Прошлый месяц" },
-	{ key: "quarter", label: "Текущий квартал" },
+const CHIP_PRESETS: { key: PeriodPreset; label: string }[] = [
+	{ key: "month",        label: "Текущий месяц" },
+	{ key: "quarter",      label: "Текущий квартал" },
+	{ key: "year",         label: "Текущий год" },
+	{ key: "prev_month",   label: "Прошлый месяц" },
 	{ key: "prev_quarter", label: "Прошлый квартал" },
-	{ key: "year", label: "Текущий год" },
-	{ key: "prev_year", label: "Прошлый год" },
-	{ key: "all", label: "Всё время" },
+	{ key: "prev_year",    label: "Прошлый год" },
+	{ key: "all",          label: "Всё время" },
 ];
 
 export interface DateRangePickerProps {
 	value: PeriodValue;
 	onChange: (v: PeriodValue) => void;
-	/** Hide арровы сдвига периода. */
 	hideShift?: boolean;
 	className?: string;
 }
 
-export function DateRangePicker({ value, onChange, hideShift, className }: DateRangePickerProps) {
+export function DateRangePicker({ value, onChange, className }: DateRangePickerProps) {
 	const [open, setOpen] = useState(false);
-	const [draft, setDraft] = useState<PeriodValue>(value);
+	const [fromInput, setFromInput] = useState(value.from);
+	const [toInput, setToInput] = useState(value.to);
 
-	useEffect(() => { if (open) setDraft(value); }, [open, value]);
+	useEffect(() => {
+		if (open) {
+			setFromInput(value.from);
+			setToInput(value.to);
+		}
+	}, [open, value.from, value.to]);
 
-	const apply = (next: PeriodValue) => {
-		onChange(next);
+	const applyPreset = (preset: PeriodPreset) => {
+		const r = getPresetRange(preset);
+		onChange({ preset, ...r });
 		setOpen(false);
 	};
 
-	const choosePreset = (preset: PeriodPreset) => {
-		if (preset === "custom") {
-			setDraft({ ...draft, preset });
-			return;
+	const applyCustom = (from: string, to: string) => {
+		if (from && to && from <= to) {
+			onChange({ preset: "custom", from, to });
 		}
-		const r = getPresetRange(preset);
-		setDraft({ preset, ...r });
 	};
 
-	const cn = ["inline-flex items-stretch", className].filter(Boolean).join(" ");
+	const reset = (e: { stopPropagation(): void }) => {
+		e.stopPropagation();
+		onChange(defaultPeriod("month"));
+	};
+
+	const isDefault = value.preset === "month" &&
+		value.from === getPresetRange("month").from &&
+		value.to === getPresetRange("month").to;
 
 	return (
-		<div className={cn}>
-			{!hideShift && (
+		<Popover open={open} onOpenChange={setOpen}>
+			<PopoverTrigger asChild>
 				<button
 					type="button"
-					onClick={() => onChange(shiftPeriod(value, -1))}
-					className="am-control am-press !w-9 !h-9 !p-0 flex items-center justify-center text-am-text-muted hover:text-am-text-strong !rounded-r-none border-r-0"
-					aria-label="Предыдущий период"
+					className={cn(
+						"h-9 pl-3 flex items-center gap-1.5 rounded-full border border-gray-200 bg-white text-sm text-gray-700 hover:border-gray-400 transition-colors whitespace-nowrap shrink-0",
+						isDefault ? "pr-3" : "pr-2",
+						className,
+					)}
 				>
-					<ChevronLeft className="w-4 h-4" />
+					<CalendarDays className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+					<span>{periodLabel(value)}</span>
+					{!isDefault && (
+						<span
+							role="button"
+							aria-label="Сбросить период"
+							onClick={reset}
+							className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+						>
+							<X className="w-3 h-3" />
+						</span>
+					)}
 				</button>
-			)}
-			<Popover open={open} onOpenChange={setOpen}>
-				<PopoverTrigger asChild>
-					<button
-						type="button"
-						className={`am-control am-press !h-9 !w-auto inline-flex items-center gap-2 px-3 min-w-[130px] hover:border-am-border-strong ${hideShift ? "" : "!rounded-none"}`}
-					>
-						<CalendarDays className="w-4 h-4 text-am-text-muted" />
-						<span className="text-sm text-am-text-strong flex-1 text-left">{periodLabel(value)}</span>
-						<ChevronDown className="w-4 h-4 text-am-text-subtle" />
-					</button>
-				</PopoverTrigger>
-				<PopoverContent className="w-[480px] p-0" align="start">
-					<div className="p-4 space-y-4 max-h-[min(70vh,520px)] overflow-y-auto">
-						<div>
-							<p className="text-[11px] uppercase tracking-wide text-am-text-muted font-semibold mb-2">
-								Период
-							</p>
-							<div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-								{PRESETS.map((p) => {
-									const active = draft.preset === p.key;
-									return (
-										<button
-											key={p.key}
-											type="button"
-											onClick={() => choosePreset(p.key)}
-											className={`am-press text-sm text-left px-3 py-2 rounded-md border ${
-												active
-													? "bg-am-brand-surface border-am-brand text-am-brand"
-													: "bg-am-bg border-am-border text-am-text hover:border-am-border-strong"
-											}`}
-										>
-											{p.label}
-										</button>
-									);
-								})}
-							</div>
-						</div>
+			</PopoverTrigger>
 
-						{/* Custom range */}
-						<div>
-							<p className="text-[11px] uppercase tracking-wide text-am-text-muted font-semibold mb-2">
-								Произвольный диапазон
-							</p>
-							<div className="flex items-center gap-2">
-								<input
-									type="date"
-									value={draft.from}
-									onChange={(e) => setDraft({ ...draft, preset: "custom", from: e.target.value })}
-									className="am-control !h-9 flex-1"
-								/>
-								<span className="text-am-text-subtle">-</span>
-								<input
-									type="date"
-									value={draft.to}
-									onChange={(e) => setDraft({ ...draft, preset: "custom", to: e.target.value })}
-									className="am-control !h-9 flex-1"
-								/>
-							</div>
-						</div>
-
-						<div className="flex justify-end gap-2 pt-2 border-t border-am-border">
-							<Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
-								Отмена
-							</Button>
-							<Button
-								size="sm"
-								onClick={() => apply(draft)}
-								className="bg-am-brand hover:bg-am-brand-hover text-white"
-							>
-								Применить
-							</Button>
-						</div>
+			<PopoverContent className="w-[300px] p-4 space-y-3" align="start">
+				{/* Date range inputs */}
+				<div className="flex items-center gap-2">
+					<div className="relative flex-1">
+						<input
+							type="date"
+							value={fromInput}
+							onChange={(e) => setFromInput(e.target.value)}
+							onBlur={() => applyCustom(fromInput, toInput)}
+							className="w-full h-9 pl-3 pr-8 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 bg-white"
+						/>
+						<CalendarDays className="absolute right-2 top-2.5 w-4 h-4 text-gray-300 pointer-events-none" />
 					</div>
-				</PopoverContent>
-			</Popover>
-			{!hideShift && (
-				<button
-					type="button"
-					onClick={() => onChange(shiftPeriod(value, 1))}
-					className="am-control am-press !w-9 !h-9 !p-0 flex items-center justify-center text-am-text-muted hover:text-am-text-strong !rounded-l-none border-l-0"
-					aria-label="Следующий период"
-				>
-					<ChevronRight className="w-4 h-4" />
-				</button>
-			)}
-		</div>
+					<span className="text-gray-400 text-sm shrink-0">—</span>
+					<div className="relative flex-1">
+						<input
+							type="date"
+							value={toInput}
+							onChange={(e) => setToInput(e.target.value)}
+							onBlur={() => applyCustom(fromInput, toInput)}
+							className="w-full h-9 pl-3 pr-8 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 bg-white"
+						/>
+						<CalendarDays className="absolute right-2 top-2.5 w-4 h-4 text-gray-300 pointer-events-none" />
+					</div>
+				</div>
+
+				{/* Preset chips */}
+				<div className="grid grid-cols-2 gap-1.5">
+					{CHIP_PRESETS.map(({ key, label }) => {
+						const active = value.preset === key;
+						return (
+							<button
+								key={key}
+								type="button"
+								onClick={() => applyPreset(key)}
+								className={cn(
+									"h-8 px-3 text-sm rounded-full border text-left transition-colors",
+									active
+										? "border-emerald-500 text-emerald-700 bg-emerald-50 font-medium"
+										: "border-gray-200 text-gray-600 hover:border-gray-300 bg-white",
+									key === "all" && "col-span-2",
+								)}
+							>
+								{label}
+							</button>
+						);
+					})}
+				</div>
+			</PopoverContent>
+		</Popover>
 	);
 }
 
-/** Очистка периода — кнопка-крестик рядом с DateRangePicker. */
-export function ClearPeriodButton({
-	onClear,
-}: {
-	onClear: () => void;
-}) {
+/** Stub kept for backward compat — no longer needed with chip trigger. */
+export function ClearPeriodButton({ onClear }: { onClear: () => void }) {
 	return (
 		<button
 			type="button"
 			onClick={onClear}
-			className="am-control am-press !w-9 !h-9 !p-0 flex items-center justify-center text-am-text-subtle hover:text-am-danger ml-1"
+			className="h-9 w-9 flex items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-colors"
 			aria-label="Сбросить период"
-			title="Сбросить период"
 		>
 			<X className="w-4 h-4" />
 		</button>

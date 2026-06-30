@@ -1464,18 +1464,17 @@ export function Layout({ children }: { children: ReactNode }) {
 							})}
 						</nav>
 
-						<div className="mt-3 space-y-2 border-t border-slate-200/80 pt-3">
+						<div className="mt-2 border-t border-slate-200/80 pt-2">
 							{canOpenSystemSettings && (
 								<Link href={activeModuleSettingsHref}>
-									<div className="flex h-9 items-center gap-2.5 rounded-full px-3 text-sm font-medium text-slate-700 transition-all hover:bg-slate-100 hover:text-slate-950">
-										<Settings className="h-4 w-4 text-slate-500" />
+									<div className="flex h-9 items-center gap-2.5 px-3 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900 rounded-lg hover:bg-slate-100">
+										<Settings className="h-4 w-4 shrink-0" />
 										<span>Настройки</span>
 									</div>
 								</Link>
 							)}
-							<div className="rounded-[16px] border border-slate-200/80 bg-white/76 p-1 shadow-sm shadow-slate-950/5">
-								<UserProfileDropdown />
-							</div>
+							<div className="mx-3 my-1.5 border-t border-slate-200/60" />
+							<UserProfileDropdown />
 						</div>
 					</aside>
 

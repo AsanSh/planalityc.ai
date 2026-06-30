@@ -781,7 +781,7 @@ export default function RentalAccounts() {
 								</div>
 								<div className="rounded-xl border p-3">
 									<p className="text-xs text-gray-500">Расходы</p>
-									<p className="mt-1 font-bold text-rose-600">\u2212{Math.round(accOps?.summary?.expense || 0).toLocaleString("ru-KG")}</p>
+									<p className="mt-1 font-bold text-rose-600">−{Math.round(accOps?.summary?.expense || 0).toLocaleString("ru-KG")}</p>
 								</div>
 								<div className="rounded-xl border p-3">
 									<p className="text-xs text-gray-500">Итог</p>

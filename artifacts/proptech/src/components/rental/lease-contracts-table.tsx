@@ -25,6 +25,9 @@ export type LeaseContractRow = LeaseContract & {
 	tenantEmail?: string | null;
 	tenantIin?: string | null;
 	propertyBlock?: string | null;
+	propertyFloor?: number | null;
+	propertyFullAddress?: string | null;
+	propertyProjectName?: string | null;
 	propertyRentalStatus?: string | null;
 	gracePeriodDays?: number | null;
 	discountType?: string | null;
@@ -102,11 +105,25 @@ export function LeaseContractsTable({
 				),
 			},
 			{
-				id: "propertyUnitNumber",
+				id: "propertyFullAddress",
 				header: "Объект",
-				size: 130,
-				accessorFn: (row) => row.propertyUnitNumber || `#${row.propertyId}`,
-				meta: { exportLabel: "Объект" },
+				size: 240,
+				accessorFn: (row) =>
+					row.propertyFullAddress ||
+					row.propertyUnitNumber ||
+					`#${row.propertyId}`,
+				meta: { exportLabel: "Объект", grow: true },
+				cell: ({ row }) => {
+					const label =
+						row.original.propertyFullAddress ||
+						row.original.propertyUnitNumber ||
+						`#${row.original.propertyId}`;
+					return (
+						<span className="text-sm leading-snug" title={label}>
+							{label}
+						</span>
+					);
+				},
 			},
 			{
 				id: "propertyBlock",

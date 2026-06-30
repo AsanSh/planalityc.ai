@@ -21,6 +21,7 @@ import {
   isValidTemplateId,
   uploadRentalDocumentTemplate,
 } from "../lib/rental-document-templates";
+import { formatPropertyFullAddress } from "../lib/format-property-address";
 import { requireTenantCompany } from "../middleware/tenant";
 import { requireEnabledModule } from "../middleware/modules";
 import {
@@ -544,6 +545,13 @@ router.get("/rental/contracts", async (req: AuthenticatedRequest, res): Promise<
       propertyUnitNumber: p?.unitNumber ?? null,
       propertyProjectName: p?.projectName ?? null,
       propertyBlock: p?.block ?? null,
+      propertyFloor: p?.floor ?? null,
+      propertyFullAddress: formatPropertyFullAddress({
+        unitNumber: p?.unitNumber,
+        projectName: p?.projectName,
+        block: p?.block,
+        floor: p?.floor,
+      }),
       propertyRentalStatus: p?.rentalStatus ?? null,
     };
   }));

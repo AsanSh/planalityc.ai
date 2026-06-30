@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
@@ -112,6 +113,12 @@ export default function RentalAccounts() {
 	>({});
 	const [loadingRates, setLoadingRates] = useState(false);
 	const [loading, setLoading] = useState(false);
+	const [opsAccount, setOpsAccount] = useState<any>(null);
+	const { data: accOps, isLoading: opsLoading } = useQuery<any>({
+		queryKey: ["rental-account-ops", opsAccount?.id],
+		queryFn: () => api.get(`/rental/accounts/${opsAccount.id}/operations`).then((r) => r.data),
+		enabled: !!opsAccount,
+	});
 	const [deleting, setDeleting] = useState<number | null>(null);
 	const [recalculating, setRecalculating] = useState(false);
 	const handleRecalculate = async () => {
@@ -243,10 +250,15 @@ export default function RentalAccounts() {
 				meta: { exportLabel: "Название", pinned: "left" },
 				cell: ({ row }) => (
 					<div>
-						<div className="flex items-center gap-2 font-medium">
+						<button
+							type="button"
+							onClick={() => setOpsAccount(row.original)}
+							className="flex items-center gap-2 font-medium text-left hover:text-blue-700 hover:underline"
+							title="Показать движения по счёту"
+						>
 							{typeIcons[row.original.type] || typeIcons.bank}
 							{row.original.name}
-						</div>
+						</button>
 						{row.original.notes && (
 							<p className="text-xs text-muted-foreground mt-0.5 ml-6">
 								{row.original.notes}
@@ -749,6 +761,58 @@ export default function RentalAccounts() {
 							</Button>
 						</div>
 					</div>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog open={!!opsAccount} onOpenChange={(o) => !o && setOpsAccount(null)}>
+				<DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle>Движения по счёту · {opsAccount?.name}</DialogTitle>
+						<DialogDescription>Из чего складывается баланс счёта.</DialogDescription>
+					</DialogHeader>
+					{opsLoading ? (
+						<div className="py-10 text-center text-sm text-gray-500">Загрузка…</div>
+					) : (
+						<>
+							<div className="grid grid-cols-3 gap-3">
+								<div className="rounded-xl border p-3">
+									<p className="text-xs text-gray-500">Поступления</p>
+									<p className="mt-1 font-bold text-emerald-600">+{Math.round(accOps?.summary?.income || 0).toLocaleString("ru-KG")}</p>
+								</div>
+								<div className="rounded-xl border p-3">
+									<p className="text-xs text-gray-500">Расходы</p>
+									<p className="mt-1 font-bold text-rose-600">\u2212{Math.round(accOps?.summary?.expense || 0).toLocaleString("ru-KG")}</p>
+								</div>
+								<div className="rounded-xl border p-3">
+									<p className="text-xs text-gray-500">Итог</p>
+									<p className="mt-1 font-bold text-gray-900">{Math.round(accOps?.summary?.net || 0).toLocaleString("ru-KG")}</p>
+								</div>
+							</div>
+							<div className="mt-3 overflow-hidden rounded-xl border">
+								<table className="w-full text-sm">
+									<thead>
+										<tr className="border-b bg-gray-50 text-left text-xs text-gray-500">
+											<th className="px-3 py-2 font-medium">Дата</th>
+											<th className="px-3 py-2 font-medium">Операция</th>
+											<th className="px-3 py-2 text-right font-medium">Сумма</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y">
+										{(accOps?.operations || []).length === 0 && (
+											<tr><td colSpan={3} className="py-8 text-center text-gray-400">Движений нет</td></tr>
+										)}
+										{(accOps?.operations || []).map((op: any, i: number) => (
+											<tr key={i} className="hover:bg-gray-50">
+												<td className="whitespace-nowrap px-3 py-2 text-gray-600">{op.date ? new Date(op.date).toLocaleDateString("ru-RU") : "\u2014"}</td>
+												<td className="px-3 py-2 text-gray-800">{op.label}</td>
+												<td className={`whitespace-nowrap px-3 py-2 text-right font-medium ${op.amount >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{op.amount >= 0 ? "+" : "\u2212"}{Math.round(Math.abs(op.amount)).toLocaleString("ru-KG")} {op.currency || ""}</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						</>
+					)}
 				</DialogContent>
 			</Dialog>
 		</div>

@@ -279,6 +279,47 @@ router.get("/rental/accounts", async (req: AuthenticatedRequest, res): Promise<v
   res.json(rows);
 });
 
+// Движения по счёту: из чего состоит баланс (поступления + депозиты − расходы)
+router.get("/rental/accounts/:id/operations", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const companyId = req.scopedCompanyId!;
+  const accountId = parseInt(req.params.id as string, 10);
+  if (!Number.isFinite(accountId)) { res.status(400).json({ error: "Некорректный счёт" }); return; }
+
+  const pays = await db.select({
+    date: paymentsTable.paymentDate,
+    amount: paymentsTable.accountAmount,
+    amountRaw: paymentsTable.amount,
+    note: paymentsTable.note,
+    currency: paymentsTable.currency,
+  }).from(paymentsTable).where(and(eq(paymentsTable.companyId, companyId), eq(paymentsTable.accountId, accountId)));
+
+  const deps = await db.select({
+    date: depositsTable.receivedDate,
+    amount: depositsTable.amount,
+    note: depositsTable.note,
+    currency: depositsTable.currency,
+  }).from(depositsTable).where(and(eq(depositsTable.companyId, companyId), eq(depositsTable.accountId, accountId)));
+
+  const exps = await db.select({
+    date: expensesTable.expenseDate,
+    amount: expensesTable.amount,
+    category: expensesTable.category,
+    description: expensesTable.description,
+    currency: expensesTable.currency,
+  }).from(expensesTable).where(and(eq(expensesTable.companyId, companyId), eq(expensesTable.accountId, accountId)));
+
+  const operations = [
+    ...pays.map((p) => ({ date: p.date, kind: "income" as const, label: p.note || "Поступление (аренда)", amount: parseFloat(String(p.amount ?? p.amountRaw ?? 0)), currency: p.currency })),
+    ...deps.map((d) => ({ date: d.date, kind: "income" as const, label: d.note || "Депозит", amount: parseFloat(String(d.amount ?? 0)), currency: d.currency })),
+    ...exps.map((e) => ({ date: e.date, kind: "expense" as const, label: e.category || e.description || "Расход", amount: -parseFloat(String(e.amount ?? 0)), currency: e.currency })),
+  ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+
+  const income = operations.filter((o) => o.amount > 0).reduce((s, o) => s + o.amount, 0);
+  const expense = operations.filter((o) => o.amount < 0).reduce((s, o) => s + o.amount, 0);
+
+  res.json({ operations, summary: { income, expense: Math.abs(expense), net: income + expense } });
+});
+
 router.post("/rental/accounts", async (req: AuthenticatedRequest, res): Promise<void> => {
   const { name, type, bank, bik, accountNumber, currency, openingBalance, notes, legalEntityId } = req.body;
   if (!name) { res.status(400).json({ error: "name required" }); return; }

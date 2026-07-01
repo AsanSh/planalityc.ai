@@ -467,6 +467,11 @@ const MODULES: Module[] = [
 				title: "Финансы и отчёты",
 				items: [
 					{
+						href: "/warehouse/finance-queue",
+						label: "Финсогласование",
+						icon: CreditCard,
+					},
+					{
 						href: "/warehouse/costs",
 						label: "Стоимость запасов",
 						icon: Wallet,

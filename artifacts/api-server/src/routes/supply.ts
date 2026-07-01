@@ -9,10 +9,14 @@ import {
   companySupplierCreditLimitsTable,
   approvalLimitsTable,
   warehouseStockTable,
+  warehouseItemsTable,
+  warehousesTable,
+  supplierProductsTable,
   globalProductsTable,
   usersTable,
 } from "../lib/db";
 import { splitRequestItem } from "../lib/supply-batches";
+import { resolveWarehouseItemId } from "../lib/supply-catalog";
 import { requireAuth, requireRole, requirePermission, type AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
 import { requireEnabledModule } from "../middleware/modules";
@@ -252,27 +256,60 @@ router.post(
       .from(supplyRequestItemsTable)
       .where(eq(supplyRequestItemsTable.requestId, id));
 
-    const result = await db.transaction(async (tx) => {
-      const planned: Array<{ requestItemId: number; fromStock: number; toPurchase: number; mode: string }> = [];
-      for (const p of planItems) {
-        const item = items.find((it) => it.id === Number(p.requestItemId));
-        if (!item) continue;
+    // Справочники для авто-резолва позиции склада по каталогу
+    const [supplierProducts, warehouseItems, warehouses] = await Promise.all([
+      db
+        .select({ id: supplierProductsTable.id, globalProductId: supplierProductsTable.globalProductId })
+        .from(supplierProductsTable)
+        .where(eq(supplierProductsTable.companyId, companyId)),
+      db
+        .select({ id: warehouseItemsTable.id, globalProductId: warehouseItemsTable.globalProductId })
+        .from(warehouseItemsTable)
+        .where(eq(warehouseItemsTable.companyId, companyId)),
+      db.select().from(warehousesTable).where(eq(warehousesTable.companyId, companyId)),
+    ]);
+    const defaultWarehouseId =
+      (req.body?.warehouseId ? Number(req.body.warehouseId) : undefined) ??
+      warehouses.find((w) => w.type === "central")?.id ??
+      warehouses[0]?.id;
 
-        const [stock] = await tx
-          .select()
-          .from(warehouseStockTable)
-          .where(
-            and(
-              eq(warehouseStockTable.companyId, companyId),
-              eq(warehouseStockTable.warehouseId, Number(p.warehouseId)),
-              eq(warehouseStockTable.itemId, Number(p.warehouseItemId)),
-            ),
+    const result = await db.transaction(async (tx) => {
+      const planned: Array<{
+        requestItemId: number;
+        warehouseItemId: number | null;
+        fromStock: number;
+        toPurchase: number;
+        mode: string;
+      }> = [];
+      for (const item of items) {
+        const override = planItems.find((p) => Number(p.requestItemId) === item.id);
+        const warehouseId = override?.warehouseId ? Number(override.warehouseId) : defaultWarehouseId;
+        const warehouseItemId =
+          (override?.warehouseItemId ? Number(override.warehouseItemId) : undefined) ??
+          resolveWarehouseItemId(
+            { globalProductId: item.globalProductId, supplierProductId: item.supplierProductId },
+            supplierProducts,
+            warehouseItems,
           );
+
+        let stock: typeof warehouseStockTable.$inferSelect | undefined;
+        if (warehouseItemId != null && warehouseId != null) {
+          [stock] = await tx
+            .select()
+            .from(warehouseStockTable)
+            .where(
+              and(
+                eq(warehouseStockTable.companyId, companyId),
+                eq(warehouseStockTable.warehouseId, warehouseId),
+                eq(warehouseStockTable.itemId, warehouseItemId),
+              ),
+            );
+        }
         const available = stock
           ? Math.max(0, Number(stock.quantity) - Number(stock.reservedQuantity))
           : 0;
         const { fromStock, toPurchase } = splitRequestItem(available, Number(item.quantity));
-        const mode = toPurchase === 0 ? "from_stock" : fromStock === 0 ? "purchase" : "auto";
+        const mode = fromStock === 0 ? "purchase" : toPurchase === 0 ? "from_stock" : "auto";
 
         // зарезервировать выдаваемое со склада
         if (fromStock > 0 && stock) {
@@ -288,11 +325,11 @@ router.post(
             fulfillMode: mode,
             fromStockQty: String(fromStock),
             purchaseQty: String(toPurchase),
-            reservedWarehouseId: fromStock > 0 ? Number(p.warehouseId) : null,
+            reservedWarehouseId: fromStock > 0 && warehouseId != null ? warehouseId : null,
           })
           .where(eq(supplyRequestItemsTable.id, item.id));
 
-        planned.push({ requestItemId: item.id, fromStock, toPurchase, mode });
+        planned.push({ requestItemId: item.id, warehouseItemId: warehouseItemId ?? null, fromStock, toPurchase, mode });
       }
       return planned;
     });

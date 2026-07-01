@@ -104,7 +104,7 @@ router.post("/warehouse/items", async (req: AuthenticatedRequest, res): Promise<
   try {
     const {
       name, category, unit, currentStock, minStock, maxStock,
-      unitPrice, currency, supplier, sku, barcode, location, description
+      unitPrice, currency, supplier, sku, barcode, location, description, globalProductId
     } = req.body;
 
     if (!name || !unit) {
@@ -127,6 +127,7 @@ router.post("/warehouse/items", async (req: AuthenticatedRequest, res): Promise<
       barcode,
       location,
       description,
+      globalProductId: globalProductId != null ? Number(globalProductId) : null,
       isActive: true,
     }).returning();
 

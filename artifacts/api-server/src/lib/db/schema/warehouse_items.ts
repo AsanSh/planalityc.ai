@@ -18,6 +18,8 @@ export const warehouseItemsTable = pgTable("warehouse_items", {
   barcode: text("barcode"),
   location: text("location"),
   description: text("description"),
+  // Связка с единым каталогом платформы (фаза 3+): для авто-разбиения заявки
+  globalProductId: integer("global_product_id"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

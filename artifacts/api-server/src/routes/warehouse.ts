@@ -8,6 +8,8 @@ import {
   warehouseOutgoingTable,
   warehouseInventoryTable,
   warehouseSupplierPaymentsTable,
+  warehousesTable,
+  warehouseStockTable,
   activityLogTable,
   constructionProjectsTable,
 } from "../lib/db";
@@ -102,7 +104,7 @@ router.post("/warehouse/items", async (req: AuthenticatedRequest, res): Promise<
   try {
     const {
       name, category, unit, currentStock, minStock, maxStock,
-      unitPrice, currency, supplier, sku, barcode, location, description
+      unitPrice, currency, supplier, sku, barcode, location, description, globalProductId
     } = req.body;
 
     if (!name || !unit) {
@@ -125,6 +127,7 @@ router.post("/warehouse/items", async (req: AuthenticatedRequest, res): Promise<
       barcode,
       location,
       description,
+      globalProductId: globalProductId != null ? Number(globalProductId) : null,
       isActive: true,
     }).returning();
 
@@ -230,6 +233,122 @@ router.delete(
     }
   }
 );
+
+// ──────────────────────────────────────────────────────────────────────────────
+// WAREHOUSES (Склады: центральный / объектный / прорабский)
+// ──────────────────────────────────────────────────────────────────────────────
+
+router.get("/warehouse/warehouses", async (req: AuthenticatedRequest, res): Promise<void> => {
+  try {
+    const { type, projectId } = req.query as Record<string, string | undefined>;
+    const conditions: SQL[] = [eq(warehousesTable.companyId, req.scopedCompanyId!)];
+    if (type) conditions.push(eq(warehousesTable.type, type));
+    if (projectId) conditions.push(eq(warehousesTable.projectId, Number(projectId)));
+
+    const rows = await db.select().from(warehousesTable)
+      .where(and(...conditions))
+      .orderBy(warehousesTable.type, warehousesTable.name);
+    res.json(rows);
+  } catch (error) {
+    console.error("Error fetching warehouses:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/warehouse/warehouses", async (req: AuthenticatedRequest, res): Promise<void> => {
+  try {
+    const { name, type, projectId, responsibleUserId, address } = req.body;
+    if (!name) {
+      res.status(400).json({ error: "name is required" });
+      return;
+    }
+    const allowedTypes = ["central", "project", "foreman", "transit"];
+    const warehouseType = type ?? "central";
+    if (!allowedTypes.includes(warehouseType)) {
+      res.status(400).json({ error: `type must be one of ${allowedTypes.join(", ")}` });
+      return;
+    }
+
+    const [created] = await db.insert(warehousesTable).values({
+      companyId: req.scopedCompanyId!,
+      name,
+      type: warehouseType,
+      projectId: projectId ?? null,
+      responsibleUserId: responsibleUserId ?? null,
+      address: address ?? null,
+    }).returning();
+
+    await logWarehouseActivity(req.scopedCompanyId!, req.userId, "warehouse", created.id, "create", `Создан склад «${name}»`, created);
+    res.status(201).json(created);
+  } catch (error) {
+    console.error("Error creating warehouse:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch("/warehouse/warehouses/:id", async (req: AuthenticatedRequest, res): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+    const { name, responsibleUserId, address, isActive, projectId } = req.body;
+
+    const patch: Record<string, unknown> = {};
+    if (name !== undefined) patch.name = name;
+    if (responsibleUserId !== undefined) patch.responsibleUserId = responsibleUserId;
+    if (address !== undefined) patch.address = address;
+    if (isActive !== undefined) patch.isActive = isActive;
+    if (projectId !== undefined) patch.projectId = projectId;
+    if (Object.keys(patch).length === 0) {
+      res.status(400).json({ error: "no updatable fields provided" });
+      return;
+    }
+
+    const [updated] = await db.update(warehousesTable)
+      .set(patch)
+      .where(and(eq(warehousesTable.id, id), eq(warehousesTable.companyId, req.scopedCompanyId!)))
+      .returning();
+    if (!updated) {
+      res.status(404).json({ error: "warehouse not found" });
+      return;
+    }
+    await logWarehouseActivity(req.scopedCompanyId!, req.userId, "warehouse", id, "update", `Изменён склад «${updated.name}»`, updated);
+    res.json(updated);
+  } catch (error) {
+    console.error("Error updating warehouse:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Остатки по конкретному складу (join имя/ед.изм. из номенклатуры, available = quantity - reserved)
+router.get("/warehouse/stock", async (req: AuthenticatedRequest, res): Promise<void> => {
+  try {
+    const { warehouseId } = req.query as Record<string, string | undefined>;
+    const conditions: SQL[] = [eq(warehouseStockTable.companyId, req.scopedCompanyId!)];
+    if (warehouseId) conditions.push(eq(warehouseStockTable.warehouseId, Number(warehouseId)));
+
+    const rows = await db.select({
+      id: warehouseStockTable.id,
+      warehouseId: warehouseStockTable.warehouseId,
+      itemId: warehouseStockTable.itemId,
+      itemName: warehouseItemsTable.name,
+      unit: warehouseItemsTable.unit,
+      quantity: warehouseStockTable.quantity,
+      reservedQuantity: warehouseStockTable.reservedQuantity,
+      avgPrice: warehouseStockTable.avgPrice,
+    }).from(warehouseStockTable)
+      .leftJoin(warehouseItemsTable, eq(warehouseItemsTable.id, warehouseStockTable.itemId))
+      .where(and(...conditions))
+      .orderBy(warehouseItemsTable.name);
+
+    const withAvailable = rows.map((r) => ({
+      ...r,
+      available: String(Math.max(0, Number(r.quantity) - Number(r.reservedQuantity))),
+    }));
+    res.json(withAvailable);
+  } catch (error) {
+    console.error("Error fetching warehouse stock:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // ──────────────────────────────────────────────────────────────────────────────
 // INCOMING (Поступления)

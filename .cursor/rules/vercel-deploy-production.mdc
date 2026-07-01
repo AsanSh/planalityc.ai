@@ -47,6 +47,33 @@ npx vercel deploy --prod --yes
 
 Или push в `main` — Git integration на project `planalityc.ai`.
 
+## Staging (develop → staging, main → production)
+
+Ветка `develop` — общая dev/staging ветка. Push в `develop` (paths `artifacts/proptech/**` или `artifacts/api-server/**`) деплоит автоматически через `.github/workflows/deploy-staging-frontend.yml` / `deploy-staging-api.yml`. Push в `main` — существующий flow (prod), без изменений.
+
+| | Vercel project | URL |
+|---|---|---|
+| Frontend staging | `planalityc-ai-staging` (`prj_koB00Oze8NNfMthXmWc3mnYUC7eI`) | https://planalityc-ai-staging.vercel.app |
+| API staging | `planalityc-api-staging` (`prj_6qzDLAbTO1yHrg5XJRHtbtsucSDd`) | https://planalityc-api-staging.vercel.app |
+
+- Staging frontend `VITE_API_URL` → staging API URL (не путать с прод).
+- Staging API: свой `JWT_SECRET` (не совпадает с прод — staging-токены не должны работать в проде), `FRONTEND_URL` → staging frontend URL, `DATABASE_URL` → отдельная Neon DB-ветка `staging` (см. ниже). Внешние интеграции (SMS/email) на staging — тестовые ключи или не настроены, реальные не дергать.
+- Flow фичи: `feature/*` → PR в `develop` → push в `develop` → проверка на staging URL → PR `develop` → `main` → push в `main` → prod (как раньше).
+- Новые миграции сначала прогоняются на staging (API стартует и гоняет `runMigrations()` против staging-ветки Neon), только потом мёржим в `main`.
+
+### Neon DB-ветка для staging
+
+Прод-база — Neon проект `crimson-glitter-76438940` (org `AsanS`, консоль показывает имя проекта "AssetHub" — не переименовывать/не путать), ветка **`planalityc`** (id `br-tiny-cherry-ap4as22v`, НЕ `main` и НЕ `production` — там другое приложение делит тот же Neon-аккаунт). Подтверждено прямым `psql`-подключением: схема (`users`, `companies`, `construction_projects`, `crm_leads`, `tenants`, ...) точно совпадает с `lib/db/src/schema`.
+
+Staging-ветка **`staging`** (id `br-bitter-glitter-aphct7ch`) уже создана как copy-on-write от `planalityc` и подключена как `DATABASE_URL` в `planalityc-api-staging` (pooler host). Пересоздать/освежить при необходимости:
+```bash
+neonctl branches create --name staging --parent planalityc --project-id crimson-glitter-76438940
+```
+Перед миграцией на прод — снапшот-бэкап тем же механизмом:
+```bash
+neonctl branches create --name backup-$(date +%Y%m%d) --parent planalityc --project-id crimson-glitter-76438940
+```
+
 ## bcrypt → bcryptjs
 
 - На Vercel использовать **`bcryptjs`**, не `bcrypt` (native `.node` → `invalid ELF header` на Linux).

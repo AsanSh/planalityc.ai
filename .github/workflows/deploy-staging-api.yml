@@ -1,0 +1,27 @@
+name: Deploy API → Vercel (staging)
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'artifacts/api-server/**'
+      - '.github/workflows/deploy-staging-api.yml'
+
+jobs:
+  deploy:
+    name: Deploy planalityc-api-staging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Deploy to Staging
+        run: |
+          vercel deploy --prod \
+            --token=${{ secrets.VERCEL_TOKEN }} \
+            --yes
+        env:
+          VERCEL_ORG_ID: team_qAoTAQ23XcOvbSRXVfeWOmWa
+          VERCEL_PROJECT_ID: prj_6qzDLAbTO1yHrg5XJRHtbtsucSDd

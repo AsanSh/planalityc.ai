@@ -52,6 +52,9 @@ type SupplyRequestDetail = SupplyRequestRow & {
 		quantity: string;
 		unit: string;
 		notes?: string | null;
+		fulfillMode?: string | null;
+		fromStockQty?: string | null;
+		purchaseQty?: string | null;
 	}>;
 	approvals: Array<{
 		id: number;
@@ -335,16 +338,37 @@ export default function WarehouseSupplyApprovals() {
 									Позиции ({detail.items.length})
 								</p>
 								<div className="border rounded-md divide-y max-h-40 overflow-y-auto">
-									{detail.items.map((item) => (
-										<div key={item.id} className="px-3 py-2 text-sm flex justify-between gap-2">
-											<span>
-												{item.productName || item.customName || "—"}
-											</span>
-											<span className="text-gray-600 whitespace-nowrap">
-												{Number(item.quantity).toLocaleString("ru-KG")} {item.unit}
-											</span>
-										</div>
-									))}
+									{detail.items.map((item) => {
+										const fromStock = Number(item.fromStockQty ?? 0);
+										const toPurchase = Number(item.purchaseQty ?? 0);
+										const planned = item.fulfillMode && item.fulfillMode !== "auto" || fromStock > 0 || toPurchase > 0;
+										return (
+											<div key={item.id} className="px-3 py-2 text-sm">
+												<div className="flex justify-between gap-2">
+													<span>
+														{item.productName || item.customName || "—"}
+													</span>
+													<span className="text-gray-600 whitespace-nowrap">
+														{Number(item.quantity).toLocaleString("ru-KG")} {item.unit}
+													</span>
+												</div>
+												{planned && (
+													<div className="mt-1 flex gap-1.5">
+														{fromStock > 0 && (
+															<Badge variant="secondary" className="bg-emerald-100 text-emerald-800">
+																Со склада: {fromStock.toLocaleString("ru-KG")}
+															</Badge>
+														)}
+														{toPurchase > 0 && (
+															<Badge variant="secondary" className="bg-amber-100 text-amber-800">
+																Докупить: {toPurchase.toLocaleString("ru-KG")}
+															</Badge>
+														)}
+													</div>
+												)}
+											</div>
+										);
+									})}
 								</div>
 							</div>
 

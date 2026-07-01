@@ -49,6 +49,12 @@ interface WarehouseItem {
 	barcode?: string;
 	location?: string;
 	description?: string;
+	globalProductId?: number | null;
+}
+
+interface GlobalProduct {
+	id: number;
+	canonicalName: string;
 }
 
 function formatCurrency(amount: number, currency: string = "KGS") {
@@ -89,6 +95,13 @@ function ItemDialog({ open, onClose, item }: ItemDialogProps) {
 		barcode: item?.barcode || "",
 		location: item?.location || "",
 		description: item?.description || "",
+		globalProductId: item?.globalProductId ? String(item.globalProductId) : "none",
+	});
+
+	const { data: catalog = [] } = useQuery<GlobalProduct[]>({
+		queryKey: ["catalog-products-for-items"],
+		queryFn: () => api.get("/catalog/products").then((r) => r.data),
+		enabled: open,
 	});
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -109,6 +122,10 @@ function ItemDialog({ open, onClose, item }: ItemDialogProps) {
 				barcode: formData.barcode || null,
 				location: formData.location || null,
 				description: formData.description || null,
+				globalProductId:
+					formData.globalProductId && formData.globalProductId !== "none"
+						? Number(formData.globalProductId)
+						: null,
 			};
 
 			if (item) {
@@ -304,6 +321,31 @@ function ItemDialog({ open, onClose, item }: ItemDialogProps) {
 							}
 							placeholder="Зона А, стеллаж 3, полка 2"
 						/>
+					</div>
+
+					<div>
+						<Label>Позиция единого каталога</Label>
+						<Select
+							value={formData.globalProductId}
+							onValueChange={(v) =>
+								setFormData({ ...formData, globalProductId: v })
+							}
+						>
+							<SelectTrigger>
+								<SelectValue placeholder="Не связано с каталогом" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="none">Не связано с каталогом</SelectItem>
+								{catalog.map((p) => (
+									<SelectItem key={p.id} value={String(p.id)}>
+										{p.canonicalName}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<p className="mt-1 text-xs text-muted-foreground">
+							Нужно для авто-разбиения заявок «со склада / докупить».
+						</p>
 					</div>
 
 					<div>

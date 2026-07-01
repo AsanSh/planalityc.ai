@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   api:
-    name: API typecheck and build
+    name: API typecheck, tests and build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -38,11 +38,14 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Unit tests
+        run: npm run test
+
       - name: Build
         run: npm run build
 
   frontend:
-    name: Frontend typecheck and build
+    name: Frontend typecheck, tests and build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -63,6 +66,9 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test
 
       - name: Build
         env:

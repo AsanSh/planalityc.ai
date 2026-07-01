@@ -617,29 +617,36 @@ export default function RentalProperties() {
 
 	const downloadImportTemplate = async () => {
 		try {
-			const XLSX = await import("xlsx");
-			const workbook = XLSX.utils.book_new();
-			const sheet = XLSX.utils.json_to_sheet(RENTAL_TEMPLATE_SAMPLE, {
-				header: [...RENTAL_IMPORT_COLUMNS],
-			});
-			sheet["!cols"] = RENTAL_IMPORT_COLUMNS.map((column) => ({
-				wch: Math.max(14, column.length + 4),
-			}));
-			XLSX.utils.book_append_sheet(workbook, sheet, "Объекты аренды");
-			const rules = XLSX.utils.aoa_to_sheet([
-				["Правила заполнения"],
-				["Обязательные поля", "Адрес, Номер объекта"],
-				["ОсОО", "Можно оставить пустым: будет выбрано первое активное ОсОО компании."],
-				["Договор", "Создаётся, если заполнены Арендатор, Дата начала и Аренда в месяц."],
-				["Тип объекта", "Квартира, Офис, Парковка, Кладовая"],
-				["Тип арендатора", "Физлицо или Компания"],
-				["Валюта", "KGS или USD"],
-				["Статус договора", "Активный, Черновик, Расторгнут"],
-				["Дата", "Формат YYYY-MM-DD или ДД.ММ.ГГГГ"],
+			const { downloadXlsxMulti } = await import("@/lib/xlsx-lite");
+			await downloadXlsxMulti("rental-import-template.xlsx", [
+				{
+					name: "Объекты аренды",
+					rows: [
+						[...RENTAL_IMPORT_COLUMNS],
+						...RENTAL_TEMPLATE_SAMPLE.map((sample) =>
+							RENTAL_IMPORT_COLUMNS.map((column) => sample[column] ?? ""),
+						),
+					],
+					colWidths: RENTAL_IMPORT_COLUMNS.map((column) =>
+						Math.max(14, column.length + 4),
+					),
+				},
+				{
+					name: "Инструкция",
+					rows: [
+						["Правила заполнения"],
+						["Обязательные поля", "Адрес, Номер объекта"],
+						["ОсОО", "Можно оставить пустым: будет выбрано первое активное ОсОО компании."],
+						["Договор", "Создаётся, если заполнены Арендатор, Дата начала и Аренда в месяц."],
+						["Тип объекта", "Квартира, Офис, Парковка, Кладовая"],
+						["Тип арендатора", "Физлицо или Компания"],
+						["Валюта", "KGS или USD"],
+						["Статус договора", "Активный, Черновик, Расторгнут"],
+						["Дата", "Формат YYYY-MM-DD или ДД.ММ.ГГГГ"],
+					],
+					colWidths: [22, 80],
+				},
 			]);
-			rules["!cols"] = [{ wch: 22 }, { wch: 80 }];
-			XLSX.utils.book_append_sheet(workbook, rules, "Инструкция");
-			XLSX.writeFile(workbook, "rental-import-template.xlsx");
 		} catch (e: unknown) {
 			toast({
 				title: "Не удалось создать шаблон",
@@ -656,16 +663,8 @@ export default function RentalProperties() {
 
 		setImporting(true);
 		try {
-			const XLSX = await import("xlsx");
-			const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
-			const firstSheetName = workbook.SheetNames[0];
-			if (!firstSheetName) throw new Error("В файле нет листов");
-
-			const sheet = workbook.Sheets[firstSheetName];
-			const rows = XLSX.utils.sheet_to_json<RentalImportRow>(sheet, {
-				defval: "",
-				raw: true,
-			});
+			const { readSheetObjects } = await import("@/lib/xlsx-lite");
+			const rows = (await readSheetObjects(file)) as RentalImportRow[];
 
 			if (!rows.length) {
 				toast({

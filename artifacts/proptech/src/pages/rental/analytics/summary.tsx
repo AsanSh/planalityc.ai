@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import { downloadXlsx, readSheetRows } from "@/lib/xlsx-lite";
 import {
 	AlertTriangle, Building2, Check, ChevronDown, ChevronUp, ChevronsUpDown,
 	Columns, Download, FileSpreadsheet, Loader2, Pencil, Percent,
@@ -71,7 +71,9 @@ function fmtDate(s: string | null | undefined) {
 function fmtNum(v: number) {
 	return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(v);
 }
-function excelDateToISO(serial: number | string | null): string {
+function excelDateToISO(serial: unknown): string {
+	// exceljs отдаёт ячейки-даты как Date; serial-числа оставлены для совместимости
+	if (serial instanceof Date) return serial.toISOString().slice(0, 10);
 	if (!serial || isNaN(Number(serial))) return "";
 	const n = Number(serial);
 	if (n < 1000) return ""; // not a date
@@ -526,15 +528,12 @@ export default function RentalSummary() {
 	const occupancy     = totalProps > 0 ? Math.round((propsArr.filter((p: any) => p.rentalStatus === "rented").length / totalProps) * 100) : 0;
 
 	// ── Excel import ──────────────────────────────────────────────────────────
-	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
-		const reader = new FileReader();
-		reader.onload = ev => {
-			const data = new Uint8Array(ev.target!.result as ArrayBuffer);
-			const wb = XLSX.read(data, { type: "array" });
-			const ws = wb.Sheets[wb.SheetNames[0]];
-			const raw = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1, defval: "" }) as any[][];
+		e.target.value = "";
+		{
+			const raw = (await readSheetRows(file)) as any[][];
 
 			// Find header row (look for row with "Арендатор")
 			let headerIdx = raw.findIndex(r => r.some(c => String(c).includes("Арендатор")));
@@ -567,9 +566,7 @@ export default function RentalSummary() {
 				});
 			}
 			setImportRows(parsed);
-		};
-		reader.readAsArrayBuffer(file);
-		e.target.value = "";
+		}
 	};
 
 	// ── Excel export ──────────────────────────────────────────────────────────
@@ -588,10 +585,6 @@ export default function RentalSummary() {
 			return cells;
 		});
 
-		const ws = XLSX.utils.aoa_to_sheet([header, ...data]);
-		// Style header row (bold via column widths)
-		ws["!cols"] = visibleDefs.map(c => ({ wch: Math.max(c.label.length + 2, 12) }));
-
 		// Add totals row
 		const totalsRow: any[] = ["Итого"];
 		for (const col of visibleDefs) {
@@ -602,11 +595,13 @@ export default function RentalSummary() {
 			else if (col.key === "roi") totalsRow.push(avgRoi != null ? parseFloat(avgRoi.toFixed(2)) : "");
 			else totalsRow.push("");
 		}
-		XLSX.utils.sheet_add_aoa(ws, [totalsRow], { origin: -1 });
 
-		const wb = XLSX.utils.book_new();
-		XLSX.utils.book_append_sheet(wb, ws, "Свод аренды");
-		XLSX.writeFile(wb, `rental-summary-${new Date().toISOString().slice(0,10)}.xlsx`);
+		void downloadXlsx(
+			`rental-summary-${new Date().toISOString().slice(0,10)}.xlsx`,
+			"Свод аренды",
+			[header, ...data, totalsRow],
+			{ colWidths: [6, ...visibleDefs.map(c => Math.max(c.label.length + 2, 12))] },
+		);
 	};
 
 	const exportCsv = () => {

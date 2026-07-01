@@ -27,6 +27,11 @@ export const supplyRequestItemsTable = pgTable("supply_request_items", {
   customName: text("custom_name"),
   quantity: numeric("quantity", { precision: 14, scale: 3 }).notNull().default("0"),
   unit: text("unit").notNull().default("шт"),
+  // Разбиение потребности ПТО (фаза 3): auto | from_stock | purchase
+  fulfillMode: text("fulfill_mode").notNull().default("auto"),
+  fromStockQty: numeric("from_stock_qty", { precision: 14, scale: 3 }).notNull().default("0"),
+  purchaseQty: numeric("purchase_qty", { precision: 14, scale: 3 }).notNull().default("0"),
+  reservedWarehouseId: integer("reserved_warehouse_id"),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

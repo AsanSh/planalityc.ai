@@ -8,9 +8,11 @@ import {
   supplyOrdersTable,
   companySupplierCreditLimitsTable,
   approvalLimitsTable,
+  warehouseStockTable,
   globalProductsTable,
   usersTable,
 } from "../lib/db";
+import { splitRequestItem } from "../lib/supply-batches";
 import { requireAuth, requireRole, requirePermission, type AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
 import { requireEnabledModule } from "../middleware/modules";
@@ -224,6 +226,78 @@ router.post(
         .where(eq(supplyRequestsTable.id, id));
     }
     res.status(201).json(approval);
+  },
+);
+
+// POST /supply/requests/:id/plan — ПТО разбивает позиции на «со склада / докупить» и резервирует остаток
+router.post(
+  "/supply/requests/:id/plan",
+  requirePermission("procurement:approve"),
+  async (req: AuthenticatedRequest, res): Promise<void> => {
+    const companyId = req.scopedCompanyId!;
+    const id = Number(req.params.id);
+    const planItems: Array<{ requestItemId: number; warehouseId: number; warehouseItemId: number }> =
+      Array.isArray(req.body?.items) ? req.body.items : [];
+
+    const [request] = await db
+      .select()
+      .from(supplyRequestsTable)
+      .where(and(eq(supplyRequestsTable.id, id), eq(supplyRequestsTable.companyId, companyId)));
+    if (!request) {
+      res.status(404).json({ error: "Заявка не найдена" });
+      return;
+    }
+    const items = await db
+      .select()
+      .from(supplyRequestItemsTable)
+      .where(eq(supplyRequestItemsTable.requestId, id));
+
+    const result = await db.transaction(async (tx) => {
+      const planned: Array<{ requestItemId: number; fromStock: number; toPurchase: number; mode: string }> = [];
+      for (const p of planItems) {
+        const item = items.find((it) => it.id === Number(p.requestItemId));
+        if (!item) continue;
+
+        const [stock] = await tx
+          .select()
+          .from(warehouseStockTable)
+          .where(
+            and(
+              eq(warehouseStockTable.companyId, companyId),
+              eq(warehouseStockTable.warehouseId, Number(p.warehouseId)),
+              eq(warehouseStockTable.itemId, Number(p.warehouseItemId)),
+            ),
+          );
+        const available = stock
+          ? Math.max(0, Number(stock.quantity) - Number(stock.reservedQuantity))
+          : 0;
+        const { fromStock, toPurchase } = splitRequestItem(available, Number(item.quantity));
+        const mode = toPurchase === 0 ? "from_stock" : fromStock === 0 ? "purchase" : "auto";
+
+        // зарезервировать выдаваемое со склада
+        if (fromStock > 0 && stock) {
+          await tx
+            .update(warehouseStockTable)
+            .set({ reservedQuantity: String(Number(stock.reservedQuantity) + fromStock) })
+            .where(eq(warehouseStockTable.id, stock.id));
+        }
+
+        await tx
+          .update(supplyRequestItemsTable)
+          .set({
+            fulfillMode: mode,
+            fromStockQty: String(fromStock),
+            purchaseQty: String(toPurchase),
+            reservedWarehouseId: fromStock > 0 ? Number(p.warehouseId) : null,
+          })
+          .where(eq(supplyRequestItemsTable.id, item.id));
+
+        planned.push({ requestItemId: item.id, fromStock, toPurchase, mode });
+      }
+      return planned;
+    });
+
+    res.json({ requestId: id, planned: result });
   },
 );
 

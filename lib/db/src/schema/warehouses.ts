@@ -30,10 +30,25 @@ export const warehouseStockTable = pgTable("warehouse_stock", {
   uniqWarehouseItem: unique("warehouse_stock_warehouse_item_uniq").on(t.warehouseId, t.itemId),
 }));
 
+/** Партии остатка по цене поступления (партионный учёт, фаза 3). FIFO по receivedAt. */
+export const warehouseStockBatchesTable = pgTable("warehouse_stock_batches", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  warehouseId: integer("warehouse_id").notNull(),
+  itemId: integer("item_id").notNull(),
+  incomingId: integer("incoming_id"), // источник поступления, если есть
+  quantity: numeric("quantity", { precision: 14, scale: 3 }).notNull().default("0"),
+  unitPrice: numeric("unit_price", { precision: 14, scale: 2 }).notNull().default("0"),
+  receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const insertWarehouseSchema = createInsertSchema(warehousesTable).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertWarehouseStockSchema = createInsertSchema(warehouseStockTable).omit({ id: true, updatedAt: true });
+export const insertWarehouseStockBatchSchema = createInsertSchema(warehouseStockBatchesTable).omit({ id: true });
 
 export type InsertWarehouse = z.infer<typeof insertWarehouseSchema>;
 export type Warehouse = typeof warehousesTable.$inferSelect;
 export type InsertWarehouseStock = z.infer<typeof insertWarehouseStockSchema>;
 export type WarehouseStock = typeof warehouseStockTable.$inferSelect;
+export type InsertWarehouseStockBatch = z.infer<typeof insertWarehouseStockBatchSchema>;
+export type WarehouseStockBatch = typeof warehouseStockBatchesTable.$inferSelect;

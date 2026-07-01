@@ -183,6 +183,10 @@ import WarehouseItems from "@/pages/warehouse/items";
 import WarehouseOrders from "@/pages/warehouse/orders";
 import WarehouseOutgoing from "@/pages/warehouse/outgoing";
 import WarehouseReports from "@/pages/warehouse/reports";
+import WarehouseWarehouses from "@/pages/warehouse/warehouses";
+import WarehouseTransfers from "@/pages/warehouse/transfers";
+import WarehouseTransferReceive from "@/pages/warehouse/transfer-receive";
+import WarehouseFinanceQueue from "@/pages/warehouse/finance-queue";
 import WarehouseRequests from "@/pages/warehouse/requests";
 import WarehouseSupplyApprovals from "@/pages/warehouse/approvals";
 import WarehouseMarketplace from "@/pages/warehouse/marketplace";
@@ -794,6 +798,18 @@ function Router() {
 			</Route>
 			<Route path="/warehouse/approvals">
 				<ProtectedRoute component={WarehouseSupplyApprovals} />
+			</Route>
+			<Route path="/warehouse/warehouses">
+				<ProtectedRoute component={WarehouseWarehouses} />
+			</Route>
+			<Route path="/warehouse/transfers/:id/receive">
+				<ProtectedRoute component={WarehouseTransferReceive} />
+			</Route>
+			<Route path="/warehouse/transfers">
+				<ProtectedRoute component={WarehouseTransfers} />
+			</Route>
+			<Route path="/warehouse/finance-queue">
+				<ProtectedRoute component={WarehouseFinanceQueue} />
 			</Route>
 			<Route path="/warehouse/incoming">
 				<ProtectedRoute component={WarehouseIncoming} />

@@ -48,7 +48,7 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 		shortLabel: "Сводное",
 		description: "Общее ядро компании: пользователи, контрагенты, настройки, импорт и сводная аналитика.",
 		settingsKeys: ["core", "analytics", "properties", "users", "counterparties", "settings", "admin"],
-		routePrefixes: ["/dashboard", "/consolidated", "/counterparties", "/properties", "/users", "/settings", "/design-system", "/import", "/activity", "/companies"],
+		routePrefixes: ["/dashboard", "/consolidated", "/counterparties", "/properties", "/users", "/settings", "/subscription", "/design-system", "/import", "/activity", "/companies"],
 		dashboardTabs: ["control", "analytics"],
 		defaultPath: "/dashboard?tab=control",
 		ownedEntities: ["company", "user", "role", "counterparty", "notification"],
@@ -121,7 +121,7 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 		routePrefixes: ["/warehouse"],
 		dashboardTabs: ["supply"],
 		defaultPath: "/dashboard?tab=supply",
-		ownedEntities: ["supplyRequest", "purchaseOrder", "supplier", "warehouseItem", "stockMovement"],
+		ownedEntities: ["supplyRequest", "purchaseOrder", "supplier", "warehouseItem", "stockMovement", "warehouse", "warehouseStock", "transfer"],
 		integrations: [
 			{
 				id: "procurement.finance",

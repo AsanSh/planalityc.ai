@@ -48,6 +48,8 @@ export * from "./accounting_periods";
 export * from "./legal_entities";
 export * from "./roles";
 export * from "./warehouse_items";
+export * from "./warehouses";
+export * from "./warehouse_transfers";
 export * from "./warehouse_suppliers";
 export * from "./warehouse_supplier_payments";
 export * from "./warehouse_incoming";

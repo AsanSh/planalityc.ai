@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import { downloadXlsx, readSheetObjects } from "./xlsx-lite";
 
 export const UNIT_TEMPLATE_HEADERS = [
 	"Номер",
@@ -34,59 +34,18 @@ export type UnitImportRow = Record<string, unknown>;
 
 export function downloadUnitsTemplate(projectName?: string) {
 	const example = [
-		{
-			Номер: "101",
-			Этаж: 1,
-			Секция: "А",
-			Тип: "Квартира",
-			Комнат: 2,
-			"Площадь м²": 65.5,
-			"Цена за м²": 120000,
-			Валюта: "KGS",
-			Статус: "Свободна",
-			Заметки: "",
-		},
-		{
-			Номер: "102",
-			Этаж: 1,
-			Секция: "А",
-			Тип: "Квартира",
-			Комнат: 3,
-			"Площадь м²": 78,
-			"Цена за м²": 120000,
-			Валюта: "KGS",
-			Статус: "Свободна",
-			Заметки: "",
-		},
+		["101", 1, "А", "Квартира", 2, 65.5, 120000, "KGS", "Свободна", ""],
+		["102", 1, "А", "Квартира", 3, 78, 120000, "KGS", "Свободна", ""],
 	];
-	const ws = XLSX.utils.json_to_sheet(example, { header: [...UNIT_TEMPLATE_HEADERS] });
-	const wb = XLSX.utils.book_new();
-	XLSX.utils.book_append_sheet(wb, ws, "Квартиры");
 	const name = projectName
 		? `шаблон_квартир_${projectName.replace(/\s+/g, "_")}.xlsx`
 		: "шаблон_квартир_шахматка.xlsx";
-	XLSX.writeFile(wb, name);
+	return downloadXlsx(name, "Квартиры", [[...UNIT_TEMPLATE_HEADERS], ...example]);
 }
 
-export function parseUnitsFile(file: File): Promise<UnitImportRow[]> {
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-		reader.onload = (e) => {
-			try {
-				const data = new Uint8Array(e.target?.result as ArrayBuffer);
-				const wb = XLSX.read(data, { type: "array" });
-				const sheet = wb.Sheets[wb.SheetNames[0]];
-				const rows = XLSX.utils.sheet_to_json<UnitImportRow>(sheet, {
-					defval: "",
-				});
-				resolve(rows.filter((r) => String(r["Номер"] ?? r.unitNumber ?? "").trim()));
-			} catch (err) {
-				reject(err);
-			}
-		};
-		reader.onerror = () => reject(new Error("Не удалось прочитать файл"));
-		reader.readAsArrayBuffer(file);
-	});
+export async function parseUnitsFile(file: File): Promise<UnitImportRow[]> {
+	const rows = await readSheetObjects(file);
+	return rows.filter((r) => String(r["Номер"] ?? r.unitNumber ?? "").trim());
 }
 
 export type UnitExportRow = {
@@ -111,27 +70,41 @@ export function exportUnitsToExcel(
 	units: UnitExportRow[],
 	projectName: string,
 ) {
-	const rows = units.map((u) => ({
-		Номер: u.unitNumber,
-		Этаж: u.floor ?? "",
-		Секция: u.block ?? "",
-		Тип: TYPE_RU[u.unitType] || u.unitType,
-		Комнат: u.roomCount ?? "",
-		"Площадь м²": u.area ?? "",
-		"Цена за м²": u.pricePerSqm ?? "",
-		"Стоимость": u.totalPrice ?? "",
-		Валюта: u.currency,
-		Статус: STATUS_RU[u.status] || u.status,
-		Покупатель: u.buyerName ?? "",
-		"Сумма договора": u.contractTotal ?? "",
-		Оплачено: u.paidAmount ?? "",
-		Остаток: u.remainingAmount ?? "",
-		Заметки: u.notes ?? "",
-	}));
-	const ws = XLSX.utils.json_to_sheet(rows);
-	const wb = XLSX.utils.book_new();
-	XLSX.utils.book_append_sheet(wb, ws, "Квартиры");
-	const safeName = projectName.replace(/[^\w\u0400-\u04FF-]+/g, "_").replace(/_+/g, "_");
+	const header = [
+		"Номер",
+		"Этаж",
+		"Секция",
+		"Тип",
+		"Комнат",
+		"Площадь м²",
+		"Цена за м²",
+		"Стоимость",
+		"Валюта",
+		"Статус",
+		"Покупатель",
+		"Сумма договора",
+		"Оплачено",
+		"Остаток",
+		"Заметки",
+	];
+	const rows = units.map((u) => [
+		u.unitNumber,
+		u.floor ?? "",
+		u.block ?? "",
+		TYPE_RU[u.unitType] || u.unitType,
+		u.roomCount ?? "",
+		u.area ?? "",
+		u.pricePerSqm ?? "",
+		u.totalPrice ?? "",
+		u.currency,
+		STATUS_RU[u.status] || u.status,
+		u.buyerName ?? "",
+		u.contractTotal ?? "",
+		u.paidAmount ?? "",
+		u.remainingAmount ?? "",
+		u.notes ?? "",
+	]);
+	const safeName = projectName.replace(/[^\wЀ-ӿ-]+/g, "_").replace(/_+/g, "_");
 	const fname = `kvartiry-${safeName}-${new Date().toISOString().slice(0, 10)}.xlsx`;
-	XLSX.writeFile(wb, fname);
+	return downloadXlsx(fname, "Квартиры", [header, ...rows]);
 }

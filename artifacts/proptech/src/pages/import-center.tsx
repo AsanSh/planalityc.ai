@@ -7,7 +7,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import { useRef, useState } from "react";
-import * as XLSX from "xlsx";
+import { readSheetObjects } from "@/lib/xlsx-lite";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -160,10 +160,7 @@ export default function ImportCenter() {
 		if (!file) return;
 
 		try {
-			const buf = await file.arrayBuffer();
-			const wb = XLSX.read(buf, { type: "array" });
-			const ws = wb.Sheets[wb.SheetNames[0]];
-			const data = XLSX.utils.sheet_to_json(ws) as Record<string, unknown>[];
+			const data = await readSheetObjects(file);
 
 			if (!data.length) {
 				toast({

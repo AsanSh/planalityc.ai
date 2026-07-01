@@ -11,6 +11,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileText, Plus, Loader2, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api-error";
 
@@ -59,13 +65,11 @@ interface DocumentsSectionProps {
   };
 }
 
-function viewPayload(doc: DocumentRow) {
-  if (!doc.payload) return;
+function buildPayloadText(doc: DocumentRow): string {
+  if (!doc.payload) return "";
   try {
     const data = JSON.parse(doc.payload) as Record<string, unknown>;
     const parts = [
-      `${doc.name}`,
-      ``,
       `Продавец: ${String(data["sellerName"] ?? "—")}`,
       `Покупатель: ${String(data["buyerName"] ?? "—")}`,
       ``,
@@ -78,10 +82,9 @@ function viewPayload(doc: DocumentRow) {
       data["contractNumber"] ? `Договор: ${String(data["contractNumber"])}` : null,
       `Дата: ${String(data["date"] ?? "")}`,
     ];
-    const text = parts.filter((p): p is string => p !== null && p !== "").join("\n");
-    alert(text);
+    return parts.filter((p): p is string => p !== null).join("\n");
   } catch {
-    alert(doc.payload);
+    return doc.payload;
   }
 }
 
@@ -102,6 +105,7 @@ export function DocumentsSection({
 }: DocumentsSectionProps) {
   const qc = useQueryClient();
   const [generating, setGenerating] = useState(false);
+  const [viewedDoc, setViewedDoc] = useState<DocumentRow | null>(null);
 
   const { data: docs = [], isLoading } = useQuery<DocumentRow[]>({
     queryKey: ["documents", entityType, entityId],
@@ -221,7 +225,7 @@ export function DocumentsSection({
                     size="sm"
                     variant="ghost"
                     className="gap-1 text-slate-500 hover:text-slate-700 flex-shrink-0"
-                    onClick={() => viewPayload(doc)}
+                    onClick={() => setViewedDoc(doc)}
                     title="Просмотреть"
                   >
                     <Eye className="w-3.5 h-3.5" />
@@ -232,6 +236,17 @@ export function DocumentsSection({
           })}
         </ul>
       )}
+
+      <Dialog open={viewedDoc !== null} onOpenChange={(open) => !open && setViewedDoc(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{viewedDoc?.name}</DialogTitle>
+          </DialogHeader>
+          <p className="whitespace-pre-line text-sm text-slate-700">
+            {viewedDoc ? buildPayloadText(viewedDoc) : ""}
+          </p>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

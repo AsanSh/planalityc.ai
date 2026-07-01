@@ -1151,7 +1151,7 @@ async function exportProgressXlsx(
 	config: ProgressColumnConfig,
 	formatCell: ProgressFormatters["formatCell"],
 ) {
-	const XLSX = await import("xlsx");
+	const { downloadXlsx } = await import("@/lib/xlsx-lite");
 	const exportCols = BUILTIN_COLUMNS.filter((c) => c.id !== "projectName");
 	const headers = [
 		"Проект",
@@ -1182,13 +1182,16 @@ async function exportProgressXlsx(
 			}),
 		];
 	});
-	const worksheet = XLSX.utils.aoa_to_sheet([headers, ...body]);
-	worksheet["!cols"] = headers.map((header) => ({
-		wch: Math.max(14, Math.min(34, String(header).length + 4)),
-	}));
-	const workbook = XLSX.utils.book_new();
-	XLSX.utils.book_append_sheet(workbook, worksheet, "Прогресс проектов");
-	XLSX.writeFile(workbook, `progress-projects-${new Date().toISOString().slice(0, 10)}.xlsx`);
+	await downloadXlsx(
+		`progress-projects-${new Date().toISOString().slice(0, 10)}.xlsx`,
+		"Прогресс проектов",
+		[headers, ...body],
+		{
+			colWidths: headers.map((header) =>
+				Math.max(14, Math.min(34, String(header).length + 4)),
+			),
+		},
+	);
 }
 
 export function ProjectsProgressTab({

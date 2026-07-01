@@ -170,7 +170,7 @@ export default function UserProfileDropdown() {
 			<div ref={dropdownRef} className="relative">
 				<div
 					onClick={() => setOpen((v) => !v)}
-					className="flex items-center gap-2.5 cursor-pointer hover:bg-gray-50 rounded-xl px-2 py-1 transition-colors select-none"
+					className="flex items-center gap-2.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/8 rounded-xl px-2 py-1 transition-colors select-none"
 				>
 					<div
 						className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
@@ -179,20 +179,20 @@ export default function UserProfileDropdown() {
 						{initials}
 					</div>
 					<div>
-						<div className="text-sm font-semibold text-gray-900 leading-none">
+						<div className="text-sm font-semibold text-gray-900 dark:text-white leading-none">
 							{u?.firstName || "Администратор"}
 						</div>
-						<div className="text-[10px] text-gray-600 mt-0.5">{roleLabel}</div>
+						<div className="text-[10px] text-gray-600 dark:text-white/40 mt-0.5">{roleLabel}</div>
 					</div>
 					<ChevronDown
-						className={`w-3.5 h-3.5 text-gray-600 transition-transform ${open ? "rotate-180" : ""}`}
+						className={`w-3.5 h-3.5 text-gray-600 dark:text-white/40 transition-transform ${open ? "rotate-180" : ""}`}
 					/>
 				</div>
 
 				{open && (
-					<div className="absolute bottom-12 right-0 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-[1000] overflow-hidden">
+					<div className="absolute bottom-12 right-0 w-64 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-[1000] overflow-hidden">
 						{/* Header */}
-						<div className="px-4 py-3 bg-gray-50 border-b">
+						<div className="px-4 py-3 bg-gray-50 dark:bg-white/[0.03] border-b dark:border-white/10">
 							<div className="flex items-center gap-3">
 								<div
 									className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
@@ -201,11 +201,11 @@ export default function UserProfileDropdown() {
 									{initials}
 								</div>
 								<div className="min-w-0">
-									<p className="font-semibold text-gray-900 text-sm truncate">
+									<p className="font-semibold text-gray-900 dark:text-white text-sm truncate">
 										{fullName}
 									</p>
-									<p className="text-xs text-gray-500 truncate">{u?.email}</p>
-									<span className="text-[10px] text-indigo-600 font-medium">
+									<p className="text-xs text-gray-500 dark:text-white/40 truncate">{u?.email}</p>
+									<span className="text-[10px] text-indigo-600 dark:text-cyan-300 font-medium">
 										{roleLabel}
 									</span>
 								</div>
@@ -217,32 +217,32 @@ export default function UserProfileDropdown() {
 							{showSystemSettings && (
 								<button
 									onClick={openSystemSettings}
-									className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-700 transition-colors"
+									className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/8 text-sm text-gray-700 dark:text-white/75 transition-colors"
 								>
-									<Settings className="w-4 h-4 text-gray-600" />
+									<Settings className="w-4 h-4 text-gray-600 dark:text-white/50" />
 									Настройки системы
 								</button>
 							)}
 							<button
 								onClick={openProfile}
-								className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-700 transition-colors"
+								className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/8 text-sm text-gray-700 dark:text-white/75 transition-colors"
 							>
-								<User className="w-4 h-4 text-gray-600" />
+								<User className="w-4 h-4 text-gray-600 dark:text-white/50" />
 								Редактировать профиль
 							</button>
 							<button
 								onClick={openPassword}
-								className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-700 transition-colors"
+								className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/8 text-sm text-gray-700 dark:text-white/75 transition-colors"
 							>
-								<Key className="w-4 h-4 text-gray-600" />
+								<Key className="w-4 h-4 text-gray-600 dark:text-white/50" />
 								Изменить пароль
 							</button>
 						</div>
 
-						<div className="border-t py-1">
+						<div className="border-t dark:border-white/10 py-1">
 							<button
 								onClick={handleLogout}
-								className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-rose-50 text-sm text-rose-600 transition-colors"
+								className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-rose-50 dark:hover:bg-rose-500/10 text-sm text-rose-600 dark:text-rose-400 transition-colors"
 							>
 								<LogOut className="w-4 h-4" />
 								Выйти из системы

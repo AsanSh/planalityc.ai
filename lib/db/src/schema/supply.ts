@@ -53,6 +53,11 @@ export const supplyOrdersTable = pgTable("supply_orders", {
   requestId: integer("request_id"),
   status: text("status").notNull().default("draft"), // draft | placed | processing | delivered | closed
   paymentType: text("payment_type").notNull().default("prepaid"), // prepaid | postpaid | installment
+  // Финсогласование и оплата (фаза 2): none | pending_finance | approved_by_finance | sent_to_payment | paid_partially | paid | payment_rejected
+  paymentStatus: text("payment_status").notNull().default("none"),
+  financeApprovedBy: integer("finance_approved_by"),
+  financeApprovedAt: timestamp("finance_approved_at", { withTimezone: true }),
+  paidAmount: numeric("paid_amount", { precision: 15, scale: 2 }).notNull().default("0"),
   totalAmount: numeric("total_amount", { precision: 15, scale: 2 }).notNull().default("0"),
   currency: text("currency").notNull().default("KGS"),
   notes: text("notes"),
@@ -89,6 +94,24 @@ export const installmentPlansTable = pgTable("installment_plans", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
+
+/** Матрица лимитов согласования: до какой суммы может утверждать роль (фаза 2). */
+export const approvalLimitsTable = pgTable("approval_limits", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  role: text("role").notNull(),
+  maxAmount: numeric("max_amount", { precision: 15, scale: 2 }).notNull().default("0"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export const insertApprovalLimitSchema = createInsertSchema(approvalLimitsTable).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertApprovalLimit = z.infer<typeof insertApprovalLimitSchema>;
+export type ApprovalLimit = typeof approvalLimitsTable.$inferSelect;
 
 export const insertSupplyRequestSchema = createInsertSchema(supplyRequestsTable).omit({
   id: true,

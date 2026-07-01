@@ -134,7 +134,7 @@ export function CashSummary({ accounts }: { accounts: CashAccount[] }) {
 		return (
 			<div
 				key={a.id}
-				className="flex items-center gap-2.5 px-4 py-1.5 hover:bg-gray-50"
+				className="flex items-center gap-2.5 px-4 py-1.5 hover:bg-gray-50 dark:hover:bg-white/[0.06]"
 			>
 				<Switch
 					checked={!off}
@@ -145,7 +145,7 @@ export function CashSummary({ accounts }: { accounts: CashAccount[] }) {
 				<span
 					className={cn(
 						"mr-2 flex-1 truncate text-[13px]",
-						off ? "text-gray-400 line-through" : "text-gray-600",
+						off ? "text-gray-400 dark:text-white/25 line-through" : "text-gray-600 dark:text-white/65",
 					)}
 				>
 					{a.name}
@@ -153,12 +153,12 @@ export function CashSummary({ accounts }: { accounts: CashAccount[] }) {
 				<span
 					className={cn(
 						"whitespace-nowrap text-right font-mono text-[13px]",
-						off ? "text-gray-400" : "text-gray-900",
+						off ? "text-gray-400 dark:text-white/25" : "text-gray-900 dark:text-white",
 					)}
 				>
 					{fmtMoney(bal, a.currency || "KGS")}
 					{showConverted && !off && (
-						<span className="block text-[11px] text-gray-500">
+						<span className="block text-[11px] text-gray-500 dark:text-white/45">
 							≈ {fmtMoney(toDefault(a), defaultCurrency)}
 						</span>
 					)}
@@ -182,18 +182,18 @@ export function CashSummary({ accounts }: { accounts: CashAccount[] }) {
 			<PopoverContent align="end" className="w-96 p-0">
 				<div className="flex items-start justify-between gap-2 border-b px-4 py-3">
 					<div>
-						<div className="text-xs text-gray-500">Деньги бизнеса</div>
-						<div className="text-base font-semibold text-gray-900">
+						<div className="text-xs text-gray-500 dark:text-white/50">Деньги бизнеса</div>
+						<div className="text-base font-semibold text-gray-900 dark:text-white">
 							{fmtMoney(total, defaultCurrency)}
 						</div>
 					</div>
-					<div className="flex shrink-0 items-center gap-0.5 rounded-full border border-gray-200 bg-gray-50 p-0.5 text-[11px]">
+					<div className="flex shrink-0 items-center gap-0.5 rounded-full border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/8 p-0.5 text-[11px]">
 						<button
 							type="button"
 							onClick={() => setByEntity(true)}
 							className={cn(
 								"rounded-full px-2.5 py-1 transition-colors",
-								byEntity ? "bg-cyan-600 text-white" : "text-gray-600",
+								byEntity ? "bg-cyan-600 text-white" : "text-gray-600 dark:text-white/60",
 							)}
 						>
 							По юр. лицам
@@ -203,7 +203,7 @@ export function CashSummary({ accounts }: { accounts: CashAccount[] }) {
 							onClick={() => setByEntity(false)}
 							className={cn(
 								"rounded-full px-2.5 py-1 transition-colors",
-								!byEntity ? "bg-cyan-600 text-white" : "text-gray-600",
+								!byEntity ? "bg-cyan-600 text-white" : "text-gray-600 dark:text-white/60",
 							)}
 						>
 							Все счета
@@ -213,15 +213,15 @@ export function CashSummary({ accounts }: { accounts: CashAccount[] }) {
 
 				<div className="max-h-[420px] overflow-y-auto py-1">
 					{list.length === 0 ? (
-						<div className="px-4 py-3 text-sm text-gray-600">Счетов нет</div>
+						<div className="px-4 py-3 text-sm text-gray-600 dark:text-white/55">Счетов нет</div>
 					) : byEntity ? (
 						groups.map((g) => (
 							<div key={g.key} className="py-1">
 								<div className="flex items-center justify-between px-4 py-1.5">
-									<span className="text-[13px] font-semibold text-gray-900">
+									<span className="text-[13px] font-semibold text-gray-900 dark:text-white">
 										{g.name}
 									</span>
-									<span className="whitespace-nowrap font-mono text-[13px] font-semibold text-gray-900">
+									<span className="whitespace-nowrap font-mono text-[13px] font-semibold text-gray-900 dark:text-white">
 										{fmtMoney(g.subtotal, defaultCurrency)}
 									</span>
 								</div>
@@ -234,7 +234,7 @@ export function CashSummary({ accounts }: { accounts: CashAccount[] }) {
 				</div>
 
 				{nbkr?.date && (
-					<div className="border-t px-4 py-2 text-[11px] text-gray-600">
+					<div className="border-t border-white/10 px-4 py-2 text-[11px] text-gray-600 dark:text-white/45">
 						Курс НБКР на {nbkr.date}
 					</div>
 				)}

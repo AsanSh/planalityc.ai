@@ -63,11 +63,11 @@ export function PlanalitycLogo({
 			<div className={cn("flex items-center gap-3 min-w-0", className)}>
 				<LogoMark className="h-8 w-8 flex-shrink-0" />
 				<div className="min-w-0">
-					<div className="text-white font-bold text-sm leading-none truncate">
+					<div className="text-slate-900 dark:text-white font-bold text-sm leading-none truncate">
 						{BRAND.shortName}
-						<span className="text-cyan-400/90 font-semibold">.ai</span>
+						<span className="text-cyan-600 dark:text-cyan-400/90 font-semibold">.ai</span>
 					</div>
-					<div className="text-white/40 text-[10px] mt-0.5 truncate">
+					<div className="text-slate-500 dark:text-white/40 text-[10px] mt-0.5 truncate">
 						{BRAND.taglineShort}
 					</div>
 				</div>

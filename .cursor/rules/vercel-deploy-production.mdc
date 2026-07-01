@@ -63,13 +63,15 @@ npx vercel deploy --prod --yes
 
 ### Neon DB-ветка для staging
 
-Используем ветвление Neon (copy-on-write), а не отдельный сервер БД:
+Прод-база — Neon проект `crimson-glitter-76438940` (org `AsanS`, консоль показывает имя проекта "AssetHub" — не переименовывать/не путать), ветка **`planalityc`** (id `br-tiny-cherry-ap4as22v`, НЕ `main` и НЕ `production` — там другое приложение делит тот же Neon-аккаунт). Подтверждено прямым `psql`-подключением: схема (`users`, `companies`, `construction_projects`, `crm_leads`, `tenants`, ...) точно совпадает с `lib/db/src/schema`.
+
+Staging-ветка **`staging`** (id `br-bitter-glitter-aphct7ch`) уже создана как copy-on-write от `planalityc` и подключена как `DATABASE_URL` в `planalityc-api-staging` (pooler host). Пересоздать/освежить при необходимости:
 ```bash
-neonctl branches create --name staging --parent main --project-id <PLANALITYC_NEON_PROJECT_ID>
+neonctl branches create --name staging --parent planalityc --project-id crimson-glitter-76438940
 ```
 Перед миграцией на прод — снапшот-бэкап тем же механизмом:
 ```bash
-neonctl branches create --name backup-$(date +%Y%m%d) --parent main --project-id <PLANALITYC_NEON_PROJECT_ID>
+neonctl branches create --name backup-$(date +%Y%m%d) --parent planalityc --project-id crimson-glitter-76438940
 ```
 
 ## bcrypt → bcryptjs

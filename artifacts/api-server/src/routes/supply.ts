@@ -7,12 +7,19 @@ import {
   supplyApprovalsTable,
   supplyOrdersTable,
   companySupplierCreditLimitsTable,
+  approvalLimitsTable,
   globalProductsTable,
   usersTable,
 } from "../lib/db";
 import { requireAuth, requireRole, requirePermission, type AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
 import { requireEnabledModule } from "../middleware/modules";
+import {
+  nextPaymentStatus,
+  resolveRequiredApprover,
+  type PaymentStatus,
+  type PaymentEvent,
+} from "../lib/supply-payments";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth, requireTenantCompany, requireEnabledModule("warehouse"));
@@ -394,6 +401,186 @@ router.put(
       })
       .returning();
     res.status(201).json(created);
+  },
+);
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ФИНСОГЛАСОВАНИЕ И ОПЛАТА ЗАКАЗА (фаза 2)
+// ──────────────────────────────────────────────────────────────────────────────
+
+/** Общий помощник: применить событие оплаты к заказу через машину статусов. */
+async function applyPaymentEvent(
+  req: AuthenticatedRequest,
+  res: import("express").Response,
+  event: PaymentEvent,
+  extra?: (order: typeof supplyOrdersTable.$inferSelect) => Record<string, unknown>,
+): Promise<void> {
+  const companyId = req.scopedCompanyId!;
+  const id = Number(req.params.id);
+  const [order] = await db
+    .select()
+    .from(supplyOrdersTable)
+    .where(and(eq(supplyOrdersTable.id, id), eq(supplyOrdersTable.companyId, companyId)));
+  if (!order) {
+    res.status(404).json({ error: "Заказ не найден" });
+    return;
+  }
+  let next: PaymentStatus;
+  try {
+    next = nextPaymentStatus(order.paymentStatus as PaymentStatus, event);
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : "Недопустимый переход" });
+    return;
+  }
+  const patch: Record<string, unknown> = { paymentStatus: next, ...(extra ? extra(order) : {}) };
+  const [updated] = await db
+    .update(supplyOrdersTable)
+    .set(patch)
+    .where(eq(supplyOrdersTable.id, id))
+    .returning();
+  res.json(updated);
+}
+
+// Снабженец отправляет заказ на финсогласование
+router.post("/supply/orders/:id/submit-to-finance", async (req: AuthenticatedRequest, res): Promise<void> => {
+  await applyPaymentEvent(req, res, { type: "submit" });
+});
+
+// Финдир/бухгалтер утверждает оплату
+router.post(
+  "/supply/orders/:id/finance-approve",
+  requireRole("owner", "admin", "company_admin", "finance"),
+  async (req: AuthenticatedRequest, res): Promise<void> => {
+    await applyPaymentEvent(req, res, { type: "approve" }, () => ({
+      financeApprovedBy: req.userId ?? null,
+      financeApprovedAt: new Date(),
+    }));
+  },
+);
+
+// Отклонить оплату
+router.post(
+  "/supply/orders/:id/reject-payment",
+  requireRole("owner", "admin", "company_admin", "finance"),
+  async (req: AuthenticatedRequest, res): Promise<void> => {
+    await applyPaymentEvent(req, res, { type: "reject" });
+  },
+);
+
+// Передать на оплату
+router.post(
+  "/supply/orders/:id/send-to-payment",
+  requireRole("owner", "admin", "company_admin", "finance"),
+  async (req: AuthenticatedRequest, res): Promise<void> => {
+    await applyPaymentEvent(req, res, { type: "send" });
+  },
+);
+
+// Зарегистрировать оплату (полную или частичную) — накапливает paid_amount
+router.post(
+  "/supply/orders/:id/register-payment",
+  requireRole("owner", "admin", "company_admin", "finance"),
+  async (req: AuthenticatedRequest, res): Promise<void> => {
+    const companyId = req.scopedCompanyId!;
+    const id = Number(req.params.id);
+    const amount = Number(req.body?.amount ?? 0);
+    if (!(amount > 0)) {
+      res.status(400).json({ error: "Укажите положительную сумму оплаты" });
+      return;
+    }
+    const [order] = await db
+      .select()
+      .from(supplyOrdersTable)
+      .where(and(eq(supplyOrdersTable.id, id), eq(supplyOrdersTable.companyId, companyId)));
+    if (!order) {
+      res.status(404).json({ error: "Заказ не найден" });
+      return;
+    }
+    const newPaid = Number(order.paidAmount) + amount;
+    let next: PaymentStatus;
+    try {
+      next = nextPaymentStatus(order.paymentStatus as PaymentStatus, {
+        type: "pay",
+        paidAmount: newPaid,
+        totalAmount: Number(order.totalAmount),
+      });
+    } catch (e) {
+      res.status(400).json({ error: e instanceof Error ? e.message : "Недопустимый переход" });
+      return;
+    }
+    const [updated] = await db
+      .update(supplyOrdersTable)
+      .set({ paymentStatus: next, paidAmount: String(newPaid) })
+      .where(eq(supplyOrdersTable.id, id))
+      .returning();
+    res.json(updated);
+  },
+);
+
+// GET /supply/approval-limits — матрица лимитов согласования
+router.get("/supply/approval-limits", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(approvalLimitsTable)
+    .where(eq(approvalLimitsTable.companyId, req.scopedCompanyId!))
+    .orderBy(approvalLimitsTable.maxAmount);
+  res.json(rows);
+});
+
+// GET /supply/approval-limits/resolve?amount= — кто должен согласовать сумму
+router.get("/supply/approval-limits/resolve", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const amount = String(req.query.amount ?? "0");
+  const limits = await db
+    .select()
+    .from(approvalLimitsTable)
+    .where(eq(approvalLimitsTable.companyId, req.scopedCompanyId!));
+  const role = resolveRequiredApprover(amount, limits.map((l) => ({ role: l.role, maxAmount: l.maxAmount })));
+  res.json({ requiredApproverRole: role });
+});
+
+// POST /supply/approval-limits — создать/обновить лимит для роли
+router.post(
+  "/supply/approval-limits",
+  requireRole("owner", "admin", "company_admin", "finance"),
+  async (req: AuthenticatedRequest, res): Promise<void> => {
+    const companyId = req.scopedCompanyId!;
+    const body = req.body ?? {};
+    if (!body.role) {
+      res.status(400).json({ error: "Укажите role" });
+      return;
+    }
+    const [existing] = await db
+      .select()
+      .from(approvalLimitsTable)
+      .where(and(eq(approvalLimitsTable.companyId, companyId), eq(approvalLimitsTable.role, String(body.role))));
+    if (existing) {
+      const [updated] = await db
+        .update(approvalLimitsTable)
+        .set({ maxAmount: String(body.maxAmount ?? "0") })
+        .where(eq(approvalLimitsTable.id, existing.id))
+        .returning();
+      res.json(updated);
+      return;
+    }
+    const [created] = await db
+      .insert(approvalLimitsTable)
+      .values({ companyId, role: String(body.role), maxAmount: String(body.maxAmount ?? "0") })
+      .returning();
+    res.status(201).json(created);
+  },
+);
+
+// DELETE /supply/approval-limits/:id
+router.delete(
+  "/supply/approval-limits/:id",
+  requireRole("owner", "admin", "company_admin", "finance"),
+  async (req: AuthenticatedRequest, res): Promise<void> => {
+    const companyId = req.scopedCompanyId!;
+    const id = Number(req.params.id);
+    await db
+      .delete(approvalLimitsTable)
+      .where(and(eq(approvalLimitsTable.id, id), eq(approvalLimitsTable.companyId, companyId)));
+    res.sendStatus(204);
   },
 );
 

@@ -49,7 +49,7 @@ npx vercel deploy --prod --yes
 
 ## Staging (develop → staging, main → production)
 
-Ветка `develop` — общая dev/staging ветка. Push в `develop` (paths `artifacts/proptech/**` или `artifacts/api-server/**`) деплоит автоматически через `.github/workflows/deploy-staging-frontend.yml` / `deploy-staging-api.yml`. Push в `main` — существующий flow (prod), без изменений.
+Ветка `develop` — общая dev/staging ветка. Push в `develop` деплоит автоматически через `.github/workflows/deploy-staging.yml` (API, затем frontend). Push в `main` — prod через `.github/workflows/deploy-production.yml` (backup БД → API → frontend, с approval через environment `production`). Подробности: [docs/dev-prod.md](../../docs/dev-prod.md).
 
 | | Vercel project | URL |
 |---|---|---|

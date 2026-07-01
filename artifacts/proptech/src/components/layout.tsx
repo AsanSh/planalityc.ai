@@ -2,6 +2,7 @@ import {
 	Activity,
 	AlertTriangle,
 	ArrowRightLeft,
+	Warehouse,
 	BarChart,
 	BarChart2,
 	BarChart3,
@@ -447,6 +448,8 @@ const MODULES: Module[] = [
 			{
 				title: "Снабжение",
 				items: [
+					{ href: "/warehouse/warehouses", label: "Склады", icon: Warehouse },
+					{ href: "/warehouse/transfers", label: "Перемещения", icon: ArrowRightLeft },
 					{ href: "/warehouse/incoming", label: "Поступления", icon: Truck },
 					{
 						href: "/warehouse/outgoing",

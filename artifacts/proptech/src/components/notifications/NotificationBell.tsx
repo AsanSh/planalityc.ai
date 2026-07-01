@@ -134,7 +134,7 @@ export function NotificationBell() {
 				<Button
 					variant="ghost"
 					size="icon"
-					className="relative h-11 w-11 rounded-2xl border border-transparent text-slate-700 hover:border-cyan-100 hover:bg-cyan-50"
+					className="relative h-11 w-11 rounded-2xl border border-transparent text-slate-700 hover:border-cyan-100 hover:bg-cyan-50 dark:text-white/60 dark:hover:border-cyan-400/20 dark:hover:bg-white/8"
 					aria-label="Уведомления"
 				>
 					<Bell className="h-5 w-5" />
@@ -150,7 +150,7 @@ export function NotificationBell() {
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
 				align="end"
-				className="w-[min(420px,calc(100vw-24px))] overflow-hidden rounded-[28px] border border-white/80 bg-white/94 p-0 shadow-2xl shadow-slate-950/18 backdrop-blur-xl"
+				className="w-[min(420px,calc(100vw-24px))] overflow-hidden rounded-[28px] border border-white/80 bg-white/94 p-0 shadow-2xl shadow-slate-950/18 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/97"
 			>
 				<div className="border-b border-slate-100 bg-gradient-to-br from-slate-950 to-cyan-950 px-5 py-4 text-white">
 					<div className="flex items-center justify-between gap-3">
@@ -179,19 +179,19 @@ export function NotificationBell() {
 
 				<ScrollArea className="h-[430px]">
 					{isLoading ? (
-						<div className="flex flex-col items-center justify-center py-14 text-slate-500">
-							<Loader2 className="mb-3 h-7 w-7 animate-spin text-cyan-700" />
+						<div className="flex flex-col items-center justify-center py-14 text-slate-500 dark:text-white/50">
+							<Loader2 className="mb-3 h-7 w-7 animate-spin text-cyan-700 dark:text-cyan-300" />
 							<p className="text-sm font-medium">Загружаю уведомления…</p>
 						</div>
 					) : isError ? (
 						<div className="flex flex-col items-center justify-center px-8 py-14 text-center">
-							<div className="grid h-14 w-14 place-items-center rounded-3xl border border-amber-200 bg-amber-50 text-amber-700">
+							<div className="grid h-14 w-14 place-items-center rounded-3xl border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-400/25 dark:bg-amber-500/10 dark:text-amber-300">
 								<AlertTriangle className="h-6 w-6" />
 							</div>
-							<p className="mt-3 text-sm font-semibold text-slate-900">
+							<p className="mt-3 text-sm font-semibold text-slate-900 dark:text-white">
 								Не удалось загрузить уведомления
 							</p>
-							<p className="mt-1 text-xs text-slate-500">
+							<p className="mt-1 text-xs text-slate-500 dark:text-white/50">
 								Проверьте подключение к серверу и повторите попытку.
 							</p>
 							<Button
@@ -204,14 +204,14 @@ export function NotificationBell() {
 							</Button>
 						</div>
 					) : notificationsArray.length === 0 ? (
-						<div className="flex flex-col items-center justify-center px-8 py-14 text-center text-slate-500">
-							<div className="grid h-16 w-16 place-items-center rounded-[28px] border border-cyan-100 bg-cyan-50 text-cyan-700">
+						<div className="flex flex-col items-center justify-center px-8 py-14 text-center text-slate-500 dark:text-white/50">
+							<div className="grid h-16 w-16 place-items-center rounded-[28px] border border-cyan-100 bg-cyan-50 text-cyan-700 dark:border-cyan-400/20 dark:bg-cyan-500/10 dark:text-cyan-300">
 								<Bell className="h-7 w-7" />
 							</div>
-							<p className="mt-3 text-sm font-semibold text-slate-900">
+							<p className="mt-3 text-sm font-semibold text-slate-900 dark:text-white">
 								Все спокойно
 							</p>
-							<p className="mt-1 text-xs text-slate-500">
+							<p className="mt-1 text-xs text-slate-500 dark:text-white/50">
 								Новые задачи, просрочки и согласования появятся здесь.
 							</p>
 						</div>
@@ -229,12 +229,12 @@ export function NotificationBell() {
 										key={notification.id}
 										className={`rounded-3xl border px-3.5 py-3 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-950/8 ${
 											!notification.isRead
-												? "border-cyan-100 bg-cyan-50/80"
-												: "border-slate-100 bg-white/78"
+												? "border-cyan-100 bg-cyan-50/80 dark:border-cyan-400/20 dark:bg-cyan-500/10"
+												: "border-slate-100 bg-white/78 dark:border-white/8 dark:bg-white/[0.035]"
 										}`}
 									>
 										<div className="flex gap-3">
-											<div className={`mt-0.5 grid h-9 w-9 flex-shrink-0 place-items-center rounded-2xl bg-white shadow-sm ${iconColor}`}>
+											<div className={`mt-0.5 grid h-9 w-9 flex-shrink-0 place-items-center rounded-2xl bg-white dark:bg-white/8 shadow-sm ${iconColor}`}>
 												<IconComponent className="h-5 w-5" />
 											</div>
 
@@ -247,15 +247,15 @@ export function NotificationBell() {
 															}
 															className="text-left w-full"
 														>
-															<p className="text-sm font-semibold text-slate-950">
+															<p className="text-sm font-semibold text-slate-950 dark:text-white">
 																{notification.title}
 															</p>
 															{message && (
-																<p className="mt-1 line-clamp-2 text-xs text-slate-500">
+																<p className="mt-1 line-clamp-2 text-xs text-slate-500 dark:text-white/50">
 																	{message}
 																</p>
 															)}
-															<p className="mt-2 text-[11px] font-medium text-slate-400">
+															<p className="mt-2 text-[11px] font-medium text-slate-400 dark:text-white/35">
 																{formatDistanceToNow(
 																	new Date(notification.createdAt),
 																	{
@@ -268,15 +268,15 @@ export function NotificationBell() {
 													</Link>
 												) : (
 													<div>
-														<p className="text-sm font-semibold text-slate-950">
+														<p className="text-sm font-semibold text-slate-950 dark:text-white">
 															{notification.title}
 														</p>
 														{message && (
-															<p className="mt-1 line-clamp-2 text-xs text-slate-500">
+															<p className="mt-1 line-clamp-2 text-xs text-slate-500 dark:text-white/50">
 																{message}
 															</p>
 														)}
-														<p className="mt-2 text-[11px] font-medium text-slate-400">
+														<p className="mt-2 text-[11px] font-medium text-slate-400 dark:text-white/35">
 															{formatDistanceToNow(
 																new Date(notification.createdAt),
 																{
@@ -294,7 +294,7 @@ export function NotificationBell() {
 													<Button
 														variant="ghost"
 														size="icon"
-														className="h-7 w-7 rounded-full text-emerald-700 hover:bg-emerald-50"
+														className="h-7 w-7 rounded-full text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
 														onClick={(e) => {
 															e.stopPropagation();
 															markReadMutation.mutate(notification.id);
@@ -306,7 +306,7 @@ export function NotificationBell() {
 												<Button
 													variant="ghost"
 													size="icon"
-													className="h-7 w-7 rounded-full text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+													className="h-7 w-7 rounded-full text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:text-white/35 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
 													onClick={(e) => {
 														e.stopPropagation();
 														deleteMutation.mutate(notification.id);

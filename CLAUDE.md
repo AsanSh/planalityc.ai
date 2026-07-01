@@ -16,7 +16,7 @@ Do not duplicate those guidelines here.
 
 - **Frontend:** `artifacts/proptech` — React, Vite, TanStack Query, Orval api-client
 - **API:** `artifacts/api-server` — Express, Drizzle, Vercel serverless
-- **Shared schemas (legacy duplicate):** `lib/db` vs `artifacts/api-server/src/lib/db` — runtime uses api-server copy
+- **DB schema (single source):** `artifacts/api-server/src/lib/db` — drizzle.config.ts тоже указывает сюда; legacy-дубликат `lib/db` удалён
 
 ## Deploy
 

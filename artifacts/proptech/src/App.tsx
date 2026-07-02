@@ -12,6 +12,8 @@ import { ThemeProvider } from "@/lib/theme";
 import { useModuleAccess } from "@/hooks/use-module-access";
 import { isChunkLoadError, reloadForFreshAssets } from "@/lib/chunk-reload";
 import NotFound from "@/pages/not-found";
+import ForemanStock from "@/pages/foreman/stock";
+import ForemanNewRequest from "@/pages/foreman/new-request";
 
 class PageErrorBoundary extends React.Component<
 	{ children: React.ReactNode },
@@ -315,6 +317,12 @@ function Router() {
 			</Route>
 			<Route path="/buyer-portal">
 				<PortalRoute component={BuyerPortal} />
+			</Route>
+			<Route path="/foreman">
+				<PortalRoute component={ForemanStock} />
+			</Route>
+			<Route path="/foreman/new">
+				<PortalRoute component={ForemanNewRequest} />
 			</Route>
 			<Route path="/admin/portal/buyer/:buyerId">
 				{(params) => (

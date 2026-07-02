@@ -10,9 +10,10 @@ export const supplyRequestsTable = pgTable("supply_requests", {
   projectId: integer("project_id"),
   constructionStageId: integer("construction_stage_id"),
   requestedBy: integer("requested_by").notNull(),
-  status: text("status").notNull().default("pending"), // pending | approved | rejected | ordered | cancelled
+  status: text("status").notNull().default("draft"), // draft | pending_approval | approved | planned | ordered | closed | rejected | cancelled
   priority: text("priority").notNull().default("normal"), // low | normal | high | urgent
   neededByDate: text("needed_by_date"),
+  estimatedAmount: numeric("estimated_amount", { precision: 15, scale: 2 }).notNull().default("0"),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

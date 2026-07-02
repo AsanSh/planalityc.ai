@@ -17,6 +17,7 @@ Do not duplicate those guidelines here.
 - **Frontend:** `artifacts/proptech` — React, Vite, TanStack Query, Orval api-client
 - **API:** `artifacts/api-server` — Express, Drizzle, Vercel serverless
 - **DB schema (single source):** `artifacts/api-server/src/lib/db` — drizzle.config.ts тоже указывает сюда; legacy-дубликат `lib/db` удалён
+- **UI design system:** `artifacts/proptech/.interface-design/system.md` — правда по UI-паттернам. **Все таблицы — ТОЛЬКО через `<DataTable>`** (`src/components/data-table.tsx`); сырой `<table>`/голый shadcn `<Table>` для данных запрещены. Тёмная тема — см. раздел Dark theme там же.
 
 ## Deploy
 

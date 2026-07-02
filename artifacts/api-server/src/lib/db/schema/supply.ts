@@ -72,6 +72,22 @@ export const supplyOrdersTable = pgTable("supply_orders", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
+/** Позиции заказа снабжения (из части «докупить», с ценой поставщика). */
+export const supplyOrderItemsTable = pgTable("supply_order_items", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull(),
+  requestItemId: integer("request_item_id"),
+  globalProductId: integer("global_product_id"),
+  supplierProductId: integer("supplier_product_id"),
+  customName: text("custom_name"),
+  quantity: numeric("quantity", { precision: 14, scale: 3 }).notNull().default("0"),
+  unit: text("unit").notNull().default("шт"),
+  unitPrice: numeric("unit_price", { precision: 15, scale: 2 }).notNull().default("0"),
+  lineTotal: numeric("line_total", { precision: 15, scale: 2 }).notNull().default("0"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
 /** Лимиты и отсрочки от поставщика для компании. */
 export const companySupplierCreditLimitsTable = pgTable("company_supplier_credit_limits", {
   id: serial("id").primaryKey(),
@@ -149,6 +165,11 @@ export const insertInstallmentPlanSchema = createInsertSchema(installmentPlansTa
   createdAt: true,
   updatedAt: true,
 });
+export const insertSupplyOrderItemSchema = createInsertSchema(supplyOrderItemsTable).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export type InsertSupplyRequest = z.infer<typeof insertSupplyRequestSchema>;
 export type SupplyRequest = typeof supplyRequestsTable.$inferSelect;
@@ -162,3 +183,5 @@ export type InsertCompanySupplierCreditLimit = z.infer<typeof insertCompanySuppl
 export type CompanySupplierCreditLimit = typeof companySupplierCreditLimitsTable.$inferSelect;
 export type InsertInstallmentPlan = z.infer<typeof insertInstallmentPlanSchema>;
 export type InstallmentPlan = typeof installmentPlansTable.$inferSelect;
+export type InsertSupplyOrderItem = z.infer<typeof insertSupplyOrderItemSchema>;
+export type SupplyOrderItem = typeof supplyOrderItemsTable.$inferSelect;

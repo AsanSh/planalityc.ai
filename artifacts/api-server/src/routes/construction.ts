@@ -3105,6 +3105,20 @@ router.post("/units/:id/change-requests", async (req: AuthenticatedRequest, res)
   const [me] = req.userId
     ? await db.select({ firstName: usersTable.firstName, lastName: usersTable.lastName, role: usersTable.role }).from(usersTable).where(eq(usersTable.id, req.userId))
     : [undefined];
+  // Приложенный файл (для ПТО): base64 до ~8 МБ
+  let docMeta: string | null = null;
+  const document = body.document;
+  if (document && typeof document === "object" && document.base64) {
+    if (String(document.base64).length > 12_000_000) {
+      res.status(400).json({ error: "Файл слишком большой (макс. 8 МБ)" });
+      return;
+    }
+    docMeta = JSON.stringify({
+      fileName: String(document.fileName || "файл"),
+      mimeType: String(document.mimeType || "application/octet-stream"),
+      base64: String(document.base64),
+    });
+  }
   const [created] = await db
     .insert(constructionUnitChangeRequestsTable)
     .values({
@@ -3115,6 +3129,7 @@ router.post("/units/:id/change-requests", async (req: AuthenticatedRequest, res)
       currentValue: body.currentValue != null ? String(body.currentValue) : null,
       requestedValue,
       comment: body.comment ? String(body.comment) : null,
+      documentMeta: docMeta,
       status: "pending",
       requestedBy: req.userId ?? null,
       requestedByName: displayName(me),

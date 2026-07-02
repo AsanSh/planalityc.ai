@@ -12,7 +12,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { api } from "@/lib/api";
-import { SPEC_TYPES } from "@/components/construction/unit-change-requests";
+import { SPEC_TYPES, downloadDocMeta } from "@/components/construction/unit-change-requests";
 
 const SPEC_LABEL = Object.fromEntries(SPEC_TYPES.map((s) => [s.value, s.label]));
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
@@ -38,6 +38,7 @@ interface ChangeRequest {
 	block?: string | null;
 	floor?: number | null;
 	projectName?: string | null;
+	documentMeta?: string | null;
 }
 
 const fmt = (d?: string | null) =>
@@ -115,6 +116,11 @@ export default function ConstructionChangeRequests() {
 										<td className="px-4 py-3">
 											<div>{SPEC_LABEL[r.specType] ?? r.specType}: {r.currentValue ? `${r.currentValue} → ` : ""}<span className="font-semibold">{r.requestedValue}</span></div>
 											{r.comment && <div className="text-xs text-muted-foreground">{r.comment}</div>}
+											{r.documentMeta && (
+												<button type="button" onClick={() => downloadDocMeta(r.documentMeta)} className="mt-0.5 text-xs font-medium text-cyan-700 underline">
+													Скачать файл
+												</button>
+											)}
 										</td>
 										<td className="px-4 py-3">
 											<div>{r.requestedByName || "—"}</div>

@@ -42,10 +42,29 @@ interface ChangeRequest {
 	reviewComment: string | null;
 	reviewedAt: string | null;
 	createdAt: string;
+	documentMeta?: string | null;
 }
 
 const fmt = (d?: string | null) =>
 	d ? new Date(d).toLocaleDateString("ru-KG", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
+
+/** Скачать приложенный к заявке файл из document_meta (JSON с base64). */
+export function downloadDocMeta(documentMeta?: string | null) {
+	if (!documentMeta) return;
+	try {
+		const meta = JSON.parse(documentMeta) as { fileName?: string; mimeType?: string; base64?: string };
+		if (!meta.base64) return;
+		const bytes = Uint8Array.from(atob(meta.base64), (c) => c.charCodeAt(0));
+		const url = URL.createObjectURL(new Blob([bytes], { type: meta.mimeType || "application/octet-stream" }));
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = meta.fileName || "файл";
+		a.click();
+		URL.revokeObjectURL(url);
+	} catch {
+		/* noop */
+	}
+}
 
 export function UnitChangeRequests({ unitId }: { unitId: number }) {
 	const { toast } = useToast();
@@ -55,6 +74,25 @@ export function UnitChangeRequests({ unitId }: { unitId: number }) {
 	const [requestedValue, setRequestedValue] = useState("");
 	const [currentValue, setCurrentValue] = useState("");
 	const [comment, setComment] = useState("");
+	const [doc, setDoc] = useState<{ fileName: string; mimeType: string; base64: string } | null>(null);
+
+	const handleFile = (file: File) => {
+		if (file.size > 8 * 1024 * 1024) {
+			toast({ title: "Файл слишком большой (макс. 8 МБ)", variant: "destructive" });
+			return;
+		}
+		const allowed = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
+		if (!allowed.includes(file.type)) {
+			toast({ title: "Только PDF или изображение", variant: "destructive" });
+			return;
+		}
+		const reader = new FileReader();
+		reader.onload = () => {
+			const base64 = ((reader.result as string).split(",")[1]) || "";
+			setDoc({ fileName: file.name, mimeType: file.type, base64 });
+		};
+		reader.readAsDataURL(file);
+	};
 
 	const key = ["unit-change-requests", unitId];
 	const { data: requests = [] } = useQuery<ChangeRequest[]>({
@@ -69,6 +107,7 @@ export function UnitChangeRequests({ unitId }: { unitId: number }) {
 				requestedValue,
 				currentValue: currentValue || null,
 				comment: comment || null,
+				document: doc || undefined,
 			}),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: key });
@@ -78,6 +117,7 @@ export function UnitChangeRequests({ unitId }: { unitId: number }) {
 			setCurrentValue("");
 			setComment("");
 			setSpecType("area");
+			setDoc(null);
 			toast({ title: "Заявка на изменение отправлена в ПТО" });
 		},
 		onError: (e) => toast({ title: "Ошибка", description: getApiErrorMessage(e), variant: "destructive" }),
@@ -123,6 +163,16 @@ export function UnitChangeRequests({ unitId }: { unitId: number }) {
 						<Label className="text-xs">Комментарий</Label>
 						<Input className="mt-1 h-9" value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Причина изменения" />
 					</div>
+					<div>
+						<Label className="text-xs">Файл для ПТО (PDF/фото, до 8 МБ)</Label>
+						<input
+							type="file"
+							accept="application/pdf,image/jpeg,image/png,image/webp"
+							onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+							className="mt-1 block w-full text-xs text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-1.5 file:text-white hover:file:bg-slate-700"
+						/>
+						{doc && <p className="mt-1 text-[11px] text-emerald-600">Приложен: {doc.fileName}</p>}
+					</div>
 					<div className="flex justify-end gap-2">
 						<Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>Отмена</Button>
 						<Button
@@ -157,6 +207,11 @@ export function UnitChangeRequests({ unitId }: { unitId: number }) {
 									{r.requestedByName || "—"} · {fmt(r.createdAt)}
 									{r.reviewedAt && ` · ПТО: ${r.reviewedByName || "—"}, ${fmt(r.reviewedAt)}`}
 								</p>
+								{r.documentMeta && (
+									<button type="button" onClick={() => downloadDocMeta(r.documentMeta)} className="mt-1 block text-[11px] font-medium text-cyan-700 underline">
+										Скачать файл
+									</button>
+								)}
 								{r.reviewComment && <p className="text-[11px] text-gray-500">ПТО: {r.reviewComment}</p>}
 							</li>
 						);

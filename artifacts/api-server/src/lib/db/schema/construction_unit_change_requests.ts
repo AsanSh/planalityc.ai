@@ -17,6 +17,8 @@ export const constructionUnitChangeRequestsTable = pgTable("construction_unit_ch
   currentValue: text("current_value"),
   requestedValue: text("requested_value").notNull(),
   comment: text("comment"),
+  // Приложенный файл для ПТО: JSON { fileName, mimeType, base64 }
+  documentMeta: text("document_meta"),
   // pending | in_progress | rejected | done
   status: text("status").notNull().default("pending"),
   requestedBy: integer("requested_by"),

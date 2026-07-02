@@ -14,6 +14,7 @@ export const constructionMaterialsTable = pgTable("construction_materials", {
   totalPrice: numeric("total_price", { precision: 15, scale: 2 }).notNull().default("0"),
   currency: text("currency").notNull().default("KGS"),
   supplierId: integer("supplier_id"),
+  globalProductId: integer("global_product_id"),
   status: text("status").notNull().default("planned"),
   deliveredAt: text("delivered_at"),
   notes: text("notes"),

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, and, SQL, sql, asc, inArray, gt } from "drizzle-orm";
+import { eq, and, SQL, sql, asc, inArray, gt, isNull } from "drizzle-orm";
 import {
   db, propertiesTable, tenantsTable, leaseContractsTable,
   accrualsTable, paymentsTable, depositsTable, expensesTable,
@@ -377,20 +377,30 @@ router.post("/rental/accounts/recalculate", async (req: AuthenticatedRequest, re
 
   const updated: { id: number; newBalance: string }[] = [];
   for (const acc of accounts) {
+    // Платежи-зачёты депозита (source_deposit_id) — внутренняя переклассификация,
+    // деньги уже на счёте в виде депозита, поэтому в приток их не считаем.
     const [inRow] = await db.select({
       total: sql<string>`COALESCE(SUM(COALESCE(${paymentsTable.accountAmount}, ${paymentsTable.amount})::numeric), 0)`,
     })
       .from(paymentsTable)
-      .where(and(eq(paymentsTable.companyId, companyId), eq(paymentsTable.accountId, acc.id)));
-    const [depRow] = await db.select({ total: sql<string>`COALESCE(SUM(amount::numeric), 0)` })
+      .where(and(
+        eq(paymentsTable.companyId, companyId),
+        eq(paymentsTable.accountId, acc.id),
+        isNull(paymentsTable.sourceDepositId),
+      ));
+    // Депозиты: полученные — приток, возвращённые арендатору — реальный отток.
+    const [depRow] = await db.select({
+      received: sql<string>`COALESCE(SUM(amount::numeric), 0)`,
+      returned: sql<string>`COALESCE(SUM(COALESCE(returned_amount, 0)::numeric), 0)`,
+    })
       .from(depositsTable)
       .where(and(eq(depositsTable.companyId, companyId), eq(depositsTable.accountId, acc.id)));
     const [outRow] = await db.select({ total: sql<string>`COALESCE(SUM(amount::numeric), 0)` })
       .from(expensesTable)
       .where(and(eq(expensesTable.companyId, companyId), eq(expensesTable.accountId, acc.id)));
 
-    const inflow = parseFloat(inRow?.total ?? "0") + parseFloat(depRow?.total ?? "0");
-    const outflow = parseFloat(outRow?.total ?? "0");
+    const inflow = parseFloat(inRow?.total ?? "0") + parseFloat(depRow?.received ?? "0");
+    const outflow = parseFloat(outRow?.total ?? "0") + parseFloat(depRow?.returned ?? "0");
     const newBalance = Math.max(0, inflow - outflow).toFixed(2);
 
     await db.update(bankAccountsTable)

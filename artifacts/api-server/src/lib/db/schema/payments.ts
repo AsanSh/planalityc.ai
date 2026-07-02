@@ -17,6 +17,10 @@ export const paymentsTable = pgTable("payments", {
   paymentDate: text("payment_date").notNull(),
   paymentMethod: text("payment_method"),
   accountId: integer("account_id"),
+  /** Если платёж создан зачётом депозита — id депозита. Такой платёж не является
+   *  новым притоком на счёт (внутренняя переклассификация) и исключается из
+   *  пересчёта баланса. */
+  sourceDepositId: integer("source_deposit_id"),
   note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

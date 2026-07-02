@@ -175,11 +175,11 @@ export default function SubscriptionPage() {
 	const accessStatus = company?.accessStatus || "active";
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 dark:[--foreground:222_48%_10%] dark:[--card-foreground:222_48%_10%] dark:[--muted-foreground:215_16%_44%]">
 			<div className="flex flex-wrap items-start justify-between gap-4">
 				<div>
 					<h1 className="text-2xl font-bold tracking-tight dark:text-slate-900">Подписка и услуги</h1>
-					<p className="mt-1 text-sm text-muted-foreground dark:text-slate-500">
+					<p className="mt-1 text-sm text-muted-foreground">
 						Тарифы, подключённые возможности и стоимость дополнительных услуг.
 					</p>
 				</div>
@@ -230,7 +230,7 @@ export default function SubscriptionPage() {
 							<p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 								Комментарий
 							</p>
-							<p className="mt-1 text-sm font-medium text-slate-700 dark:text-slate-200">
+							<p className="mt-1 text-sm font-medium text-slate-700">
 								{company?.subscriptionComment || "Условия подписки уточняются администратором платформы."}
 							</p>
 						</div>
@@ -275,7 +275,7 @@ export default function SubscriptionPage() {
 											<p className="mb-3 text-sm font-semibold">{plan.featuresTitle}</p>
 											<ul className="space-y-2">
 												{plan.features.map((feature) => (
-													<li key={feature} className="flex gap-2 text-sm text-slate-700 dark:text-slate-200">
+													<li key={feature} className="flex gap-2 text-sm text-slate-700">
 														<Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
 														<span>{feature}</span>
 													</li>

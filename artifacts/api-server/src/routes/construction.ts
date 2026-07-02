@@ -18,6 +18,7 @@ import {
   taskCommentsTable,
   consolidatedLogsTable,
   constructionSupplementsTable,
+  constructionUnitChangeRequestsTable,
   notificationsTable,
   usersTable,
   constructionTaskDependenciesTable,
@@ -3068,6 +3069,141 @@ router.get("/units/:id/supplements", async (req: AuthenticatedRequest, res): Pro
     .orderBy(desc(constructionSupplementsTable.createdAt));
   res.json(rows);
 });
+
+// ── ЗАЯВКИ НА ИЗМЕНЕНИЕ СПЕЦИФИКАЦИЙ ПОМЕЩЕНИЯ (шахматка → ПТО) ───────────────
+const CHANGE_SPEC_TYPES = new Set(["area", "wet_points", "doors", "layout", "other"]);
+
+function displayName(u?: { firstName: string | null; lastName: string | null } | null): string {
+  if (!u) return "—";
+  const n = [u.firstName, u.lastName].filter(Boolean).join(" ").trim();
+  return n || "—";
+}
+
+/** POST /units/:id/change-requests — создать заявку (продажник / руководитель проекта) */
+router.post("/units/:id/change-requests", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const companyId = req.scopedCompanyId!;
+  const unitId = parseInt(req.params.id as string);
+  const body = req.body ?? {};
+  const specType = String(body.specType || "area");
+  const requestedValue = String(body.requestedValue || "").trim();
+  if (!CHANGE_SPEC_TYPES.has(specType)) {
+    res.status(400).json({ error: "Некорректный тип спецификации" });
+    return;
+  }
+  if (!requestedValue) {
+    res.status(400).json({ error: "Укажите желаемое значение" });
+    return;
+  }
+  const [unit] = await db
+    .select({ id: constructionUnitsTable.id, projectId: constructionUnitsTable.projectId })
+    .from(constructionUnitsTable)
+    .where(and(eq(constructionUnitsTable.id, unitId), eq(constructionUnitsTable.companyId, companyId)));
+  if (!unit) {
+    res.status(404).json({ error: "Помещение не найдено" });
+    return;
+  }
+  const [me] = req.userId
+    ? await db.select({ firstName: usersTable.firstName, lastName: usersTable.lastName, role: usersTable.role }).from(usersTable).where(eq(usersTable.id, req.userId))
+    : [undefined];
+  const [created] = await db
+    .insert(constructionUnitChangeRequestsTable)
+    .values({
+      companyId,
+      projectId: unit.projectId,
+      unitId,
+      specType,
+      currentValue: body.currentValue != null ? String(body.currentValue) : null,
+      requestedValue,
+      comment: body.comment ? String(body.comment) : null,
+      status: "pending",
+      requestedBy: req.userId ?? null,
+      requestedByName: displayName(me),
+      requesterRole: me?.role ?? null,
+    })
+    .returning();
+  res.status(201).json(created);
+});
+
+/** GET /units/:id/change-requests — история заявок по помещению */
+router.get("/units/:id/change-requests", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const unitId = parseInt(req.params.id as string);
+  const rows = await db
+    .select()
+    .from(constructionUnitChangeRequestsTable)
+    .where(and(
+      eq(constructionUnitChangeRequestsTable.unitId, unitId),
+      eq(constructionUnitChangeRequestsTable.companyId, req.scopedCompanyId!),
+    ))
+    .orderBy(desc(constructionUnitChangeRequestsTable.createdAt));
+  res.json(rows);
+});
+
+/** GET /change-requests — список заявок для ПТО (фильтры status, projectId) */
+router.get("/change-requests", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const companyId = req.scopedCompanyId!;
+  const { status, projectId } = req.query as Record<string, string | undefined>;
+  const conditions = [eq(constructionUnitChangeRequestsTable.companyId, companyId)];
+  if (status) conditions.push(eq(constructionUnitChangeRequestsTable.status, status));
+  if (projectId) conditions.push(eq(constructionUnitChangeRequestsTable.projectId, Number(projectId)));
+
+  const rows = await db
+    .select({
+      req: constructionUnitChangeRequestsTable,
+      unitNumber: constructionUnitsTable.unitNumber,
+      block: constructionUnitsTable.block,
+      floor: constructionUnitsTable.floor,
+      projectName: constructionProjectsTable.name,
+    })
+    .from(constructionUnitChangeRequestsTable)
+    .leftJoin(constructionUnitsTable, eq(constructionUnitsTable.id, constructionUnitChangeRequestsTable.unitId))
+    .leftJoin(constructionProjectsTable, eq(constructionProjectsTable.id, constructionUnitChangeRequestsTable.projectId))
+    .where(and(...conditions))
+    .orderBy(desc(constructionUnitChangeRequestsTable.createdAt));
+
+  res.json(rows.map((r) => ({ ...r.req, unitNumber: r.unitNumber, block: r.block, floor: r.floor, projectName: r.projectName })));
+});
+
+/** POST /change-requests/:id/review — ПТО принимает в работу или отклоняет */
+router.post(
+  "/change-requests/:id/review",
+  requireRole("owner", "admin", "company_admin", "construction_director", "pto_engineer", "engineer"),
+  async (req: AuthenticatedRequest, res): Promise<void> => {
+    const companyId = req.scopedCompanyId!;
+    const id = parseInt(req.params.id as string);
+    const action = String(req.body?.action || "");
+    if (!["accept", "reject"].includes(action)) {
+      res.status(400).json({ error: "action: accept | reject" });
+      return;
+    }
+    const [existing] = await db
+      .select()
+      .from(constructionUnitChangeRequestsTable)
+      .where(and(eq(constructionUnitChangeRequestsTable.id, id), eq(constructionUnitChangeRequestsTable.companyId, companyId)));
+    if (!existing) {
+      res.status(404).json({ error: "Заявка не найдена" });
+      return;
+    }
+    if (existing.status !== "pending") {
+      res.status(400).json({ error: `Заявка уже обработана (статус: ${existing.status})` });
+      return;
+    }
+    const [me] = req.userId
+      ? await db.select({ firstName: usersTable.firstName, lastName: usersTable.lastName }).from(usersTable).where(eq(usersTable.id, req.userId))
+      : [undefined];
+    const [updated] = await db
+      .update(constructionUnitChangeRequestsTable)
+      .set({
+        status: action === "accept" ? "in_progress" : "rejected",
+        reviewedBy: req.userId ?? null,
+        reviewedByName: displayName(me),
+        reviewComment: req.body?.comment ? String(req.body.comment) : null,
+        reviewedAt: new Date(),
+      })
+      .where(eq(constructionUnitChangeRequestsTable.id, id))
+      .returning();
+    res.json(updated);
+  },
+);
 
 // ── TASK COMMENTS (ЧАТ) ──────────────────────────────────────────────────────
 

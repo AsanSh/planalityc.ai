@@ -1,10 +1,11 @@
-import { Boxes, ClipboardList } from "lucide-react";
+import { Boxes, ClipboardList, ScrollText } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 
 const TABS = [
 	{ href: "/foreman", label: "Остатки", icon: Boxes },
-	{ href: "/foreman/new", label: "Заявка", icon: ClipboardList },
+	{ href: "/foreman/requests", label: "Мои заявки", icon: ScrollText },
+	{ href: "/foreman/new", label: "Создать", icon: ClipboardList },
 ];
 
 /** Лёгкая мобильная оболочка приложения прораба (PWA): шапка + нижняя навигация. */

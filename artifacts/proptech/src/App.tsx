@@ -98,6 +98,7 @@ import ConstructionOverdue from "@/pages/construction/planning/overdue";
 import ConstructionProjects from "@/pages/construction/projects";
 import ConstructionReports from "@/pages/construction/reports";
 import ConstructionStages from "@/pages/construction/stages";
+import ConstructionChangeRequests from "@/pages/construction/change-requests";
 import ConstructionTasks from "@/pages/construction/tasks";
 import { TaskDetailPage } from "@/features/construction-tasks/TaskDetailPage";
 import ConstructionWorkers from "@/pages/construction/workers";
@@ -616,6 +617,9 @@ function Router() {
 			</Route>
 			<Route path="/construction/planning/approvals">
 				<ProtectedRoute component={ConstructionApprovals} />
+			</Route>
+			<Route path="/construction/change-requests">
+				<ProtectedRoute component={ConstructionChangeRequests} />
 			</Route>
 			<Route path="/construction/planning/broadcast">
 				<ProtectedRoute component={ConstructionBroadcast} />

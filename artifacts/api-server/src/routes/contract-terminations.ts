@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, and, SQL } from "drizzle-orm";
+import { eq, and, gt, inArray, asc, desc, SQL } from "drizzle-orm";
 import {
   db,
   contractTerminationsTable,
@@ -8,6 +8,10 @@ import {
   leaseContractsTable,
   propertiesTable,
   constructionTasksTable,
+  accrualsTable,
+  paymentsTable,
+  paymentAllocationsTable,
+  depositsTable,
 } from "../lib/db";
 import { requireAuth, AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
@@ -16,17 +20,106 @@ const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth, requireTenantCompany);
 
+const today = (): string => new Date().toISOString().split("T")[0];
+
+/**
+ * Зачесть депозит в счёт оплаты аренды: создать платёж-переклассификацию
+ * (source_deposit_id) и распределить его по открытым начислениям договора,
+ * начиная с самого раннего (или с указанного startAccrualId).
+ * Возвращает id платежа и сколько удалось распределить.
+ */
+async function applyDepositToAccruals(params: {
+  companyId: number;
+  leaseContractId: number;
+  deposit: typeof depositsTable.$inferSelect;
+  amount: number;
+  startAccrualId?: number | null;
+  payDate: string;
+}): Promise<{ paymentId: number; applied: number }> {
+  const { companyId, leaseContractId, deposit, amount, startAccrualId, payDate } = params;
+
+  const [payment] = await db
+    .insert(paymentsTable)
+    .values({
+      companyId,
+      leaseContractId,
+      amount: String(amount),
+      currency: deposit.currency,
+      accountAmount: String(amount),
+      exchangeRate: "1",
+      exchangeRateDate: payDate,
+      paymentDate: payDate,
+      paymentMethod: "deposit_offset",
+      accountId: deposit.accountId ?? null,
+      sourceDepositId: deposit.id,
+      note: `Зачёт депозита №${deposit.id} при расторжении`,
+    })
+    .returning();
+
+  const accruals = await db
+    .select()
+    .from(accrualsTable)
+    .where(
+      and(
+        eq(accrualsTable.companyId, companyId),
+        eq(accrualsTable.leaseContractId, leaseContractId),
+      ),
+    )
+    .orderBy(asc(accrualsTable.dueDate), asc(accrualsTable.id));
+
+  let startIdx = 0;
+  if (startAccrualId != null) {
+    const idx = accruals.findIndex((a) => a.id === startAccrualId);
+    if (idx >= 0) startIdx = idx;
+  }
+
+  let remaining = amount;
+  for (let i = startIdx; i < accruals.length && remaining > 0.01; i++) {
+    const acc = accruals[i];
+    if (acc.status === "cancelled" || acc.status === "paid") continue;
+    const total = parseFloat(acc.amount || "0");
+    const paid = parseFloat(acc.paidAmount || "0");
+    const open = Math.max(0, total - paid);
+    if (open <= 0.01) continue;
+
+    const allocAmount = Math.min(remaining, open);
+    await db.insert(paymentAllocationsTable).values({
+      companyId,
+      paymentId: payment.id,
+      accrualId: acc.id,
+      amount: String(allocAmount),
+      note: "Зачёт депозита",
+    });
+
+    const newPaid = paid + allocAmount;
+    const newBalance = Math.max(0, total - newPaid);
+    await db
+      .update(accrualsTable)
+      .set({
+        paidAmount: String(newPaid),
+        balance: String(newBalance),
+        status: newBalance <= 0.01 ? "paid" : "partial",
+      })
+      .where(eq(accrualsTable.id, acc.id));
+
+    remaining -= allocAmount;
+  }
+
+  return { paymentId: payment.id, applied: amount - Math.max(0, remaining) };
+}
+
 // ─── POST /contract-terminations ────────────────────────────────────────────
 // Initiate a termination process for a sales or lease contract.
 router.post(
   "/contract-terminations",
   async (req: AuthenticatedRequest, res): Promise<void> => {
     const companyId = req.scopedCompanyId!;
-    const { contractType, contractId, reason, basis } = req.body as {
+    const { contractType, contractId, reason, basis, terminationDate } = req.body as {
       contractType?: string;
       contractId?: number;
       reason?: string;
       basis?: string;
+      terminationDate?: string;
     };
 
     if (!contractType || !contractId) {
@@ -83,6 +176,7 @@ router.post(
         companyId,
         contractType,
         contractId,
+        terminationDate: terminationDate || today(),
         reason: reason ?? null,
         basis: basis ?? null,
         status: "initiated",
@@ -186,14 +280,85 @@ router.post(
       return;
     }
 
-    const { paid, debt, penalty, depositReturn, refund, note } = req.body as {
+    const { paid, debt, penalty, depositReturn, refund, note, depositActions } = req.body as {
       paid?: number;
       debt?: number;
       penalty?: number;
       depositReturn?: number;
       refund?: number;
       note?: string;
+      depositActions?: {
+        apply?: { amount?: number; startAccrualId?: number | null };
+        return?: { amount?: number; date?: string };
+      };
     };
+
+    // ── Реальная обработка депозита (только аренда) ─────────────────────────
+    let depositApplied = 0;
+    let depositReturned = 0;
+    if (depositActions && term.contractType === "lease") {
+      const applyAmount = Math.max(0, Number(depositActions.apply?.amount ?? 0));
+      const returnAmount = Math.max(0, Number(depositActions.return?.amount ?? 0));
+
+      if (applyAmount > 0 || returnAmount > 0) {
+        const [deposit] = await db
+          .select()
+          .from(depositsTable)
+          .where(
+            and(
+              eq(depositsTable.companyId, companyId),
+              eq(depositsTable.leaseContractId, term.contractId),
+              eq(depositsTable.status, "held"),
+            ),
+          )
+          .orderBy(desc(depositsTable.id))
+          .limit(1);
+
+        if (!deposit) {
+          res.status(400).json({ error: "Активный депозит по договору не найден" });
+          return;
+        }
+
+        const depositTotal = parseFloat(deposit.amount || "0");
+        if (applyAmount + returnAmount > depositTotal + 0.01) {
+          res.status(400).json({
+            error: `Сумма зачёта и возврата (${applyAmount + returnAmount}) превышает депозит (${depositTotal})`,
+          });
+          return;
+        }
+
+        const payDate = term.terminationDate || today();
+
+        if (applyAmount > 0) {
+          const r = await applyDepositToAccruals({
+            companyId,
+            leaseContractId: term.contractId,
+            deposit,
+            amount: applyAmount,
+            startAccrualId: depositActions.apply?.startAccrualId ?? null,
+            payDate,
+          });
+          depositApplied = r.applied;
+        }
+
+        depositReturned = returnAmount;
+
+        await db
+          .update(depositsTable)
+          .set({
+            status: applyAmount > 0 ? "applied" : returnAmount > 0 ? "returned" : deposit.status,
+            returnedAmount: returnAmount > 0 ? String(returnAmount) : deposit.returnedAmount,
+            returnedDate: returnAmount > 0 ? depositActions.return?.date || payDate : deposit.returnedDate,
+            note: [
+              deposit.note,
+              `Расторжение: зачтено ${depositApplied}, возвращено ${returnAmount}`,
+            ]
+              .filter(Boolean)
+              .join(" · "),
+          })
+          .where(eq(depositsTable.id, deposit.id));
+      }
+    }
 
     const financials = {
       ...(term.financials as Record<string, unknown>),
@@ -202,6 +367,8 @@ router.post(
       ...(penalty !== undefined ? { penalty } : {}),
       ...(depositReturn !== undefined ? { depositReturn } : {}),
       ...(refund !== undefined ? { refund } : {}),
+      ...(depositApplied > 0 ? { depositApplied } : {}),
+      ...(depositReturned > 0 ? { depositReturn: depositReturned } : {}),
     };
 
     const [row] = await db
@@ -309,16 +476,43 @@ router.post(
         // Task-closing is best-effort; skip if relation does not exist
       }
     } else {
-      // Mark the lease contract as terminated
+      const termDate = term.terminationDate || today();
+
+      // Mark the lease contract as terminated and fix its end date so no further
+      // accruals are generated past the termination date.
       await db
         .update(leaseContractsTable)
-        .set({ status: "terminated" })
+        .set({ status: "terminated", endDate: termDate })
         .where(
           and(
             eq(leaseContractsTable.id, term.contractId),
             eq(leaseContractsTable.companyId, companyId),
           ),
         );
+
+      // Cancel future unpaid accruals (dueDate after termination, nothing paid yet).
+      const futureAccruals = await db
+        .select()
+        .from(accrualsTable)
+        .where(
+          and(
+            eq(accrualsTable.leaseContractId, term.contractId),
+            eq(accrualsTable.companyId, companyId),
+            inArray(accrualsTable.status, ["pending", "overdue", "approved"]),
+            gt(accrualsTable.dueDate, termDate),
+          ),
+        );
+      for (const a of futureAccruals) {
+        if (parseFloat(a.paidAmount || "0") > 0) continue;
+        await db
+          .update(accrualsTable)
+          .set({
+            status: "cancelled",
+            balance: "0",
+            notes: [a.notes, `Отменено при расторжении ${termDate}`].filter(Boolean).join(" · "),
+          })
+          .where(eq(accrualsTable.id, a.id));
+      }
 
       // Return linked property to free pool
       const [contract] = await db

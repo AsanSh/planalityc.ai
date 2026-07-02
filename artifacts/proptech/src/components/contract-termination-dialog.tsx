@@ -43,6 +43,7 @@ interface Termination {
   companyId: number;
   contractType: string;
   contractId: number;
+  terminationDate: string | null;
   reason: string | null;
   basis: string | null;
   status: string; // initiated | approved | settled | closed
@@ -148,14 +149,22 @@ function StepInitiate({
 }) {
   const [reason, setReason] = useState("");
   const [basis, setBasis] = useState<"agreement" | "unilateral">("agreement");
+  const [terminationDate, setTerminationDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
+    if (!terminationDate) {
+      toast.error("Укажите дату расторжения");
+      return;
+    }
     setLoading(true);
     try {
       const { data } = await api.post<Termination>("/contract-terminations", {
         contractType,
         contractId,
+        terminationDate,
         reason: reason.trim() || undefined,
         basis,
       });
@@ -170,6 +179,19 @@ function StepInitiate({
 
   return (
     <div className="space-y-4">
+      <div>
+        <Label htmlFor="termination-date">Дата расторжения</Label>
+        <Input
+          id="termination-date"
+          type="date"
+          className="mt-1"
+          value={terminationDate}
+          onChange={(e) => setTerminationDate(e.target.value)}
+        />
+        <p className="text-[11px] text-muted-foreground mt-1">
+          С этой даты начисления по договору прекратятся, будущие — отменятся.
+        </p>
+      </div>
       <div>
         <Label htmlFor="basis">Основание</Label>
         <Select value={basis} onValueChange={(v) => setBasis(v as "agreement" | "unilateral")}>
@@ -252,6 +274,23 @@ function StepApprove({
   );
 }
 
+interface HeldDeposit {
+  id: number;
+  amount: string;
+  currency: string;
+  status: string;
+}
+
+interface OpenAccrual {
+  id: number;
+  period: string;
+  dueDate: string;
+  amount: string;
+  paidAmount: string;
+  balance: string;
+  status: string;
+}
+
 function StepSettle({
   termination,
   onSettled,
@@ -259,27 +298,94 @@ function StepSettle({
   termination: Termination;
   onSettled: (term: Termination) => void;
 }) {
+  const isLease = termination.contractType === "lease";
   const [loading, setLoading] = useState(false);
   const [financials, setFinancials] = useState({
     paid: "",
     debt: "",
     penalty: "",
-    depositReturn: "",
     refund: "",
   });
   const [note, setNote] = useState(termination.note ?? "");
 
+  // Deposit split (lease only)
+  const [applyAmount, setApplyAmount] = useState("");
+  const [applyAccrualId, setApplyAccrualId] = useState<string>("auto");
+  const [returnAmount, setReturnAmount] = useState("");
+  const [returnDate, setReturnDate] = useState(
+    termination.terminationDate ?? new Date().toISOString().split("T")[0],
+  );
+
+  const { data: deposits } = useQuery<HeldDeposit[]>({
+    queryKey: ["rental-deposits", termination.contractId, "held"],
+    queryFn: () =>
+      api
+        .get<HeldDeposit[]>("/rental/deposits", {
+          params: { leaseContractId: String(termination.contractId), status: "held" },
+        })
+        .then((r) => r.data),
+    enabled: isLease,
+  });
+  const deposit = deposits?.[0] ?? null;
+
+  const { data: accruals } = useQuery<OpenAccrual[]>({
+    queryKey: ["rental-accruals", termination.contractId],
+    queryFn: () =>
+      api
+        .get<OpenAccrual[]>("/rental/accruals", {
+          params: { leaseContractId: String(termination.contractId) },
+        })
+        .then((r) => r.data),
+    enabled: isLease && !!deposit,
+  });
+  const openAccruals = (accruals ?? []).filter((a) => {
+    if (a.status === "cancelled" || a.status === "paid") return false;
+    const open = parseFloat(a.amount || "0") - parseFloat(a.paidAmount || "0");
+    return open > 0.01;
+  });
+
+  const depositTotal = deposit ? parseFloat(deposit.amount || "0") : 0;
+  const applyNum = parseFloat(applyAmount) || 0;
+  const returnNum = parseFloat(returnAmount) || 0;
+  const depositOverspent = depositTotal > 0 && applyNum + returnNum > depositTotal + 0.01;
+
+  const fillAll = (target: "apply" | "return") => {
+    if (target === "apply") {
+      setApplyAmount(String(depositTotal));
+      setReturnAmount("");
+    } else {
+      setReturnAmount(String(depositTotal));
+      setApplyAmount("");
+    }
+  };
+
   const handleSettle = async () => {
+    if (depositOverspent) {
+      toast.error("Зачёт + возврат превышают сумму депозита");
+      return;
+    }
     setLoading(true);
     try {
       const body: Record<string, unknown> = {};
       if (financials.paid !== "") body.paid = parseFloat(financials.paid) || 0;
       if (financials.debt !== "") body.debt = parseFloat(financials.debt) || 0;
       if (financials.penalty !== "") body.penalty = parseFloat(financials.penalty) || 0;
-      if (financials.depositReturn !== "")
-        body.depositReturn = parseFloat(financials.depositReturn) || 0;
       if (financials.refund !== "") body.refund = parseFloat(financials.refund) || 0;
       if (note) body.note = note;
+
+      if (isLease && deposit && (applyNum > 0 || returnNum > 0)) {
+        body.depositActions = {
+          ...(applyNum > 0
+            ? {
+                apply: {
+                  amount: applyNum,
+                  startAccrualId: applyAccrualId === "auto" ? null : parseInt(applyAccrualId, 10),
+                },
+              }
+            : {}),
+          ...(returnNum > 0 ? { return: { amount: returnNum, date: returnDate } } : {}),
+        };
+      }
 
       const { data } = await api.post<Termination>(
         `/contract-terminations/${termination.id}/settle`,
@@ -305,7 +411,6 @@ function StepSettle({
             { key: "paid", label: "Оплачено" },
             { key: "debt", label: "Долг" },
             { key: "penalty", label: "Штраф / неустойка" },
-            { key: "depositReturn", label: "Возврат депозита" },
             { key: "refund", label: "Возврат покупателю" },
           ] as const
         ).map(({ key, label }) => (
@@ -326,6 +431,104 @@ function StepSettle({
           </div>
         ))}
       </div>
+
+      {/* Deposit handling — lease only */}
+      {isLease && deposit && (
+        <div className="rounded-lg border border-am-brand/30 bg-am-brand/5 p-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Депозит</span>
+            <span className="text-sm font-semibold">
+              {depositTotal.toLocaleString("ru-RU")} {deposit.currency}
+            </span>
+          </div>
+
+          {/* Apply toward rent */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="dep-apply" className="text-xs">
+                Зачесть в счёт аренды
+              </Label>
+              <button
+                type="button"
+                className="text-[11px] text-am-brand hover:underline"
+                onClick={() => fillAll("apply")}
+              >
+                весь депозит
+              </button>
+            </div>
+            <Input
+              id="dep-apply"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              value={applyAmount}
+              onChange={(e) => setApplyAmount(e.target.value)}
+            />
+            {applyNum > 0 && (
+              <Select value={applyAccrualId} onValueChange={setApplyAccrualId}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">Автоматически — с самого раннего долга</SelectItem>
+                  {openAccruals.map((a) => (
+                    <SelectItem key={a.id} value={String(a.id)}>
+                      {a.period} · остаток{" "}
+                      {(parseFloat(a.amount) - parseFloat(a.paidAmount)).toLocaleString("ru-RU")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          {/* Return to tenant */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="dep-return" className="text-xs">
+                Вернуть арендатору
+              </Label>
+              <button
+                type="button"
+                className="text-[11px] text-am-brand hover:underline"
+                onClick={() => fillAll("return")}
+              >
+                весь депозит
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                id="dep-return"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                value={returnAmount}
+                onChange={(e) => setReturnAmount(e.target.value)}
+              />
+              <Input
+                type="date"
+                value={returnDate}
+                onChange={(e) => setReturnDate(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {depositOverspent && (
+            <p className="text-xs text-rose-600">
+              Зачёт + возврат ({(applyNum + returnNum).toLocaleString("ru-RU")}) превышают депозит.
+            </p>
+          )}
+          {!depositOverspent && applyNum + returnNum > 0 && applyNum + returnNum < depositTotal - 0.01 && (
+            <p className="text-xs text-muted-foreground">
+              Остаток депозита{" "}
+              {(depositTotal - applyNum - returnNum).toLocaleString("ru-RU")} останется удержанным.
+            </p>
+          )}
+        </div>
+      )}
+
       <div>
         <Label htmlFor="settle-note">Примечание</Label>
         <Textarea
@@ -337,7 +540,7 @@ function StepSettle({
           placeholder="Дополнительные комментарии к финрасчёту..."
         />
       </div>
-      <Button className="w-full" onClick={handleSettle} disabled={loading}>
+      <Button className="w-full" onClick={handleSettle} disabled={loading || depositOverspent}>
         {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         Зафиксировать расчёт
       </Button>
@@ -377,6 +580,7 @@ function StepClose({
     { key: "paid", label: "Оплачено" },
     { key: "debt", label: "Долг" },
     { key: "penalty", label: "Штраф" },
+    { key: "depositApplied", label: "Депозит в счёт аренды" },
     { key: "depositReturn", label: "Возврат депозита" },
     { key: "refund", label: "Возврат" },
   ].filter(({ key }) => fin[key] != null && fin[key] !== 0);

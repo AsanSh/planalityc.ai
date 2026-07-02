@@ -175,10 +175,10 @@ export default function SubscriptionPage() {
 	const accessStatus = company?.accessStatus || "active";
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 dark:[--foreground:222_48%_10%] dark:[--card-foreground:222_48%_10%] dark:[--muted-foreground:215_16%_44%]">
 			<div className="flex flex-wrap items-start justify-between gap-4">
 				<div>
-					<h1 className="text-2xl font-bold tracking-tight">Подписка и услуги</h1>
+					<h1 className="text-2xl font-bold tracking-tight dark:text-slate-900">Подписка и услуги</h1>
 					<p className="mt-1 text-sm text-muted-foreground">
 						Тарифы, подключённые возможности и стоимость дополнительных услуг.
 					</p>
@@ -189,7 +189,7 @@ export default function SubscriptionPage() {
 				</Button>
 			</div>
 
-			<Card className="border-cyan-100 bg-gradient-to-br from-white to-cyan-50/60">
+			<Card className="border-cyan-100 bg-gradient-to-br from-white to-cyan-50/60 dark:border-cyan-900/40 dark:from-card dark:to-card">
 				<CardHeader className="pb-3">
 					<div className="flex flex-wrap items-start justify-between gap-4">
 						<div>
@@ -214,19 +214,19 @@ export default function SubscriptionPage() {
 				</CardHeader>
 				<CardContent>
 					<div className="grid gap-3 md:grid-cols-3">
-						<div className="rounded-[16px] border border-white/80 bg-white/78 p-4">
+						<div className="rounded-[16px] border border-white/80 bg-white/78 p-4 dark:border-white/10 dark:bg-white/[0.06]">
 							<p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 								Тариф
 							</p>
 							<p className="mt-1 text-xl font-bold">{PLAN_LABELS[currentPlan] || currentPlan}</p>
 						</div>
-						<div className="rounded-[16px] border border-white/80 bg-white/78 p-4">
+						<div className="rounded-[16px] border border-white/80 bg-white/78 p-4 dark:border-white/10 dark:bg-white/[0.06]">
 							<p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 								Действует до
 							</p>
 							<p className="mt-1 text-xl font-bold">{dateText(company?.subscriptionEndsAt)}</p>
 						</div>
-						<div className="rounded-[16px] border border-white/80 bg-white/78 p-4">
+						<div className="rounded-[16px] border border-white/80 bg-white/78 p-4 dark:border-white/10 dark:bg-white/[0.06]">
 							<p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 								Комментарий
 							</p>
@@ -253,7 +253,7 @@ export default function SubscriptionPage() {
 								<Card
 									key={plan.id}
 									className={cn(
-										"relative overflow-hidden border-white/80 bg-white",
+										"relative overflow-hidden border-white/80 bg-white dark:border-slate-800 dark:bg-card",
 										active && "border-cyan-400 shadow-xl shadow-cyan-950/10",
 									)}
 								>

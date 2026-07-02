@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { UnitChangeRequests } from "@/components/construction/unit-change-requests";
 import {
 	Dialog,
 	DialogContent,
@@ -329,6 +330,11 @@ export function UnitDialog({
 						)}
 					</div>
 				</form>
+				{isEdit && init?.id && (
+					<div className="mt-3">
+						<UnitChangeRequests unitId={init.id} />
+					</div>
+				)}
 			</DialogContent>
 		</Dialog>
 	);

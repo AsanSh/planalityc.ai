@@ -136,6 +136,7 @@ const MODULES: Module[] = [
 						{ href: "/construction/contractors", label: "Подрядчики", icon: Briefcase },
 						{ href: "/construction/workers", label: "Бригады", icon: Hammer },
 						{ href: "/construction/planning/approvals", label: "Согласование", icon: CheckSquare },
+						{ href: "/construction/change-requests", label: "Заявки на изменение", icon: ClipboardList },
 					],
 				},
 				{

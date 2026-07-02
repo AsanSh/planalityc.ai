@@ -27,7 +27,12 @@ export function PortalPreviewDialog({
 }) {
 	return (
 		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-			<DialogContent className="!w-[96vw] !max-w-[1280px] max-h-[92vh] overflow-y-auto p-0 gap-0">
+			<DialogContent
+				className="!w-[96vw] !max-w-[1280px] max-h-[92vh] overflow-y-auto p-0 gap-0"
+				// Превью портала закрывается только крестиком: клик по фону/вне контента
+				// не должен закрывать диалог и обнажать внутреннюю карточку договора под ним.
+				onInteractOutside={(e) => e.preventDefault()}
+			>
 				<DialogTitle className="sr-only">Предпросмотр портала</DialogTitle>
 				{open && type === "contractor" && (
 					<ContractorPortal previewContractorId={id} />

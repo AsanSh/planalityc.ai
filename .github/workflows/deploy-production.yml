@@ -63,6 +63,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Run tests
+        run: npm test
+
       - name: Build
         run: npm run build
 
@@ -107,6 +110,9 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Run tests
+        run: npm test
 
       - name: Build
         env:

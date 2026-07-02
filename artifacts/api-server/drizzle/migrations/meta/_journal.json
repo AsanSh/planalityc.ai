@@ -41,6 +41,18 @@
     { "idx": 36, "version": "7", "when": 1780060000000, "tag": "0036_portal_content", "breakpoints": true },
     { "idx": 37, "version": "7", "when": 1780065000000, "tag": "0037_legal_entity_finance", "breakpoints": true },
     { "idx": 38, "version": "7", "when": 1780070000000, "tag": "0038_properties_columns_heal", "breakpoints": true },
-    { "idx": 39, "version": "7", "when": 1780075000000, "tag": "0039_crm_announcements_telegram", "breakpoints": true }
+    { "idx": 39, "version": "7", "when": 1780075000000, "tag": "0039_crm_announcements_telegram", "breakpoints": true },
+    { "idx": 40, "version": "7", "when": 1780080000000, "tag": "0040_rbac_permissions", "breakpoints": true },
+    { "idx": 41, "version": "7", "when": 1780085000000, "tag": "0041_contract_terminations", "breakpoints": true },
+    { "idx": 42, "version": "7", "when": 1780090000000, "tag": "0042_tax_invoice_docs", "breakpoints": true },
+    { "idx": 43, "version": "7", "when": 1780095000000, "tag": "0043_portal_access", "breakpoints": true },
+    { "idx": 44, "version": "7", "when": 1780100000000, "tag": "0044_portal_engagement", "breakpoints": true },
+    { "idx": 45, "version": "7", "when": 1780105000000, "tag": "0045_chat_attachments_contact_phones", "breakpoints": true },
+    { "idx": 46, "version": "7", "when": 1780110000000, "tag": "0046_supply_warehouses", "breakpoints": true },
+    { "idx": 47, "version": "7", "when": 1780115000000, "tag": "0047_supply_payments", "breakpoints": true },
+    { "idx": 48, "version": "7", "when": 1780120000000, "tag": "0048_supply_batches_split", "breakpoints": true },
+    { "idx": 49, "version": "7", "when": 1780125000000, "tag": "0049_warehouse_item_global_link", "breakpoints": true },
+    { "idx": 50, "version": "7", "when": 1780130000000, "tag": "0050_unit_change_requests", "breakpoints": true },
+    { "idx": 51, "version": "7", "when": 1780135000000, "tag": "0051_change_request_document", "breakpoints": true }
   ]
 }

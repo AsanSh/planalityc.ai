@@ -47,3 +47,25 @@ test("отрицательные остатки трактуются как 0", 
     toPurchase: 5,
   });
 });
+
+import { priceOrderLines, type OrderLineInput } from "./supply-sourcing";
+
+const lines: OrderLineInput[] = [
+  { productId: 1, quantity: 2 },
+  { productId: 2, quantity: 5 },
+  { productId: 3, quantity: 1 },
+];
+
+test("считает суммы позиций и итог по прайсу", () => {
+  const res = priceOrderLines(lines, { 1: 100, 2: 50 });
+  assert.deepEqual(res.lines, [
+    { productId: 1, quantity: 2, unitPrice: 100, lineTotal: 200 },
+    { productId: 2, quantity: 5, unitPrice: 50, lineTotal: 250 },
+    { productId: 3, quantity: 1, unitPrice: 0, lineTotal: 0 },
+  ]);
+  assert.equal(res.total, 450);
+});
+
+test("пустой список → total 0", () => {
+  assert.deepEqual(priceOrderLines([], {}), { lines: [], total: 0 });
+});

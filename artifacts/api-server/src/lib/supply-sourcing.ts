@@ -37,3 +37,31 @@ export function planMultiObjectSourcing(
   }
   return { fromOwn, fromOthers, toPurchase: remaining };
 }
+
+export interface OrderLineInput {
+  productId: number;
+  quantity: number;
+}
+
+export interface PricedLine {
+  productId: number;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+/**
+ * Проставить цены позициям заказа по прайсу (productId → цена). Нет цены → 0.
+ * Возвращает позиции с суммами и общий итог.
+ */
+export function priceOrderLines(
+  lines: OrderLineInput[],
+  priceByProductId: Record<number, number>,
+): { lines: PricedLine[]; total: number } {
+  const priced: PricedLine[] = lines.map((l) => {
+    const unitPrice = priceByProductId[l.productId] ?? 0;
+    return { productId: l.productId, quantity: l.quantity, unitPrice, lineTotal: unitPrice * l.quantity };
+  });
+  const total = priced.reduce((sum, l) => sum + l.lineTotal, 0);
+  return { lines: priced, total };
+}

@@ -10,9 +10,10 @@ export const supplyRequestsTable = pgTable("supply_requests", {
   projectId: integer("project_id"),
   constructionStageId: integer("construction_stage_id"),
   requestedBy: integer("requested_by").notNull(),
-  status: text("status").notNull().default("pending"), // pending | approved | rejected | ordered | cancelled
+  status: text("status").notNull().default("draft"), // draft | pending_approval | approved | planned | ordered | closed | rejected | cancelled
   priority: text("priority").notNull().default("normal"), // low | normal | high | urgent
   neededByDate: text("needed_by_date"),
+  estimatedAmount: numeric("estimated_amount", { precision: 15, scale: 2 }).notNull().default("0"),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
@@ -67,6 +68,22 @@ export const supplyOrdersTable = pgTable("supply_orders", {
   currency: text("currency").notNull().default("KGS"),
   notes: text("notes"),
   createdBy: integer("created_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+/** Позиции заказа снабжения (из части «докупить», с ценой поставщика). */
+export const supplyOrderItemsTable = pgTable("supply_order_items", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull(),
+  requestItemId: integer("request_item_id"),
+  globalProductId: integer("global_product_id"),
+  supplierProductId: integer("supplier_product_id"),
+  customName: text("custom_name"),
+  quantity: numeric("quantity", { precision: 14, scale: 3 }).notNull().default("0"),
+  unit: text("unit").notNull().default("шт"),
+  unitPrice: numeric("unit_price", { precision: 15, scale: 2 }).notNull().default("0"),
+  lineTotal: numeric("line_total", { precision: 15, scale: 2 }).notNull().default("0"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
@@ -148,6 +165,11 @@ export const insertInstallmentPlanSchema = createInsertSchema(installmentPlansTa
   createdAt: true,
   updatedAt: true,
 });
+export const insertSupplyOrderItemSchema = createInsertSchema(supplyOrderItemsTable).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export type InsertSupplyRequest = z.infer<typeof insertSupplyRequestSchema>;
 export type SupplyRequest = typeof supplyRequestsTable.$inferSelect;
@@ -161,3 +183,5 @@ export type InsertCompanySupplierCreditLimit = z.infer<typeof insertCompanySuppl
 export type CompanySupplierCreditLimit = typeof companySupplierCreditLimitsTable.$inferSelect;
 export type InsertInstallmentPlan = z.infer<typeof insertInstallmentPlanSchema>;
 export type InstallmentPlan = typeof installmentPlansTable.$inferSelect;
+export type InsertSupplyOrderItem = z.infer<typeof insertSupplyOrderItemSchema>;
+export type SupplyOrderItem = typeof supplyOrderItemsTable.$inferSelect;

@@ -60,3 +60,32 @@ test("resolveRequiredApprover: сумма выше всех порогов — �
 test("resolveRequiredApprover: без лимитов — null", () => {
   assert.equal(resolveRequiredApprover("100", []), null);
 });
+
+import { canApproveAmount } from "./supply-payments";
+
+const limits = [
+  { role: "foreman", maxAmount: "100000" },
+  { role: "manager", maxAmount: "500000" },
+  { role: "director", maxAmount: "5000000" },
+];
+
+test("роль с достаточным лимитом согласует", () => {
+  assert.equal(canApproveAmount("manager", "300000", limits), true);
+});
+
+test("роль с недостаточным лимитом не согласует", () => {
+  assert.equal(canApproveAmount("foreman", "300000", limits), false);
+});
+
+test("сумма выше всех лимитов — только высшая роль", () => {
+  assert.equal(canApproveAmount("director", "9000000", limits), true);
+  assert.equal(canApproveAmount("manager", "9000000", limits), false);
+});
+
+test("роль вне матрицы не согласует", () => {
+  assert.equal(canApproveAmount("intern", "1000", limits), false);
+});
+
+test("пустая матрица — не ограничиваем (true)", () => {
+  assert.equal(canApproveAmount("anyone", "1000000", []), true);
+});

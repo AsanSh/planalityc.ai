@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, and, SQL, sql, desc, like, or } from "drizzle-orm";
+import { eq, and, SQL, sql, desc, like, or, inArray } from "drizzle-orm";
 import {
   db,
   warehouseItemsTable,
@@ -24,6 +24,7 @@ import {
 import { buildSupplierReconciliation } from "../lib/portal-reconciliation";
 import { ensureCounterpartyWithRole } from "../lib/counterparty-sync";
 import { createConstructionExpenseFromOutgoing } from "../lib/warehouse-construction-expense";
+import { aggregateObjectStock } from "../lib/object-stock";
 
 function mapSupplierResponse(row: typeof warehouseSuppliersTable.$inferSelect) {
   const { contractDocumentMeta, ...rest } = row;
@@ -349,6 +350,78 @@ router.get("/warehouse/stock", async (req: AuthenticatedRequest, res): Promise<v
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+// GET /warehouse/objects/:projectId/stock — агрегированные остатки по объекту (S1)
+router.get(
+  "/warehouse/objects/:projectId/stock",
+  async (req: AuthenticatedRequest, res): Promise<void> => {
+    try {
+      const companyId = req.scopedCompanyId!;
+      const projectId = Number(req.params.projectId);
+
+      const warehouses = await db
+        .select({
+          id: warehousesTable.id,
+          type: warehousesTable.type,
+          projectId: warehousesTable.projectId,
+        })
+        .from(warehousesTable)
+        .where(eq(warehousesTable.companyId, companyId));
+
+      const objectWarehouseIds = warehouses
+        .filter(
+          (w) => (w.type === "project" || w.type === "foreman") && w.projectId === projectId,
+        )
+        .map((w) => w.id);
+
+      if (objectWarehouseIds.length === 0) {
+        res.json([]);
+        return;
+      }
+
+      const stock = await db
+        .select({
+          warehouseId: warehouseStockTable.warehouseId,
+          itemId: warehouseStockTable.itemId,
+          quantity: warehouseStockTable.quantity,
+          reservedQuantity: warehouseStockTable.reservedQuantity,
+          itemName: warehouseItemsTable.name,
+          unit: warehouseItemsTable.unit,
+        })
+        .from(warehouseStockTable)
+        .leftJoin(warehouseItemsTable, eq(warehouseItemsTable.id, warehouseStockTable.itemId))
+        .where(
+          and(
+            eq(warehouseStockTable.companyId, companyId),
+            inArray(warehouseStockTable.warehouseId, objectWarehouseIds),
+          ),
+        );
+
+      const lines = aggregateObjectStock(
+        projectId,
+        warehouses.map((w) => ({ id: w.id, type: w.type as never, projectId: w.projectId })),
+        stock.map((s) => ({
+          warehouseId: s.warehouseId,
+          itemId: s.itemId,
+          quantity: s.quantity,
+          reservedQuantity: s.reservedQuantity,
+        })),
+      );
+
+      const meta = new Map(stock.map((s) => [s.itemId, { itemName: s.itemName, unit: s.unit }]));
+      const enriched = lines.map((l) => ({
+        ...l,
+        itemName: meta.get(l.itemId)?.itemName ?? null,
+        unit: meta.get(l.itemId)?.unit ?? null,
+      }));
+
+      res.json(enriched);
+    } catch (error) {
+      console.error("Error fetching object stock:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // INCOMING (Поступления)

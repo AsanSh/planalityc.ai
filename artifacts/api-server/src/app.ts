@@ -115,8 +115,16 @@ app.use(
   })
 );
 
-// Body parsing with size limits
-app.use(express.json({ limit: "25mb" }));
+// Body parsing with size limits.
+// verify: сохраняем raw body — нужен для проверки HMAC-подписи Meta-вебхуков (crm.ts).
+app.use(
+  express.json({
+    limit: "25mb",
+    verify: (req, _res, buf) => {
+      (req as { rawBody?: Buffer }).rawBody = buf;
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
 // XSS Protection - sanitize inputs

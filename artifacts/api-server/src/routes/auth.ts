@@ -52,7 +52,7 @@ function getFrontendBaseUrl(): string {
 function getApiPublicBaseUrl(): string {
   return (
     process.env.API_PUBLIC_URL ||
-    "https://proptech-api.vercel.app/api"
+    "https://planalityc-api.vercel.app"
   ).replace(/\/+$/, "");
 }
 

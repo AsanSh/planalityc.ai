@@ -2,89 +2,128 @@ import { Router } from "express";
 import { eq, and, desc, or } from "drizzle-orm";
 import { db, notificationsTable, messagesTable, usersTable } from "../lib/db";
 import { requireAuth, AuthenticatedRequest } from "../middleware/auth";
+import { requireTenantCompany } from "../middleware/tenant";
 
+// Единый роутер уведомлений и чата (объединены бывшие notifications.ts + notifications-api.ts).
 const router: ReturnType<typeof Router> = Router();
+
+router.use(requireAuth, requireTenantCompany);
 
 // ── NOTIFICATIONS ──────────────────────────────────────────────────────────
 
-router.get("/notifications", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
-  const rows = await db
-    .select()
-    .from(notificationsTable)
-    .where(
-      and(
-        eq(notificationsTable.userId, req.userId!),
-        eq(notificationsTable.companyId, req.companyId!)
-      )
+router.get("/notifications", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const { limit = "50", unreadOnly } = req.query;
+
+  let conditions = and(
+    eq(notificationsTable.companyId, req.scopedCompanyId!),
+    or(
+      eq(notificationsTable.userId, req.userId!),
+      eq(notificationsTable.userId, null as any) // общекорпоративные уведомления
     )
+  );
+
+  if (unreadOnly === "true") {
+    conditions = and(conditions, eq(notificationsTable.isRead, false));
+  }
+
+  const notifications = await db.select()
+    .from(notificationsTable)
+    .where(conditions)
     .orderBy(desc(notificationsTable.createdAt))
-    .limit(50);
-  res.json(rows);
+    .limit(parseInt(limit as string) || 50);
+
+  res.json(notifications);
 });
 
-router.get("/notifications/unread-count", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
-  const rows = await db
-    .select()
+router.get("/notifications/unread-count", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const rows = await db.select({ id: notificationsTable.id })
     .from(notificationsTable)
-    .where(
-      and(
+    .where(and(
+      eq(notificationsTable.companyId, req.scopedCompanyId!),
+      or(
         eq(notificationsTable.userId, req.userId!),
-        eq(notificationsTable.companyId, req.companyId!),
-        eq(notificationsTable.isRead, false)
-      )
-    );
+        eq(notificationsTable.userId, null as any)
+      ),
+      eq(notificationsTable.isRead, false)
+    ));
   res.json({ count: rows.length });
 });
 
-router.post("/notifications", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
-  const { userId, type, title, body, link, fromUserId } = req.body;
-  if (!userId || !title) { res.status(400).json({ error: "userId and title required" }); return; }
+router.post("/notifications", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const { userId, type, title, body, message, icon, color, link, metadata, fromUserId } = req.body;
+  if (!title) { res.status(400).json({ error: "title required" }); return; }
+
   const [row] = await db.insert(notificationsTable).values({
-    companyId: req.companyId!,
-    userId,
+    companyId: req.scopedCompanyId!,
+    userId: userId || null,
     fromUserId: fromUserId || null,
     type: type || "info",
     title,
-    body: body || null,
+    body: body || message || null,
+    message: message || body || null,
+    icon: icon || "info",
+    color: color || "blue",
     link: link || null,
+    metadata: metadata ? JSON.stringify(metadata) : null,
+    isRead: false,
+    read: false,
   }).returning();
+
   res.status(201).json(row);
 });
 
-router.patch("/notifications/:id/read", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
+router.patch("/notifications/:id/read", async (req: AuthenticatedRequest, res): Promise<void> => {
   const id = parseInt(req.params.id as string, 10);
   const [row] = await db.update(notificationsTable)
-    .set({ isRead: true })
-    .where(and(eq(notificationsTable.id, id), eq(notificationsTable.userId, req.userId!)))
+    .set({ isRead: true, read: true })
+    .where(and(
+      eq(notificationsTable.id, id),
+      eq(notificationsTable.companyId, req.scopedCompanyId!)
+    ))
     .returning();
-  if (!row) { res.status(404).json({ error: "Not found" }); return; }
+  if (!row) { res.status(404).json({ error: "Notification not found" }); return; }
   res.json(row);
 });
 
-router.post("/notifications/read-all", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
+async function markAllRead(req: AuthenticatedRequest): Promise<void> {
   await db.update(notificationsTable)
-    .set({ isRead: true })
-    .where(
-      and(
+    .set({ isRead: true, read: true })
+    .where(and(
+      eq(notificationsTable.companyId, req.scopedCompanyId!),
+      or(
         eq(notificationsTable.userId, req.userId!),
-        eq(notificationsTable.companyId, req.companyId!)
-      )
-    );
+        eq(notificationsTable.userId, null as any)
+      ),
+      eq(notificationsTable.isRead, false)
+    ));
+}
+
+// Два алиаса одного действия — их используют разные части фронтенда.
+router.patch("/notifications/mark-all-read", async (req: AuthenticatedRequest, res): Promise<void> => {
+  await markAllRead(req);
   res.json({ ok: true });
 });
 
-router.delete("/notifications/:id", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
+router.post("/notifications/read-all", async (req: AuthenticatedRequest, res): Promise<void> => {
+  await markAllRead(req);
+  res.json({ ok: true });
+});
+
+router.delete("/notifications/:id", async (req: AuthenticatedRequest, res): Promise<void> => {
   const id = parseInt(req.params.id as string, 10);
   await db.delete(notificationsTable)
-    .where(and(eq(notificationsTable.id, id), eq(notificationsTable.userId, req.userId!)));
+    .where(and(
+      eq(notificationsTable.id, id),
+      eq(notificationsTable.companyId, req.scopedCompanyId!)
+    ));
   res.json({ ok: true });
 });
 
 // ── MESSAGES / CHAT ────────────────────────────────────────────────────────
 
-router.get("/messages/conversations", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
+router.get("/messages/conversations", async (req: AuthenticatedRequest, res): Promise<void> => {
   const myId = req.userId!;
-  const companyId = req.companyId!;
+  const companyId = req.scopedCompanyId!;
 
   const sent = await db.select().from(messagesTable)
     .where(and(eq(messagesTable.fromUserId, myId), eq(messagesTable.companyId, companyId)));
@@ -93,7 +132,7 @@ router.get("/messages/conversations", requireAuth, async (req: AuthenticatedRequ
 
   const all = [...sent, ...received];
 
-  // Build conversation map (partner userId → last message)
+  // partner userId → последнее сообщение
   const convMap: Record<number, any> = {};
   all.forEach(m => {
     const partnerId = m.fromUserId === myId ? (m.toUserId ?? 0) : m.fromUserId;
@@ -129,10 +168,24 @@ router.get("/messages/conversations", requireAuth, async (req: AuthenticatedRequ
   res.json(conversations);
 });
 
-router.get("/messages/:partnerId", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
+// Важно: объявлен ДО "/messages/:partnerId", иначе "unread-count" матчится как partnerId.
+router.get("/messages/unread-count", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const rows = await db.select({ id: messagesTable.id }).from(messagesTable)
+    .where(
+      and(
+        eq(messagesTable.toUserId, req.userId!),
+        eq(messagesTable.companyId, req.scopedCompanyId!),
+        eq(messagesTable.isRead, false)
+      )
+    );
+  res.json({ count: rows.length });
+});
+
+router.get("/messages/:partnerId", async (req: AuthenticatedRequest, res): Promise<void> => {
   const myId = req.userId!;
-  const companyId = req.companyId!;
+  const companyId = req.scopedCompanyId!;
   const partnerId = parseInt(req.params.partnerId as string, 10);
+  if (!Number.isFinite(partnerId)) { res.status(400).json({ error: "Invalid partnerId" }); return; }
 
   const msgs = await db.select().from(messagesTable)
     .where(
@@ -146,7 +199,7 @@ router.get("/messages/:partnerId", requireAuth, async (req: AuthenticatedRequest
     )
     .orderBy(messagesTable.createdAt);
 
-  // Mark received as read
+  // Полученные сообщения помечаем прочитанными
   await db.update(messagesTable)
     .set({ isRead: true })
     .where(
@@ -160,7 +213,7 @@ router.get("/messages/:partnerId", requireAuth, async (req: AuthenticatedRequest
   res.json(msgs);
 });
 
-router.post("/messages", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
+router.post("/messages", async (req: AuthenticatedRequest, res): Promise<void> => {
   const { toUserId, content, attachment } = req.body;
   const text = typeof content === "string" ? content.trim() : "";
   const hasAttachment =
@@ -178,7 +231,7 @@ router.post("/messages", requireAuth, async (req: AuthenticatedRequest, res): Pr
     return;
   }
   const [row] = await db.insert(messagesTable).values({
-    companyId: req.companyId!,
+    companyId: req.scopedCompanyId!,
     fromUserId: req.userId!,
     toUserId,
     content: text,
@@ -188,18 +241,6 @@ router.post("/messages", requireAuth, async (req: AuthenticatedRequest, res): Pr
     attachmentSize: hasAttachment && typeof attachment.size === "number" ? attachment.size : null,
   }).returning();
   res.status(201).json(row);
-});
-
-router.get("/messages/unread-count", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
-  const rows = await db.select().from(messagesTable)
-    .where(
-      and(
-        eq(messagesTable.toUserId, req.userId!),
-        eq(messagesTable.companyId, req.companyId!),
-        eq(messagesTable.isRead, false)
-      )
-    );
-  res.json({ count: rows.length });
 });
 
 export default router;

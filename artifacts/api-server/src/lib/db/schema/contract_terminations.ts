@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, timestamp, jsonb, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -7,6 +7,7 @@ export const contractTerminationsTable = pgTable("contract_terminations", {
   companyId: integer("company_id").notNull(),
   contractType: text("contract_type").notNull(), // 'sales' | 'lease'
   contractId: integer("contract_id").notNull(),
+  terminationDate: date("termination_date"), // дата расторжения; используется для endDate и отсечки начислений
   reason: text("reason"),
   basis: text("basis"), // 'agreement' | 'unilateral'
   status: text("status").notNull().default("initiated"), // initiated -> approved -> settled -> closed

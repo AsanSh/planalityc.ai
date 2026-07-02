@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle, Clock, FileText, Plus, ShieldCheck, Tags, XCircle } from "lucide-react";
 import { Link } from "wouter";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -81,10 +81,14 @@ export default function WarehouseRequests() {
 	const { data: projects = [] } = useQuery<Project[]>({
 		queryKey: ["construction-projects-for-supply"],
 		queryFn: async () => {
-			const { data } = await api.get<any>("/construction/projects");
+			const { data } = await api.get<any>("/construction/projects/all");
 			return Array.isArray(data) ? data : data?.items ?? [];
 		},
 	});
+	// Если есть стройпроекты — подтягиваем первый по умолчанию (а не «Без проекта»).
+	useEffect(() => {
+		if (!projectId && projects.length) setProjectId(String(projects[0].id));
+	}, [projects, projectId]);
 	const { data: suppliers = [] } = useQuery<Supplier[]>({
 		queryKey: ["warehouse-suppliers-for-requests"],
 		queryFn: () =>
@@ -135,7 +139,11 @@ export default function WarehouseRequests() {
 	const seedMut = useMutation({
 		mutationFn: () => api.post("/catalog/categories/seed-defaults"),
 		onSuccess: (r) => {
-			toast({ title: "Каталог инициализирован", description: `Добавлено: ${r.data.inserted}` });
+			toast({
+				title: "Каталог инициализирован",
+				description: `Категорий: ${r.data.inserted ?? 0}, позиций: ${r.data.insertedProducts ?? 0}`,
+			});
+			qc.invalidateQueries({ queryKey: ["global-products-for-supply"] });
 		},
 		onError: (e) =>
 			toast({

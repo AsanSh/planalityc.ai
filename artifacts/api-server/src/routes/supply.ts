@@ -23,14 +23,18 @@ import { requireEnabledModule } from "../middleware/modules";
 import {
   nextPaymentStatus,
   resolveRequiredApprover,
+  canApproveAmount,
   type PaymentStatus,
   type PaymentEvent,
 } from "../lib/supply-payments";
+import { nextRequestStatus } from "../lib/supply-workflow";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth, requireTenantCompany, requireEnabledModule("warehouse"));
 
-const REQUEST_STATUSES = new Set(["pending", "approved", "rejected", "ordered", "cancelled"]);
+const REQUEST_STATUSES = new Set([
+  "draft", "pending_approval", "approved", "planned", "ordered", "closed", "rejected", "cancelled",
+]);
 const REQUEST_PRIORITIES = new Set(["low", "normal", "high", "urgent"]);
 const ORDER_STATUSES = new Set(["draft", "placed", "processing", "delivered", "closed"]);
 const PAYMENT_TYPES = new Set(["prepaid", "postpaid", "installment"]);
@@ -66,12 +70,11 @@ router.post("/supply/requests", async (req: AuthenticatedRequest, res): Promise<
     res.status(400).json({ error: "Добавьте хотя бы одну позицию заявки" });
     return;
   }
-  const status = String(body.status || "pending");
-  const priority = String(body.priority || "normal");
-  if (!REQUEST_STATUSES.has(status)) {
-    res.status(400).json({ error: "Некорректный статус заявки" });
+  if (!body.projectId) {
+    res.status(400).json({ error: "Укажите объект (projectId) заявки" });
     return;
   }
+  const priority = String(body.priority || "normal");
   if (!REQUEST_PRIORITIES.has(priority)) {
     res.status(400).json({ error: "Некорректный приоритет заявки" });
     return;
@@ -93,8 +96,9 @@ router.post("/supply/requests", async (req: AuthenticatedRequest, res): Promise<
         projectId: body.projectId ? Number(body.projectId) : null,
         constructionStageId: body.constructionStageId ? Number(body.constructionStageId) : null,
         requestedBy: req.userId!,
-        status,
+        status: "draft",
         priority,
+        estimatedAmount: String(body.estimatedAmount ?? "0"),
         neededByDate: body.neededByDate ? String(body.neededByDate) : null,
         notes: body.notes ? String(body.notes) : null,
       })
@@ -115,6 +119,33 @@ router.post("/supply/requests", async (req: AuthenticatedRequest, res): Promise<
   });
 
   res.status(201).json(created);
+});
+
+// POST /supply/requests/:id/submit — прораб отправляет заявку ПТО на согласование
+router.post("/supply/requests/:id/submit", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const companyId = req.scopedCompanyId!;
+  const id = Number(req.params.id);
+  const [request] = await db
+    .select()
+    .from(supplyRequestsTable)
+    .where(and(eq(supplyRequestsTable.id, id), eq(supplyRequestsTable.companyId, companyId)));
+  if (!request) {
+    res.status(404).json({ error: "Заявка не найдена" });
+    return;
+  }
+  let next: string;
+  try {
+    next = nextRequestStatus(request.status as never, { type: "submit" });
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : "Недопустимый переход" });
+    return;
+  }
+  const [updated] = await db
+    .update(supplyRequestsTable)
+    .set({ status: next })
+    .where(eq(supplyRequestsTable.id, id))
+    .returning();
+  res.json(updated);
 });
 
 // GET /supply/requests/:id
@@ -207,6 +238,24 @@ router.post(
       return;
     }
 
+    // сумма заявки → требуемый уровень согласования по матрице лимитов
+    if (status === "approved") {
+      const limits = await db
+        .select()
+        .from(approvalLimitsTable)
+        .where(eq(approvalLimitsTable.companyId, companyId));
+      const approverRole = String(req.userRole ?? "");
+      const ok = canApproveAmount(
+        approverRole,
+        String(request.estimatedAmount ?? "0"),
+        limits.map((l) => ({ role: l.role, maxAmount: l.maxAmount })),
+      );
+      if (!ok) {
+        res.status(403).json({ error: "Недостаточно полномочий для согласования этой суммы" });
+        return;
+      }
+    }
+
     const [approval] = await db
       .insert(supplyApprovalsTable)
       .values({
@@ -218,16 +267,16 @@ router.post(
       })
       .returning();
 
-    if (status === "approved") {
-      await db
-        .update(supplyRequestsTable)
-        .set({ status: "approved" })
-        .where(eq(supplyRequestsTable.id, id));
-    } else if (status === "rejected") {
-      await db
-        .update(supplyRequestsTable)
-        .set({ status: "rejected" })
-        .where(eq(supplyRequestsTable.id, id));
+    if (status === "approved" || status === "rejected") {
+      const event = status === "approved" ? ({ type: "approve" } as const) : ({ type: "reject" } as const);
+      let next: string;
+      try {
+        next = nextRequestStatus(request.status as never, event);
+      } catch (e) {
+        res.status(400).json({ error: e instanceof Error ? e.message : "Недопустимый переход" });
+        return;
+      }
+      await db.update(supplyRequestsTable).set({ status: next }).where(eq(supplyRequestsTable.id, id));
     }
     res.status(201).json(approval);
   },

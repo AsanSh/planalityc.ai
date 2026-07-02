@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	getListAccrualsQueryKey,
 	getListLeaseContractsQueryKey,
@@ -636,7 +637,7 @@ export default function Payments() {
 	const [groupSearch, setGroupSearch] = useState("");
 	const scope = useLegalEntityScope();
 	const handleCancel = async (payment: any) => {
-		if (!confirm(`Отменить платёж ${fmtCurrency(payment.amount, payment.currency)} от ${formatDate(payment.paymentDate)}? Начисление будет восстановлено.`)) return;
+		if (!(await confirmDialog(`Отменить платёж ${fmtCurrency(payment.amount, payment.currency)} от ${formatDate(payment.paymentDate)}? Начисление будет восстановлено.`, { destructive: true }))) return;
 		try {
 			const res = await fetch(`${BASE}/rental/payments/${payment.id}`, {
 				method: "DELETE",

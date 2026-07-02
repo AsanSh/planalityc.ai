@@ -57,7 +57,7 @@ function fmtDateTime(value: string | null | undefined) {
 	if (!value) return "—";
 	const d = new Date(value);
 	if (Number.isNaN(d.getTime())) return "—";
-	return d.toLocaleString("ru-RU");
+	return d.toLocaleString("ru-KG");
 }
 
 function formatDiscount(row: LeaseContractRow) {

@@ -8,7 +8,7 @@ import { api } from "@/lib/api";
 import { cn, formatCurrency } from "@/lib/utils";
 
 function formatDate(d: string) {
-	return new Date(d).toLocaleDateString("ru-RU");
+	return new Date(d).toLocaleDateString("ru-KG");
 }
 
 const METHOD_LABELS: Record<string, string> = {

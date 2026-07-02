@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	BarChart3,
 	Grid3X3,
@@ -267,7 +268,7 @@ export function WbsPage() {
 	};
 
 	const handleDelete = async (id: number) => {
-		if (!confirm("Удалить этап WBS? Подэтапы могут остаться без родителя.")) return;
+		if (!(await confirmDialog("Удалить этап WBS? Подэтапы могут остаться без родителя.", { destructive: true }))) return;
 		await fetch(`${BASE}/construction/stages/${id}`, { method: "DELETE", headers: ah() });
 		toast({ title: "Этап удалён" });
 		setSelectedNode(null);
@@ -335,7 +336,7 @@ export function WbsPage() {
 			});
 			return;
 		}
-		if (stages.length > 0 && !confirm("В выбранном проекте уже есть этапы WBS. Добавить шаблон к существующей структуре?")) {
+		if (stages.length > 0 && !(await confirmDialog("В выбранном проекте уже есть этапы WBS. Добавить шаблон к существующей структуре?"))) {
 			return;
 		}
 
@@ -401,9 +402,10 @@ export function WbsPage() {
 				? `\n\nВнимание: найдено связанных записей: задачи — ${taskCount}, расходы — ${expenseCount}. После удаления этапов они могут потерять привязку к WBS.`
 				: "";
 		if (
-			!confirm(
+			!(await confirmDialog(
 				`Удалить все этапы и подэтапы WBS проекта «${projectName}»?${dependencyText}\n\nДействие нельзя отменить.`,
-			)
+				{ destructive: true },
+			))
 		) {
 			return;
 		}

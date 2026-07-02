@@ -12,7 +12,7 @@ export function periodYear(period: PeriodValue) {
 }
 
 export function dateLabel(period: PeriodValue) {
-	const fmt = new Intl.DateTimeFormat("ru-RU", {
+	const fmt = new Intl.DateTimeFormat("ru-KG", {
 		day: "2-digit",
 		month: "2-digit",
 		year: "numeric",

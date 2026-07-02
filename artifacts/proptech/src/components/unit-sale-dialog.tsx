@@ -28,7 +28,7 @@ import {
 } from "@/lib/payment-schedule";
 
 function fmt(n: number) {
-	return new Intl.NumberFormat("ru-RU").format(n);
+	return new Intl.NumberFormat("ru-KG").format(n);
 }
 
 export type UnitForSale = {

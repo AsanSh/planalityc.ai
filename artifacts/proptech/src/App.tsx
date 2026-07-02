@@ -3,6 +3,7 @@ import React from "react";
 import { Redirect, Route, Switch, Router as WouterRouter, useLocation, useSearch } from "wouter";
 import { Layout } from "@/components/layout";
 import { PlatformAdminLayout } from "@/components/platform-admin-layout";
+import { ConfirmDialogHost } from "@/components/ui/confirm-dialog";
 import { ConstructionLoader } from "@/components/ui/construction-loader";
 import { Toaster } from "@/components/ui/toaster";
 import { SonnerToaster } from "@/components/ui/sonner-toaster";
@@ -882,6 +883,7 @@ function App() {
 						</WouterRouter>
 						<Toaster />
 						<SonnerToaster />
+						<ConfirmDialogHost />
 					</AuthProvider>
 				</TooltipProvider>
 			</ThemeProvider>

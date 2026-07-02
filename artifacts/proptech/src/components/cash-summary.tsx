@@ -32,7 +32,7 @@ function loadExcluded(): Set<string> {
 }
 
 function fmtMoney(n: number, currency: string): string {
-	const formatted = new Intl.NumberFormat("ru-RU", {
+	const formatted = new Intl.NumberFormat("ru-KG", {
 		minimumFractionDigits: 0,
 		maximumFractionDigits: 2,
 	}).format(n);

@@ -222,7 +222,7 @@ function AnalyzeEstimate() {
 										Итого по смете
 									</p>
 									<p className="text-xl font-bold">
-										{Number(result.totalAmount).toLocaleString("ru-RU")} ₽
+										{Number(result.totalAmount).toLocaleString("ru-KG")} ₽
 									</p>
 								</CardContent>
 							</Card>
@@ -284,7 +284,7 @@ function AnalyzeEstimate() {
 										</p>
 										{issue.impact && (
 											<p className="text-xs text-red-600 pl-6">
-												Влияние: {Number(issue.impact).toLocaleString("ru-RU")}{" "}
+												Влияние: {Number(issue.impact).toLocaleString("ru-KG")}{" "}
 												₽
 											</p>
 										)}
@@ -500,7 +500,7 @@ function AnalyzeTender() {
 								)}
 								{result.budget && (
 									<Badge variant="outline">
-										Бюджет: {Number(result.budget).toLocaleString("ru-RU")} ₽
+										Бюджет: {Number(result.budget).toLocaleString("ru-KG")} ₽
 									</Badge>
 								)}
 								{result.deadline && (

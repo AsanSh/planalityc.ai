@@ -420,7 +420,7 @@ export default function CRMDashboard() {
 											{activity.description}
 										</p>
 										<p className="text-xs text-gray-500 mt-1">
-											{new Date(activity.date).toLocaleString("ru-RU", {
+											{new Date(activity.date).toLocaleString("ru-KG", {
 												day: "2-digit",
 												month: "2-digit",
 												year: "numeric",

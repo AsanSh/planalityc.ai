@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	getListAccrualsQueryKey,
 	getListLeaseContractsQueryKey,
@@ -227,7 +228,7 @@ export default function RentalAccounts() {
 	}
 
 	async function handleDelete(id: number) {
-		if (!confirm("Удалить расчётный счёт?")) return;
+		if (!(await confirmDialog("Удалить расчётный счёт?", { destructive: true }))) return;
 		setDeleting(id);
 		try {
 			await api.delete(`/rental/accounts/${id}`);
@@ -803,7 +804,7 @@ export default function RentalAccounts() {
 										)}
 										{(accOps?.operations || []).map((op: any, i: number) => (
 											<tr key={i} className="hover:bg-gray-50">
-												<td className="whitespace-nowrap px-3 py-2 text-gray-600">{op.date ? new Date(op.date).toLocaleDateString("ru-RU") : "\u2014"}</td>
+												<td className="whitespace-nowrap px-3 py-2 text-gray-600">{op.date ? new Date(op.date).toLocaleDateString("ru-KG") : "\u2014"}</td>
 												<td className="px-3 py-2 text-gray-800">{op.label}</td>
 												<td className={`whitespace-nowrap px-3 py-2 text-right font-medium ${op.amount >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{op.amount >= 0 ? "+" : "\u2212"}{Math.round(Math.abs(op.amount)).toLocaleString("ru-KG")} {op.currency || ""}</td>
 											</tr>

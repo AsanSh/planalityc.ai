@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -95,7 +96,7 @@ export function BulkCommercialPriceDialog({
 			toast({ title: "Коэффициент должен быть больше нуля", variant: "destructive" });
 			return;
 		}
-		if (publishForSale && !confirm(`Открыть ${count} объект(ов) для продажи?`)) {
+		if (publishForSale && !(await confirmDialog(`Открыть ${count} объект(ов) для продажи?`))) {
 			return;
 		}
 

@@ -29,7 +29,7 @@ type ForecastSort = "date" | "counterparty";
 function fmtFull(n: any) {
 	const v = parseFloat(n || "0");
 	if (Number.isNaN(v)) return "0";
-	return new Intl.NumberFormat("ru-RU").format(v);
+	return new Intl.NumberFormat("ru-KG").format(v);
 }
 
 const MONTHS = [

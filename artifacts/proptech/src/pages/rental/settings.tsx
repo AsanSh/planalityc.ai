@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	Bell,
 	ChevronRight,
@@ -306,7 +307,7 @@ function DocTemplateRow({
 	};
 
 	const handleDeleteFile = async () => {
-		if (!confirm(`Удалить загруженный файл «${doc.label}»?`)) return;
+		if (!(await confirmDialog(`Удалить загруженный файл «${doc.label}»?`, { destructive: true }))) return;
 		setLoading(true);
 		try {
 			await api.delete(`/rental/document-templates/${doc.id}/file`);
@@ -323,7 +324,7 @@ function DocTemplateRow({
 	};
 
 	const handleDeleteCustom = async () => {
-		if (!confirm(`Удалить шаблон «${doc.label}» и загруженный файл?`)) return;
+		if (!(await confirmDialog(`Удалить шаблон «${doc.label}» и загруженный файл?`, { destructive: true }))) return;
 		setLoading(true);
 		try {
 			await api.delete(`/rental/document-templates/custom/${doc.id}`);

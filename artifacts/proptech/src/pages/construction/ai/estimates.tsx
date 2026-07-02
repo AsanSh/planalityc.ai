@@ -43,7 +43,7 @@ interface Project {
 }
 
 function fmt(v: number) {
-	return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(v || 0);
+	return new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(v || 0);
 }
 
 function DeviationBadge({ pct }: { pct: number }) {

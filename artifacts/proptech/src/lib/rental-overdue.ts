@@ -48,7 +48,7 @@ export function fmtCurrency(n: number | string, currency = "KGS") {
 }
 
 export function fmtNum(n: number) {
-	return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(n);
+	return new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(n);
 }
 
 export function fmtDate(date: string) {

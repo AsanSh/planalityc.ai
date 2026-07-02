@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { Edit2, ExternalLink, Plus, Trash2, UserCheck, Users, UserX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -117,7 +118,7 @@ function TenantDialog({ open, onClose, tenant }: TenantDialogProps) {
 			setFormData({
 				fullName: tenant.fullName,
 				phone: tenant.phone || "",
-				phones: normalizeContactPhones((tenant as any).phones, tenant.phone),
+				phones: normalizeContactPhones(tenant.phones, tenant.phone),
 				email: tenant.email || "",
 				iin: tenant.iin || "",
 				type: ((tenant as TenantRow).type as "individual" | "company") || "individual",
@@ -349,9 +350,10 @@ function TenantDialog({ open, onClose, tenant }: TenantDialogProps) {
 								disabled={isPending}
 								onClick={async () => {
 									if (
-										!confirm(
+										!(await confirmDialog(
 											`Удалить арендатора «${tenant.fullName}»?\n\nДействие необратимо.`,
-										)
+											{ destructive: true },
+										))
 									) {
 										return;
 									}
@@ -412,9 +414,10 @@ export default function RentalTenants() {
 
 	const handleDelete = useCallback(async (tenant: Tenant) => {
 		if (
-			!confirm(
+			!(await confirmDialog(
 				`Удалить арендатора «${tenant.fullName}»?\n\nДействие необратимо. Удаление возможно только без активных договоров и задолженности.`,
-			)
+				{ destructive: true },
+			))
 		) {
 			return;
 		}

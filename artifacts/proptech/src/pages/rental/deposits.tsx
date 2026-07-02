@@ -361,8 +361,8 @@ export default function Deposits() {
 		<div className="p-6 space-y-3">
 			<KpiRow>
 				<KpiCard variant="strip" label="Записей" value={filteredDeposits.length} sub="за период" icon={Banknote} color="blue" loading={isLoading} />
-				<KpiCard variant="strip" label="Сумма депозитов" value={new Intl.NumberFormat("ru-RU").format(totalAmount)} sub="KGS экв." icon={Wallet} color="purple" loading={isLoading} />
-				<KpiCard variant="strip" label="Возвращено" value={new Intl.NumberFormat("ru-RU").format(totalReturned)} sub="за период" icon={CheckCircle2} color="green" loading={isLoading} />
+				<KpiCard variant="strip" label="Сумма депозитов" value={new Intl.NumberFormat("ru-KG").format(totalAmount)} sub="KGS экв." icon={Wallet} color="purple" loading={isLoading} />
+				<KpiCard variant="strip" label="Возвращено" value={new Intl.NumberFormat("ru-KG").format(totalReturned)} sub="за период" icon={CheckCircle2} color="green" loading={isLoading} />
 				<KpiCard variant="strip" label="Удерживается" value={heldCount} sub="активных депозитов" icon={Shield} color="yellow" loading={isLoading} />
 			</KpiRow>
 

@@ -9,6 +9,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const CONTRACT_PIPELINE = [
 	{
@@ -66,12 +67,12 @@ export function ContractStatusStepper({
 			? CONTRACT_PIPELINE[currentIdx + 1]
 			: null;
 
-	const changeStatus = (target: string, label: string) => {
+	const changeStatus = async (target: string, label: string) => {
 		if (target === status || loading) return;
 		if (
-			!confirm(
+			!(await confirmDialog(
 				`Перевести договор в статус «${label}»?\n\nЭто делает менеджер продаж вручную — автоматически этап не меняется.`,
-			)
+			))
 		) {
 			return;
 		}

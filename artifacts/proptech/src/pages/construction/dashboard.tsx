@@ -32,7 +32,7 @@ import { api } from "@/lib/api";
 function fmt(n: any) {
 	const v = parseFloat(n || "0");
 	if (Number.isNaN(v)) return "0";
-	return new Intl.NumberFormat("ru-RU").format(Math.round(v));
+	return new Intl.NumberFormat("ru-KG").format(Math.round(v));
 }
 function fmtShort(n: any) {
 	const v = parseFloat(n || "0");

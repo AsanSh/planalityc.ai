@@ -32,7 +32,7 @@ export function BarChart({
 					fontSize={12}
 					tickLine={false}
 					tickFormatter={(value) =>
-						new Intl.NumberFormat("ru-RU", { notation: "compact" }).format(
+						new Intl.NumberFormat("ru-KG", { notation: "compact" }).format(
 							value,
 						)
 					}
@@ -45,7 +45,7 @@ export function BarChart({
 						boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
 					}}
 					formatter={(value: number) =>
-						new Intl.NumberFormat("ru-RU").format(value)
+						new Intl.NumberFormat("ru-KG").format(value)
 					}
 				/>
 				<Bar dataKey="value" radius={[8, 8, 0, 0]}>

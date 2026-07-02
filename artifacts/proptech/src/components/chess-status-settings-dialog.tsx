@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -190,11 +191,12 @@ export function ChessStatusSettingsDialog({
 											size="icon"
 											variant="ghost"
 											className="h-7 w-7 text-red-600"
-											onClick={() => {
+											onClick={async () => {
 												if (
-													!confirm(
+													!(await confirmDialog(
 														`Удалить статус «${s.label}»? Доступно только если ни одна квартира не использует его.`,
-													)
+														{ destructive: true },
+													))
 												)
 													return;
 												deleteMut.mutate(s.id);

@@ -160,7 +160,7 @@ function money(value: number) {
 
 function dateText(value?: string | null) {
 	if (!value) return "Без даты окончания";
-	return new Date(value).toLocaleDateString("ru-RU", {
+	return new Date(value).toLocaleDateString("ru-KG", {
 		day: "2-digit",
 		month: "long",
 		year: "numeric",

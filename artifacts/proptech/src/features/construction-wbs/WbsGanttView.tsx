@@ -57,7 +57,7 @@ function diffDays(a: Date, b: Date) {
 }
 
 function formatDate(date: Date) {
-	return new Intl.DateTimeFormat("ru-RU", {
+	return new Intl.DateTimeFormat("ru-KG", {
 		day: "2-digit",
 		month: "2-digit",
 		year: "2-digit",
@@ -66,13 +66,13 @@ function formatDate(date: Date) {
 
 function formatTick(date: Date, scale: Scale) {
 	if (scale === "day") {
-		return new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "short" }).format(date);
+		return new Intl.DateTimeFormat("ru-KG", { day: "2-digit", month: "short" }).format(date);
 	}
 	if (scale === "week") {
 		return `нед. ${getWeekNumber(date)}`;
 	}
 	if (scale === "month") {
-		return new Intl.DateTimeFormat("ru-RU", { month: "short", year: "2-digit" }).format(date);
+		return new Intl.DateTimeFormat("ru-KG", { month: "short", year: "2-digit" }).format(date);
 	}
 	if (scale === "quarter") {
 		return `${Math.floor(date.getMonth() / 3) + 1} кв. ${date.getFullYear()}`;

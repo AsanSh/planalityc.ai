@@ -135,7 +135,7 @@ export default function PlatformAdminDashboard() {
 										</Link>
 										<p className="text-xs text-muted-foreground">
 											{c.email || "—"} ·{" "}
-											{new Date(c.createdAt).toLocaleDateString("ru-RU")}
+											{new Date(c.createdAt).toLocaleDateString("ru-KG")}
 										</p>
 									</div>
 									<Badge variant={c.isActive ? "default" : "secondary"}>

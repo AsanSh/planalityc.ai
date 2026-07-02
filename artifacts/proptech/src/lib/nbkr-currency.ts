@@ -45,7 +45,7 @@ export function kgsToDisplay(
 }
 
 export function fmtCurrencyAmount(n: number, currency: DisplayCurrency): string {
-	const formatted = new Intl.NumberFormat("ru-RU", {
+	const formatted = new Intl.NumberFormat("ru-KG", {
 		minimumFractionDigits: 0,
 		maximumFractionDigits: currency === "USD" ? 2 : 0,
 	}).format(n);
@@ -59,5 +59,5 @@ export function nbkrUsdRateLabel(rates: Record<string, NbkrRate>): string | null
 	const scale = parseFloat(usd.scale || "1") || 1;
 	if (!rate) return null;
 	const perUnit = rate / scale;
-	return `1 USD = ${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 }).format(perUnit)} с`;
+	return `1 USD = ${new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 2 }).format(perUnit)} с`;
 }

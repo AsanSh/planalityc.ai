@@ -11,7 +11,7 @@ import { defaultPeriod, isInPeriod, type PeriodValue } from "@/lib/period-utils"
 function fmtFull(n: any) {
 	const v = parseFloat(n || "0");
 	if (Number.isNaN(v)) return "0";
-	return new Intl.NumberFormat("ru-RU").format(v);
+	return new Intl.NumberFormat("ru-KG").format(v);
 }
 
 function daysOverdue(dueDate: string) {

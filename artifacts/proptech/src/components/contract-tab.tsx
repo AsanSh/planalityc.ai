@@ -263,7 +263,7 @@ export function ContractTab({ salesContractId, projectId, initialPayload }: Prop
 		});
 
 	const fmtMoney = (n: number) =>
-		new Intl.NumberFormat("ru-RU").format(Math.round(n));
+		new Intl.NumberFormat("ru-KG").format(Math.round(n));
 
 	const displaySchedule = useMemo(
 		() =>

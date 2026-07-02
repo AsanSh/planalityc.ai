@@ -44,7 +44,7 @@ const TYPE_CONFIG = {
 function fmt(n: any) {
 	const v = parseFloat(n || "0");
 	if (Number.isNaN(v)) return "0";
-	return new Intl.NumberFormat("ru-RU").format(v);
+	return new Intl.NumberFormat("ru-KG").format(v);
 }
 
 export default function ConstructionAccounts() {

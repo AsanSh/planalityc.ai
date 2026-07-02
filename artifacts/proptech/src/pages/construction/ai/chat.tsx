@@ -157,7 +157,7 @@ export default function AIChat() {
 									>
 										<p className="whitespace-pre-wrap">{msg.content}</p>
 										<p className={`text-xs mt-1 opacity-60`}>
-											{msg.timestamp.toLocaleTimeString("ru-RU", {
+											{msg.timestamp.toLocaleTimeString("ru-KG", {
 												hour: "2-digit",
 												minute: "2-digit",
 											})}

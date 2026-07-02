@@ -125,7 +125,7 @@ export default function PlatformAdminCompanies() {
 									</TableCell>
 									<TableCell>{c.usersCount}</TableCell>
 									<TableCell className="text-sm">
-										{new Date(c.createdAt).toLocaleDateString("ru-RU")}
+										{new Date(c.createdAt).toLocaleDateString("ru-KG")}
 									</TableCell>
 									<TableCell>
 										<Badge variant={c.isActive ? "default" : "secondary"}>

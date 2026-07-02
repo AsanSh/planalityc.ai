@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	CheckSquare,
 	Download,
@@ -257,7 +258,7 @@ export default function SalesGrid() {
 
 	const handleDeleteUnit = async () => {
 		if (!panelUnit) return;
-		if (!confirm(`Удалить юнит ${panelUnit.unitNumber}? Действие необратимо.`)) return;
+		if (!(await confirmDialog(`Удалить юнит ${panelUnit.unitNumber}? Действие необратимо.`, { destructive: true }))) return;
 		try {
 			await api.delete(`/construction/units/${panelUnit.id}`);
 			toast({ title: "Юнит удалён" });
@@ -326,7 +327,7 @@ export default function SalesGrid() {
 	const bulkPublish = async () => {
 		const ids = Array.from(bulkSelectedIds);
 		if (!projectId || ids.length === 0) return;
-		if (!confirm(`Открыть ${ids.length} объект(ов) для продажи?`)) return;
+		if (!(await confirmDialog(`Открыть ${ids.length} объект(ов) для продажи?`))) return;
 		try {
 			const { data } = await api.post<{ updated: number; total: number }>(
 				"/construction/units/bulk-pricing",
@@ -678,8 +679,8 @@ export default function SalesGrid() {
 										setSaleFlow({ unit: panelUnit as ChessDialogUnit, status });
 										setPanelUnitId(null);
 									}}
-									onTerminateContract={(contractId) => {
-										if (confirm("Расторгнуть договор и освободить юнит?")) {
+									onTerminateContract={async (contractId) => {
+										if (await confirmDialog("Расторгнуть договор и освободить юнит?", { destructive: true })) {
 											terminateContractMut.mutate(contractId);
 										}
 									}}
@@ -711,8 +712,8 @@ export default function SalesGrid() {
 						setSaleFlow({ unit: panelUnit as ChessDialogUnit, status });
 						setPanelUnitId(null);
 					}}
-					onTerminateContract={(contractId) => {
-						if (confirm("Расторгнуть договор и освободить юнит?")) {
+					onTerminateContract={async (contractId) => {
+						if (await confirmDialog("Расторгнуть договор и освободить юнит?", { destructive: true })) {
 							terminateContractMut.mutate(contractId);
 						}
 					}}

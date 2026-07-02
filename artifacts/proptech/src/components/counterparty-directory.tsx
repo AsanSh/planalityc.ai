@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Briefcase, Edit2, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -255,8 +256,8 @@ export function CounterpartyDirectory({
 						</button>
 						<button
 							type="button"
-							onClick={() => {
-								if (confirm(`Удалить «${row.original.fullName}»?`))
+							onClick={async () => {
+								if (await confirmDialog(`Удалить «${row.original.fullName}»?`, { destructive: true }))
 									deleteMut.mutate(row.original.id);
 							}}
 							className="text-am-text-subtle hover:text-rose-600 p-1"

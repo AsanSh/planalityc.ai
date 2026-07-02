@@ -163,7 +163,7 @@ export default function WarehouseCompanies() {
 										Всего закуплено:
 									</span>
 									<span className="text-sm font-bold text-emerald-600">
-										{new Intl.NumberFormat("ru-RU", {
+										{new Intl.NumberFormat("ru-KG", {
 											notation: "compact",
 										}).format(supplier.totalAmount)}{" "}
 										с

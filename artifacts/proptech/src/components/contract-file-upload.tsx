@@ -1,4 +1,5 @@
 import { Download, FileText, Loader2, Trash2, Upload } from "lucide-react";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -128,7 +129,7 @@ export function ContractFileUpload({
 	};
 
 	const handleDelete = async () => {
-		if (!entityId || !confirm("Удалить загруженный договор?")) return;
+		if (!entityId || !(await confirmDialog("Удалить загруженный договор?", { destructive: true }))) return;
 		setLoading(true);
 		try {
 			await api.delete(documentPath(entityType, entityId));

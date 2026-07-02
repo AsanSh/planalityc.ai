@@ -91,7 +91,7 @@ function buildPayloadText(doc: DocumentRow): string {
 function formatMoney(n: unknown): string {
   const v = parseFloat(String(n ?? 0));
   if (!Number.isFinite(v)) return "0";
-  return new Intl.NumberFormat("ru-RU", {
+  return new Intl.NumberFormat("ru-KG", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(v);
@@ -216,7 +216,7 @@ export function DocumentsSection({
                       </span>
                     )}
                     <span className="text-[10px] text-slate-400">
-                      {new Date(doc.createdAt).toLocaleDateString("ru-RU")}
+                      {new Date(doc.createdAt).toLocaleDateString("ru-KG")}
                     </span>
                   </div>
                 </div>

@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	Building,
 	Calculator,
@@ -739,7 +740,7 @@ function ProjectDialog({
 									{templateInfo.uploadedAt && (
 										<span className="text-emerald-600">
 											{" "}
-											· {new Date(templateInfo.uploadedAt).toLocaleDateString("ru-RU")}
+											· {new Date(templateInfo.uploadedAt).toLocaleDateString("ru-KG")}
 										</span>
 									)}
 								</div>
@@ -807,7 +808,7 @@ function ProjectDialog({
 									className="text-rose-700 border-rose-200 hover:bg-rose-50"
 									disabled={templateUploading}
 									onClick={async () => {
-										if (!init || !confirm("Удалить шаблон договора проекта?")) return;
+										if (!init || !(await confirmDialog("Удалить шаблон договора проекта?", { destructive: true }))) return;
 										setTemplateUploading(true);
 										try {
 											await api.delete(
@@ -983,7 +984,7 @@ export default function ConstructionProjects() {
 	);
 
 	const handleDelete = async (id: number, name: string) => {
-		if (!confirm(`Удалить проект "${name}"?`)) return;
+		if (!(await confirmDialog(`Удалить проект "${name}"?`, { destructive: true }))) return;
 		try {
 			await api.delete(`/construction/projects/${id}`);
 			toast({ title: "Проект удалён" });
@@ -1124,7 +1125,7 @@ export default function ConstructionProjects() {
 						const altSym = currencySymbol(displayCurrency);
 						const rateHint =
 							projectCurrency === "USD" && usdRate > 1
-								? ` · курс 1 USD = ${new Intl.NumberFormat("ru-RU", {
+								? ` · курс 1 USD = ${new Intl.NumberFormat("ru-KG", {
 										maximumFractionDigits: 2,
 									}).format(usdRate)} сом`
 								: "";

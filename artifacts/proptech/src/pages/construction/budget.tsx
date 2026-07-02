@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	Download,
 	Edit2,
@@ -49,7 +50,7 @@ const ah = () => {
 function fmtKgs(v: string | number) {
 	const n = parseFloat(String(v));
 	return (
-		`${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(
+		`${new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(
 			n || 0,
 		)} с`
 	);
@@ -382,7 +383,7 @@ export default function ConstructionBudget() {
 	const diff = totalPlanned - totalActual;
 
 	const handleDelete = async (id: number) => {
-		if (!confirm("Удалить статью?")) return;
+		if (!(await confirmDialog("Удалить статью?", { destructive: true }))) return;
 		await fetch(`${BASE}/construction/budget/${id}`, {
 			method: "DELETE",
 			headers: ah(),

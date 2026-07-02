@@ -47,7 +47,7 @@ const STATUS_CLASS: Record<string, string> = {
 };
 
 function formatDate(date?: string | null) {
-	return date ? new Date(date).toLocaleDateString("ru-RU") : "—";
+	return date ? new Date(date).toLocaleDateString("ru-KG") : "—";
 }
 
 function requestTitle(request: SupplyRequest) {

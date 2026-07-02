@@ -610,7 +610,7 @@ export default function Leads() {
 				meta: { exportLabel: "Дата лида" },
 				cell: ({ row }) => (
 					<span className="text-sm text-gray-500">
-						{new Date(row.original.leadDate).toLocaleDateString("ru-RU")}
+						{new Date(row.original.leadDate).toLocaleDateString("ru-KG")}
 					</span>
 				),
 			},

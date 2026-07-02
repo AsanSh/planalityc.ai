@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	AlertTriangle,
 	Banknote,
@@ -170,9 +171,9 @@ export function DiscountDialog({ accrual, onClose, onSaved }: DiscountDialogProp
 
 	const handleCancelDiscount = async () => {
 		if (
-			!confirm(
+			!(await confirmDialog(
 				"Отменить применённую льготу? Сумма и срок начисления будут восстановлены.",
-			)
+			))
 		) {
 			return;
 		}

@@ -23,7 +23,7 @@ export function fmtProjectAmount(v: string | number | null | undefined) {
 	if (v == null || v === "") return "—";
 	const n = parseFloat(String(v));
 	if (Number.isNaN(n)) return "—";
-	return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(n);
+	return new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(n);
 }
 
 export function convertProjectAmount(

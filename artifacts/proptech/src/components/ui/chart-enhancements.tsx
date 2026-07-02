@@ -51,7 +51,7 @@ export function GradientBar({
       )}
       {showValue && (
         <span className="text-sm font-semibold text-gray-900">
-          {new Intl.NumberFormat("ru-RU").format(value)}
+          {new Intl.NumberFormat("ru-KG").format(value)}
         </span>
       )}
     </div>

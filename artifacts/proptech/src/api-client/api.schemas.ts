@@ -181,18 +181,34 @@ export const CounterpartyType = {
 	tenant: "tenant",
 } as const;
 
+/** Контактный телефон с необязательным владельцем (jsonb в БД). */
+export interface ContactPhone {
+	number: string;
+	/** @nullable */
+	owner?: string | null;
+}
+
 export interface Counterparty {
 	id: number;
 	/** @nullable */
 	companyId?: number | null;
 	type: CounterpartyType;
 	fullName: string;
+	/** Категория/роль контрагента (legacy-поле, по умолчанию "other") */
+	category?: string;
 	/** @nullable */
 	iin?: string | null;
 	/** @nullable */
 	phone?: string | null;
 	/** @nullable */
+	phones?: ContactPhone[] | null;
+	/** @nullable */
 	email?: string | null;
+	/** @nullable */
+	address?: string | null;
+	/** Контрагент сам является юрлицом группы (intercompany)
+	 * @nullable */
+	linkedLegalEntityId?: number | null;
 	/** @nullable */
 	additionalContact?: string | null;
 	/** @nullable */
@@ -680,6 +696,8 @@ export interface Tenant {
 	fullName: string;
 	/** @nullable */
 	phone?: string | null;
+	/** @nullable */
+	phones?: ContactPhone[] | null;
 	/** @nullable */
 	email?: string | null;
 	/** @nullable */

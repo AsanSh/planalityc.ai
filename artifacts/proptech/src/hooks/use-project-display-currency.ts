@@ -27,7 +27,7 @@ export function useProjectDisplayCurrency() {
 	const displayUsdRate = manualUsdRate ?? (nbkrUsdRate > 0 ? nbkrUsdRate : 1);
 
 	const rateLabel = useMemo(() => {
-		const formatted = new Intl.NumberFormat("ru-RU", {
+		const formatted = new Intl.NumberFormat("ru-KG", {
 			maximumFractionDigits: 4,
 		}).format(displayUsdRate);
 		const suffix = manualUsdRate != null ? " (вручную)" : "";

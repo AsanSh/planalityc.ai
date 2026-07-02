@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	AlertTriangle,
 	Check,
@@ -37,7 +38,7 @@ import { computePaymentAllocation } from "@/lib/payment-allocation";
 function fmt(n: any) {
 	const v = parseFloat(n);
 	if (Number.isNaN(v)) return "0";
-	return new Intl.NumberFormat("ru-RU").format(v);
+	return new Intl.NumberFormat("ru-KG").format(v);
 }
 
 type DueDateFilter = "all" | "today" | "week" | "month" | "quarter" | "year" | "custom";
@@ -251,20 +252,20 @@ export default function ConstructionCashier() {
 		}));
 	}
 
-	function handlePay() {
+	async function handlePay() {
 		if (!selectedContract) return;
 		if (!paymentForm.accountId) {
 			toast.error("Выберите счёт зачисления");
 			return;
 		}
 		if (willOverpay) {
-			const ok = confirm(
+			const ok = await confirmDialog(
 				`Сумма больше открытых начислений на ${fmt(allocationPreview?.unallocated)} ${paymentForm.currency}. Провести платёж с переплатой?`,
 			);
 			if (!ok) return;
 		}
 		if (contractAccruals.length > 0 && allocationPreview?.lines.length === 0) {
-			const ok = confirm(
+			const ok = await confirmDialog(
 				"Платёж не распределится по начислениям. Провести без привязки к графику?",
 			);
 			if (!ok) return;

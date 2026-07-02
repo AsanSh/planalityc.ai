@@ -203,7 +203,7 @@ const toneClass: Record<string, string> = {
 };
 
 function formatMoney(value: number) {
-	return new Intl.NumberFormat("ru-RU", {
+	return new Intl.NumberFormat("ru-KG", {
 		maximumFractionDigits: 0,
 	}).format(value);
 }

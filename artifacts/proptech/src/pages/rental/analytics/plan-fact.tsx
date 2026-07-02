@@ -22,12 +22,12 @@ const MONTHS = [
 
 function fmt(v: number) {
 	if (v === 0) return "—";
-	return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(v);
+	return new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(v);
 }
 
 function fmtDelta(v: number) {
 	if (v === 0) return "—";
-	return (v > 0 ? "+" : "") + new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(v);
+	return (v > 0 ? "+" : "") + new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(v);
 }
 
 function getMonthIdx(dateStr: string, year: string): number {

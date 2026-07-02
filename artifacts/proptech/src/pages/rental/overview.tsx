@@ -60,7 +60,7 @@ function fmtDate(s: string | null | undefined) {
 }
 
 function fmtNum(v: number) {
-	return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(v);
+	return new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(v);
 }
 
 // Inline editable cell for market value

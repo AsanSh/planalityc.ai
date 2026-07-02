@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useLocation } from "wouter";
 import {
 	addMonths,
@@ -916,7 +917,7 @@ function TasksTable({
 						<div
 							className={`text-sm ${isOverdue ? "text-rose-600 font-medium" : "text-gray-600"}`}
 						>
-							{d.toLocaleDateString("ru-RU", {
+							{d.toLocaleDateString("ru-KG", {
 								day: "2-digit",
 								month: "short",
 							})}
@@ -1471,7 +1472,7 @@ export default function ConstructionTasks() {
 	}));
 
 	const handleDelete = async (id: number) => {
-		if (!confirm("Удалить задачу?")) return;
+		if (!(await confirmDialog("Удалить задачу?", { destructive: true }))) return;
 		await fetch(`${BASE}/construction/tasks/${id}`, { method: "DELETE", headers: ah() });
 		toast({ title: "Удалено" });
 		qc.invalidateQueries({ queryKey: ["construction-tasks"] });

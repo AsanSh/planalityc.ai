@@ -181,7 +181,7 @@ function toBankAccountUpdatePayload(formData: {
 }
 
 function formatCurrency(amount: number, currency: Currency) {
-	const formatted = new Intl.NumberFormat("ru-RU", {
+	const formatted = new Intl.NumberFormat("ru-KG", {
 		minimumFractionDigits: 2,
 		maximumFractionDigits: 2,
 	}).format(amount);

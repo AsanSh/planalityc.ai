@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { Edit2, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -71,8 +72,8 @@ export default function Properties() {
 		setIsDialogOpen(true);
 	};
 
-	const handleDelete = (id: number) => {
-		if (confirm("Удалить этот объект?")) {
+	const handleDelete = async (id: number) => {
+		if (await confirmDialog("Удалить этот объект?", { destructive: true })) {
 			deleteMutation.mutate(
 				{ id },
 				{

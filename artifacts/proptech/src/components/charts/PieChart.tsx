@@ -57,7 +57,7 @@ export function PieChart({
 						boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
 					}}
 					formatter={(value: number) =>
-						new Intl.NumberFormat("ru-RU").format(value)
+						new Intl.NumberFormat("ru-KG").format(value)
 					}
 				/>
 				{showLegend && <Legend />}

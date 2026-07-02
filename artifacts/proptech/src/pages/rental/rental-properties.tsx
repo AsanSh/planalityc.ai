@@ -1,4 +1,5 @@
 import { useListRentalProperties, getListRentalPropertiesQueryKey } from "@/api-client";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, ChevronDown, ChevronUp, ChevronsUpDown, Download, Home, Loader2, Pencil, Plus, Trash2, Upload, UserCircle, Wallet } from "lucide-react";
 import { useSortable } from "@/lib/use-sortable";
@@ -519,7 +520,7 @@ function PropTable({ isLoading, sortedProps, propertiesArray, rentedCount, total
 						<tr className="bg-slate-50 font-semibold border-t-2 border-slate-200">
 							<td className={TD + " text-gray-700"} colSpan={2}>Итого: {propertiesArray.length} объектов</td>
 							<td className={TD + " text-gray-700"}>{rentedCount} сдано</td>
-							<td className={TD + " tabular-nums text-right text-gray-700"}>{totalArea > 0 ? `${new Intl.NumberFormat("ru-RU").format(totalArea)} м²` : "—"}</td>
+							<td className={TD + " tabular-nums text-right text-gray-700"}>{totalArea > 0 ? `${new Intl.NumberFormat("ru-KG").format(totalArea)} м²` : "—"}</td>
 							<td className={TD} colSpan={4} />
 						</tr>
 					</tfoot>
@@ -552,7 +553,7 @@ export default function RentalProperties() {
 		0,
 	);
 	const fmtArea = (value: number) =>
-		`${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(value)} м²`;
+		`${new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(value)} м²`;
 
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editing, setEditing] = useState<RentalPropertyRow | null>(null);
@@ -803,9 +804,10 @@ export default function RentalProperties() {
 	const handleDelete = async (p: RentalPropertyRow) => {
 		const label = `${p.projectName} ${p.unitNumber}`.trim();
 		if (
-			!confirm(
+			!(await confirmDialog(
 				`Удалить объект «${label}»?\n\nДействие необратимо. Объект можно удалить только без активных договоров и задолженности.`,
-			)
+				{ destructive: true },
+			))
 		) {
 			return;
 		}

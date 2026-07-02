@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { Edit2, KeyRound, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -69,9 +70,9 @@ export default function Users() {
 
 	const handlePasswordReset = async (user: User) => {
 		if (
-			!confirm(
+			!(await confirmDialog(
 				`Отправить ${user.email} ссылку для сброса пароля? Старая ссылка перестанет действовать.`,
-			)
+			))
 		) {
 			return;
 		}
@@ -99,8 +100,8 @@ export default function Users() {
 		}
 	};
 
-	const handleDelete = (id: number) => {
-		if (confirm("Удалить этого сотрудника?")) {
+	const handleDelete = async (id: number) => {
+		if (await confirmDialog("Удалить этого сотрудника?", { destructive: true })) {
 			deleteMutation.mutate(
 				{ id },
 				{

@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { Banknote, CheckCircle2, Edit2, Package, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -330,7 +331,7 @@ export default function ConstructionMaterials() {
 	);
 
 	const handleDelete = async (id: number) => {
-		if (!confirm("Удалить материал?")) return;
+		if (!(await confirmDialog("Удалить материал?", { destructive: true }))) return;
 		await fetch(`${BASE}/construction/materials/${id}`, {
 			method: "DELETE",
 			headers: ah(),

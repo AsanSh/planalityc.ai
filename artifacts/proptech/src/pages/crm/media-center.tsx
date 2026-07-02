@@ -28,6 +28,7 @@ import { ClientPortalExperience } from "@/components/client-portal-experience";
 import { PortalMediaFeed } from "@/components/portal-media-feed";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -453,9 +454,9 @@ export default function CrmMediaCenter() {
 		createMutation.mutate({ payload, publish });
 	};
 
-	const remove = () => {
+	const remove = async () => {
 		if (!editing) return;
-		if (!confirm(`Удалить «${editing.title}»?`)) return;
+		if (!(await confirmDialog(`Удалить «${editing.title}»?`, { destructive: true }))) return;
 		deleteMutation.mutate(editing.id);
 	};
 

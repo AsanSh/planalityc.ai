@@ -1,4 +1,5 @@
 import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	Check,
 	ChevronsUpDown,
@@ -87,7 +88,7 @@ export function fmtLeaseAmount(amount: number | string, currency = "KGS") {
 
 export function fmtLeaseDate(date: string | null | undefined) {
 	if (!date) return "—";
-	return new Date(date).toLocaleDateString("ru-RU");
+	return new Date(date).toLocaleDateString("ru-KG");
 }
 
 const MONTHS_RU = [
@@ -211,7 +212,7 @@ function ProrationPreview({
 							{fmtLeaseAmount(firstMonth.amount, currency)}
 						</span>{" "}
 						<span className="text-blue-500">
-							(с {new Date(startDate).toLocaleDateString("ru-RU")} до конца
+							(с {new Date(startDate).toLocaleDateString("ru-KG")} до конца
 							месяца)
 						</span>
 					</div>
@@ -223,7 +224,7 @@ function ProrationPreview({
 							{fmtLeaseAmount(lastMonth.amount, currency)}
 						</span>{" "}
 						<span className="text-blue-500">
-							(до {new Date(endDate).toLocaleDateString("ru-RU")})
+							(до {new Date(endDate).toLocaleDateString("ru-KG")})
 						</span>
 					</div>
 				)}
@@ -1095,9 +1096,10 @@ export function TerminateLeaseDialog({
 
 	const handleTerminate = async () => {
 		if (
-			!confirm(
+			!(await confirmDialog(
 				`Расторгнуть договор ${lease.contractNumber}?\n\nОбъект освободится, будущие начисления отменятся. История платежей сохранится.`,
-			)
+				{ destructive: true },
+			))
 		) {
 			return;
 		}

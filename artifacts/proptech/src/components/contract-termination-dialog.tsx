@@ -392,7 +392,7 @@ function StepClose({
             <div key={key} className="flex justify-between">
               <span className="text-muted-foreground">{label}</span>
               <span className="font-medium">
-                {Number(fin[key]).toLocaleString("ru-RU")}
+                {Number(fin[key]).toLocaleString("ru-KG")}
               </span>
             </div>
           ))}

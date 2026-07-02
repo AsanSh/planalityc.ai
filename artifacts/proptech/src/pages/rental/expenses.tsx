@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	getListAccrualsQueryKey,
 	getListLeaseContractsQueryKey,
@@ -495,7 +496,7 @@ export default function Expenses() {
 	};
 
 	const handleDelete = useCallback(async (expense: any) => {
-		if (!confirm(`Удалить расход ${formatCurrency(expense.amount, expense.currency)} от ${formatDate(expense.expenseDate)}?`)) return;
+		if (!(await confirmDialog(`Удалить расход ${formatCurrency(expense.amount, expense.currency)} от ${formatDate(expense.expenseDate)}?`, { destructive: true }))) return;
 		try {
 			await api.delete(`/rental/expenses/${expense.id}`);
 			toast({ title: "Расход удалён" });
@@ -612,7 +613,7 @@ export default function Expenses() {
 		<div className="p-6 space-y-3">
 			<KpiRow>
 				<KpiCard variant="strip" label="Расходов" value={filteredExpenses.length} sub="за период" icon={Receipt} color="blue" loading={isLoading} />
-				<KpiCard variant="strip" label="Сумма" value={new Intl.NumberFormat("ru-RU").format(totalAmount)} sub="KGS экв." icon={Wallet} color="red" loading={isLoading} />
+				<KpiCard variant="strip" label="Сумма" value={new Intl.NumberFormat("ru-KG").format(totalAmount)} sub="KGS экв." icon={Wallet} color="red" loading={isLoading} />
 				<KpiCard variant="strip" label="Категорий" value={categoriesCount} sub="уникальных" icon={Tag} color="purple" loading={isLoading} />
 				<KpiCard variant="strip" label="Объектов" value={new Set(filteredExpenses.map((e) => e.propertyId)).size} sub="с расходами" icon={Building2} color="green" loading={isLoading} />
 			</KpiRow>

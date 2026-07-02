@@ -93,7 +93,7 @@ export default function PhotoReport() {
 		const blob = new Blob([report], { type: "text/plain" });
 		const a = document.createElement("a");
 		a.href = URL.createObjectURL(blob);
-		a.download = `photo-report-${projectName}-${new Date().toLocaleDateString("ru-RU")}.txt`;
+		a.download = `photo-report-${projectName}-${new Date().toLocaleDateString("ru-KG")}.txt`;
 		a.click();
 	};
 

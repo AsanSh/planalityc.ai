@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { Edit2, Hammer, Phone, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -266,7 +267,7 @@ export default function ConstructionWorkers() {
 	const projectMap = Object.fromEntries(projects.map((p) => [p.id, p.name]));
 
 	const handleDelete = async (id: number) => {
-		if (!confirm("Удалить рабочего?")) return;
+		if (!(await confirmDialog("Удалить рабочего?", { destructive: true }))) return;
 		await fetch(`${BASE}/construction/workers/${id}`, {
 			method: "DELETE",
 			headers: ah(),

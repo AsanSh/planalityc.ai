@@ -177,7 +177,7 @@ export default function ContractorAnalytics() {
 									<div>
 										<p className="text-xs text-muted-foreground">Выплачено</p>
 										<p className="font-medium">
-											{Number(c.totalPaid || 0).toLocaleString("ru-RU")} ₽
+											{Number(c.totalPaid || 0).toLocaleString("ru-KG")} ₽
 										</p>
 									</div>
 									{c.contractAmount && (
@@ -186,7 +186,7 @@ export default function ContractorAnalytics() {
 												По контракту
 											</p>
 											<p className="font-medium">
-												{Number(c.contractAmount).toLocaleString("ru-RU")} ₽
+												{Number(c.contractAmount).toLocaleString("ru-KG")} ₽
 											</p>
 										</div>
 									)}

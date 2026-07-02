@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	ArrowLeft,
 	Building2,
@@ -250,7 +251,7 @@ export default function PlatformAdminCompanyDetail() {
 	}
 
 	async function sendPasswordReset(userId: number, email: string) {
-		if (!confirm(`Отправить ${email} ссылку для входа и установки пароля?`)) {
+		if (!(await confirmDialog(`Отправить ${email} ссылку для входа и установки пароля?`))) {
 			return;
 		}
 		try {

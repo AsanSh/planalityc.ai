@@ -258,7 +258,7 @@ export default function MortgageCalculator() {
 										<li>• Минимальный первоначальный взнос — от 10%</li>
 										<li>
 											• Ставки актуальны на{" "}
-											{new Date().toLocaleDateString("ru-RU")}
+											{new Date().toLocaleDateString("ru-KG")}
 										</li>
 										<li>• Расчет носит информационный характер</li>
 									</ul>
@@ -280,11 +280,11 @@ export default function MortgageCalculator() {
 								</div>
 								<div className="text-5xl font-bold mb-2">
 									{result
-										? new Intl.NumberFormat("ru-RU", {
+										? new Intl.NumberFormat("ru-KG", {
 												notation: "compact",
 											}).format(result.monthlyPayment)
 										: "0"}{" "}
-									₸
+									сом
 								</div>
 								<div className="text-purple-100 text-sm">Платеж в месяц</div>
 							</Card>
@@ -297,10 +297,10 @@ export default function MortgageCalculator() {
 									</Badge>
 								</div>
 								<div className="text-4xl font-bold mb-2">
-									{new Intl.NumberFormat("ru-RU", {
+									{new Intl.NumberFormat("ru-KG", {
 										notation: "compact",
 									}).format(loanAmount)}{" "}
-									₸
+									сом
 								</div>
 								<div className="text-teal-100 text-sm">К выдаче</div>
 							</Card>
@@ -321,11 +321,11 @@ export default function MortgageCalculator() {
 										</div>
 										<div className="text-2xl font-bold text-gray-900">
 											{result
-												? new Intl.NumberFormat("ru-RU").format(
+												? new Intl.NumberFormat("ru-KG").format(
 														result.totalAmount,
 													)
 												: "0"}{" "}
-											₸
+											сом
 										</div>
 									</div>
 
@@ -335,11 +335,11 @@ export default function MortgageCalculator() {
 										</div>
 										<div className="text-2xl font-bold text-amber-600">
 											{result
-												? new Intl.NumberFormat("ru-RU").format(
+												? new Intl.NumberFormat("ru-KG").format(
 														result.totalInterest,
 													)
 												: "0"}{" "}
-											₸
+											сом
 										</div>
 										<div className="text-xs text-gray-500 mt-1">
 											{result

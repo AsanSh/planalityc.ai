@@ -139,17 +139,17 @@ function CounterpartyDialog({
 			setFormData({
 				fullName: counterparty.fullName,
 				type: counterparty.type || "individual",
-				category: (counterparty as any).category || "other",
+				category: counterparty.category || "other",
 				iin: counterparty.iin || "",
 				phone: counterparty.phone || "",
-				phones: normalizeContactPhones((counterparty as any).phones, counterparty.phone),
+				phones: normalizeContactPhones(counterparty.phones, counterparty.phone),
 				email: counterparty.email || "",
-				address: (counterparty as any).address || "",
+				address: counterparty.address || "",
 				additionalContact: counterparty.additionalContact || "",
 				comment: counterparty.comment || "",
 				linkedLegalEntityId:
-					(counterparty as any).linkedLegalEntityId != null
-						? String((counterparty as any).linkedLegalEntityId)
+					counterparty.linkedLegalEntityId != null
+						? String(counterparty.linkedLegalEntityId)
 						: "",
 			});
 		} else if (!counterparty && open) {
@@ -495,7 +495,7 @@ export default function Counterparties() {
 		: [];
 	const filtered = counterpartiesArray.filter((cp) => {
 		if (categoryFilter === "all") return true;
-		return (cp as any).category === categoryFilter;
+		return cp.category === categoryFilter;
 	});
 
 	const columns = useMemo<ColumnDef<Counterparty, unknown>[]>(
@@ -515,10 +515,10 @@ export default function Counterparties() {
 				id: "category",
 				header: "Категория",
 				size: 120,
-				accessorFn: (row) => (row as any).category || "other",
+				accessorFn: (row) => row.category || "other",
 				meta: { exportLabel: "Категория" },
 				cell: ({ row }) => {
-					const cat = (row.original as any).category;
+					const cat = row.original.category || "other";
 					return (
 						<Badge
 							className={cn(
@@ -558,7 +558,7 @@ export default function Counterparties() {
 				size: 170,
 				meta: { exportLabel: "Телефон" },
 				cell: ({ row }) => {
-					const phones = normalizeContactPhones((row.original as any).phones, row.original.phone)
+					const phones = normalizeContactPhones(row.original.phones, row.original.phone)
 						.filter((p) => p.number.trim());
 					if (!phones.length) return <span className="text-gray-500">—</span>;
 					return (
@@ -622,7 +622,7 @@ export default function Counterparties() {
 	// Count by category
 	const countByCategory = counterpartiesArray.reduce(
 		(acc, cp) => {
-			const cat = (cp as any).category || "other";
+			const cat = cp.category || "other";
 			acc[cat] = (acc[cat] || 0) + 1;
 			return acc;
 		},

@@ -61,7 +61,7 @@ function num(value: unknown) {
 }
 
 function formatDate(date: string) {
-	return date ? new Date(date).toLocaleDateString("ru-RU") : "—";
+	return date ? new Date(date).toLocaleDateString("ru-KG") : "—";
 }
 
 function money(amount: number, currency = "KGS") {

@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	Briefcase,
 	CheckCircle2,
@@ -694,7 +695,7 @@ export default function ConstructionContractors() {
 		}
 	};
 	const handleDelete = async (id: number) => {
-		if (!confirm("Удалить подрядчика?")) return;
+		if (!(await confirmDialog("Удалить подрядчика?", { destructive: true }))) return;
 		await fetch(`${BASE}/construction/contractors/${id}`, {
 			method: "DELETE",
 			headers: ah(),

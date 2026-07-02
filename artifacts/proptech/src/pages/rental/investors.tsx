@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	ExternalLink,
 	Eye,
@@ -238,7 +239,7 @@ export default function Investors() {
 	const investorsArray = Array.isArray(investors) ? investors : [];
 
 	const handleDelete = useCallback(async (id: number, name: string) => {
-		if (!confirm(`Удалить владельца "${name}"?`)) return;
+		if (!(await confirmDialog(`Удалить владельца "${name}"?`, { destructive: true }))) return;
 		try {
 			await authFetch(`/rental/investors/${id}`, { method: "DELETE" });
 			toast({ title: "Владелец удалён" });

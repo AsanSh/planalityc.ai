@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	Building2,
 	ChevronDown,
@@ -333,7 +334,7 @@ export default function SettingsCategories() {
 	}
 
 	async function handleDelete(cat: Category) {
-		if (!confirm(`Удалить статью "${cat.name}"?`)) return;
+		if (!(await confirmDialog(`Удалить статью "${cat.name}"?`, { destructive: true }))) return;
 		try {
 			await api.delete(`/categories/${cat.id}`);
 			toast({ title: "Статья удалена" });

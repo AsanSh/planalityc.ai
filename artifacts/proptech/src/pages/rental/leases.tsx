@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { CalendarClock, CheckCircle2, FileText, Plus, Wallet } from "lucide-react";
 import { useState } from "react";
 import { ContractTerminationDialog } from "@/components/contract-termination-dialog";
@@ -62,7 +63,7 @@ export default function RentalContracts() {
 			lease.status === "draft"
 				? `Удалить черновик договора ${lease.contractNumber}?\n\nДействие необратимо.`
 				: `Удалить договор ${lease.contractNumber}?\n\nМожно удалить только без платежей и задолженности.`;
-		if (!confirm(warn)) return;
+		if (!(await confirmDialog(warn, { destructive: true }))) return;
 		try {
 			await api.delete(`/rental/contracts/${lease.id}`);
 			toast({ title: "Договор удалён" });

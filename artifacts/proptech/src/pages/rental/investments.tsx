@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { PieChart, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState, useCallback } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -243,7 +244,7 @@ export default function Investments() {
 	);
 
 	const handleDelete = useCallback(async (id: number) => {
-		if (!confirm("Удалить инвестицию?")) return;
+		if (!(await confirmDialog("Удалить инвестицию?", { destructive: true }))) return;
 		try {
 			await authFetch(`/rental/investments/${id}`, { method: "DELETE" });
 			toast({ title: "Запись удалена" });

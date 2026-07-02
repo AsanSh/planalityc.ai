@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { getDistributionsQueryKey } from "@/lib/rental-query-keys";
 import { BarChart2, CheckCircle2, Play, Plus, Trash2 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
@@ -246,7 +247,7 @@ export default function Distributions() {
 	}, [queryClient, toast]);
 
 	const handleDelete = useCallback(async (id: number) => {
-		if (!confirm("Удалить запись?")) return;
+		if (!(await confirmDialog("Удалить запись?", { destructive: true }))) return;
 		try {
 			await authFetch(`/rental/distributions/${id}`, { method: "DELETE" });
 			toast({ title: "Удалено" });

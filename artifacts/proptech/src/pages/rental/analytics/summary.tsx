@@ -69,7 +69,7 @@ function fmtDate(s: string | null | undefined) {
 	return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
 }
 function fmtNum(v: number) {
-	return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(v);
+	return new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(v);
 }
 function excelDateToISO(serial: unknown): string {
 	// exceljs отдаёт ячейки-даты как Date; serial-числа оставлены для совместимости

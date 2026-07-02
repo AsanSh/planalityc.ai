@@ -352,7 +352,7 @@ function PaymentScheduleDialog({
 									{contract.paymentSchedule.map((item, idx) => (
 										<TableRow key={idx}>
 											<TableCell>
-												{new Date(item.date).toLocaleDateString("ru-RU")}
+												{new Date(item.date).toLocaleDateString("ru-KG")}
 											</TableCell>
 											<TableCell className="font-medium">
 												{formatCurrency(item.amount, contract.currency)}

@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -43,7 +44,7 @@ export function TaskChecklistSection({
 	};
 
 	const remove = async (itemId: number) => {
-		if (!confirm("Удалить пункт?")) return;
+		if (!(await confirmDialog("Удалить пункт?", { destructive: true }))) return;
 		await api.delete(`/construction/tasks/${taskId}/checklist/${itemId}`);
 		onChanged();
 	};

@@ -49,7 +49,7 @@ function DrillDownModal({
 												: (r.description || r.category || "Расход")}
 										</p>
 										<p className="text-xs text-gray-600 mt-0.5">
-											{new Date(type === "inflow" ? r.paymentDate : r.expenseDate).toLocaleDateString("ru-RU")}
+											{new Date(type === "inflow" ? r.paymentDate : r.expenseDate).toLocaleDateString("ru-KG")}
 											{type === "inflow" && r.paymentMethod
 												? ` · ${r.paymentMethod}`
 												: ""}
@@ -105,7 +105,7 @@ function formatPeriod(period: string) {
 }
 
 function formatDate(d: string) {
-	return new Date(d).toLocaleDateString("ru-RU");
+	return new Date(d).toLocaleDateString("ru-KG");
 }
 
 export default function CashflowReport() {

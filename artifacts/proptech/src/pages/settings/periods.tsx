@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	Building2,
 	CalendarDays,
@@ -292,7 +293,7 @@ export default function SettingsPeriods() {
 	}
 
 	async function handleDelete(p: Period) {
-		if (!confirm(`Удалить период "${p.name}"?`)) return;
+		if (!(await confirmDialog(`Удалить период "${p.name}"?`, { destructive: true }))) return;
 		try {
 			await api.delete(`/admin/periods/${p.id}`);
 			toast({ title: "Период удалён" });

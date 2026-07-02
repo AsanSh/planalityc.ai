@@ -19,7 +19,7 @@ const MONTHS_GENITIVE = [
 ];
 
 function fmtMoney(n: number) {
-	return new Intl.NumberFormat("ru-RU").format(Math.round(n));
+	return new Intl.NumberFormat("ru-KG").format(Math.round(n));
 }
 
 function fmtDateLong(iso: string) {

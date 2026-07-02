@@ -1,6 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { requestStatusBadge, requestStatusLabel } from "@/lib/supply-status";
@@ -15,14 +17,30 @@ interface SupplyRequest {
 	createdAt: string;
 }
 
-/** Экран «Мои заявки»: заявки текущего прораба со статусами (S2). */
+/** Экран «Мои заявки»: заявки прораба со статусами + подтверждение приёмки (S2/S6). */
 export default function ForemanMyRequests() {
 	const { user } = useAuth();
+	const { toast } = useToast();
+	const qc = useQueryClient();
 	const userId = (user as { id?: number } | null)?.id;
 
 	const { data: requests = [], isLoading } = useQuery<SupplyRequest[]>({
 		queryKey: ["foreman-my-requests"],
 		queryFn: () => api.get("/supply/requests").then((r) => r.data),
+	});
+
+	const receiveMut = useMutation({
+		mutationFn: (id: number) => api.post(`/supply/requests/${id}/receive`),
+		onSuccess: () => {
+			toast({ title: "Приёмка подтверждена" });
+			qc.invalidateQueries({ queryKey: ["foreman-my-requests"] });
+		},
+		onError: (e) =>
+			toast({
+				title: "Не удалось подтвердить",
+				description: e instanceof Error ? e.message : undefined,
+				variant: "destructive",
+			}),
 	});
 
 	const mine = userId
@@ -57,6 +75,16 @@ export default function ForemanMyRequests() {
 							{new Date(r.createdAt).toLocaleDateString("ru-KG")}
 							{r.neededByDate ? ` · нужно к ${r.neededByDate}` : ""}
 						</div>
+						{r.status === "ordered" && (
+							<Button
+								className="mt-3 w-full"
+								size="sm"
+								onClick={() => receiveMut.mutate(r.id)}
+								disabled={receiveMut.isPending}
+							>
+								Подтвердить приёмку
+							</Button>
+						)}
 					</li>
 				))}
 			</ul>

@@ -12,11 +12,11 @@ export async function syncContractDeposit(params: {
   signDate: string | null | undefined;
   startDate: string;
   depositAccountId?: number | null;
-}): Promise<void> {
+}, txOrDb: any = db): Promise<void> {
   const amount = parseFloat(String(params.depositAmount ?? 0));
   const receivedDate = String(params.signDate || params.startDate).slice(0, 10);
 
-  const contractDeposits = await db.select().from(depositsTable).where(
+  const contractDeposits: (typeof depositsTable.$inferSelect)[] = await txOrDb.select().from(depositsTable).where(
     and(
       eq(depositsTable.companyId, params.companyId),
       eq(depositsTable.leaseContractId, params.leaseContractId),
@@ -27,7 +27,7 @@ export async function syncContractDeposit(params: {
   if (!Number.isFinite(amount) || amount <= 0) {
     for (const d of contractDeposits) {
       if (d.status === "held" && !d.returnedAmount && d.note === CONTRACT_DEPOSIT_NOTE) {
-        await db.delete(depositsTable).where(eq(depositsTable.id, d.id));
+        await txOrDb.delete(depositsTable).where(eq(depositsTable.id, d.id));
       }
     }
     return;
@@ -39,7 +39,7 @@ export async function syncContractDeposit(params: {
   const amountStr = String(amount);
 
   if (held) {
-    await db.update(depositsTable)
+    await txOrDb.update(depositsTable)
       .set({
         amount: amountStr,
         currency: params.currency,
@@ -50,7 +50,7 @@ export async function syncContractDeposit(params: {
     return;
   }
 
-  await db.insert(depositsTable).values({
+  await txOrDb.insert(depositsTable).values({
     companyId: params.companyId,
     leaseContractId: params.leaseContractId,
     amount: amountStr,

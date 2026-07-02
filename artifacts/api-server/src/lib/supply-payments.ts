@@ -62,3 +62,23 @@ export function resolveRequiredApprover(amount: string, limits: ApprovalLimit[])
   const covering = sorted.find((l) => amt <= Number(l.maxAmount));
   return covering ? covering.role : sorted[sorted.length - 1].role;
 }
+
+/**
+ * Может ли согласующий с ролью approverRole утвердить заявку на сумму amount
+ * по матрице лимитов. Полномочия = maxAmount роли: старше тот, у кого лимит больше.
+ * Пустая матрица — ограничение не применяется (true).
+ */
+export function canApproveAmount(
+  approverRole: string,
+  amount: string,
+  limits: ApprovalLimit[],
+): boolean {
+  if (limits.length === 0) return true;
+  const approverLimit = limits.find((l) => l.role === approverRole);
+  if (!approverLimit) return false;
+  const requiredRole = resolveRequiredApprover(amount, limits);
+  if (requiredRole == null) return true;
+  const requiredLimit = limits.find((l) => l.role === requiredRole);
+  if (!requiredLimit) return false;
+  return Number(approverLimit.maxAmount) >= Number(requiredLimit.maxAmount);
+}

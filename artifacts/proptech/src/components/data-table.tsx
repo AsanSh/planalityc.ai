@@ -341,7 +341,7 @@ export function DataTable<T>({
 	);
 
 	return (
-		<div className="space-y-2.5">
+		<div className="space-y-2.5 dark:[--foreground:222_48%_10%] dark:[--card-foreground:222_48%_10%] dark:[--muted-foreground:215_16%_47%]">
 			{!hideToolbar && (
 				<div className="am-shell-filter am-table-toolbar rounded-[20px] p-1.5">
 				{toolbar}

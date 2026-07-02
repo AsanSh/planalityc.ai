@@ -50,6 +50,12 @@ const NAV: PortalNavItem[] = [
 	{ id: "profile", label: "Профиль", icon: UserRound },
 ];
 
+/** Банки/электронные кошельки для онлайн-оплаты. Пока витрина — логика позже. */
+const PAY_BANKS: { id: string; name: string; short: string; color: string }[] = [
+	{ id: "mbank", name: "МБанк", short: "M", color: "#e11d48" },
+	{ id: "bakai", name: "Бакай Банк", short: "Б", color: "#0ea5e9" },
+];
+
 /**
  * Единый портал «финансового контрагента» (арендатор / подрядчик / поставщик /
  * покупатель) в стиле SmartEstate. Суммы — сырые числа, форматируются по
@@ -104,6 +110,10 @@ function CounterpartyPortalInner({
 }) {
 	const [section, setSection] = useState("dashboard");
 	const { fmt } = usePortalCurrency();
+
+	// Онлайн-оплата: пока только выбор банка/кошелька (логика — позже).
+	const [payRow, setPayRow] = useState<{ label: string; amount: number; currency?: string } | null>(null);
+	const [payNote, setPayNote] = useState<string | null>(null);
 
 	const totalCharged = ledger.reduce((s, r) => s + r.charged, 0);
 	const totalPaid = ledger.reduce((s, r) => s + r.paid, 0);
@@ -285,11 +295,12 @@ function CounterpartyPortalInner({
 										<th className="px-5 py-3 text-right font-medium">{summaryLabels.charged}</th>
 										<th className="px-5 py-3 text-right font-medium">{summaryLabels.paid}</th>
 										<th className="px-5 py-3 text-right font-medium">Баланс</th>
+										<th className="px-5 py-3 text-right font-medium" />
 									</tr>
 								</thead>
 								<tbody className="divide-y">
 									{sortedLedger.length === 0 && (
-										<tr><td colSpan={5} className="py-10 text-center text-gray-400">Операций пока нет</td></tr>
+										<tr><td colSpan={6} className="py-10 text-center text-gray-400">Операций пока нет</td></tr>
 									)}
 									{sortedLedger.map((r, idx) => (
 										<tr key={idx} className="hover:bg-gray-50/80">
@@ -298,6 +309,17 @@ function CounterpartyPortalInner({
 											<td className="px-5 py-3 text-right text-slate-900">{r.charged ? fmt(r.charged, r.currency ?? currency) : "—"}</td>
 											<td className="px-5 py-3 text-right text-emerald-600">{r.paid ? fmt(r.paid, r.currency ?? currency) : "—"}</td>
 											<td className="whitespace-nowrap px-5 py-3 text-right font-semibold text-slate-900">{fmt(r.balanceRun, currency)}</td>
+											<td className="px-5 py-3 text-right">
+												{r.charged > 0 && r.paid === 0 && (
+													<button
+														type="button"
+														onClick={() => { setPayRow({ label: r.label, amount: r.charged, currency: r.currency ?? currency }); setPayNote(null); }}
+														className="whitespace-nowrap rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-700"
+													>
+														Оплатить
+													</button>
+												)}
+											</td>
 										</tr>
 									))}
 								</tbody>
@@ -305,6 +327,56 @@ function CounterpartyPortalInner({
 						</div>
 					</div>
 				</>
+			)}
+
+			{/* Выбор банка/кошелька для онлайн-оплаты (витрина, логика — позже) */}
+			{payRow && (
+				<div
+					className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+					onClick={() => setPayRow(null)}
+				>
+					<div
+						className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
+						onClick={(e) => e.stopPropagation()}
+					>
+						<div className="mb-1 flex items-start justify-between gap-3">
+							<h3 className="font-serif text-lg font-bold text-slate-900">Оплата</h3>
+							<button
+								type="button"
+								onClick={() => setPayRow(null)}
+								className="text-gray-400 transition hover:text-gray-600"
+								aria-label="Закрыть"
+							>
+								✕
+							</button>
+						</div>
+						<p className="mb-4 text-sm text-gray-500">
+							{payRow.label} · <span className="font-semibold text-slate-800">{fmt(payRow.amount, payRow.currency ?? currency)}</span>
+						</p>
+						<p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">Выберите банк или кошелёк</p>
+						<div className="space-y-2">
+							{PAY_BANKS.map((b) => (
+								<button
+									key={b.id}
+									type="button"
+									onClick={() => setPayNote(`Онлайн-оплата через «${b.name}» скоро будет доступна.`)}
+									className="flex w-full items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 text-left transition hover:border-slate-300 hover:bg-gray-50"
+								>
+									<span
+										className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-sm font-bold text-white"
+										style={{ backgroundColor: b.color }}
+									>
+										{b.short}
+									</span>
+									<span className="font-semibold text-slate-800">{b.name}</span>
+								</button>
+							))}
+						</div>
+						{payNote && (
+							<p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">{payNote}</p>
+						)}
+					</div>
+				</div>
 			)}
 
 			{section === "documents" && (

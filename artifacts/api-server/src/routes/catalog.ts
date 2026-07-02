@@ -10,6 +10,7 @@ import {
 } from "../lib/db";
 import { requireAuth, requireRole, type AuthenticatedRequest } from "../middleware/auth";
 import { requireTenantCompany } from "../middleware/tenant";
+import { CATALOG_SEED_PRODUCTS } from "../lib/catalog-seed";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth, requireTenantCompany);
@@ -98,8 +99,33 @@ router.post(
       .where(inArray(globalProductCategoriesTable.slug, slugs))
       .orderBy(globalProductCategoriesTable.sortOrder, globalProductCategoriesTable.id);
 
+    // Наполнение реальными позициями (ТН ВЭД-ориентированный базовый справочник).
+    const categoryIdBySlug = new Map(all.map((c) => [c.slug, c.id]));
+    const productSlugs = CATALOG_SEED_PRODUCTS.map((p) => p.slug);
+    const existingProducts = await db
+      .select({ slug: globalProductsTable.slug })
+      .from(globalProductsTable)
+      .where(inArray(globalProductsTable.slug, productSlugs));
+    const existingProductSet = new Set(existingProducts.map((p) => p.slug));
+
+    const productsToInsert = CATALOG_SEED_PRODUCTS.filter(
+      (p) => !existingProductSet.has(p.slug) && categoryIdBySlug.has(p.categorySlug),
+    ).map((p) => ({
+      categoryId: categoryIdBySlug.get(p.categorySlug)!,
+      canonicalName: p.canonicalName,
+      slug: p.slug,
+      unitDefault: p.unit,
+      status: "active",
+      searchText: `${p.canonicalName} ТН ВЭД ${p.tnved}`,
+    }));
+
+    if (productsToInsert.length > 0) {
+      await db.insert(globalProductsTable).values(productsToInsert);
+    }
+
     res.json({
       inserted: toInsert.length,
+      insertedProducts: productsToInsert.length,
       total: all.length,
       categories: all,
     });

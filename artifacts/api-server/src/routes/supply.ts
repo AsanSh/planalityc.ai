@@ -148,6 +148,34 @@ router.post("/supply/requests/:id/submit", async (req: AuthenticatedRequest, res
   res.json(updated);
 });
 
+// POST /supply/requests/:id/receive — прораб подтверждает приёмку (ordered → closed)
+// Постинг остатка по средневзвешенной цене включится, когда заказ понесёт цены (S3–S5).
+router.post("/supply/requests/:id/receive", async (req: AuthenticatedRequest, res): Promise<void> => {
+  const companyId = req.scopedCompanyId!;
+  const id = Number(req.params.id);
+  const [request] = await db
+    .select()
+    .from(supplyRequestsTable)
+    .where(and(eq(supplyRequestsTable.id, id), eq(supplyRequestsTable.companyId, companyId)));
+  if (!request) {
+    res.status(404).json({ error: "Заявка не найдена" });
+    return;
+  }
+  let next: string;
+  try {
+    next = nextRequestStatus(request.status as never, { type: "close" });
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : "Приёмку можно подтвердить только по заказанной заявке" });
+    return;
+  }
+  const [updated] = await db
+    .update(supplyRequestsTable)
+    .set({ status: next })
+    .where(eq(supplyRequestsTable.id, id))
+    .returning();
+  res.json(updated);
+});
+
 // GET /supply/requests/:id
 router.get("/supply/requests/:id", async (req: AuthenticatedRequest, res): Promise<void> => {
   const companyId = req.scopedCompanyId!;

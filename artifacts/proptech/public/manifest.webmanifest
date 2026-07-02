@@ -1,0 +1,19 @@
+{
+  "name": "Планалитик — Прораб",
+  "short_name": "Прораб",
+  "description": "Заявки, остатки и списание материалов на объекте",
+  "start_url": "/foreman",
+  "scope": "/foreman",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle, Clock, FileText, Plus, ShieldCheck, Tags, XCircle } from "lucide-react";
 import { Link } from "wouter";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -43,11 +43,14 @@ type Project = { id: number; name: string };
 type Supplier = { id: number; name: string };
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-	pending: { label: "Ожидает", color: "bg-amber-100 text-amber-700", icon: Clock },
-	approved: { label: "Одобрена", color: "bg-blue-100 text-blue-700", icon: CheckCircle },
+	draft: { label: "Черновик", color: "bg-gray-100 text-gray-700", icon: FileText },
+	pending_approval: { label: "На согласовании ПТО", color: "bg-amber-100 text-amber-700", icon: Clock },
+	approved: { label: "Одобрена", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle },
+	planned: { label: "Распланирована", color: "bg-sky-100 text-sky-700", icon: ShieldCheck },
+	ordered: { label: "Заказана", color: "bg-indigo-100 text-indigo-700", icon: Tags },
+	closed: { label: "Закрыта", color: "bg-gray-100 text-gray-600", icon: CheckCircle },
 	rejected: { label: "Отклонена", color: "bg-rose-100 text-rose-700", icon: XCircle },
-	ordered: { label: "В заказе", color: "bg-indigo-100 text-indigo-700", icon: Tags },
-	cancelled: { label: "Отменена", color: "bg-gray-100 text-gray-700", icon: XCircle },
+	cancelled: { label: "Отменена", color: "bg-gray-100 text-gray-500", icon: XCircle },
 };
 
 const priorityConfig: Record<string, { label: string; color: string }> = {
@@ -81,10 +84,14 @@ export default function WarehouseRequests() {
 	const { data: projects = [] } = useQuery<Project[]>({
 		queryKey: ["construction-projects-for-supply"],
 		queryFn: async () => {
-			const { data } = await api.get<any>("/construction/projects");
+			const { data } = await api.get<any>("/construction/projects/all");
 			return Array.isArray(data) ? data : data?.items ?? [];
 		},
 	});
+	// Если есть стройпроекты — подтягиваем первый по умолчанию (а не «Без проекта»).
+	useEffect(() => {
+		if (!projectId && projects.length) setProjectId(String(projects[0].id));
+	}, [projects, projectId]);
 	const { data: suppliers = [] } = useQuery<Supplier[]>({
 		queryKey: ["warehouse-suppliers-for-requests"],
 		queryFn: () =>
@@ -100,7 +107,7 @@ export default function WarehouseRequests() {
 
 	const createMut = useMutation({
 		mutationFn: async () => {
-			return api.post("/supply/requests", {
+			const res = await api.post<{ id: number }>("/supply/requests", {
 				projectId: projectId ? Number(projectId) : undefined,
 				priority,
 				neededByDate: neededByDate || undefined,
@@ -113,9 +120,12 @@ export default function WarehouseRequests() {
 					notes: item.notes || undefined,
 				})),
 			});
+			// Сразу отправляем на согласование ПТО (draft → pending_approval).
+			await api.post(`/supply/requests/${res.data.id}/submit`);
+			return res;
 		},
 		onSuccess: () => {
-			toast({ title: "Заявка создана" });
+			toast({ title: "Заявка отправлена ПТО" });
 			setOpen(false);
 			setProjectId("");
 			setPriority("normal");
@@ -135,7 +145,11 @@ export default function WarehouseRequests() {
 	const seedMut = useMutation({
 		mutationFn: () => api.post("/catalog/categories/seed-defaults"),
 		onSuccess: (r) => {
-			toast({ title: "Каталог инициализирован", description: `Добавлено: ${r.data.inserted}` });
+			toast({
+				title: "Каталог инициализирован",
+				description: `Категорий: ${r.data.inserted ?? 0}, позиций: ${r.data.insertedProducts ?? 0}`,
+			});
+			qc.invalidateQueries({ queryKey: ["global-products-for-supply"] });
 		},
 		onError: (e) =>
 			toast({
@@ -237,7 +251,7 @@ export default function WarehouseRequests() {
 
 			<div className="space-y-3">
 				{filtered.map((request) => {
-					const status = statusConfig[request.status] ?? statusConfig.pending;
+					const status = statusConfig[request.status] ?? statusConfig.draft;
 					const priority = priorityConfig[request.priority] ?? priorityConfig.normal;
 					const StatusIcon = status.icon;
 					return (

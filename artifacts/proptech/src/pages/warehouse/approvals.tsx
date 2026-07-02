@@ -10,6 +10,11 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
+import {
+	REQUEST_STATUS_BADGE as statusBadge,
+	REQUEST_STATUS_FILTERS as STATUS_FILTERS,
+	REQUEST_STATUS_LABEL as statusLabel,
+} from "@/lib/supply-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -69,29 +74,8 @@ type SupplyRequestDetail = SupplyRequestRow & {
 type Project = { id: number; name: string };
 type Supplier = { id: number; name: string };
 
-const STATUS_FILTERS = [
-	{ value: "pending", label: "На согласовании" },
-	{ value: "approved", label: "Одобрено" },
-	{ value: "rejected", label: "Отклонено" },
-	{ value: "ordered", label: "В заказе" },
-	{ value: "all", label: "Все" },
-] as const;
-
-const statusBadge: Record<string, string> = {
-	pending: "bg-amber-100 text-amber-700 border-amber-200",
-	approved: "bg-emerald-100 text-emerald-700 border-emerald-200",
-	rejected: "bg-rose-100 text-rose-700 border-rose-200",
-	ordered: "bg-blue-100 text-blue-700 border-blue-200",
-	cancelled: "bg-gray-100 text-gray-600 border-gray-200",
-};
-
-const statusLabel: Record<string, string> = {
-	pending: "На согласовании",
-	approved: "Одобрена",
-	rejected: "Отклонена",
-	ordered: "В заказе",
-	cancelled: "Отменена",
-};
+// Статусы заявки — единый словарь (см. импорт из @/lib/supply-status):
+// STATUS_FILTERS, statusBadge, statusLabel.
 
 const approvalStatusLabel: Record<string, string> = {
 	pending: "Ожидает",
@@ -102,7 +86,7 @@ const approvalStatusLabel: Record<string, string> = {
 export default function WarehouseSupplyApprovals() {
 	const { toast } = useToast();
 	const qc = useQueryClient();
-	const [statusFilter, setStatusFilter] = useState<string>("pending");
+	const [statusFilter, setStatusFilter] = useState<string>("pending_approval");
 	const [selectedId, setSelectedId] = useState<number | null>(null);
 	const [comment, setComment] = useState("");
 	const [orderOpen, setOrderOpen] = useState(false);
@@ -282,7 +266,7 @@ export default function WarehouseSupplyApprovals() {
 											</p>
 										)}
 									</div>
-									<Badge className={statusBadge[req.status] ?? statusBadge.pending}>
+									<Badge className={statusBadge[req.status] ?? statusBadge.pending_approval}>
 										{statusLabel[req.status] ?? req.status}
 									</Badge>
 								</div>
@@ -324,7 +308,7 @@ export default function WarehouseSupplyApprovals() {
 										)}
 									</p>
 								</div>
-								<Badge className={statusBadge[detail.status] ?? statusBadge.pending}>
+								<Badge className={statusBadge[detail.status] ?? statusBadge.pending_approval}>
 									{statusLabel[detail.status] ?? detail.status}
 								</Badge>
 							</div>

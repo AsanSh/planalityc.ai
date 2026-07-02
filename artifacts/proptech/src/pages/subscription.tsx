@@ -178,8 +178,8 @@ export default function SubscriptionPage() {
 		<div className="space-y-6">
 			<div className="flex flex-wrap items-start justify-between gap-4">
 				<div>
-					<h1 className="text-2xl font-bold tracking-tight">Подписка и услуги</h1>
-					<p className="mt-1 text-sm text-muted-foreground">
+					<h1 className="text-2xl font-bold tracking-tight dark:text-slate-900">Подписка и услуги</h1>
+					<p className="mt-1 text-sm text-muted-foreground dark:text-slate-500">
 						Тарифы, подключённые возможности и стоимость дополнительных услуг.
 					</p>
 				</div>

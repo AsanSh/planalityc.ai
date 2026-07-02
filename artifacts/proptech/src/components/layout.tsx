@@ -1189,10 +1189,15 @@ export function Layout({ children }: { children: ReactNode }) {
 							</div>
 						</div>
 						<button
+							type="button"
 							onClick={logout}
-							className={cn("opacity-0 group-hover:opacity-100 transition-opacity", sidebarCollapsed && "hidden")}
+							aria-label="Выйти из системы"
+							className={cn(
+								"flex-shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:text-white/50 dark:hover:bg-white/8 dark:hover:text-white/80",
+								sidebarCollapsed && "hidden",
+							)}
 						>
-							<LogOut className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:text-white/40 dark:hover:text-white/70" />
+							<LogOut className="h-4 w-4" />
 						</button>
 					</div>
 				</div>
